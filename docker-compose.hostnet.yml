@@ -1,0 +1,10 @@
+# Optional Performance Profile for Linux/WSL2 with Host Networking
+# Usage: docker compose -f docker-compose.yml -f docker-compose.hostnet.yml up -d
+version: '3.8'
+
+services:
+  livekit:
+    network_mode: "host"
+    ports: !reset []
+    environment:
+      - LIVEKIT_CONFIG=/etc/livekit.yaml

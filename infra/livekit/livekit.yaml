@@ -1,0 +1,11 @@
+port: 7880
+rtc:
+  tcp_port: 7881
+  udp_port: 7882
+  use_external_ip: false
+  node_ip: 127.0.0.1
+keys:
+  devkey: devsecret_aitranslate_meeting_secret_key_32chars
+logging:
+  json: false
+  level: info

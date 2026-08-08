@@ -1,0 +1,36 @@
+# Node / Frontend
+apps/web/node_modules/
+apps/web/dist/
+apps/web/dist-ssr/
+apps/web/*.local
+apps/web/.cache/
+apps/web/.eslintcache
+apps/web/coverage/
+
+# .NET / Backend
+**/bin/
+**/obj/
+**/.vs/
+*.user
+*.userosscache
+*.sln.docstates
+
+# Python / AI Service
+**/__pycache__/
+apps/ai-service/.venv/
+apps/ai-service/venv/
+*.pyc
+apps/ai-service/.pytest_cache/
+.coverage
+htmlcov/
+
+# Environment & Secret Files
+.env
+.env.local
+*.pem
+
+# IDE & OS Files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
