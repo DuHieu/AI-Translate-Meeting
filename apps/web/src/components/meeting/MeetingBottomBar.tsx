@@ -25,8 +25,11 @@ interface MeetingBottomBarProps {
   onToggleScreenShare: () => void;
   onLeaveRoom: () => void;
   onOpenPeoplePanel: () => void;
+  onToggleSubtitlePanel: () => void;
   onOpenSettings: () => void;
   onOpenLayoutMenu: () => void;
+  isSubtitlePanelOpen: boolean;
+  subtitleCount: number;
   numParticipants: number;
 }
 
@@ -40,12 +43,14 @@ export const MeetingBottomBar: React.FC<MeetingBottomBarProps> = ({
   onToggleScreenShare,
   onLeaveRoom,
   onOpenPeoplePanel,
+  onToggleSubtitlePanel,
   onOpenSettings,
   onOpenLayoutMenu,
+  isSubtitlePanelOpen,
+  subtitleCount,
   numParticipants,
 }) => {
   const [currentTime, setCurrentTime] = useState('');
-  const [showCaptionsToast, setShowCaptionsToast] = useState(false);
 
   useEffect(() => {
     const updateTime = () => {
@@ -59,34 +64,19 @@ export const MeetingBottomBar: React.FC<MeetingBottomBarProps> = ({
     return () => clearInterval(interval);
   }, []);
 
-  // Register keyboard shortcuts: Ctrl+D (Mic), Ctrl+E (Camera)
   useKeyboardShortcuts({
     onToggleMic,
     onToggleCamera,
   });
 
-  const handleCaptionsClick = () => {
-    setShowCaptionsToast(true);
-    setTimeout(() => setShowCaptionsToast(false), 3000);
-  };
-
   return (
     <footer className="h-20 border-t border-slate-800/80 bg-slate-950/95 backdrop-blur-md px-4 md:px-6 flex items-center justify-between z-20 shrink-0 select-none relative">
-      {/* Toast for Captions Placeholder */}
-      {showCaptionsToast && (
-        <div className="absolute bottom-24 left-1/2 -translate-x-1/2 bg-sky-950 border border-sky-500/40 text-sky-200 text-xs px-4 py-2 rounded-xl shadow-2xl animate-fade-in font-medium z-50">
-          ✨ Live Translation Subtitles coming soon in Phase 1 Step 7!
-        </div>
-      )}
-
-      {/* Left: Time & Code */}
       <div className="hidden sm:flex items-center gap-3 text-slate-400 font-mono text-xs">
         <span className="font-semibold text-slate-300">{currentTime}</span>
         <span className="text-slate-600">|</span>
         <span className="uppercase text-slate-300 font-bold">{meetingCode}</span>
       </div>
 
-      {/* Center: Main Primary Controls */}
       <div className="flex items-center gap-2.5 md:gap-3 mx-auto sm:mx-0">
         <MeetingControlButton
           icon={isMicOn ? <Mic className="w-5 h-5" /> : <MicOff className="w-5 h-5" />}
@@ -105,10 +95,11 @@ export const MeetingBottomBar: React.FC<MeetingBottomBarProps> = ({
         />
 
         <MeetingControlButton
-          icon={<Subtitles className="w-5 h-5 text-sky-400" />}
+          icon={<Subtitles className={`w-5 h-5 ${isSubtitlePanelOpen ? 'text-white' : 'text-sky-400'}`} />}
           label="Live Subtitles"
-          tooltip="Live Translation Subtitles (Coming soon)"
-          onClick={handleCaptionsClick}
+          tooltip={subtitleCount > 0 ? `Open live transcript (${subtitleCount})` : 'Open live transcript'}
+          onClick={onToggleSubtitlePanel}
+          active={isSubtitlePanelOpen}
         />
 
         <MeetingControlButton
@@ -135,7 +126,6 @@ export const MeetingBottomBar: React.FC<MeetingBottomBarProps> = ({
         />
       </div>
 
-      {/* Right: Drawer Toggles */}
       <div className="hidden sm:flex items-center gap-2">
         <button
           type="button"

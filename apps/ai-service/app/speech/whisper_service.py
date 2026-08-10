@@ -1,11 +1,13 @@
 from dataclasses import dataclass
 from typing import Optional
 
+
 @dataclass
 class TranscriptResult:
     text: str
     language: str
     is_final: bool
+
 
 class SpeechToTextService:
     def __init__(self, model_size: str = "small", device: str = "cpu", compute_type: str = "int8"):
@@ -15,13 +17,13 @@ class SpeechToTextService:
         self._model = None
 
     async def transcribe(self, audio: bytes, language: Optional[str] = "vi") -> TranscriptResult:
-        """Transcribe audio chunk using Whisper or fallback mock for initial Step 1."""
+        """Transcribe audio chunk using Whisper or fallback mock for the current MVP."""
         if not audio:
             return TranscriptResult(text="", language=language or "vi", is_final=True)
 
-        # Placeholder transcript result for Step 1 health check / test
+        # Placeholder transcript result for health/demo flow until real Whisper loading is wired.
         return TranscriptResult(
             text="Xin chào, chúng ta bắt đầu cuộc họp nhé.",
             language=language or "vi",
-            is_final=True
+            is_final=True,
         )

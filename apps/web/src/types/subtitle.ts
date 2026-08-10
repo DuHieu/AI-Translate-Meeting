@@ -13,14 +13,5 @@ export interface SubtitleMessage {
 
 export interface SubtitleBroadcast {
   type: "subtitle";
-  data: {
-    meetingId: string;
-    participantId: string;
-    participantName: string;
-    sourceLanguage: string;
-    originalText: string;
-    translations: Record<string, string>;
-    isFinal: boolean;
-    timestamp: string;
-  };
+  data: SubtitleMessage;
 }

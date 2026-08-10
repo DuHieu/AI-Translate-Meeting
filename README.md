@@ -9,7 +9,7 @@ This repository is a Phase 1 MVP scaffold.
 - Meeting creation/join/leave API is implemented with EF Core persistence.
 - LiveKit access token generation is implemented for local development.
 - React meeting UI and subtitle panels are implemented.
-- AI WebSocket flow is present, but speech-to-text and translation currently use placeholder/local fallback responses.
+- AI WebSocket subtitle flow is wired into the meeting UI, but speech-to-text and translation currently use placeholder/local fallback responses.
 - Docker Compose can run the local service stack.
 
 Production readiness still requires real STT/translation model wiring, authentication, room authorization, stricter CORS, deployment secrets, and end-to-end media testing.
@@ -156,6 +156,16 @@ Important variables:
 | `LIVEKIT_API_KEY`, `LIVEKIT_API_SECRET` | LiveKit token signing credentials |
 | `WHISPER_MODEL`, `WHISPER_DEVICE`, `WHISPER_COMPUTE_TYPE` | AI service STT settings |
 
+Frontend runtime defaults:
+
+| Variable | Purpose |
+| --- | --- |
+| `VITE_API_URL` | Optional API base URL. If unset, the web app uses same-origin `/api`. |
+| `VITE_SUBTITLE_WS_URL` | Optional full WebSocket endpoint. If unset, the web app uses same-origin `/ws/transcribe`. |
+| `VITE_ENABLE_WEBRTC_DEBUG` | Enables the debug overlay when set to `true`. |
+
+In Docker, `apps/web/nginx.conf` proxies `/api/` to the API container and `/ws/` to the AI service container.
+
 ## API Surface
 
 | Method | Endpoint | Purpose |
@@ -166,7 +176,7 @@ Important variables:
 | `POST` | `/api/meetings/{meetingCode}/leave` | Mark a participant as left |
 | `GET` | `/api/meetings/{meetingCode}/participants` | List active participants |
 | `GET` | `/health` | API/database health |
-| `WS` | `/ws/transcribe` | AI service subtitle stream |
+| `WS` | `/ws/transcribe?meetingId=...&participantId=...&participantName=...&sourceLanguage=...&targetLanguage=...` | AI service subtitle stream |
 
 ## Verification Snapshot
 

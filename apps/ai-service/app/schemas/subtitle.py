@@ -1,14 +1,17 @@
-from pydantic import BaseModel, Field
-from typing import Dict, Optional
 from datetime import datetime
+from uuid import uuid4
+
+from pydantic import BaseModel, Field
 
 class SubtitleData(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid4()))
     meetingId: str
     participantId: str
     participantName: str
     sourceLanguage: str
+    targetLanguage: str
     originalText: str
-    translations: Dict[str, str] = Field(default_factory=dict)
+    translatedText: str
     isFinal: bool = True
     timestamp: str = Field(default_factory=lambda: datetime.utcnow().isoformat() + "Z")
 

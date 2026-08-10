@@ -28,5 +28,19 @@ app.include_router(health_router)
 ws_handler = TranscribeWebSocketHandler()
 
 @app.websocket("/ws/transcribe")
-async def websocket_endpoint(websocket: WebSocket, meetingId: str = "default", participantId: str = "default"):
-    await ws_handler.handle(websocket, meetingId, participantId)
+async def websocket_endpoint(
+    websocket: WebSocket,
+    meetingId: str = "default",
+    participantId: str = "default",
+    participantName: str = "Participant",
+    sourceLanguage: str = "vi",
+    targetLanguage: str = "en",
+):
+    await ws_handler.handle(
+        websocket,
+        meetingId,
+        participantId,
+        participantName,
+        sourceLanguage,
+        targetLanguage,
+    )
