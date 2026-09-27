@@ -9,6 +9,9 @@ class Settings(BaseSettings):
     WHISPER_COMPUTE_TYPE: str = os.getenv("WHISPER_COMPUTE_TYPE", "int8")
     DEFAULT_SOURCE_LANGUAGE: str = os.getenv("DEFAULT_SOURCE_LANGUAGE", "vi")
     DEFAULT_TARGET_LANGUAGE: str = os.getenv("DEFAULT_TARGET_LANGUAGE", "ja")
+    LAYA_SERVICE_URL: str = os.getenv("LAYA_SERVICE_URL", "http://laya:8000")
+    LAYA_CONFIDENCE_THRESHOLD: float = float(os.getenv("LAYA_CONFIDENCE_THRESHOLD", "0.80"))
+    LAYA_ENABLED: bool = os.getenv("LAYA_ENABLED", "true").lower() in ("true", "1", "yes")
 
     class Config:
         env_file = ".env"

@@ -54,6 +54,8 @@ export function normalizeSubtitleMessage(raw: unknown, preferredTargetLanguage: 
     translatedText: translatedText || originalText,
     isFinal: typeof payload.isFinal === 'boolean' ? payload.isFinal : true,
     timestamp: readString(payload.timestamp, new Date().toISOString()),
+    tags: Array.isArray(payload.tags) ? (payload.tags as string[]) : [],
+    confidence: typeof payload.confidence === 'number' ? payload.confidence : 0,
   };
 }
 

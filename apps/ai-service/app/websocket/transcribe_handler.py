@@ -5,6 +5,7 @@ from fastapi import WebSocket, WebSocketDisconnect
 from app.schemas.subtitle import SubtitleBroadcastMessage, SubtitleData
 from app.speech.whisper_service import SpeechToTextService
 from app.translation.local_provider import LocalTranslationProvider
+from app.services.laya_client import LayaDecisionClient
 
 logger = logging.getLogger("ai_service")
 
@@ -13,6 +14,7 @@ class TranscribeWebSocketHandler:
     def __init__(self):
         self.stt = SpeechToTextService()
         self.translator = LocalTranslationProvider()
+        self.laya = LayaDecisionClient()
 
     async def handle(
         self,
@@ -80,6 +82,12 @@ class TranscribeWebSocketHandler:
             source_language,
             target_language,
         )
+
+        tags: list[str] = []
+        confidence = 0.0
+        if is_final and original_text:
+            tags, confidence = await self.laya.classify_sentence(original_text)
+
         return SubtitleBroadcastMessage(
             data=SubtitleData(
                 meetingId=meeting_id,
@@ -90,5 +98,7 @@ class TranscribeWebSocketHandler:
                 originalText=original_text,
                 translatedText=translated_text,
                 isFinal=is_final,
+                tags=tags,
+                confidence=confidence,
             )
         )

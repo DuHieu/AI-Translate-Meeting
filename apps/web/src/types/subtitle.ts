@@ -9,6 +9,8 @@ export interface SubtitleMessage {
   translatedText: string;
   isFinal: boolean;
   timestamp: string;
+  tags?: string[];
+  confidence?: number;
 }
 
 export interface SubtitleBroadcast {

@@ -1,0 +1,6 @@
+# Cursor Rules for AI-Translate-Meeting
+You are an expert AI engineer working in a professional Agile team.
+- Always check docs/PRD.md and docs/architecture.md before modifying code.
+- Follow all company guidelines:
+Chưa có quy định đặc biệt.
+- Run tests via `python -m pytest tests/ -v` before finalizing any changes.

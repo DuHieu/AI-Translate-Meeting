@@ -74,11 +74,32 @@ services:
       - WHISPER_MODEL=small
       - WHISPER_DEVICE=cpu
       - WHISPER_COMPUTE_TYPE=int8
+      - LAYA_SERVICE_URL=http://laya:8000
+      - LAYA_CONFIDENCE_THRESHOLD=0.80
+      - LAYA_ENABLED=true
     ports:
       - "8000:8000"
     depends_on:
       redis:
         condition: service_healthy
+
+  laya:
+    image: python:3.11-slim
+    container_name: ai_translate_laya
+    restart: always
+    command: >
+      sh -c "pip install --no-cache-dir 'laya[serve]' &&
+             LAYA_HOST=0.0.0.0 LAYA_PORT=8000 LAYA_DEVICE=cpu LAYA_PRELOAD=1 LAYA_MODELS=multilingual laya-serve"
+    environment:
+      - LAYA_HOST=0.0.0.0
+      - LAYA_PORT=8000
+      - LAYA_DEVICE=cpu
+      - LAYA_PRELOAD=1
+      - LAYA_MODELS=multilingual
+    ports:
+      - "8005:8000"
+    volumes:
+      - laya_cache:/root/.cache/huggingface
 
   web:
     build:
@@ -93,3 +114,4 @@ services:
 
 volumes:
   postgres_data:
+  laya_cache:
