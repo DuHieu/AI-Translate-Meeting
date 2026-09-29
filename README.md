@@ -87,7 +87,10 @@ Local URLs:
 | API health | `http://localhost:5000/health` |
 | AI service | `http://localhost:8000` |
 | AI health | `http://localhost:8000/health` |
-| LiveKit | `ws://localhost:7880` |
+| LiveKit | `ws://127.0.0.1:7880` |
+
+Local media compatibility and verification limits: [Media verification](docs/media-verification.md).
+Codex/Antigravity collaboration: [Agent bridge](docs/agent-bridge.md).
 
 Optional Linux/WSL2 host networking profile:
 

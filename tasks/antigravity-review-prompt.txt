@@ -1,0 +1,6 @@
+Review mic/camera lifecycle and concurrent publication risks in this repository. Read only, no edits or commits. Reply in Vietnamese with concrete findings and file references. Do not run tests, git commands, or other shell commands.
+Use your built-in file reader, or these exact approved PowerShell commands individually:
+Get-Content -LiteralPath D:/MyProject/AI-Translate-Meeting/apps/web/src/pages/PreJoinPage.tsx
+Get-Content -LiteralPath D:/MyProject/AI-Translate-Meeting/apps/web/src/components/meeting/MeetingShell.tsx
+Get-Content -LiteralPath D:/MyProject/AI-Translate-Meeting/tasks/antigravity-handoff.md
+Distinguish static review from runtime proof. Check initial publish cancellation/reconnect, screen sharing and permission retries overlapping toggles, and stale previews after permission recovery.
