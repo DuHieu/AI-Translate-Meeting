@@ -30,7 +30,7 @@ services:
       retries: 5
 
   livekit:
-    image: livekit/livekit-server:v1.6.0
+    image: livekit/livekit-server:v1.13.7
     container_name: ai_translate_livekit
     command: --config /etc/livekit.yaml
     restart: always
@@ -51,7 +51,8 @@ services:
       - ASPNETCORE_ENVIRONMENT=Development
       - ConnectionStrings__DefaultConnection=Host=postgres;Port=5432;Database=ai_translate_meeting;Username=postgres;Password=postgres
       - Redis__ConnectionString=redis:6379
-      - LiveKit__Url=ws://livekit:7880
+      - LiveKit__InternalUrl=http://livekit:7880
+      - LiveKit__PublicUrl=ws://127.0.0.1:7880
       - LiveKit__ApiKey=devkey
       - LiveKit__ApiSecret=devsecret_aitranslate_meeting_secret_key_32chars
     ports:
@@ -71,7 +72,7 @@ services:
     environment:
       - REDIS_HOST=redis
       - REDIS_PORT=6379
-      - WHISPER_MODEL=small
+      - WHISPER_MODEL=tiny
       - WHISPER_DEVICE=cpu
       - WHISPER_COMPUTE_TYPE=int8
       - LAYA_SERVICE_URL=http://laya:8000

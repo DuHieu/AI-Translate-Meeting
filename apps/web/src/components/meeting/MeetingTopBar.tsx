@@ -12,7 +12,8 @@ export const MeetingTopBar: React.FC<MeetingTopBarProps> = ({ meetingCode, conne
   const [copied, setCopied] = useState(false);
 
   const handleCopyCode = () => {
-    navigator.clipboard.writeText(meetingCode);
+    const inviteUrl = `${window.location.origin}/prejoin/${meetingCode}`;
+    navigator.clipboard.writeText(inviteUrl);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
@@ -48,12 +49,20 @@ export const MeetingTopBar: React.FC<MeetingTopBarProps> = ({ meetingCode, conne
       <div className="flex items-center gap-2.5">
         <button
           onClick={handleCopyCode}
-          title="Click to copy meeting code"
-          className="bg-slate-800 hover:bg-slate-700/80 border border-slate-700/80 px-3 py-1 rounded-full text-xs font-mono text-slate-300 flex items-center gap-1.5 transition cursor-pointer"
+          title="Sao chép link mời phòng họp"
+          className="bg-slate-800 hover:bg-slate-700/80 border border-slate-700/80 px-3 py-1.5 rounded-full text-xs font-mono text-slate-300 flex items-center gap-1.5 transition cursor-pointer"
         >
-          <span className="text-slate-400">Code:</span>
+          <span className="text-slate-400">Phòng:</span>
           <span className="text-sky-400 font-bold uppercase tracking-wider">{meetingCode}</span>
-          {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5 text-slate-400" />}
+          {copied ? (
+            <span className="text-emerald-400 flex items-center gap-1 font-sans text-[11px] font-medium">
+              <Check className="w-3.5 h-3.5" /> Đã copy link
+            </span>
+          ) : (
+            <span className="text-slate-400 flex items-center gap-1 font-sans text-[11px]">
+              <Copy className="w-3.5 h-3.5" /> Copy link mời
+            </span>
+          )}
         </button>
 
         <NetworkQualityIndicator />

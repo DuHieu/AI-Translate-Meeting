@@ -67,10 +67,12 @@ export class SubtitleWebSocketService {
   private isIntentionalClose = false;
   private currentOptions: SubtitleConnectOptions | null = null;
   private suppressNextCloseReconnect = false;
+  private reconnectTimer: number | null = null;
 
   connect(options: SubtitleConnectOptions) {
     this.isIntentionalClose = false;
     this.currentOptions = options;
+    this.clearReconnectTimer();
     const wsUrl = this.buildUrl(options);
 
     if (
@@ -142,21 +144,40 @@ export class SubtitleWebSocketService {
   private scheduleReconnect() {
     if (!this.currentOptions) return;
 
+    this.clearReconnectTimer();
     this.reconnectAttempts++;
     // Exponential backoff: 1s, 2s, 5s, 10s, capped at 30s
     const delays = [1000, 2000, 5000, 10000];
     const delay = delays[this.reconnectAttempts - 1] || this.maxReconnectDelay;
-    console.log(`[SubtitleWS] Reconnecting in ${delay}ms (attempt ${this.reconnectAttempts})...`);
-    setTimeout(() => {
+    console.debug(`[SubtitleWS] Reconnecting in ${delay}ms (attempt ${this.reconnectAttempts})...`);
+    this.reconnectTimer = window.setTimeout(() => {
+      this.reconnectTimer = null;
       if (!this.isIntentionalClose && this.currentOptions) {
         this.connect(this.currentOptions);
       }
     }, delay);
   }
 
+  private clearReconnectTimer() {
+    if (this.reconnectTimer !== null) {
+      window.clearTimeout(this.reconnectTimer);
+      this.reconnectTimer = null;
+    }
+  }
+
+  isConnected(): boolean {
+    return this.ws?.readyState === WebSocket.OPEN;
+  }
+
   sendAudioChunk(chunk: ArrayBuffer) {
     if (this.ws && this.ws.readyState === WebSocket.OPEN) {
       this.ws.send(chunk);
+    }
+  }
+
+  sendSpeechText(text: string, language?: string) {
+    if (this.ws && this.ws.readyState === WebSocket.OPEN && text.trim()) {
+      this.ws.send(JSON.stringify({ text: text.trim(), language, isFinal: true }));
     }
   }
 
@@ -168,6 +189,7 @@ export class SubtitleWebSocketService {
   disconnect() {
     this.isIntentionalClose = true;
     this.currentOptions = null;
+    this.clearReconnectTimer();
     if (this.ws) {
       this.ws.close();
       this.ws = null;

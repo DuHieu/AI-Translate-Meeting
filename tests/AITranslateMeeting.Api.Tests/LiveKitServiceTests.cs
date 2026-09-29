@@ -18,7 +18,7 @@ public class LiveKitServiceTests
             ApiKey = "devkey",
             ApiSecret = "devsecret_aitranslate_meeting_secret_key_32chars",
             InternalUrl = "http://livekit:7880",
-            PublicUrl = "ws://localhost:7880"
+            PublicUrl = "ws://127.0.0.1:7880"
         };
 
         _liveKitService = new LiveKitService(Microsoft.Extensions.Options.Options.Create(_options));

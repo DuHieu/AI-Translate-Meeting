@@ -31,7 +31,7 @@ public class MeetingServiceTests
 
         _mockLiveKitService
             .Setup(x => x.GetPublicUrl())
-            .Returns("ws://localhost:7880");
+            .Returns("ws://127.0.0.1:7880");
 
         _service = new MeetingService(_dbContext, _mockLiveKitService.Object, _mockLogger.Object);
     }
@@ -102,7 +102,7 @@ public class MeetingServiceTests
         // Assert
         Assert.NotNull(result);
         Assert.Equal("MOCK_JWT_LIVEKIT_TOKEN", result.Token);
-        Assert.Equal("ws://localhost:7880", result.LiveKitUrl);
+        Assert.Equal("ws://127.0.0.1:7880", result.LiveKitUrl);
         Assert.StartsWith("p_", result.Identity);
     }
 

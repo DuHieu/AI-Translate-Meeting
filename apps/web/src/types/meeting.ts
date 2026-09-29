@@ -74,4 +74,8 @@ export interface MeetingSessionData {
   targetLanguage: SupportedLanguage;
   liveKitUrl: string;
   token: string;
+  initialMicOn?: boolean;
+  initialCameraOn?: boolean;
+  audioDeviceId?: string;
+  videoDeviceId?: string;
 }

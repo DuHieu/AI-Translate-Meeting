@@ -20,11 +20,11 @@ export const MeetingPage: React.FC = () => {
     const savedSession = meetingStorage.getSession(meetingCode);
     if (savedSession && savedSession.token && savedSession.liveKitUrl) {
       setSession(savedSession);
+      setIsChecking(false);
     } else {
-      setSession(null);
+      navigate(`/prejoin/${meetingCode}`, { replace: true });
     }
-    setIsChecking(false);
-  }, [meetingCode]);
+  }, [meetingCode, navigate]);
 
   if (isChecking) {
     return (

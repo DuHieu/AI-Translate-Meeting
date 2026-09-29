@@ -1,6 +1,5 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { TrackPublication, Participant } from 'livekit-client';
-import { VideoTrack } from '@livekit/components-react';
 import { Monitor, StopCircle } from 'lucide-react';
 import { ParticipantTile } from './ParticipantTile';
 
@@ -19,12 +18,28 @@ export const PresentationStage: React.FC<PresentationStageProps> = ({
   isLocalPresenting,
   onStopPresenting,
 }) => {
+  const screenVideoRef = useRef<HTMLVideoElement>(null);
+
+  useEffect(() => {
+    const el = screenVideoRef.current;
+    const track = screenTrack.track;
+    if (el && track) {
+      track.attach(el);
+      return () => {
+        track.detach(el);
+      };
+    }
+  }, [screenTrack, screenTrack.track]);
+
   return (
     <div className="w-full h-full flex flex-col md:flex-row gap-4 p-4 overflow-hidden relative">
       {/* Main Dominant Presentation Stage */}
       <div className="flex-1 h-full relative bg-slate-950 border border-slate-800 rounded-3xl overflow-hidden flex flex-col items-center justify-center">
-        <VideoTrack
-          trackRef={{ participant: presenter, source: screenTrack.source, publication: screenTrack }}
+        <video
+          ref={screenVideoRef}
+          autoPlay
+          playsInline
+          muted={true}
           className="w-full h-full object-contain"
         />
 

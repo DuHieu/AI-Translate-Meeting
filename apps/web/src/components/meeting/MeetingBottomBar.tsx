@@ -11,8 +11,12 @@ import {
   Settings,
   Grid,
   Subtitles,
+  ChevronUp,
 } from 'lucide-react';
+import { LocalAudioTrack } from 'livekit-client';
 import { MeetingControlButton } from './MeetingControlButton';
+import { AudioDeviceMenu } from './AudioDeviceMenu';
+import { VideoDeviceMenu } from './VideoDeviceMenu';
 import { useKeyboardShortcuts } from '../../hooks/useKeyboardShortcuts';
 
 interface MeetingBottomBarProps {
@@ -20,6 +24,11 @@ interface MeetingBottomBarProps {
   isMicOn: boolean;
   isCameraOn: boolean;
   isScreenSharing: boolean;
+  microphoneTrack?: LocalAudioTrack | null;
+  /** Room fully connected — mic/cam/screen controls are enabled */
+  isConnected?: boolean;
+  /** Room is connecting or reconnecting — show subtle hint on buttons */
+  isConnecting?: boolean;
   onToggleMic: () => void;
   onToggleCamera: () => void;
   onToggleScreenShare: () => void;
@@ -38,6 +47,9 @@ export const MeetingBottomBar: React.FC<MeetingBottomBarProps> = ({
   isMicOn,
   isCameraOn,
   isScreenSharing,
+  microphoneTrack,
+  isConnected = true,
+  isConnecting = false,
   onToggleMic,
   onToggleCamera,
   onToggleScreenShare,
@@ -51,6 +63,11 @@ export const MeetingBottomBar: React.FC<MeetingBottomBarProps> = ({
   numParticipants,
 }) => {
   const [currentTime, setCurrentTime] = useState('');
+  const [isAudioMenuOpen, setIsAudioMenuOpen] = useState(false);
+  const [isVideoMenuOpen, setIsVideoMenuOpen] = useState(false);
+
+  // Buttons disabled while room is not connected to prevent NegotiationError loops
+  const mediaDisabled = !isConnected;
 
   useEffect(() => {
     const updateTime = () => {
@@ -78,21 +95,103 @@ export const MeetingBottomBar: React.FC<MeetingBottomBarProps> = ({
       </div>
 
       <div className="flex items-center gap-2.5 md:gap-3 mx-auto sm:mx-0">
-        <MeetingControlButton
-          icon={isMicOn ? <Mic className="w-5 h-5" /> : <MicOff className="w-5 h-5" />}
-          label="Toggle Microphone"
-          tooltip={isMicOn ? 'Turn off mic (Ctrl+D)' : 'Turn on mic (Ctrl+D)'}
-          onClick={onToggleMic}
-          danger={!isMicOn}
-        />
+        {/* Microphone Split Control (Google Meet / Zoom style) */}
+        <div className={`relative flex items-center ${mediaDisabled ? 'opacity-50 pointer-events-none' : ''}`}>
+          <div
+            className="flex items-center rounded-2xl bg-slate-900 border border-slate-700/80 overflow-hidden shadow-lg"
+            title={mediaDisabled ? (isConnecting ? 'Đang kết nối phòng họp...' : 'Phòng họp chưa kết nối') : undefined}
+          >
+            <button
+              type="button"
+              onClick={onToggleMic}
+              disabled={mediaDisabled}
+              title={
+                mediaDisabled
+                  ? (isConnecting ? 'Đang kết nối...' : 'Phòng họp chưa kết nối')
+                  : isMicOn ? 'Tắt microphone (Ctrl+D)' : 'Bật microphone (Ctrl+D)'
+              }
+              className={`p-3 md:px-4 md:py-3 flex items-center justify-center transition ${mediaDisabled ? 'cursor-not-allowed' : 'cursor-pointer'} ${
+                isMicOn
+                  ? 'bg-slate-800 hover:bg-slate-700 text-slate-100'
+                  : 'bg-red-600 hover:bg-red-500 text-white'
+              }`}
+            >
+              {isMicOn ? <Mic className="w-5 h-5 text-emerald-400" /> : <MicOff className="w-5 h-5 text-white" />}
+            </button>
 
-        <MeetingControlButton
-          icon={isCameraOn ? <Video className="w-5 h-5" /> : <VideoOff className="w-5 h-5" />}
-          label="Toggle Camera"
-          tooltip={isCameraOn ? 'Turn off camera (Ctrl+E)' : 'Turn on camera (Ctrl+E)'}
-          onClick={onToggleCamera}
-          danger={!isCameraOn}
-        />
+            <button
+              type="button"
+              disabled={mediaDisabled}
+              onClick={() => {
+                setIsAudioMenuOpen((prev) => !prev);
+                setIsVideoMenuOpen(false);
+              }}
+              title="Cài đặt Microphone & Loa"
+              className={`px-1.5 py-3.5 flex items-center justify-center transition border-l border-slate-700/80 ${mediaDisabled ? 'cursor-not-allowed' : 'cursor-pointer'} ${
+                isAudioMenuOpen
+                  ? 'bg-sky-600 text-white'
+                  : isMicOn
+                  ? 'bg-slate-800/80 hover:bg-slate-700 text-slate-400 hover:text-slate-200'
+                  : 'bg-red-700 hover:bg-red-600 text-red-200 hover:text-white'
+              }`}
+            >
+              <ChevronUp className={`w-3.5 h-3.5 transition-transform ${isAudioMenuOpen ? 'rotate-180' : ''}`} />
+            </button>
+          </div>
+
+          <AudioDeviceMenu
+            microphoneTrack={microphoneTrack}
+            isOpen={isAudioMenuOpen}
+            onClose={() => setIsAudioMenuOpen(false)}
+          />
+        </div>
+
+        {/* Camera Split Control (Google Meet / Zoom style) */}
+        <div className={`relative flex items-center ${mediaDisabled ? 'opacity-50 pointer-events-none' : ''}`}>
+          <div className="flex items-center rounded-2xl bg-slate-900 border border-slate-700/80 overflow-hidden shadow-lg">
+            <button
+              type="button"
+              onClick={onToggleCamera}
+              disabled={mediaDisabled}
+              title={
+                mediaDisabled
+                  ? (isConnecting ? 'Đang kết nối...' : 'Phòng họp chưa kết nối')
+                  : isCameraOn ? 'Tắt camera (Ctrl+E)' : 'Bật camera (Ctrl+E)'
+              }
+              className={`p-3 md:px-4 md:py-3 flex items-center justify-center transition ${mediaDisabled ? 'cursor-not-allowed' : 'cursor-pointer'} ${
+                isCameraOn
+                  ? 'bg-slate-800 hover:bg-slate-700 text-slate-100'
+                  : 'bg-red-600 hover:bg-red-500 text-white'
+              }`}
+            >
+              {isCameraOn ? <Video className="w-5 h-5 text-sky-400" /> : <VideoOff className="w-5 h-5 text-white" />}
+            </button>
+
+            <button
+              type="button"
+              disabled={mediaDisabled}
+              onClick={() => {
+                setIsVideoMenuOpen((prev) => !prev);
+                setIsAudioMenuOpen(false);
+              }}
+              title="Chọn Camera"
+              className={`px-1.5 py-3.5 flex items-center justify-center transition border-l border-slate-700/80 ${mediaDisabled ? 'cursor-not-allowed' : 'cursor-pointer'} ${
+                isVideoMenuOpen
+                  ? 'bg-sky-600 text-white'
+                  : isCameraOn
+                  ? 'bg-slate-800/80 hover:bg-slate-700 text-slate-400 hover:text-slate-200'
+                  : 'bg-red-700 hover:bg-red-600 text-red-200 hover:text-white'
+              }`}
+            >
+              <ChevronUp className={`w-3.5 h-3.5 transition-transform ${isVideoMenuOpen ? 'rotate-180' : ''}`} />
+            </button>
+          </div>
+
+          <VideoDeviceMenu
+            isOpen={isVideoMenuOpen}
+            onClose={() => setIsVideoMenuOpen(false)}
+          />
+        </div>
 
         <MeetingControlButton
           icon={<Subtitles className={`w-5 h-5 ${isSubtitlePanelOpen ? 'text-white' : 'text-sky-400'}`} />}
