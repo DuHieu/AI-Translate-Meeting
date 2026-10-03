@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { meetingApi } from '../api/meetingApi';
 import { meetingStorage } from '../utils/meetingStorage';
-import { SupportedLanguage } from '../types/meeting';
+import { isAdmissionPending, SupportedLanguage, SUPPORTED_LANGUAGES_LIST } from '../types/meeting';
 import { Video, LogIn } from 'lucide-react';
 
 export const JoinMeetingPage: React.FC = () => {
@@ -36,6 +36,11 @@ export const JoinMeetingPage: React.FC = () => {
         targetLanguage,
       });
 
+      if (isAdmissionPending(joinRes)) {
+        setError('Yêu cầu đã được gửi. Vui lòng chờ host phê duyệt trong màn hình pre-join.');
+        return;
+      }
+
       meetingStorage.saveSession({
         meetingCode: joinRes.meetingCode,
         meetingId: joinRes.meetingId,
@@ -46,6 +51,9 @@ export const JoinMeetingPage: React.FC = () => {
         targetLanguage: joinRes.targetLanguage,
         liveKitUrl: joinRes.liveKitUrl,
         token: joinRes.token,
+        subtitleToken: joinRes.subtitleToken,
+        sessionToken: joinRes.sessionToken,
+        role: joinRes.role,
       });
 
       navigate(`/meeting/${joinRes.meetingCode}`);
@@ -95,9 +103,11 @@ export const JoinMeetingPage: React.FC = () => {
                 onChange={(e) => setSpokenLanguage(e.target.value as SupportedLanguage)}
                 className="w-full bg-slate-800 border border-slate-700 text-slate-100 text-sm rounded-xl p-3 outline-none"
               >
-                <option value="vi">Vietnamese (vi)</option>
-                <option value="en">English (en)</option>
-                <option value="ja">Japanese (ja)</option>
+                {SUPPORTED_LANGUAGES_LIST.map((lang) => (
+                  <option key={lang.code} value={lang.code}>
+                    {lang.name} ({lang.code})
+                  </option>
+                ))}
               </select>
             </div>
 
@@ -108,9 +118,11 @@ export const JoinMeetingPage: React.FC = () => {
                 onChange={(e) => setTargetLanguage(e.target.value as SupportedLanguage)}
                 className="w-full bg-slate-800 border border-slate-700 text-slate-100 text-sm rounded-xl p-3 outline-none"
               >
-                <option value="ja">Japanese (ja)</option>
-                <option value="vi">Vietnamese (vi)</option>
-                <option value="en">English (en)</option>
+                {SUPPORTED_LANGUAGES_LIST.map((lang) => (
+                  <option key={lang.code} value={lang.code}>
+                    {lang.name} ({lang.code})
+                  </option>
+                ))}
               </select>
             </div>
           </div>

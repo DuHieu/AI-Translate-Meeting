@@ -1,16 +1,24 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Participant, Track, TrackPublication, ParticipantEvent } from 'livekit-client';
 import { useIsSpeaking } from '@livekit/components-react';
-import { Mic, MicOff, User } from 'lucide-react';
+import { Mic, MicOff, User, Sparkles } from 'lucide-react';
+import { PipelineStatusMessage } from '../../types/subtitle';
 
 interface ParticipantTileProps {
   participant: Participant;
   isLocal?: boolean;
+  pipelineStatus?: PipelineStatusMessage;
 }
 
-export const ParticipantTile: React.FC<ParticipantTileProps> = ({ participant, isLocal = false }) => {
+
+export const ParticipantTile: React.FC<ParticipantTileProps> = ({
+  participant,
+  isLocal = false,
+  pipelineStatus,
+}) => {
   const isSpeaking = useIsSpeaking(participant);
   const videoRef = useRef<HTMLVideoElement>(null);
+
 
   const [camPub, setCamPub] = useState<TrackPublication | undefined>(() =>
     participant.getTrackPublication(Track.Source.Camera)
@@ -82,8 +90,8 @@ export const ParticipantTile: React.FC<ParticipantTileProps> = ({ participant, i
 
   return (
     <div
-      className={`relative w-full h-full rounded-2xl overflow-hidden bg-slate-900 border transition-all duration-200 flex items-center justify-center select-none ${
-        isSpeaking ? 'border-emerald-400 ring-2 ring-emerald-400/50 shadow-lg shadow-emerald-500/20' : 'border-slate-800'
+      className={`relative w-full h-full rounded-3xl overflow-hidden bg-black/60 border transition-all duration-300 flex items-center justify-center select-none shadow-2xl ${
+        isSpeaking ? 'border-cyan-400 ring-2 ring-cyan-400/50 shadow-[0_0_25px_rgba(6,182,212,0.25)]' : 'border-white/10'
       }`}
     >
       {/* Video Stream or Avatar Fallback */}
@@ -101,7 +109,7 @@ export const ParticipantTile: React.FC<ParticipantTileProps> = ({ participant, i
             className={`w-20 h-20 md:w-24 md:h-24 rounded-full ${getAvatarBg(
               participant.identity
             )} flex items-center justify-center text-white text-3xl md:text-4xl font-bold shadow-xl border-2 border-white/20 ${
-              isSpeaking ? 'ring-4 ring-emerald-400/60 scale-105' : ''
+              isSpeaking ? 'ring-4 ring-cyan-400/60 scale-105' : ''
             } transition-transform`}
           >
             {initial || <User className="w-10 h-10" />}
@@ -114,7 +122,7 @@ export const ParticipantTile: React.FC<ParticipantTileProps> = ({ participant, i
       )}
 
       {/* Participant Info Overlay (Bottom Left - Google Meet / Zoom style) */}
-      <div className="absolute bottom-3 left-3 bg-slate-950/85 backdrop-blur-md px-3 py-1.5 rounded-xl border border-slate-800 flex items-center gap-2 max-w-[80%] z-10 shadow-lg">
+      <div className="absolute bottom-3 left-3 bg-[#0B0F19]/80 backdrop-blur-xl px-3 py-1.5 rounded-2xl border border-white/10 flex items-center gap-2 max-w-[80%] z-10 shadow-lg">
         <span className="text-xs font-medium text-slate-100 truncate">
           {displayName} {isLocal ? '(Bạn)' : ''}
         </span>
@@ -126,15 +134,26 @@ export const ParticipantTile: React.FC<ParticipantTileProps> = ({ participant, i
             </div>
           ) : isSpeaking ? (
             <div className="flex items-center gap-0.5 px-0.5" title="Đang nói...">
-              <span className="w-1 h-3 bg-emerald-400 rounded-full animate-bounce [animation-delay:-0.3s]" />
-              <span className="w-1 h-4 bg-emerald-400 rounded-full animate-bounce [animation-delay:-0.15s]" />
-              <span className="w-1 h-2 bg-emerald-400 rounded-full animate-bounce" />
+              <span className="w-1 h-3 bg-cyan-400 rounded-full animate-bounce [animation-delay:-0.3s]" />
+              <span className="w-1 h-4 bg-cyan-400 rounded-full animate-bounce [animation-delay:-0.15s]" />
+              <span className="w-1 h-2 bg-cyan-400 rounded-full animate-bounce" />
             </div>
           ) : (
             <Mic className="w-3.5 h-3.5 text-slate-400" />
           )}
         </div>
+
+        {pipelineStatus?.phase === 'translating' && (
+          <div
+            className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 text-[10px] font-semibold border border-cyan-500/30 animate-pulse shadow-sm"
+            title="Đang chuyển ngữ lời nói..."
+          >
+            <Sparkles className="w-2.5 h-2.5 text-cyan-400" />
+            <span>Đang dịch...</span>
+          </div>
+        )}
       </div>
     </div>
+
   );
 };

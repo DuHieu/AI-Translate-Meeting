@@ -1,0 +1,202 @@
+{
+  "version": "1.0.0",
+  "name": "enterprise-meeting-vi-ja",
+  "description": "Domain-aware glossary for Vietnamese <-> Japanese enterprise meetings",
+  "preserved_terms": [
+    "LiveKit",
+    "Docker",
+    "PostgreSQL",
+    "Redis",
+    "FastAPI",
+    "Whisper",
+    "Laya",
+    "Vite",
+    "React",
+    "TypeScript",
+    "ASP.NET",
+    "WebRTC",
+    "WebSocket",
+    "REST",
+    "API",
+    "JWT",
+    "VAD",
+    "STT",
+    "PR",
+    "CI/CD",
+    "Git",
+    "GitHub",
+    "Kubernetes",
+    "K8s",
+    "AWS",
+    "Azure",
+    "GCP"
+  ],
+  "glossaries": {
+    "vi_ja": {
+      "engineering": {
+        "triển khai": "デプロイ",
+        "mã nguồn": "ソースコード",
+        "cơ sở dữ liệu": "データベース",
+        "kiểm thử": "テスト",
+        "độ trễ": "レイテンシ",
+        "bộ nhớ đệm": "キャッシュ",
+        "xử lý song song": "並行処理",
+        "hàng đợi": "キュー",
+        "tối ưu hóa": "最適化",
+        "phân tán": "分散",
+        "bảo mật": "セキュリティ",
+        "vi dịch vụ": "マイクロサービス",
+        "giao diện người dùng": "UI",
+        "nhận dạng giọng nói": "音声認識",
+        "dịch trực tiếp": "リアルタイム翻訳"
+      },
+      "business": {
+        "cuộc họp": "会議",
+        "bắt đầu cuộc họp": "会議を始めましょう",
+        "thống nhất": "合意",
+        "đồng ý": "賛成です",
+        "kế hoạch": "計画",
+        "tiến độ": "進捗",
+        "thời hạn": "期限",
+        "hạn chót": "締め切り",
+        "ngân sách": "予算",
+        "người tham gia": "参加者",
+        "biên bản cuộc họp": "議事録",
+        "hành động cần làm": "アクションアイテム",
+        "quyết định": "決定事項",
+        "bàn giao": "納品"
+      },
+      "general": {
+        "xin chào": "こんにちは",
+        "cảm ơn": "ありがとうございます",
+        "tạm biệt": "さようなら",
+        "vâng": "はい",
+        "không": "いいえ",
+        "làm phiền": "すみません",
+        "xin lỗi": "申し訳ございません",
+        "tôi hiểu rồi": "分かりました",
+        "chính xác": "その通りです"
+      }
+    },
+    "ja_vi": {
+      "engineering": {
+        "デプロイ": "triển khai",
+        "ソースコード": "mã nguồn",
+        "データベース": "cơ sở dữ liệu",
+        "テスト": "kiểm thử",
+        "レイテンシ": "độ trễ",
+        "キャッシュ": "bộ nhớ đệm",
+        "並行処理": "xử lý song song",
+        "キュー": "hàng đợi",
+        "最適化": "tối ưu hóa",
+        "分散": "phân tán",
+        "セキュリティ": "bảo mật",
+        "マイクロサービス": "microservices",
+        "音声認識": "nhận dạng giọng nói",
+        "リアルタイム翻訳": "dịch trực tiếp"
+      },
+      "business": {
+        "会議": "cuộc họp",
+        "合意": "thống nhất",
+        "賛成": "đồng ý",
+        "計画": "kế hoạch",
+        "進捗": "tiến độ",
+        "期限": "thời hạn",
+        "締め切り": "hạn chót",
+        "予算": "ngân sách",
+        "参加者": "người tham gia",
+        "議事録": "biên bản cuộc họp",
+        "アクションアイテム": "action items",
+        "決定事項": "quyết định",
+        "納品": "bàn giao"
+      },
+      "general": {
+        "こんにちは": "xin chào",
+        "ありがとうございます": "cảm ơn bạn",
+        "さようなら": "tạm biệt",
+        "はい": "vâng",
+        "いいえ": "không",
+        "分かりました": "tôi hiểu rồi",
+        "その通りです": "chính xác"
+      }
+    },
+    "vi_en": {
+      "engineering": {
+        "triển khai": "deploy",
+        "mã nguồn": "source code",
+        "cơ sở dữ liệu": "database",
+        "kiểm thử": "testing",
+        "độ trễ": "latency",
+        "bộ nhớ đệm": "cache",
+        "xử lý song song": "parallel processing",
+        "hàng đợi": "queue",
+        "tối ưu hóa": "optimization",
+        "phân tán": "distributed",
+        "bảo mật": "security",
+        "vi dịch vụ": "microservices",
+        "giao diện người dùng": "UI",
+        "nhận dạng giọng nói": "speech recognition",
+        "dịch trực tiếp": "live translation"
+      },
+      "business": {
+        "cuộc họp": "meeting",
+        "bắt đầu cuộc họp": "let's begin the meeting",
+        "thống nhất": "consensus",
+        "đồng ý": "agreed",
+        "kế hoạch": "plan",
+        "tiến độ": "progress",
+        "thời hạn": "deadline",
+        "hạn chót": "deadline",
+        "ngân sách": "budget",
+        "người tham gia": "participants",
+        "biên bản cuộc họp": "meeting minutes",
+        "hành động cần làm": "action items",
+        "quyết định": "decision",
+        "bàn giao": "handover"
+      },
+      "general": {
+        "xin chào": "hello",
+        "cảm ơn": "thank you",
+        "tạm biệt": "goodbye",
+        "vâng": "yes",
+        "không": "no",
+        "tôi hiểu rồi": "understood",
+        "chính xác": "exactly"
+      }
+    },
+    "en_vi": {
+      "engineering": {
+        "deploy": "triển khai",
+        "source code": "mã nguồn",
+        "database": "cơ sở dữ liệu",
+        "testing": "kiểm thử",
+        "latency": "độ trễ",
+        "cache": "bộ nhớ đệm",
+        "queue": "hàng đợi",
+        "optimization": "tối ưu hóa",
+        "security": "bảo mật",
+        "microservices": "vi dịch vụ",
+        "live translation": "dịch trực tiếp"
+      },
+      "business": {
+        "meeting": "cuộc họp",
+        "consensus": "thống nhất",
+        "deadline": "hạn chót",
+        "budget": "ngân sách",
+        "meeting minutes": "biên bản cuộc họp",
+        "action items": "hành động cần làm",
+        "decision": "quyết định",
+        "handover": "bàn giao"
+      },
+      "general": {
+        "hello": "xin chào",
+        "thank you": "cảm ơn",
+        "goodbye": "tạm biệt",
+        "yes": "vâng",
+        "no": "không",
+        "understood": "tôi hiểu rồi",
+        "exactly": "chính xác"
+      }
+    }
+  }
+}

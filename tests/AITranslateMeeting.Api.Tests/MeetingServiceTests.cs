@@ -12,6 +12,8 @@ public class MeetingServiceTests
 {
     private readonly AppDbContext _dbContext;
     private readonly Mock<ILiveKitService> _mockLiveKitService;
+    private readonly Mock<ISubtitleTokenService> _mockSubtitleTokenService;
+    private readonly Mock<IAdmissionTokenService> _mockAdmissionTokenService;
     private readonly Mock<ILogger<MeetingService>> _mockLogger;
     private readonly MeetingService _service;
 
@@ -23,6 +25,8 @@ public class MeetingServiceTests
 
         _dbContext = new AppDbContext(options);
         _mockLiveKitService = new Mock<ILiveKitService>();
+        _mockSubtitleTokenService = new Mock<ISubtitleTokenService>();
+        _mockAdmissionTokenService = new Mock<IAdmissionTokenService>();
         _mockLogger = new Mock<ILogger<MeetingService>>();
 
         _mockLiveKitService
@@ -33,7 +37,51 @@ public class MeetingServiceTests
             .Setup(x => x.GetPublicUrl())
             .Returns("ws://127.0.0.1:7880");
 
-        _service = new MeetingService(_dbContext, _mockLiveKitService.Object, _mockLogger.Object);
+        _mockSubtitleTokenService
+            .Setup(x => x.GenerateAccessToken(It.IsAny<Guid>(), It.IsAny<Guid>()))
+            .Returns("MOCK_SUBTITLE_SESSION_TOKEN");
+        _mockSubtitleTokenService
+            .Setup(x => x.GenerateAccessToken(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<string?>()))
+            .Returns("MOCK_SUBTITLE_SESSION_TOKEN");
+        _mockSubtitleTokenService
+            .Setup(x => x.GenerateAccessToken(
+                It.IsAny<Guid>(),
+                It.IsAny<Guid>(),
+                It.IsAny<string?>(),
+                It.IsAny<string?>(),
+                It.IsAny<string?>(),
+                It.IsAny<string?>()))
+            .Returns("MOCK_SUBTITLE_SESSION_TOKEN");
+
+        _mockAdmissionTokenService
+            .Setup(x => x.GenerateHostToken(It.IsAny<Guid>()))
+            .Returns("MOCK_HOST_TOKEN");
+        _mockAdmissionTokenService
+            .Setup(x => x.ValidateToken("MOCK_HOST_TOKEN"))
+            .Returns(() => new AdmissionTokenClaims(
+                _dbContext.Meetings.Single().Id,
+                null,
+                "host",
+                AdmissionTokenScopes.Host,
+                DateTime.UtcNow.AddHours(1)));
+
+        var sessionOptions = Microsoft.Extensions.Options.Options.Create(new AITranslateMeeting.Api.Options.SessionTokenOptions
+        {
+            Issuer = "ai-translate-meeting-api",
+            Audience = "ai-translate-meeting-web",
+            SigningKey = "test_session_secret_key_32chars_long_12345",
+            TokenTtlMinutes = 60
+        });
+        var sessionService = new ParticipantSessionService(_dbContext, sessionOptions, TimeProvider.System);
+
+        _service = new MeetingService(
+            _dbContext,
+            _mockLiveKitService.Object,
+            _mockSubtitleTokenService.Object,
+            _mockAdmissionTokenService.Object,
+            sessionService,
+            TimeProvider.System,
+            _mockLogger.Object);
     }
 
     [Fact]
@@ -74,7 +122,7 @@ public class MeetingServiceTests
         var created = await _service.CreateMeetingAsync(new CreateMeetingRequestDto("Test Meeting"));
 
         // Act
-        var fetched = await _service.GetMeetingAsync(created.MeetingCode);
+        var fetched = await _service.GetMeetingAsync(created.MeetingCode, created.HostToken);
 
         // Assert
         Assert.NotNull(fetched);
@@ -86,7 +134,7 @@ public class MeetingServiceTests
     public async Task GetMeeting_Invalid_Returns404()
     {
         // Act & Assert
-        await Assert.ThrowsAsync<KeyNotFoundException>(() => _service.GetMeetingAsync("INVALID_CODE"));
+        await Assert.ThrowsAsync<KeyNotFoundException>(() => _service.GetMeetingAsync("INVALID_CODE", "MOCK_HOST_TOKEN"));
     }
 
     [Fact]
@@ -94,16 +142,26 @@ public class MeetingServiceTests
     {
         // Arrange
         var meeting = await _service.CreateMeetingAsync(new CreateMeetingRequestDto("LiveKit Room"));
-        var joinReq = new JoinMeetingRequestDto("Hieu", "vi", "ja");
+        var joinReq = new JoinMeetingRequestDto("Hieu", "vi", "ja", meeting.HostToken);
 
         // Act
-        var result = await _service.JoinMeetingAsync(meeting.MeetingCode, joinReq);
+        var result = Assert.IsType<JoinMeetingResponseDto>(await _service.JoinMeetingAsync(meeting.MeetingCode, joinReq));
 
         // Assert
         Assert.NotNull(result);
         Assert.Equal("MOCK_JWT_LIVEKIT_TOKEN", result.Token);
+        Assert.Equal("MOCK_SUBTITLE_SESSION_TOKEN", result.SubtitleToken);
         Assert.Equal("ws://127.0.0.1:7880", result.LiveKitUrl);
         Assert.StartsWith("p_", result.Identity);
+        _mockSubtitleTokenService.Verify(
+            service => service.GenerateAccessToken(
+                result.MeetingId,
+                result.ParticipantId,
+                "Hieu",
+                "vi",
+                "ja",
+                result.Identity),
+            Times.Once);
     }
 
     [Fact]
@@ -111,10 +169,33 @@ public class MeetingServiceTests
     {
         // Arrange
         var meeting = await _service.CreateMeetingAsync(new CreateMeetingRequestDto("Lang Test"));
-        var invalidReq = new JoinMeetingRequestDto("Hieu", "fr", "ja");
+        var invalidReq = new JoinMeetingRequestDto("Hieu", "xx", "ja", meeting.HostToken);
 
         // Act & Assert
         await Assert.ThrowsAsync<ArgumentException>(() => _service.JoinMeetingAsync(meeting.MeetingCode, invalidReq));
+    }
+
+    [Theory]
+    [InlineData("ko", "en")]
+    [InlineData("zh", "vi")]
+    [InlineData("fr", "ja")]
+    [InlineData("de", "en")]
+    [InlineData("es", "vi")]
+    public async Task JoinMeeting_SupportedPopularLanguages_Succeeds(string spokenLang, string targetLang)
+    {
+        // Arrange
+        var meeting = await _service.CreateMeetingAsync(new CreateMeetingRequestDto("Multi-lang Test"));
+        var req = new JoinMeetingRequestDto("Global User", spokenLang, targetLang, meeting.HostToken);
+
+        // Act
+        var result = Assert.IsType<JoinMeetingResponseDto>(await _service.JoinMeetingAsync(meeting.MeetingCode, req));
+
+        // Assert
+        Assert.NotNull(result);
+        var participantInDb = await _dbContext.MeetingParticipants.FindAsync(result.ParticipantId);
+        Assert.NotNull(participantInDb);
+        Assert.Equal(spokenLang, participantInDb.SpokenLanguage);
+        Assert.Equal(targetLang, participantInDb.TargetLanguage);
     }
 
     [Fact]
@@ -122,10 +203,10 @@ public class MeetingServiceTests
     {
         // Arrange
         var meeting = await _service.CreateMeetingAsync(new CreateMeetingRequestDto("Participant Test"));
-        var joinReq = new JoinMeetingRequestDto("Tanaka", "ja", "vi");
+        var joinReq = new JoinMeetingRequestDto("Tanaka", "ja", "vi", meeting.HostToken);
 
         // Act
-        var result = await _service.JoinMeetingAsync(meeting.MeetingCode, joinReq);
+        var result = Assert.IsType<JoinMeetingResponseDto>(await _service.JoinMeetingAsync(meeting.MeetingCode, joinReq));
 
         // Assert
         var participantInDb = await _dbContext.MeetingParticipants.FindAsync(result.ParticipantId);
@@ -140,7 +221,7 @@ public class MeetingServiceTests
     public async Task JoinMeeting_MissingMeeting_Returns404()
     {
         // Arrange
-        var joinReq = new JoinMeetingRequestDto("Hieu", "vi", "ja");
+        var joinReq = new JoinMeetingRequestDto("Hieu", "vi", "ja", "MOCK_HOST_TOKEN");
 
         // Act & Assert
         await Assert.ThrowsAsync<KeyNotFoundException>(() => _service.JoinMeetingAsync("NOTFOUND", joinReq));
@@ -151,10 +232,10 @@ public class MeetingServiceTests
     {
         // Arrange
         var meeting = await _service.CreateMeetingAsync(new CreateMeetingRequestDto("Leave Test"));
-        var joined = await _service.JoinMeetingAsync(meeting.MeetingCode, new JoinMeetingRequestDto("Hieu", "vi", "ja"));
+        var joined = Assert.IsType<JoinMeetingResponseDto>(await _service.JoinMeetingAsync(meeting.MeetingCode, new JoinMeetingRequestDto("Hieu", "vi", "ja", meeting.HostToken)));
 
         // Act
-        await _service.LeaveMeetingAsync(meeting.MeetingCode, new LeaveMeetingRequestDto(joined.ParticipantId));
+        await _service.LeaveMeetingAsync(meeting.MeetingCode, new LeaveMeetingRequestDto(joined.ParticipantId), joined.SessionToken);
 
         // Assert
         var participantInDb = await _dbContext.MeetingParticipants.FindAsync(joined.ParticipantId);
@@ -167,14 +248,14 @@ public class MeetingServiceTests
     {
         // Arrange
         var meeting = await _service.CreateMeetingAsync(new CreateMeetingRequestDto("Active Participants Test"));
-        var p1 = await _service.JoinMeetingAsync(meeting.MeetingCode, new JoinMeetingRequestDto("Hieu", "vi", "ja"));
-        var p2 = await _service.JoinMeetingAsync(meeting.MeetingCode, new JoinMeetingRequestDto("Tanaka", "ja", "vi"));
+        var p1 = Assert.IsType<JoinMeetingResponseDto>(await _service.JoinMeetingAsync(meeting.MeetingCode, new JoinMeetingRequestDto("Hieu", "vi", "ja", meeting.HostToken)));
+        var p2 = Assert.IsType<JoinMeetingResponseDto>(await _service.JoinMeetingAsync(meeting.MeetingCode, new JoinMeetingRequestDto("Tanaka", "ja", "vi", meeting.HostToken)));
 
         // Hieu leaves
-        await _service.LeaveMeetingAsync(meeting.MeetingCode, new LeaveMeetingRequestDto(p1.ParticipantId));
+        await _service.LeaveMeetingAsync(meeting.MeetingCode, new LeaveMeetingRequestDto(p1.ParticipantId), p1.SessionToken);
 
         // Act
-        var active = (await _service.GetActiveParticipantsAsync(meeting.MeetingCode)).ToList();
+        var active = (await _service.GetActiveParticipantsAsync(meeting.MeetingCode, p2.SessionToken)).ToList();
 
         // Assert
         Assert.Single(active);

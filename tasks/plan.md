@@ -347,3 +347,221 @@ Không nên chạy song song:
 ## Quyết định đề xuất
 
 Bắt đầu ngay với **Task 1 -> Task 2 -> Task 3**. Đây là đường ngắn nhất để biến UI hiện tại thành demo có subtitle hoạt động, trước khi đầu tư vào STT thật.
+
+---
+
+# Kế hoạch mở rộng: Whisper cold-start hardening
+
+> Ngày lập kế hoạch: 2026-10-02
+> Các task MVP phía trên đã được triển khai; trạng thái thực tế được theo dõi trong `tasks/todo.md`. Phần này chỉ mở rộng kế hoạch, không thay thế backlog cũ.
+
+## Tổng quan
+
+Loại bỏ việc người đầu tiên phải chờ model tải trong request audio. AI service sẽ preload Whisper ở background, giữ cache qua các lần recreate container, công bố readiness thật và cho frontend hiển thị rõ trạng thái “AI đang khởi động”. LiveKit meeting vẫn hoạt động khi AI chưa sẵn sàng; chỉ audio subtitle bị tạm dừng.
+
+## Quyết định kiến trúc
+
+- Dùng một `SpeechToTextService` singleton cho preload, health và WebSocket; không tạo model thứ hai.
+- State machine: `not_started -> loading -> ready | failed`; preload idempotent, có lock và không block event loop.
+- Giữ `/health` để tương thích; thêm `/health/live` và `/health/ready`. Readiness trả HTTP 503 ProblemDetails khi `loading/failed`, không trả exception/path nội bộ.
+- Docker dùng named volume cho Hugging Face cache và bật `WHISPER_PRELOAD=true`; không commit model binary vào Git.
+- Frontend gọi same-origin `/ai-health/ready` qua Vite/Nginx proxy, không gọi trực tiếp port 8000.
+- Meeting vẫn dùng được khi AI lỗi. `useSubtitle` chỉ bắt đầu MediaRecorder và gửi audio sau khi readiness là `ready`.
+- Không thêm database, framework hay queue mới.
+
+## Dependency graph
+
+```text
+STT lifecycle state + preload API
+  -> FastAPI lifespan + readiness contract
+    -> Docker persistent cache + healthcheck
+    -> Frontend readiness client/hook
+      -> Meeting banner + audio gating
+        -> Runtime cold/warm verification + docs
+```
+
+## Task 15.1: Quản lý lifecycle và preload Whisper
+
+**Description:** Bổ sung state machine, snapshot trạng thái và hàm `preload()` idempotent cho `SpeechToTextService`. Cả preload và transcribe dùng chung model/lock.
+
+**Acceptance criteria:**
+- [x] Hai lời gọi preload đồng thời chỉ load model một lần.
+- [x] Load thành công chuyển sang `ready`; exception chuyển sang `failed` mà không lộ exception trong public status.
+- [x] `transcribe()` vẫn tương thích và có thể phục hồi/retry theo policy đã test.
+
+**Verification:**
+- [x] RED -> GREEN: focused tests mới cho `not_started/loading/ready/failed` và concurrent preload.
+- [x] `python -m pytest apps/ai-service/tests/test_whisper_readiness.py -v`
+
+**Dependencies:** None
+
+**Files likely touched:**
+- `apps/ai-service/app/speech/whisper_service.py`
+- `apps/ai-service/tests/test_whisper_readiness.py`
+
+**Estimated scope:** S, 30-45 phút
+
+## Task 15.2: Preload background và health contract
+
+**Description:** FastAPI tạo một STT singleton, truyền nó vào WebSocket handler và kick-off preload bằng lifespan background task. Health endpoint phản ánh cùng instance đó.
+
+**Acceptance criteria:**
+- [x] `/health/live` luôn trả 200 khi process/event loop còn sống.
+- [x] `/health/ready` trả 503 ProblemDetails trong `not_started/loading/failed`, trả 200 khi `ready`.
+- [x] WebSocket sử dụng đúng model instance đã preload, không load lần hai.
+
+**Verification:**
+- [x] RED -> GREEN: endpoint tests cho loading, ready, failed và backward-compatible `/health`.
+- [x] `python -m pytest apps/ai-service/tests/test_whisper_readiness.py apps/ai-service/tests/test_cors.py -v`
+
+**Dependencies:** Task 15.1
+
+**Files likely touched:**
+- `apps/ai-service/app/main.py`
+- `apps/ai-service/app/api/health.py`
+- `apps/ai-service/app/websocket/transcribe_handler.py`
+- `apps/ai-service/tests/test_whisper_readiness.py`
+
+**Estimated scope:** M, 60-90 phút
+
+## Checkpoint C1: Backend readiness
+
+- [x] Focused Python tests pass.
+- [x] Event loop/health vẫn phản hồi trong lúc mock model đang load chậm.
+- [x] Existing subtitle JWT/WebSocket tests pass.
+
+## Task 15.3: Persist model cache và Docker readiness
+
+**Description:** Bật preload qua env, mount named cache volume và thêm AI service healthcheck dựa trên `/health/ready`. Không bake một model cố định làm mất khả năng đổi `WHISPER_MODEL`.
+
+**Acceptance criteria:**
+- [x] Recreate container không tải lại artifact đã có trong cache volume.
+- [x] Container chuyển `starting -> healthy` chỉ sau khi model ready; lỗi model chuyển `unhealthy` nhưng không restart-loop phá meeting.
+- [x] Model, device, compute type và preload đều cấu hình được bằng env.
+
+**Verification:**
+- [x] Contract test kiểm tra volume, env và healthcheck.
+- [x] `docker compose config -q`
+- [x] Cold start một lần, recreate container và so sánh warm readiness time.
+
+**Dependencies:** Task 15.2
+
+**Files likely touched:**
+- `.env.example`
+- `docker-compose.yml`
+- `tests/test_operations_contract.py`
+- `scripts/smoke-test.ps1`
+
+**Estimated scope:** S, 30-45 phút
+
+## Task 15.4: Frontend readiness client và hook
+
+**Description:** Thêm typed client/hook poll `/ai-health/ready`, phân biệt `starting`, `ready`, `failed/unavailable`, có retry/backoff và cleanup khi unmount.
+
+**Acceptance criteria:**
+- [x] HTTP 200 map thành `ready`; 503 loading map thành `starting`; network/failure map thành trạng thái retry được.
+- [x] Poll không tạo timer trùng và dừng khi component unmount.
+- [x] Vite và Nginx proxy cùng một URL, không cần CORS hoặc lộ internal service URL.
+
+**Verification:**
+- [x] RED -> GREEN: frontend/source contract tests cho URL, state mapping, retry và cleanup.
+- [x] `cd apps/web && npm run lint && npm run build`
+
+**Dependencies:** Task 15.2
+
+**Files likely touched:**
+- `apps/web/src/services/aiHealthService.ts`
+- `apps/web/src/hooks/useAiReadiness.ts`
+- `apps/web/vite.config.ts`
+- `apps/web/nginx.conf`
+
+**Estimated scope:** M, 45-75 phút
+
+## Task 15.5: Banner “AI đang khởi động” và chặn gửi audio sớm
+
+**Description:** Hiển thị trạng thái AI trong phòng họp và chỉ kích hoạt recorder/subtitle audio khi model ready; không chặn WebRTC, chat phòng hoặc quyền host.
+
+**Acceptance criteria:**
+- [x] `starting` hiển thị banner accessible “AI đang khởi động, phụ đề sẽ tự bật khi sẵn sàng”.
+- [x] `failed/unavailable` hiển thị lỗi có retry nhưng meeting tiếp tục hoạt động.
+- [x] Không tạo/gửi audio chunk trước `ready`; khi chuyển `ready`, subtitle tự hoạt động không cần reload.
+
+**Verification:**
+- [x] RED -> GREEN: UI/source contract tests cho ba trạng thái và audio gating.
+- [x] Browser + audio runtime test: vào phòng khi model cold, thấy banner tự biến mất khi ready; authenticated PCM nhận subtitle final đúng binding.
+
+**Dependencies:** Task 15.4
+
+**Files likely touched:**
+- `apps/web/src/components/meeting/MeetingShell.tsx`
+- `apps/web/src/components/meeting/AiReadinessBanner.tsx`
+- `apps/web/src/hooks/useSubtitle.ts`
+- `tests/test_livekit_media_contract.py`
+
+**Estimated scope:** M, 45-75 phút
+
+## Checkpoint C2: User-visible readiness
+
+- [x] LiveKit meeting không bị chặn khi Whisper đang load hoặc lỗi.
+- [x] Frontend không gửi audio trước readiness.
+- [x] Banner đúng và tự cập nhật không reload.
+- [x] Frontend lint/build và Python tests pass.
+
+## Task 15.6: Runtime gate, observability và tài liệu
+
+**Description:** Đo cold/warm readiness, bổ sung smoke assertions, log transition/latency không chứa token, transcript hay tên người dùng, và cập nhật kiến trúc/runbook.
+
+**Acceptance criteria:**
+- [x] Có log structured cho `loading -> ready/failed` và `load_duration_ms`, không log nội dung nhạy cảm.
+- [x] Smoke xác nhận liveness/readiness; runtime PCM riêng xác nhận audio final sau warm start.
+- [x] Runbook có cache lifecycle, failure diagnosis và rollback env/volume an toàn.
+
+**Verification:**
+- [x] Toàn bộ Python/.NET/frontend gates pass.
+- [x] npm/NuGet vulnerability scans pass; `docker compose config -q` pass.
+- [x] `scripts/smoke-test.ps1` pass và runtime logs không chứa token/transcript.
+
+**Dependencies:** Tasks 15.3 và 15.5
+
+**Files likely touched:**
+- `scripts/smoke-test.ps1`
+- `docs/architecture.md`
+- `docs/production-runbook.md`
+- `tasks/todo.md`
+
+**Estimated scope:** M, 45-60 phút cộng thời gian cold-start runtime
+
+## Checkpoint C3: Hoàn tất
+
+- [x] Acceptance criteria của Tasks 15.1-15.6 đạt.
+- [x] Full verification: Python 86+ tests, .NET 64+ tests, frontend lint/build, audits, Compose config và smoke.
+- [x] Cold-start và warm-start có số đo riêng; không dùng warm result để tuyên bố cold-start.
+- [ ] Human review trước merge/deploy.
+
+## Parallelization
+
+- Tuần tự bắt buộc: `15.1 -> 15.2` và `15.4 -> 15.5`.
+- Sau khi contract 15.2 ổn định, có thể làm song song `15.3` và `15.4`.
+- `15.6` chỉ bắt đầu sau khi Docker và frontend readiness đều hoàn tất.
+
+## Rủi ro và giảm thiểu
+
+| Rủi ro | Mức độ | Giảm thiểu |
+| --- | --- | --- |
+| First boot vẫn cần tải model | Cao | Persistent cache, UI starting, readiness 503 và runbook cho pre-warm trước demo |
+| Healthcheck gây restart-loop | Cao | Healthcheck chỉ đánh dấu unhealthy; giữ restart policy hiện tại và test failure mode |
+| Preload và request cùng load hai model | Cao | Singleton + idempotent lock + concurrency test |
+| Volume rỗng che cache bake trong image | Trung bình | Chọn runtime named volume, không kết hợp bake cache vào cùng mount path |
+| Frontend poll quá nhiều | Thấp | Backoff, cleanup và dừng poll nhanh khi ready |
+| Model load fail do mạng/disk | Trung bình | State `failed`, retry có kiểm soát, meeting vẫn dùng được, log lỗi đã sanitize |
+
+## Rollback
+
+- Đặt `WHISPER_PRELOAD=false` để quay về lazy loading hiện tại.
+- Gỡ AI readiness healthcheck/proxy và banner mà không đụng admission, LiveKit hay database.
+- Giữ cache volume khi rollback; chỉ xóa thủ công nếu có xác nhận vì xóa cache làm lần khởi động sau phải tải lại.
+
+## Ước lượng
+
+- Tổng: khoảng **4-6 giờ** triển khai tập trung, chưa tính thời gian tải model/mạng.
+- Không cần migration database hoặc downtime dữ liệu.

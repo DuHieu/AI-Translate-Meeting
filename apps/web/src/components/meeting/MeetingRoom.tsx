@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { LiveKitRoom } from '@livekit/components-react';
+import { LogLevel, setLogLevel } from 'livekit-client';
 import { MeetingShell } from './MeetingShell';
 import { MeetingSessionData } from '../../types/meeting';
 import { meetingApi } from '../../api/meetingApi';
@@ -11,6 +12,10 @@ interface MeetingRoomProps {
 }
 
 const enableWebRtcDebug = import.meta.env.VITE_ENABLE_WEBRTC_DEBUG === 'true';
+
+// LiveKit's built-in connection logs can include signed access-token URLs.
+// Application-owned diagnostics below provide redacted state when explicitly enabled.
+setLogLevel(LogLevel.silent);
 
 export const MeetingRoom: React.FC<MeetingRoomProps> = ({ session, onLeaveComplete }) => {
   const [isLeaving, setIsLeaving] = useState(false);
@@ -47,7 +52,7 @@ export const MeetingRoom: React.FC<MeetingRoomProps> = ({ session, onLeaveComple
     setIsLeaving(true);
 
     try {
-      await meetingApi.leaveMeeting(session.meetingCode, session.participantId);
+      await meetingApi.leaveMeeting(session.meetingCode, session.participantId, session.sessionToken);
     } catch (e) {
       console.error('Failed to report leave to backend API', e);
     } finally {

@@ -16,4 +16,7 @@ public sealed class Meeting
 
     public ICollection<MeetingParticipant> Participants { get; set; }
         = new List<MeetingParticipant>();
+
+    public ICollection<MeetingAdmission> Admissions { get; set; }
+        = new List<MeetingAdmission>();
 }

@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using AITranslateMeeting.Api.Exceptions;
 
 namespace AITranslateMeeting.Api.Extensions;
 
@@ -21,10 +22,14 @@ public class ExceptionHandlingMiddleware
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "An unhandled exception occurred: {Message}", ex.Message);
+            if (ex is AdmissionException admissionException)
+                _logger.LogWarning("Admission request rejected with code {AdmissionCode}", admissionException.Code);
+            else
+                _logger.LogError(ex, "An unhandled exception occurred: {ExceptionType}", ex.GetType().Name);
 
             var (status, title) = ex switch
             {
+                AdmissionException admission => (admission.StatusCode, admission.Title),
                 ArgumentException => (StatusCodes.Status400BadRequest, ex.Message),
                 KeyNotFoundException => (StatusCodes.Status404NotFound, ex.Message),
                 InvalidOperationException => (StatusCodes.Status409Conflict, ex.Message),
@@ -39,9 +44,15 @@ public class ExceptionHandlingMiddleware
                 Instance = context.Request.Path
             };
 
+            if (ex is AdmissionException admissionError)
+                problemDetails.Extensions["code"] = admissionError.Code;
+
             context.Response.StatusCode = status;
-            context.Response.ContentType = "application/json";
-            await context.Response.WriteAsJsonAsync(problemDetails);
+            await context.Response.WriteAsJsonAsync(
+                problemDetails,
+                options: null,
+                contentType: "application/problem+json",
+                cancellationToken: context.RequestAborted);
         }
     }
 }

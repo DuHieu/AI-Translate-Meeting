@@ -21,12 +21,12 @@ export const MeetingControlButton: React.FC<MeetingControlButtonProps> = ({
 }) => {
   const getButtonStyles = () => {
     if (danger) {
-      return 'bg-red-600 hover:bg-red-500 text-white shadow-lg shadow-red-600/30 border-red-500';
+      return 'bg-red-600 hover:bg-red-500 text-white border border-red-600';
     }
     if (active) {
-      return 'bg-sky-600 text-white border-sky-500 shadow-md shadow-sky-600/20';
+      return 'bg-blue-600 hover:bg-blue-500 text-white border border-blue-600';
     }
-    return 'bg-slate-800 hover:bg-slate-700 text-slate-200 border-slate-700/80';
+    return 'bg-[#222224] hover:bg-[#2a2a2c] text-zinc-300 border border-[#3a3a3d] hover:border-[#52525b] hover:text-zinc-100';
   };
 
   return (
@@ -36,13 +36,13 @@ export const MeetingControlButton: React.FC<MeetingControlButtonProps> = ({
         onClick={onClick}
         disabled={disabled}
         aria-label={label}
-        className={`w-11 h-11 md:w-12 md:h-12 rounded-full border flex items-center justify-center transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-sky-500 disabled:opacity-40 disabled:cursor-not-allowed ${getButtonStyles()}`}
+        className={`w-10 h-10 md:w-11 md:h-11 rounded-xl flex items-center justify-center transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0f0f10] disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer ${getButtonStyles()}`}
       >
         {icon}
       </button>
 
       {tooltip && (
-        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2.5 py-1 bg-slate-900 border border-slate-700 text-slate-200 text-xs font-medium rounded-lg shadow-xl opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50">
+        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2.5 py-1 bg-[#222224] border border-[#3a3a3d] text-zinc-200 text-xs rounded-lg shadow-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50">
           {tooltip}
         </div>
       )}

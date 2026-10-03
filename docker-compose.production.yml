@@ -1,0 +1,225 @@
+name: ai-translate-meeting-production
+
+x-api-environment: &api-environment
+  ASPNETCORE_ENVIRONMENT: Production
+  ConnectionStrings__DefaultConnection: "Host=postgres;Port=5432;Database=${POSTGRES_DB:?Set POSTGRES_DB};Username=${POSTGRES_USER:?Set POSTGRES_USER};Password=${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD}"
+  Database__MigrateOnStartup: "false"
+  Redis__ConnectionString: redis:6379,abortConnect=false
+  LiveKit__InternalUrl: http://livekit:7880
+  LiveKit__PublicUrl: "wss://${LIVEKIT_DOMAIN:?Set LIVEKIT_DOMAIN}"
+  LiveKit__ApiKey: "${LIVEKIT_API_KEY:?Set LIVEKIT_API_KEY}"
+  LiveKit__ApiSecret: "${LIVEKIT_API_SECRET:?Set LIVEKIT_API_SECRET}"
+  LiveKit__TokenTtlMinutes: "${LIVEKIT_TOKEN_TTL_MINUTES:-60}"
+  SubtitleToken__SigningKey: "${SUBTITLE_TOKEN_SIGNING_KEY:?Set SUBTITLE_TOKEN_SIGNING_KEY}"
+  SubtitleToken__TokenTtlMinutes: "${SUBTITLE_TOKEN_TTL_MINUTES:-10}"
+  AdmissionToken__SigningKey: "${ADMISSION_TOKEN_SIGNING_KEY:?Set ADMISSION_TOKEN_SIGNING_KEY}"
+  AdmissionToken__HostTokenTtlMinutes: "${ADMISSION_HOST_TOKEN_TTL_MINUTES:-240}"
+  AdmissionToken__InviteTokenTtlMinutes: "${ADMISSION_INVITE_TOKEN_TTL_MINUTES:-15}"
+  AdmissionToken__RequestTokenTtlMinutes: "${ADMISSION_REQUEST_TOKEN_TTL_MINUTES:-15}"
+  SessionToken__SigningKey: "${SESSION_TOKEN_SIGNING_KEY:?Set SESSION_TOKEN_SIGNING_KEY}"
+  SessionToken__TokenTtlMinutes: "${SESSION_TOKEN_TTL_MINUTES:-60}"
+  Security__EnforceProductionSecrets: "true"
+  Cors__AllowedOrigins__0: "https://${APP_DOMAIN:?Set APP_DOMAIN}"
+  ForwardedHeaders__KnownProxies__0: 172.30.0.10
+
+x-api-service: &api-service
+  image: "${API_IMAGE:?Set API_IMAGE}:${IMAGE_TAG:?Set IMAGE_TAG}"
+  pull_policy: always
+  environment: *api-environment
+  networks:
+    backend:
+  security_opt:
+    - no-new-privileges:true
+  depends_on:
+    postgres:
+      condition: service_healthy
+    redis:
+      condition: service_healthy
+    livekit:
+      condition: service_healthy
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: "${POSTGRES_DB:?Set POSTGRES_DB}"
+      POSTGRES_USER: "${POSTGRES_USER:?Set POSTGRES_USER}"
+      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD}"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      backend:
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    security_opt:
+      - no-new-privileges:true
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redis_data:/data
+    networks:
+      backend:
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    security_opt:
+      - no-new-privileges:true
+
+  livekit:
+    image: livekit/livekit-server:v1.13.7
+    restart: unless-stopped
+    command:
+      - --config
+      - /etc/livekit.yaml
+      - --keys
+      - "${LIVEKIT_API_KEY:?Set LIVEKIT_API_KEY}: ${LIVEKIT_API_SECRET:?Set LIVEKIT_API_SECRET}"
+    ports:
+      - "7881:7881"
+      - "7882:7882/udp"
+    volumes:
+      - ./infra/livekit/livekit.production.yaml:/etc/livekit.yaml:ro
+    networks:
+      backend:
+    healthcheck:
+      test: ["CMD-SHELL", "wget --spider -q http://127.0.0.1:7880 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    security_opt:
+      - no-new-privileges:true
+
+  migrate:
+    <<: *api-service
+    profiles: ["tools"]
+    command: ["--migrate-only"]
+    restart: "no"
+
+  api:
+    <<: *api-service
+    restart: unless-stopped
+    networks:
+      backend:
+        ipv4_address: 172.30.0.20
+
+  ai-service:
+    image: "${AI_SERVICE_IMAGE:?Set AI_SERVICE_IMAGE}:${IMAGE_TAG:?Set IMAGE_TAG}"
+    pull_policy: always
+    restart: unless-stopped
+    environment:
+      REDIS_HOST: redis
+      REDIS_PORT: "6379"
+      WHISPER_MODEL: "${WHISPER_MODEL:-small}"
+      WHISPER_DEVICE: "${WHISPER_DEVICE:-cpu}"
+      WHISPER_COMPUTE_TYPE: "${WHISPER_COMPUTE_TYPE:-int8}"
+      WHISPER_PRELOAD: "true"
+      CORS_ALLOWED_ORIGINS: "https://${APP_DOMAIN:?Set APP_DOMAIN}"
+      TRUSTED_PROXY_IPS: 172.30.0.10
+      LAYA_SERVICE_URL: http://laya:8000
+      LAYA_ENABLED: "${LAYA_ENABLED:-true}"
+      SUBTITLE_TOKEN_SIGNING_KEY: "${SUBTITLE_TOKEN_SIGNING_KEY:?Set SUBTITLE_TOKEN_SIGNING_KEY}"
+      SUBTITLE_TOKEN_ISSUER: ai-translate-meeting-api
+      SUBTITLE_TOKEN_AUDIENCE: ai-translate-meeting-ai-service
+      WS_MAX_AUDIO_FRAME_BYTES: "${WS_MAX_AUDIO_FRAME_BYTES:-131072}"
+      WS_MAX_TEXT_FRAME_BYTES: "${WS_MAX_TEXT_FRAME_BYTES:-16384}"
+      CONTEXTUAL_TRANSLATION_ENABLED: "${CONTEXTUAL_TRANSLATION_ENABLED:-true}"
+      TRANSLATION_PROVIDER: "${TRANSLATION_PROVIDER:-contextual}"
+      TRANSLATION_MODEL: "${TRANSLATION_MODEL:-meeting-v1}"
+      TRANSLATION_TIMEOUT_MS: "${TRANSLATION_TIMEOUT_MS:-1000}"
+      TRANSLATION_FALLBACK_PROVIDER: "${TRANSLATION_FALLBACK_PROVIDER:-local}"
+      TRANSLATION_CACHE_ENABLED: "${TRANSLATION_CACHE_ENABLED:-true}"
+      TRANSLATION_CACHE_TTL_SECONDS: "${TRANSLATION_CACHE_TTL_SECONDS:-86400}"
+      TRANSLATION_DATASET_COLLECTION_ENABLED: "false"
+    volumes:
+      - whisper_cache:/root/.cache/huggingface
+    networks:
+      backend:
+        ipv4_address: 172.30.0.30
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health/ready', timeout=3)"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: "${AI_MODEL_START_PERIOD:-300s}"
+    depends_on:
+      redis:
+        condition: service_healthy
+      laya:
+        condition: service_started
+    security_opt:
+      - no-new-privileges:true
+
+  laya:
+    image: "${LAYA_IMAGE:?Set LAYA_IMAGE}:${IMAGE_TAG:?Set IMAGE_TAG}"
+    pull_policy: always
+    restart: unless-stopped
+    environment:
+      LAYA_HOST: 0.0.0.0
+      LAYA_PORT: "8000"
+      LAYA_DEVICE: cpu
+      LAYA_PRELOAD: "1"
+      LAYA_MODELS: multilingual
+    volumes:
+      - laya_cache:/root/.cache/huggingface
+    networks:
+      backend:
+    security_opt:
+      - no-new-privileges:true
+
+  web:
+    image: "${WEB_IMAGE:?Set WEB_IMAGE}:${IMAGE_TAG:?Set IMAGE_TAG}"
+    pull_policy: always
+    restart: unless-stopped
+    networks:
+      backend:
+        ipv4_address: 172.30.0.10
+    depends_on:
+      - api
+      - ai-service
+    security_opt:
+      - no-new-privileges:true
+
+  caddy:
+    image: caddy:2.11.4-alpine
+    restart: unless-stopped
+    environment:
+      APP_DOMAIN: "${APP_DOMAIN:?Set APP_DOMAIN}"
+      LIVEKIT_DOMAIN: "${LIVEKIT_DOMAIN:?Set LIVEKIT_DOMAIN}"
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./infra/caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    networks:
+      backend:
+        ipv4_address: 172.30.0.5
+    depends_on:
+      - web
+      - livekit
+    security_opt:
+      - no-new-privileges:true
+
+networks:
+  backend:
+    ipam:
+      config:
+        - subnet: 172.30.0.0/24
+
+volumes:
+  postgres_data:
+  redis_data:
+  whisper_cache:
+  laya_cache:
+  caddy_data:
+  caddy_config:

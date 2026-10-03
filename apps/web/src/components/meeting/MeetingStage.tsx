@@ -6,11 +6,14 @@ import { LayoutMode } from './ChangeLayoutDialog';
 import { ParticipantTile } from './ParticipantTile';
 import { FloatingSelfView } from './FloatingSelfView';
 import { PresentationStage } from './PresentationStage';
+import { PipelineStatusMessage } from '../../types/subtitle';
 
 interface MeetingStageProps {
   layoutMode: LayoutMode;
   meetingCode?: string;
+  pipelineStatuses?: Record<string, PipelineStatusMessage>;
 }
+
 
 interface ActiveScreenShare {
   presenter: Participant;
@@ -35,8 +38,13 @@ function findScreenShare(room: Room): ActiveScreenShare | null {
   return null;
 }
 
-export const MeetingStage: React.FC<MeetingStageProps> = ({ layoutMode, meetingCode }) => {
+export const MeetingStage: React.FC<MeetingStageProps> = ({
+  layoutMode,
+  meetingCode,
+  pipelineStatuses,
+}) => {
   const room = useRoomContext();
+
   const [copiedInvite, setCopiedInvite] = useState(false);
   const [activeScreenShare, setActiveScreenShare] = useState<ActiveScreenShare | null>(() => findScreenShare(room));
   const [participants, setParticipants] = useState<Participant[]>(() => {
@@ -96,6 +104,7 @@ export const MeetingStage: React.FC<MeetingStageProps> = ({ layoutMode, meetingC
             await room.localParticipant.setScreenShareEnabled(false);
           }
         }}
+        pipelineStatuses={pipelineStatuses}
       />
     );
   }
@@ -106,15 +115,22 @@ export const MeetingStage: React.FC<MeetingStageProps> = ({ layoutMode, meetingC
 
   // 2. Auto Layout Mode (2 Participants -> Remote dominant + Floating Self View)
   if (layoutMode === 'auto' && numParticipants === 2 && localParticipant && remoteParticipants.length === 1) {
+    const remote = remoteParticipants[0];
     return (
       <div className="w-full h-full p-4 relative overflow-hidden flex items-center justify-center">
         {/* Dominant Remote Participant */}
         <div className="w-full h-full max-w-6xl max-h-[85vh]">
-          <ParticipantTile participant={remoteParticipants[0]} />
+          <ParticipantTile
+            participant={remote}
+            pipelineStatus={pipelineStatuses?.[remote.identity] || pipelineStatuses?.[remote.sid]}
+          />
         </div>
 
         {/* Floating Local Self-View Tile */}
-        <FloatingSelfView participant={localParticipant} />
+        <FloatingSelfView
+          participant={localParticipant}
+          pipelineStatus={pipelineStatuses?.[localParticipant.identity] || pipelineStatuses?.[localParticipant.sid]}
+        />
       </div>
     );
   }
@@ -125,10 +141,17 @@ export const MeetingStage: React.FC<MeetingStageProps> = ({ layoutMode, meetingC
     return (
       <div className="w-full h-full p-4 relative overflow-hidden flex items-center justify-center">
         <div className="w-full h-full max-w-6xl max-h-[85vh]">
-          <ParticipantTile participant={mainParticipant} />
+          <ParticipantTile
+            participant={mainParticipant}
+            isLocal={mainParticipant.isLocal}
+            pipelineStatus={pipelineStatuses?.[mainParticipant.identity] || pipelineStatuses?.[mainParticipant.sid]}
+          />
         </div>
         {localParticipant && mainParticipant.identity !== localParticipant.identity && (
-          <FloatingSelfView participant={localParticipant} />
+          <FloatingSelfView
+            participant={localParticipant}
+            pipelineStatus={pipelineStatuses?.[localParticipant.identity] || pipelineStatuses?.[localParticipant.sid]}
+          />
         )}
       </div>
     );
@@ -142,13 +165,21 @@ export const MeetingStage: React.FC<MeetingStageProps> = ({ layoutMode, meetingC
     return (
       <div className="w-full h-full flex flex-col md:flex-row gap-4 p-4 overflow-hidden">
         <div className="flex-1 h-full">
-          <ParticipantTile participant={mainParticipant} />
+          <ParticipantTile
+            participant={mainParticipant}
+            isLocal={mainParticipant.isLocal}
+            pipelineStatus={pipelineStatuses?.[mainParticipant.identity] || pipelineStatuses?.[mainParticipant.sid]}
+          />
         </div>
         {sideParticipants.length > 0 && (
           <div className="w-full md:w-64 h-36 md:h-full flex md:flex-col gap-3 overflow-x-auto md:overflow-y-auto shrink-0">
             {sideParticipants.map((p) => (
               <div key={p.identity} className="w-44 md:w-full h-full md:h-36 shrink-0">
-                <ParticipantTile participant={p} isLocal={p.isLocal} />
+                <ParticipantTile
+                  participant={p}
+                  isLocal={p.isLocal}
+                  pipelineStatus={pipelineStatuses?.[p.identity] || pipelineStatuses?.[p.sid]}
+                />
               </div>
             ))}
           </div>
@@ -193,7 +224,11 @@ export const MeetingStage: React.FC<MeetingStageProps> = ({ layoutMode, meetingC
       <div className={`w-full h-full grid gap-4 place-items-center ${getGridCols()}`}>
         {participants.map((p) => (
           <div key={p.identity} className="w-full h-full min-h-[220px]">
-            <ParticipantTile participant={p} isLocal={p.isLocal} />
+            <ParticipantTile
+              participant={p}
+              isLocal={p.isLocal}
+              pipelineStatus={pipelineStatuses?.[p.identity] || pipelineStatuses?.[p.sid]}
+            />
           </div>
         ))}
       </div>

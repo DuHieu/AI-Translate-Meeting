@@ -11,6 +11,8 @@ public class AppDbContext : DbContext
 
     public DbSet<Meeting> Meetings => Set<Meeting>();
     public DbSet<MeetingParticipant> MeetingParticipants => Set<MeetingParticipant>();
+    public DbSet<MeetingAdmission> MeetingAdmissions => Set<MeetingAdmission>();
+    public DbSet<ParticipantSession> ParticipantSessions => Set<ParticipantSession>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -35,6 +37,11 @@ public class AppDbContext : DbContext
                   .WithOne(p => p.Meeting)
                   .HasForeignKey(p => p.MeetingId)
                   .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasMany(e => e.Admissions)
+                  .WithOne(a => a.Meeting)
+                  .HasForeignKey(a => a.MeetingId)
+                  .OnDelete(DeleteBehavior.Cascade);
         });
 
         modelBuilder.Entity<MeetingParticipant>(entity =>
@@ -48,11 +55,65 @@ public class AppDbContext : DbContext
             entity.Property(e => e.DisplayName).HasColumnName("display_name").HasMaxLength(100).IsRequired();
             entity.Property(e => e.SpokenLanguage).HasColumnName("spoken_language").HasMaxLength(10).IsRequired();
             entity.Property(e => e.TargetLanguage).HasColumnName("target_language").HasMaxLength(10).IsRequired();
+            entity.Property(e => e.Role).HasColumnName("role").HasMaxLength(20).HasDefaultValue("participant").IsRequired();
             entity.Property(e => e.JoinedAt).HasColumnName("joined_at").IsRequired();
             entity.Property(e => e.LeftAt).HasColumnName("left_at");
 
             entity.HasIndex(e => e.MeetingId);
             entity.HasIndex(e => e.Identity);
+            entity.HasIndex(e => new { e.MeetingId, e.LeftAt });
+        });
+
+        modelBuilder.Entity<MeetingAdmission>(entity =>
+        {
+            entity.ToTable("meeting_admissions");
+
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.MeetingId).HasColumnName("meeting_id").IsRequired();
+            entity.Property(e => e.Type).HasColumnName("type").HasMaxLength(20).IsRequired();
+            entity.Property(e => e.Status).HasColumnName("status").HasMaxLength(20).IsRequired();
+            entity.Property(e => e.Role).HasColumnName("role").HasMaxLength(20).IsRequired();
+            entity.Property(e => e.DisplayName).HasColumnName("display_name").HasMaxLength(100);
+            entity.Property(e => e.SpokenLanguage).HasColumnName("spoken_language").HasMaxLength(10);
+            entity.Property(e => e.TargetLanguage).HasColumnName("target_language").HasMaxLength(10);
+            entity.Property(e => e.CreatedAt).HasColumnName("created_at").IsRequired();
+            entity.Property(e => e.ExpiresAt).HasColumnName("expires_at").IsRequired();
+            entity.Property(e => e.DecidedAt).HasColumnName("decided_at");
+            entity.Property(e => e.ConsumedAt).HasColumnName("consumed_at");
+
+            entity.HasIndex(e => new { e.MeetingId, e.Status });
+            entity.HasIndex(e => e.ExpiresAt);
+        });
+
+        modelBuilder.Entity<ParticipantSession>(entity =>
+        {
+            entity.ToTable("participant_sessions");
+
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.MeetingId).HasColumnName("meeting_id").IsRequired();
+            entity.Property(e => e.ParticipantId).HasColumnName("participant_id").IsRequired();
+            entity.Property(e => e.Jti).HasColumnName("jti").IsRequired();
+            entity.Property(e => e.Role).HasColumnName("role").HasMaxLength(32).IsRequired();
+            entity.Property(e => e.Scopes).HasColumnName("scopes").HasMaxLength(256).IsRequired();
+            entity.Property(e => e.CreatedAt).HasColumnName("created_at").IsRequired();
+            entity.Property(e => e.ExpiresAt).HasColumnName("expires_at").IsRequired();
+            entity.Property(e => e.RevokedAt).HasColumnName("revoked_at");
+
+            entity.HasIndex(e => e.Jti).IsUnique();
+            entity.HasIndex(e => new { e.MeetingId, e.ParticipantId, e.RevokedAt, e.ExpiresAt });
+            entity.HasIndex(e => e.ExpiresAt);
+
+            entity.HasOne(e => e.Meeting)
+                  .WithMany()
+                  .HasForeignKey(e => e.MeetingId)
+                  .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(e => e.Participant)
+                  .WithMany()
+                  .HasForeignKey(e => e.ParticipantId)
+                  .OnDelete(DeleteBehavior.Cascade);
         });
     }
 }

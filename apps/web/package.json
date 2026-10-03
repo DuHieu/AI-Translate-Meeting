@@ -3,9 +3,13 @@
   "private": true,
   "version": "1.0.0",
   "type": "module",
+  "engines": {
+    "node": ">=24 <25"
+  },
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build",
+    "build": "tsc && vite build && node scripts/verify-bundle.mjs",
+    "verify:bundle": "node scripts/verify-bundle.mjs",
     "lint": "eslint . --ext ts,tsx",
     "preview": "vite preview"
   },

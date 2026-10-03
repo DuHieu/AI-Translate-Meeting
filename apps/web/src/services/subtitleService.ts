@@ -1,13 +1,24 @@
-import { SubtitleMessage } from '../types/subtitle';
+import { PipelinePhase, PipelineStatusMessage, SubtitleMessage } from '../types/subtitle';
 
 type SubtitleCallback = (msg: SubtitleMessage) => void;
+type PipelineStatusCallback = (status: PipelineStatusMessage) => void;
+
+const PIPELINE_PHASES: ReadonlySet<PipelinePhase> = new Set([
+  'transcribing',
+  'translating',
+  'ready',
+  'failed',
+]);
 
 interface SubtitleConnectOptions {
   meetingId: string;
   participantId: string;
+  subtitleToken: string;
   participantName: string;
   sourceLanguage: string;
   targetLanguage: string;
+  domain?: string;
+  initialPrompt?: string;
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -56,18 +67,62 @@ export function normalizeSubtitleMessage(raw: unknown, preferredTargetLanguage: 
     timestamp: readString(payload.timestamp, new Date().toISOString()),
     tags: Array.isArray(payload.tags) ? (payload.tags as string[]) : [],
     confidence: typeof payload.confidence === 'number' ? payload.confidence : 0,
+    speakerSequence: typeof payload.speakerSequence === 'number' ? payload.speakerSequence : undefined,
+  };
+}
+
+export function normalizePipelineStatusMessage(raw: unknown): PipelineStatusMessage | null {
+  if (!isRecord(raw) || raw.type !== 'pipeline_status' || !isRecord(raw.data)) return null;
+
+  const payload = raw.data;
+  const phase = readString(payload.phase) as PipelinePhase;
+  const sequence = payload.sequence;
+  const meetingId = readString(payload.meetingId);
+  const utteranceId = readString(payload.utteranceId);
+  const participantId = readString(payload.participantId);
+  const liveKitIdentity = readString(payload.liveKitIdentity);
+  const timestamp = readString(payload.timestamp);
+  const expiresAt = readString(payload.expiresAt);
+
+  if (
+    !PIPELINE_PHASES.has(phase) ||
+    typeof sequence !== 'number' ||
+    !Number.isInteger(sequence) ||
+    sequence < 1 ||
+    !meetingId ||
+    !utteranceId ||
+    !participantId ||
+    !liveKitIdentity ||
+    !timestamp ||
+    !expiresAt
+  ) {
+    return null;
+  }
+
+  return {
+    meetingId,
+    utteranceId,
+    participantId,
+    liveKitIdentity,
+    phase,
+    sequence,
+    timestamp,
+    expiresAt,
+    reasonCode: typeof payload.reasonCode === 'string' ? payload.reasonCode : null,
   };
 }
 
 export class SubtitleWebSocketService {
   private ws: WebSocket | null = null;
   private listeners: Set<SubtitleCallback> = new Set();
+  private pipelineStatusListeners: Set<PipelineStatusCallback> = new Set();
   private reconnectAttempts = 0;
   private maxReconnectDelay = 30000;
   private isIntentionalClose = false;
   private currentOptions: SubtitleConnectOptions | null = null;
   private suppressNextCloseReconnect = false;
   private reconnectTimer: number | null = null;
+  private isAuthenticated = false;
 
   connect(options: SubtitleConnectOptions) {
     this.isIntentionalClose = false;
@@ -89,17 +144,45 @@ export class SubtitleWebSocketService {
         this.ws.close();
       }
       this.ws = new WebSocket(wsUrl);
+      this.isAuthenticated = false;
 
       this.ws.onopen = () => {
         console.log('[SubtitleWS] Connected');
-        this.reconnectAttempts = 0;
+        this.isAuthenticated = true;
+        const normalizedParticipantName = (options.participantName || '').trim().slice(0, 100) || 'Participant';
+        this.ws?.send(
+          JSON.stringify({
+            type: 'authenticate',
+            token: options.subtitleToken,
+            participantName: normalizedParticipantName,
+            sourceLanguage: options.sourceLanguage,
+            targetLanguage: options.targetLanguage,
+          })
+        );
       };
 
       this.ws.onmessage = (event) => {
         try {
           const data = JSON.parse(event.data);
+          if (isRecord(data) && data.type === 'authenticated') {
+            this.isAuthenticated = true;
+            this.reconnectAttempts = 0;
+            const activeDomain = options.domain || localStorage.getItem('ai-meeting-domain') || 'engineering';
+            const activeInitialPrompt = options.initialPrompt || localStorage.getItem('ai-meeting-initial-prompt') || '';
+            if (activeDomain || activeInitialPrompt) {
+              this.sendConfig(activeDomain, activeInitialPrompt);
+            }
+            return;
+          }
+          const pipelineStatus = normalizePipelineStatusMessage(data);
+          if (pipelineStatus) {
+            this.isAuthenticated = true;
+            this.pipelineStatusListeners.forEach((cb) => cb(pipelineStatus));
+            return;
+          }
           const subtitle = normalizeSubtitleMessage(data, options.targetLanguage);
           if (subtitle) {
+            this.isAuthenticated = true;
             this.listeners.forEach((cb) => cb(subtitle));
           }
         } catch (err) {
@@ -107,9 +190,15 @@ export class SubtitleWebSocketService {
         }
       };
 
-      this.ws.onclose = () => {
+      this.ws.onclose = (event) => {
+        this.isAuthenticated = false;
         if (this.suppressNextCloseReconnect) {
           this.suppressNextCloseReconnect = false;
+          return;
+        }
+
+        if (event.code === 4400 || event.code === 4401 || event.code === 4403) {
+          console.error('[SubtitleWS] Session authentication rejected');
           return;
         }
 
@@ -134,9 +223,6 @@ export class SubtitleWebSocketService {
 
     url.searchParams.set('meetingId', options.meetingId);
     url.searchParams.set('participantId', options.participantId);
-    url.searchParams.set('participantName', options.participantName);
-    url.searchParams.set('sourceLanguage', options.sourceLanguage);
-    url.searchParams.set('targetLanguage', options.targetLanguage);
 
     return url.toString();
   }
@@ -166,18 +252,30 @@ export class SubtitleWebSocketService {
   }
 
   isConnected(): boolean {
-    return this.ws?.readyState === WebSocket.OPEN;
+    return this.ws?.readyState === WebSocket.OPEN && this.isAuthenticated;
   }
 
   sendAudioChunk(chunk: ArrayBuffer) {
-    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+    if (this.ws && this.ws.readyState === WebSocket.OPEN && this.isAuthenticated) {
       this.ws.send(chunk);
     }
   }
 
   sendSpeechText(text: string, language?: string) {
-    if (this.ws && this.ws.readyState === WebSocket.OPEN && text.trim()) {
+    if (this.ws && this.ws.readyState === WebSocket.OPEN && this.isAuthenticated && text.trim()) {
       this.ws.send(JSON.stringify({ text: text.trim(), language, isFinal: true }));
+    }
+  }
+
+  sendConfig(domain: string, initialPrompt?: string) {
+    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+      this.ws.send(
+        JSON.stringify({
+          type: 'config',
+          domain,
+          initialPrompt: initialPrompt || '',
+        })
+      );
     }
   }
 
@@ -186,8 +284,14 @@ export class SubtitleWebSocketService {
     return () => this.listeners.delete(callback);
   }
 
+  subscribeToPipelineStatus(callback: PipelineStatusCallback): () => void {
+    this.pipelineStatusListeners.add(callback);
+    return () => this.pipelineStatusListeners.delete(callback);
+  }
+
   disconnect() {
     this.isIntentionalClose = true;
+    this.isAuthenticated = false;
     this.currentOptions = null;
     this.clearReconnectTimer();
     if (this.ws) {

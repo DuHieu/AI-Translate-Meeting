@@ -28,7 +28,9 @@ htmlcov/
 # Environment & Secret Files
 .env
 .env.local
+.env.production
 *.pem
+*.key
 
 # IDE & OS Files
 .vscode/
@@ -38,3 +40,20 @@ Thumbs.db
 
 # Local agent coordination mailbox
 .agent-bridge/
+
+# Local browser verification artifacts
+.playwright-cli/
+screenshot_*.png
+debug_*.png
+*.png
+
+# Local database backups
+backups/
+
+# Local test fixtures, audio clips, and logs
+*.pcm
+*.mp3
+*.log
+output/
+evidence/
+scripts/debug_*.py

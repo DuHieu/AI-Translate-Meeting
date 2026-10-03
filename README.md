@@ -1,18 +1,29 @@
-# AI Translate Meeting
+# AI Translate Meeting: Private Bilingual AI Meeting Workspace
 
-Real-time meeting MVP for video calls with live multilingual subtitles. The current codebase is a monorepo with a React/Vite web client, ASP.NET Core API, Python FastAPI AI service, LiveKit, PostgreSQL, and Redis.
+> **Định vị:** Private bilingual AI meeting workspace dành cho đội dự án Việt–Nhật, có thể triển khai trong VPS/on-premise của khách hàng, tối ưu thuật ngữ dự án, phụ đề thời gian thực và biên bản hành động song ngữ.  
+> **Tài liệu đặc tả sản phẩm & vận hành:** [docs/self-hosted-product.md](docs/self-hosted-product.md)  
+> **Hướng dẫn triển khai VPS Docker:** [docs/vps-docker-deployment.md](docs/vps-docker-deployment.md)  
+> **Runbook vận hành production:** [docs/production-runbook.md](docs/production-runbook.md)
+
+AI-Translate-Meeting **không** định vị là đối thủ cạnh tranh hay bản sao thay thế Zoom, Microsoft Teams hoặc Google Meet. Sản phẩm tập trung giải quyết bài toán cốt lõi cho các công ty IT Outsourcing Việt Nam làm việc với đối tác Nhật Bản/quốc tế:
+- **Data Ownership tuyệt đối**: Triển khai private VPS hoặc On-Premise, khách hàng sở hữu toàn bộ dữ liệu, không gửi audio/transcript ra các dịch vụ SaaS ngoại vi.
+- **Không lưu audio thô mặc định**: Dữ liệu giọng nói chỉ xử lý tức thời trong RAM rồi giải phóng ngay lập tức.
+- **Domain Glossary theo dự án**: Tối ưu thuật ngữ kỹ thuật, tên module và sản phẩm cho cặp ngôn ngữ Việt ↔ Nhật ↔ Anh.
+- **Speaker-Aware Bilingual Subtitles**: Phụ đề song ngữ hiển thị thời gian thực theo từng người nói với token bảo mật.
+- **Meeting Intelligence Sidecar**: Tự động nhận diện Quyết định (Decisions) và Nhiệm vụ (Action Items).
+- **Xuất biên bản song ngữ tức thì**: Tạo biên bản họp đa định dạng (Markdown, Word .doc, Subtitle .srt, Transcript .txt).
 
 ## Current Status
 
-This repository is a Phase 1 MVP scaffold.
+**Stage: Self-Hosted Staging & Closed Beta Candidate**
 
-- Meeting creation/join/leave API is implemented with EF Core persistence.
-- LiveKit access token generation is implemented for local development.
-- React meeting UI and subtitle panels are implemented.
-- AI WebSocket subtitle flow is wired into the meeting UI, but speech-to-text and translation currently use placeholder/local fallback responses.
-- Docker Compose can run the local service stack.
-
-Production readiness still requires real STT/translation model wiring, authentication, room authorization, stricter CORS, deployment secrets, and end-to-end media testing.
+- **Real-time STT & Translation Pipeline**: Powered by `faster-whisper` (int8 on CPU) with Voice Activity Detection (VAD) audio filtering (350ms chunks) and multi-engine translation with Redis caching (TTL 24h).
+- **Laya Intelligence Sidecar**: Asynchronous decision and action item classification decoupled completely from critical subtitle path.
+- **Admission & Participant Session Authorization**: Capability-based host token, waiting room approval flow, and scoped participant session JWTs (`meeting:read`, `meeting:leave`) with server-side database revocation (`participant_sessions`).
+- **Edge Security & Rate Limiting**: Distributed Redis token bucket rate limiting (10 req/min create, 30 req/min join, 120 req/min host, 30 handshakes/min WebSocket), CSP, nosniff, DENY, Referrer-Policy, HSTS, and 10MB body limits.
+- **Observability & Health Checks**: Structured Serilog correlation ID (`X-Correlation-ID`) propagation, `/health/live` (process liveness) and `/health/ready` (database + Redis readiness probes), and zero PII logging.
+- **Data Retention & Operations**: Automated hourly background purge for expired admissions and participant sessions (> 24h), plus tested database backup and restore runbooks (`scripts/backup-database.ps1`, `scripts/restore-database.ps1`).
+- **Self-Hosted Automation Tooling**: Preflight verification script (`scripts/preflight.sh`), safe configuration generator (`scripts/generate-config.sh`), and sanitized diagnostic bundle collector (`scripts/diagnostics.sh`).
 
 ## Architecture
 
@@ -171,34 +182,28 @@ In Docker, `apps/web/nginx.conf` proxies `/api/` to the API container and `/ws/`
 
 ## API Surface
 
-| Method | Endpoint | Purpose |
-| --- | --- | --- |
-| `POST` | `/api/meetings` | Create a meeting |
-| `GET` | `/api/meetings/{meetingCode}` | Get meeting details |
-| `POST` | `/api/meetings/{meetingCode}/join` | Join a meeting and receive LiveKit token |
-| `POST` | `/api/meetings/{meetingCode}/leave` | Mark a participant as left |
-| `GET` | `/api/meetings/{meetingCode}/participants` | List active participants |
-| `GET` | `/health` | API/database health |
-| `WS` | `/ws/transcribe?meetingId=...&participantId=...&participantName=...&sourceLanguage=...&targetLanguage=...` | AI service subtitle stream |
+| Method | Endpoint | Authorization | Purpose |
+| --- | --- | --- | --- |
+| `POST` | `/api/meetings` | None (Rate limited: 10/min) | Create a meeting, return host capability token |
+| `GET` | `/api/meetings/{meetingCode}` | None | Get meeting status & active state |
+| `POST` | `/api/meetings/{meetingCode}/join` | Admission Token (Body) | Join room, receive LiveKit token & Participant Session token |
+| `POST` | `/api/meetings/{meetingCode}/leave` | `Bearer <sessionToken>` | Leave room, revoke participant session in DB |
+| `GET` | `/api/meetings/{meetingCode}/participants` | `Bearer <sessionToken>` | List active participants (scoped to room) |
+| `GET` | `/health/live` | None | Process liveness probe |
+| `GET` | `/health/ready` | None | Readiness probe (verifies PostgreSQL and Redis) |
+| `GET` | `/health` | None | Backward-compatible health probe alias |
+| `WS` | `/ws/transcribe` | `?token=<subtitleToken>` | AI service subtitle stream (JWT validated) |
 
 ## Verification Snapshot
 
-Latest local checks:
+Verified local test and build suite:
 
-- `dotnet test tests/AITranslateMeeting.Api.Tests/AITranslateMeeting.Api.Tests.csproj`
-- `npm run build` in `apps/web`
-- `npm run lint` in `apps/web`
-- `python -m compileall -q apps/ai-service/app`
-
-## Roadmap
-
-- Replace placeholder transcript responses with real audio chunk processing.
-- Wire real faster-whisper model loading and language detection.
-- Add production translation providers and caching policy.
-- Add authentication/authorization for meeting and room access.
-- Harden CORS and secrets for non-local environments.
-- Add API integration tests with `WebApplicationFactory`.
-- Add frontend E2E smoke tests for create/join/leave flows.
+- `dotnet test tests/AITranslateMeeting.Api.Tests/AITranslateMeeting.Api.Tests.csproj` (54/54 passed)
+- `python -m pytest tests/ apps/ai-service/tests/ -v` (24/24 passed)
+- `npm run build` in `apps/web` (0 errors, 0 warnings)
+- `npm run lint` in `apps/web` (clean)
+- `powershell -ExecutionPolicy Bypass -File ./scripts/smoke-test.ps1` (E2E API, WebSocket, auth & lifecycle)
+- `powershell -ExecutionPolicy Bypass -File ./scripts/backup-database.ps1` & `./scripts/restore-database.ps1` (Disaster recovery verified)
 
 ## License
 

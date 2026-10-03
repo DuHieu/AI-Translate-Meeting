@@ -1,11 +1,14 @@
 import React, { useEffect } from 'react';
 import { useRoomContext } from '@livekit/components-react';
 import { RoomEvent, Track, RemoteTrack, TrackPublication, RemoteParticipant } from 'livekit-client';
+import { audioDuckingRegistry } from '../../utils/audioDuckingRegistry';
 
 /**
  * Pure, reliable Audio Renderer for LiveKit remote participants.
  * Directly attaches RemoteAudioTracks to HTMLAudioElement without using `useTracks`
  * or `@livekit/components-core` visual stable pagination (eliminating updatePages bugs).
+ * Integrates with audioDuckingRegistry to automatically duck remote participants
+ * during client-side translation audio booth speech.
  */
 export const MeetingAudioRenderer: React.FC = () => {
   const room = useRoomContext();
@@ -22,9 +25,11 @@ export const MeetingAudioRenderer: React.FC = () => {
 
       const element = track.attach();
       element.style.display = 'none';
+      audioDuckingRegistry.register(element);
       attachedElements.set(trackKey, element);
 
       track.once('ended', () => {
+        audioDuckingRegistry.unregister(element);
         element.remove();
         attachedElements.delete(trackKey);
       });
@@ -34,6 +39,7 @@ export const MeetingAudioRenderer: React.FC = () => {
       const trackKey = track.sid || track.mediaStreamTrack?.id || '';
       const element = attachedElements.get(trackKey);
       if (element) {
+        audioDuckingRegistry.unregister(element);
         track.detach(element);
         element.remove();
         attachedElements.delete(trackKey);
@@ -65,9 +71,11 @@ export const MeetingAudioRenderer: React.FC = () => {
       room.off(RoomEvent.TrackUnsubscribed, handleTrackUnsubscribed);
 
       attachedElements.forEach((element) => {
+        audioDuckingRegistry.unregister(element);
         element.remove();
       });
       attachedElements.clear();
+      audioDuckingRegistry.reset();
     };
   }, [room]);
 

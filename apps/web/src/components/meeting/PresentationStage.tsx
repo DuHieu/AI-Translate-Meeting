@@ -2,6 +2,7 @@ import React, { useEffect, useRef } from 'react';
 import { TrackPublication, Participant } from 'livekit-client';
 import { Monitor, StopCircle } from 'lucide-react';
 import { ParticipantTile } from './ParticipantTile';
+import { PipelineStatusMessage } from '../../types/subtitle';
 
 interface PresentationStageProps {
   presenter: Participant;
@@ -9,6 +10,7 @@ interface PresentationStageProps {
   participants: Participant[];
   isLocalPresenting: boolean;
   onStopPresenting: () => void;
+  pipelineStatuses?: Record<string, PipelineStatusMessage>;
 }
 
 export const PresentationStage: React.FC<PresentationStageProps> = ({
@@ -17,6 +19,7 @@ export const PresentationStage: React.FC<PresentationStageProps> = ({
   participants,
   isLocalPresenting,
   onStopPresenting,
+  pipelineStatuses,
 }) => {
   const screenVideoRef = useRef<HTMLVideoElement>(null);
 
@@ -66,7 +69,11 @@ export const PresentationStage: React.FC<PresentationStageProps> = ({
       <div className="w-full md:w-64 h-36 md:h-full flex md:flex-col gap-3 overflow-x-auto md:overflow-y-auto shrink-0 scrollbar-thin">
         {participants.map((p) => (
           <div key={p.identity} className="w-44 md:w-full h-full md:h-36 shrink-0">
-            <ParticipantTile participant={p} isLocal={p.isLocal} />
+            <ParticipantTile
+              participant={p}
+              isLocal={p.isLocal}
+              pipelineStatus={pipelineStatuses?.[p.identity] || pipelineStatuses?.[p.sid]}
+            />
           </div>
         ))}
       </div>

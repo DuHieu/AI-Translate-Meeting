@@ -1,34 +1,48 @@
 name: AI Translate Meeting CI
 
 on:
+  workflow_call:
   push:
     branches: [ main, master, dev ]
   pull_request:
     branches: [ main, master ]
 
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  build-web:
-    name: Build Frontend (React + Vite)
+  build-and-lint-web:
+    name: Frontend Quality & Build (React + Vite)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - name: Use Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '24'
           cache: 'npm'
           cache-dependency-path: apps/web/package-lock.json
       - name: Install dependencies
+        working-directory: apps/web
+        run: npm ci
+      - name: Audit dependencies
+        working-directory: apps/web
+        run: npm audit --audit-level=low --omit=dev
+      - name: Lint Code
         run: |
           cd apps/web
-          npm ci || npm install
-      - name: Build
+          npm run lint
+      - name: Build Production Bundle
         run: |
           cd apps/web
           npm run build
 
-  build-api:
-    name: Build Backend API (.NET 8)
+  build-and-test-api:
+    name: Backend Build & Test (.NET 8)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -38,11 +52,17 @@ jobs:
           dotnet-version: '8.0.x'
       - name: Restore dependencies
         run: dotnet restore apps/api/AITranslateMeeting.Api.csproj
-      - name: Build
+      - name: Scan API dependencies
+        run: dotnet list apps/api/AITranslateMeeting.Api.csproj package --vulnerable --include-transitive
+      - name: Scan test dependencies
+        run: dotnet list tests/AITranslateMeeting.Api.Tests/AITranslateMeeting.Api.Tests.csproj package --vulnerable --include-transitive
+      - name: Build Solution
         run: dotnet build apps/api/AITranslateMeeting.Api.csproj --no-restore -c Release
+      - name: Run .NET Unit & Integration Tests
+        run: dotnet test tests/AITranslateMeeting.Api.Tests/AITranslateMeeting.Api.Tests.csproj -c Release
 
-  build-ai-service:
-    name: Check AI Service (Python FastAPI)
+  test-ai-service:
+    name: AI Service & Contract Tests (Python 3.11)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -52,6 +72,36 @@ jobs:
           python-version: '3.11'
       - name: Install dependencies
         run: |
-          cd apps/ai-service
           python -m pip install --upgrade pip
-          pip install -r requirements.txt
+          pip install -r apps/ai-service/requirements.txt
+          pip install pytest pytest-asyncio pip-audit pyyaml
+      - name: Audit Python dependencies
+        run: pip-audit -r apps/ai-service/requirements.txt
+      - name: Compile Python Syntax
+        run: python -m compileall -q apps/ai-service/app
+      - name: Run Pytest Test Suite
+        run: python -m pytest tests/ apps/ai-service/tests/ -v
+
+  validate-compose:
+    name: Validate deployment configuration
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Lint GitHub Actions workflows
+        run: docker run --rm -v "$PWD:/repo" --workdir /repo rhysd/actionlint:1.7.12@sha256:b1934ee5f1c509618f2508e6eb47ee0d3520686341fec936f3b79331f9315667 -color
+      - name: Lint deployment shell scripts
+        run: docker run --rm -v "$PWD/scripts:/mnt" koalaman/shellcheck:v0.11.0@sha256:61862eba1fcf09a484ebcc6feea46f1782532571a34ed51fedf90dd25f925a8d /mnt/deploy-production.sh /mnt/rollback-production.sh /mnt/preflight.sh /mnt/generate-config.sh /mnt/diagnostics.sh
+      - name: Validate Caddy TLS proxy configuration
+        run: docker run --rm -v "$PWD/infra/caddy/Caddyfile:/etc/caddy/Caddyfile:ro" -e APP_DOMAIN=meet.example.com -e LIVEKIT_DOMAIN=rtc.example.com caddy:2.11.4-alpine@sha256:6aeddd44c3078b0f9a35206472a11420648a79c184603ef95957d0a20044cb2b caddy validate --config /etc/caddy/Caddyfile
+      - name: Validate development Compose
+        run: docker compose config -q
+      - name: Validate production Compose
+        env:
+          IMAGE_TAG: 0000000000000000000000000000000000000000
+          POSTGRES_PASSWORD: ci-only-postgres-password
+          LIVEKIT_API_KEY: ci-only-key
+          LIVEKIT_API_SECRET: ci-only-livekit-secret-value-000000000000
+          SUBTITLE_TOKEN_SIGNING_KEY: ci-only-subtitle-key-value-0000000000000
+          ADMISSION_TOKEN_SIGNING_KEY: ci-only-admission-key-value-0000000000000
+          SESSION_TOKEN_SIGNING_KEY: ci-only-session-key-value-000000000000000
+        run: docker compose --env-file .env.production.example -f docker-compose.production.yml config -q

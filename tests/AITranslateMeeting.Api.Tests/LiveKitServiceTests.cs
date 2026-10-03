@@ -16,9 +16,10 @@ public class LiveKitServiceTests
         _options = new LiveKitOptions
         {
             ApiKey = "devkey",
-            ApiSecret = "devsecret_aitranslate_meeting_secret_key_32chars",
+            ApiSecret = new string('x', 32),
             InternalUrl = "http://livekit:7880",
-            PublicUrl = "ws://127.0.0.1:7880"
+            PublicUrl = "ws://127.0.0.1:7880",
+            TokenTtlMinutes = 60
         };
 
         _liveKitService = new LiveKitService(Microsoft.Extensions.Options.Options.Create(_options));
@@ -51,5 +52,9 @@ public class LiveKitServiceTests
         Assert.Contains(roomName, videoClaim);
         Assert.Contains("canPublish", videoClaim);
         Assert.Contains("canSubscribe", videoClaim);
+        Assert.InRange(
+            jwt.ValidTo,
+            DateTime.UtcNow.AddMinutes(55),
+            DateTime.UtcNow.AddMinutes(65));
     }
 }

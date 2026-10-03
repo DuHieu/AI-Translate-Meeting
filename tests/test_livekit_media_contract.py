@@ -37,3 +37,21 @@ def test_prejoin_falls_back_to_separate_media_requests_when_combined_request_fai
     assert "video: false" in source
     assert "audio: false" in source
     assert "video: videoConstraint" in source
+
+
+def test_prejoin_clears_device_permission_error_when_media_is_disabled():
+    prejoin_page = WEB_SRC / "pages" / "PreJoinPage.tsx"
+    source = prejoin_page.read_text(encoding="utf-8")
+
+    disabled_branch = source.index("if (!isCameraOn && !isMicOn)")
+    clear_error = source.index("setPermissionError(null);", disabled_branch)
+    early_return = source.index("return;", disabled_branch)
+
+    assert clear_error < early_return
+
+
+def test_subtitle_audio_chunks_match_realtime_latency_contract():
+    subtitle_hook = WEB_SRC / "hooks" / "useSubtitle.ts"
+    source = subtitle_hook.read_text(encoding="utf-8")
+
+    assert "const AUDIO_CHUNK_MS = 350;" in source

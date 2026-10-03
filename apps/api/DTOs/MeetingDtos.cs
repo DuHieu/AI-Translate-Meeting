@@ -12,19 +12,24 @@ public sealed record CreateMeetingResponseDto(
     string MeetingCode,
     string RoomName,
     string Name,
-    DateTime CreatedAt
+    DateTime CreatedAt,
+    string HostToken
 );
 
 public sealed record JoinMeetingRequestDto(
     [Required, StringLength(100, MinimumLength = 1)]
     string DisplayName,
 
-    [Required, RegularExpression("^(vi|en|ja)$", ErrorMessage = "Language must be 'vi', 'en', or 'ja'")]
+    [Required, RegularExpression("^(vi|en|ja|ko|zh|fr|de|es)$", ErrorMessage = "Language must be one of: 'vi', 'en', 'ja', 'ko', 'zh', 'fr', 'de', 'es'")]
     string SpokenLanguage,
 
-    [Required, RegularExpression("^(vi|en|ja)$", ErrorMessage = "Language must be 'vi', 'en', or 'ja'")]
-    string TargetLanguage
+    [Required, RegularExpression("^(vi|en|ja|ko|zh|fr|de|es)$", ErrorMessage = "Language must be one of: 'vi', 'en', 'ja', 'ko', 'zh', 'fr', 'de', 'es'")]
+    string TargetLanguage,
+
+    [StringLength(4096)] string? AdmissionToken = null
 );
+
+public abstract record JoinMeetingResultDto;
 
 public sealed record JoinMeetingResponseDto(
     Guid MeetingId,
@@ -36,7 +41,46 @@ public sealed record JoinMeetingResponseDto(
     string TargetLanguage,
     string LiveKitUrl,
     string Token,
-    DateTime JoinedAt
+    string SubtitleToken,
+    string Role,
+    DateTime JoinedAt,
+    string SessionToken = ""
+) : JoinMeetingResultDto;
+
+public sealed record AdmissionPendingResponseDto(
+    Guid MeetingId,
+    string MeetingCode,
+    Guid AdmissionId,
+    string Status,
+    string AdmissionToken,
+    DateTime ExpiresAt
+) : JoinMeetingResultDto;
+
+public sealed record CreateInviteRequestDto(
+    [Range(1, 60)] int? TtlMinutes = null
+);
+
+public sealed record InviteResponseDto(
+    Guid AdmissionId,
+    string Role,
+    string Token,
+    DateTime ExpiresAt
+);
+
+public sealed record AdmissionRequestDto(
+    Guid AdmissionId,
+    string Status,
+    string Role,
+    string DisplayName,
+    string SpokenLanguage,
+    string TargetLanguage,
+    DateTime CreatedAt,
+    DateTime ExpiresAt
+);
+
+public sealed record AdmissionDecisionRequestDto(
+    [Required, RegularExpression("^(approved|rejected)$")]
+    string Decision
 );
 
 public sealed record LeaveMeetingRequestDto(

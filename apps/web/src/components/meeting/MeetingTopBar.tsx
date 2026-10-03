@@ -1,14 +1,21 @@
 import React, { useState } from 'react';
 import { ConnectionState } from 'livekit-client';
-import { Video, Copy, Check, ShieldCheck } from 'lucide-react';
+import { Copy, Check, ShieldCheck, Zap } from 'lucide-react';
 import { NetworkQualityIndicator } from './NetworkQualityIndicator';
 
 interface MeetingTopBarProps {
   meetingCode: string;
   connectionState: ConnectionState;
+  isHost: boolean;
+  onOpenAdmission: () => void;
 }
 
-export const MeetingTopBar: React.FC<MeetingTopBarProps> = ({ meetingCode, connectionState }) => {
+export const MeetingTopBar: React.FC<MeetingTopBarProps> = ({
+  meetingCode,
+  connectionState,
+  isHost,
+  onOpenAdmission,
+}) => {
   const [copied, setCopied] = useState(false);
 
   const handleCopyCode = () => {
@@ -18,58 +25,77 @@ export const MeetingTopBar: React.FC<MeetingTopBarProps> = ({ meetingCode, conne
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const getStatusText = () => {
+  const getStatusInfo = () => {
     switch (connectionState) {
       case ConnectionState.Connected:
-        return 'Connected';
+        return { text: 'Connected', dot: 'bg-green-500' };
       case ConnectionState.Connecting:
-        return 'Connecting...';
+        return { text: 'Connecting...', dot: 'bg-amber-500 animate-pulse' };
       case ConnectionState.Reconnecting:
-        return 'Reconnecting...';
+        return { text: 'Reconnecting...', dot: 'bg-amber-500 animate-pulse' };
       case ConnectionState.Disconnected:
-        return 'Disconnected';
+        return { text: 'Disconnected', dot: 'bg-red-500' };
       default:
-        return 'Connecting...';
+        return { text: 'Connecting...', dot: 'bg-amber-500 animate-pulse' };
     }
   };
 
+  const status = getStatusInfo();
+
   return (
-    <header className="h-14 border-b border-slate-800/80 bg-slate-900/90 backdrop-blur-md px-4 md:px-6 flex items-center justify-between z-20 shrink-0 select-none">
-      {/* Product Title */}
-      <div className="flex items-center gap-3">
-        <div className="flex items-center justify-center w-8 h-8 rounded-xl bg-sky-500/10 text-sky-400 border border-sky-500/20">
-          <Video className="w-4 h-4" />
+    <header className="h-12 border-b border-[#2e2e30] bg-[#0f0f10] px-4 md:px-5 flex items-center justify-between z-20 shrink-0 select-none">
+      {/* Product logo + title */}
+      <div className="flex items-center gap-2.5">
+        <div className="flex items-center justify-center w-7 h-7 rounded-lg bg-blue-600 text-white shrink-0">
+          <Zap className="w-3.5 h-3.5" />
         </div>
-        <span className="font-semibold text-slate-100 text-sm md:text-base tracking-tight">
+        <span className="font-semibold text-zinc-100 text-sm tracking-tight">
           AI Translate Meeting
         </span>
       </div>
 
-      {/* Code & Quality Status */}
-      <div className="flex items-center gap-2.5">
+      {/* Right-side controls */}
+      <div className="flex items-center gap-2">
+        {/* Room code + copy link */}
         <button
+          type="button"
           onClick={handleCopyCode}
           title="Sao chép link mời phòng họp"
-          className="bg-slate-800 hover:bg-slate-700/80 border border-slate-700/80 px-3 py-1.5 rounded-full text-xs font-mono text-slate-300 flex items-center gap-1.5 transition cursor-pointer"
+          className="bg-[#1a1a1b] hover:bg-[#222224] border border-[#3a3a3d] px-3 py-1.5 rounded-lg text-xs font-mono text-zinc-300 flex items-center gap-1.5 transition-colors cursor-pointer"
         >
-          <span className="text-slate-400">Phòng:</span>
-          <span className="text-sky-400 font-bold uppercase tracking-wider">{meetingCode}</span>
+          <span className="text-zinc-500">Phòng:</span>
+          <span className="text-zinc-100 font-semibold uppercase tracking-wider">{meetingCode}</span>
           {copied ? (
-            <span className="text-emerald-400 flex items-center gap-1 font-sans text-[11px] font-medium">
-              <Check className="w-3.5 h-3.5" /> Đã copy link
+            <span className="text-green-400 flex items-center gap-1 font-sans font-medium ml-0.5">
+              <Check className="w-3.5 h-3.5" /> Đã copy
             </span>
           ) : (
-            <span className="text-slate-400 flex items-center gap-1 font-sans text-[11px]">
-              <Copy className="w-3.5 h-3.5" /> Copy link mời
+            <span className="text-zinc-500 flex items-center gap-1 font-sans ml-0.5">
+              <Copy className="w-3.5 h-3.5" /> Copy link
             </span>
           )}
         </button>
 
+        {/* Admission button (host only) */}
+        {isHost && (
+          <button
+            type="button"
+            onClick={onOpenAdmission}
+            title="Quản lý invite và duyệt người tham gia"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#1a1a1b] border border-[#3a3a3d] text-xs font-medium text-zinc-300 hover:bg-[#222224] hover:text-zinc-100 transition-colors cursor-pointer"
+          >
+            <ShieldCheck className="w-3.5 h-3.5 text-green-500" />
+            <span className="hidden md:inline">Admission</span>
+          </button>
+        )}
+
+        {/* Network quality */}
         <NetworkQualityIndicator />
 
-        <div className="hidden md:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-800/50 border border-slate-800 text-xs text-slate-400 font-medium">
-          <ShieldCheck className="w-3.5 h-3.5 text-sky-400" />
-          <span>{getStatusText()}</span>
+        {/* Connection status */}
+        <div className="hidden md:flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#1a1a1b] border border-[#2e2e30] text-xs text-zinc-400">
+          <span className={`w-1.5 h-1.5 rounded-full ${status.dot}`} />
+          <span>{status.text}</span>
         </div>
       </div>
     </header>

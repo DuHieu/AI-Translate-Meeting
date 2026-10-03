@@ -1,0 +1,114 @@
+name: Build and Deploy Production
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: production-deployment
+  cancel-in-progress: false
+
+jobs:
+  verify:
+    name: Release quality gates
+    uses: ./.github/workflows/ci.yml
+
+  publish-images:
+    name: Publish ${{ matrix.name }} image
+    needs: verify
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      fail-fast: true
+      matrix:
+        include:
+          - name: api
+            context: ./apps/api
+          - name: ai-service
+            context: ./apps/ai-service
+          - name: laya
+            context: ./apps/laya
+          - name: web
+            context: ./apps/web
+    steps:
+      - uses: actions/checkout@v4
+      - name: Normalize image namespace
+        id: image
+        shell: bash
+        run: echo "namespace=${GITHUB_REPOSITORY_OWNER,,}" >> "$GITHUB_OUTPUT"
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+      - name: Log in to GHCR
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build and push immutable image
+        uses: docker/build-push-action@v7
+        with:
+          context: ${{ matrix.context }}
+          push: true
+          tags: ghcr.io/${{ steps.image.outputs.namespace }}/ai-translate-meeting-${{ matrix.name }}:${{ github.sha }}
+          cache-from: type=gha,scope=${{ matrix.name }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.name }}
+          provenance: mode=max
+          sbom: true
+
+  deploy:
+    name: Deploy immutable release to VPS
+    needs: [verify, publish-images]
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+      - name: Configure pinned SSH host identity
+        shell: bash
+        env:
+          VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+          VPS_KNOWN_HOSTS: ${{ secrets.VPS_KNOWN_HOSTS }}
+        run: |
+          install -d -m 700 "$HOME/.ssh"
+          printf '%s\n' "$VPS_SSH_KEY" > "$HOME/.ssh/id_ed25519"
+          printf '%s\n' "$VPS_KNOWN_HOSTS" > "$HOME/.ssh/known_hosts"
+          chmod 600 "$HOME/.ssh/id_ed25519" "$HOME/.ssh/known_hosts"
+      - name: Package deployment manifests
+        run: |
+          tar -czf "${RUNNER_TEMP}/deployment-${GITHUB_SHA}.tgz" \
+            docker-compose.production.yml \
+            infra/caddy/Caddyfile \
+            infra/livekit/livekit.production.yaml \
+            scripts/deploy-production.sh \
+            scripts/rollback-production.sh
+      - name: Upload and activate release
+        shell: bash
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_PORT: ${{ secrets.VPS_PORT }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+          VPS_DEPLOY_PATH: ${{ vars.VPS_DEPLOY_PATH }}
+        run: |
+          set -Eeuo pipefail
+          deploy_root="${VPS_DEPLOY_PATH:-/opt/ai-translate-meeting}"
+          port="${VPS_PORT:-22}"
+          if [[ ! "$deploy_root" =~ ^/[A-Za-z0-9._/-]+$ ]]; then
+            echo "Invalid VPS_DEPLOY_PATH" >&2
+            exit 2
+          fi
+          archive="/tmp/ai-translate-meeting-${GITHUB_SHA}.tgz"
+          scp -P "$port" "${RUNNER_TEMP}/deployment-${GITHUB_SHA}.tgz" "$VPS_USER@$VPS_HOST:$archive"
+          ssh -p "$port" "$VPS_USER@$VPS_HOST" 'bash -s' -- "$deploy_root" "$GITHUB_SHA" "$archive" <<'REMOTE'
+          set -Eeuo pipefail
+          deploy_root="$1"
+          image_tag="$2"
+          archive="$3"
+          release_dir="$deploy_root/releases/$image_tag"
+          mkdir -p "$release_dir" "$deploy_root/shared"
+          tar -xzf "$archive" -C "$release_dir"
+          rm -f -- "$archive"
+          bash "$release_dir/scripts/deploy-production.sh" "$image_tag" "$deploy_root"
+          REMOTE

@@ -56,7 +56,7 @@ public class LiveKitService : ILiveKitService
         var tokenDescriptor = new SecurityTokenDescriptor
         {
             Subject = new ClaimsIdentity(claims),
-            Expires = DateTime.UtcNow.AddHours(24),
+            Expires = DateTime.UtcNow.AddMinutes(_options.TokenTtlMinutes),
             SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
         };
 

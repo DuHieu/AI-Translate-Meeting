@@ -6,8 +6,6 @@ rtc:
   # Local Docker/browser profile: advertise mapped host ports, not Docker-internal IP.
   # For LAN/mobile testing, replace this with the host LAN IP and keep ports 7880-7882 open.
   node_ip: 127.0.0.1
-keys:
-  devkey: devsecret_aitranslate_meeting_secret_key_32chars
 logging:
   json: false
   level: info

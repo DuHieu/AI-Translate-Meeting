@@ -14,6 +14,8 @@ public sealed class MeetingParticipant
 
     public string TargetLanguage { get; set; } = null!;
 
+    public string Role { get; set; } = "participant";
+
     public DateTime JoinedAt { get; set; }
 
     public DateTime? LeftAt { get; set; }

@@ -97,6 +97,22 @@ async def test_laya_client_handles_server_error():
     await client.close()
 
 
+@pytest.mark.asyncio
+async def test_laya_logs_do_not_contain_transcript(caplog):
+    transcript = "confidential customer transcript"
+    client = LayaDecisionClient(enabled=True)
+    response = MagicMock(status_code=503)
+    mock_http = AsyncMock()
+    mock_http.is_closed = False
+    mock_http.post.return_value = response
+    client._http_client = mock_http
+
+    with caplog.at_level("INFO"):
+        await client.classify_sentence(transcript)
+
+    assert transcript not in caplog.text
+
+
 def test_subtitle_data_with_tags():
     data = SubtitleData(
         meetingId="m-123",

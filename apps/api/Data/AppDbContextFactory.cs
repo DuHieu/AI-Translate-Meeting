@@ -7,8 +7,15 @@ public class AppDbContextFactory : IDesignTimeDbContextFactory<AppDbContext>
 {
     public AppDbContext CreateDbContext(string[] args)
     {
+        var connectionString = Environment.GetEnvironmentVariable("ConnectionStrings__DefaultConnection");
+        if (string.IsNullOrWhiteSpace(connectionString))
+        {
+            throw new InvalidOperationException(
+                "Set ConnectionStrings__DefaultConnection before running EF Core design-time commands.");
+        }
+
         var optionsBuilder = new DbContextOptionsBuilder<AppDbContext>();
-        optionsBuilder.UseNpgsql("Host=127.0.0.1;Port=5433;Database=ai_translate_meeting;Username=postgres;Password=postgres");
+        optionsBuilder.UseNpgsql(connectionString);
 
         return new AppDbContext(optionsBuilder.Options);
     }

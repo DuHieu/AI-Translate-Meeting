@@ -18,6 +18,7 @@ import { MeetingTopBar } from './MeetingTopBar';
 import { MeetingStage } from './MeetingStage';
 import { MeetingBottomBar } from './MeetingBottomBar';
 import { MeetingAudioRenderer } from './MeetingAudioRenderer';
+import { AiReadinessBanner } from './AiReadinessBanner';
 import { ParticipantsPanel } from './ParticipantsPanel';
 import { ChangeLayoutDialog, LayoutMode } from './ChangeLayoutDialog';
 import { MeetingSettingsDialog } from './MeetingSettingsDialog';
@@ -27,8 +28,11 @@ import { ConnectionErrorModal } from './ConnectionErrorModal';
 import { WebRtcDiagnostics } from './WebRtcDiagnostics';
 import { SubtitleOverlay } from '../subtitle/SubtitleOverlay';
 import { SubtitlePanel } from '../subtitle/SubtitlePanel';
+import { FloatingReactionsOverlay } from './FloatingReactionsOverlay';
 import { useSubtitle } from '../../hooks/useSubtitle';
-import { MeetingSessionData } from '../../types/meeting';
+import { useAiReadiness } from '../../hooks/useAiReadiness';
+import { useAudioBooth } from '../../hooks/useAudioBooth';
+import { ChatMessage, FloatingReaction, MeetingSessionData } from '../../types/meeting';
 import { classifyMediaError } from '../../utils/mediaErrors';
 import { meetingStorage } from '../../utils/meetingStorage';
 
@@ -63,6 +67,7 @@ export const MeetingShell: React.FC<MeetingShellProps> = ({ session, onLeaveRoom
   const isRoomConnecting =
     connectionState === ConnectionState.Connecting ||
     connectionState === ConnectionState.Reconnecting;
+  const aiReadiness = useAiReadiness();
 
   // Track in-flight toggles to prevent concurrent negotiations on PeerConnection
   const isMediaNegotiatingRef = useRef(false);
@@ -100,6 +105,106 @@ export const MeetingShell: React.FC<MeetingShellProps> = ({ session, onLeaveRoom
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isLayoutMenuOpen, setIsLayoutMenuOpen] = useState(false);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
+
+  // ── LiveKit In-Meeting Chat & Floating Reactions ───────────────────
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
+  const [reactions, setReactions] = useState<FloatingReaction[]>([]);
+
+  useEffect(() => {
+    if (!room) return;
+
+    const handleDataReceived = (
+      payload: Uint8Array,
+      participant?: Participant,
+      _kind?: unknown,
+      topic?: string
+    ) => {
+      try {
+        const text = new TextDecoder().decode(payload);
+        const data = JSON.parse(text);
+
+        if (topic === 'meeting-chat' || data.type === 'chat') {
+          setChatMessages((prev) => [
+            ...prev,
+            {
+              id: data.id || `msg-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+              senderId: participant?.identity || data.senderId || 'unknown',
+              senderName: participant?.name || data.senderName || 'Người tham gia',
+              text: data.text,
+              timestamp: data.timestamp || new Date().toISOString(),
+            },
+          ]);
+        } else if (topic === 'meeting-reaction' || data.type === 'reaction') {
+          const reactionId = `react-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+          const newReaction: FloatingReaction = {
+            id: reactionId,
+            emoji: data.emoji || '👍',
+            senderName: participant?.name || data.senderName || 'Người tham gia',
+            leftPercent: 15 + Math.random() * 70,
+          };
+          setReactions((prev) => [...prev, newReaction]);
+          setTimeout(() => {
+            setReactions((prev) => prev.filter((r) => r.id !== reactionId));
+          }, 3200);
+        }
+      } catch (e) {
+        console.warn('Failed to parse incoming DataChannel packet', e);
+      }
+    };
+
+    room.on(RoomEvent.DataReceived, handleDataReceived);
+    return () => {
+      room.off(RoomEvent.DataReceived, handleDataReceived);
+    };
+  }, [room]);
+
+  const handleSendChatMessage = useCallback(
+    async (text: string) => {
+      if (!room || !text.trim()) return;
+      const msg: ChatMessage = {
+        id: `msg-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+        senderId: session.participantId,
+        senderName: session.displayName || 'You',
+        text: text.trim(),
+        timestamp: new Date().toISOString(),
+      };
+      setChatMessages((prev) => [...prev, msg]);
+      try {
+        const payload = new TextEncoder().encode(JSON.stringify({ type: 'chat', ...msg }));
+        await room.localParticipant.publishData(payload, { reliable: true, topic: 'meeting-chat' });
+      } catch (e) {
+        console.error('Failed to publish chat message via LiveKit DataChannel', e);
+      }
+    },
+    [room, session.participantId, session.displayName]
+  );
+
+  const handleSendReaction = useCallback(
+    async (emoji: string) => {
+      if (!room) return;
+      const reactionId = `react-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+      const reaction: FloatingReaction = {
+        id: reactionId,
+        emoji,
+        senderName: session.displayName || 'You',
+        leftPercent: 15 + Math.random() * 70,
+      };
+      setReactions((prev) => [...prev, reaction]);
+      setTimeout(() => {
+        setReactions((prev) => prev.filter((r) => r.id !== reactionId));
+      }, 3200);
+
+      try {
+        const payload = new TextEncoder().encode(
+          JSON.stringify({ type: 'reaction', emoji, senderName: session.displayName || 'You' })
+        );
+        await room.localParticipant.publishData(payload, { reliable: false, topic: 'meeting-reaction' });
+      } catch (e) {
+        console.error('Failed to publish reaction via LiveKit DataChannel', e);
+      }
+    },
+    [room, session.displayName]
+  );
 
   const buildAudioOptions = useCallback((): AudioCaptureOptions => ({
     ...(session.audioDeviceId ? { deviceId: session.audioDeviceId } : {}),
@@ -405,20 +510,56 @@ export const MeetingShell: React.FC<MeetingShellProps> = ({ session, onLeaveRoom
 
   const subtitleOptions = React.useMemo(
     () => ({
+      subtitleToken: session.subtitleToken,
       participantName: session.displayName,
       sourceLanguage: session.spokenLanguage,
       targetLanguage: session.targetLanguage,
       isMicOn: localMediaState.micEnabled,
+      isAiReady: aiReadiness.state === 'ready',
       audioTrack: localAudioTrack?.mediaStreamTrack || null,
     }),
-    [session.displayName, session.spokenLanguage, session.targetLanguage, localMediaState.micEnabled, localAudioTrack],
+    [
+      session.subtitleToken,
+      session.displayName,
+      session.spokenLanguage,
+      session.targetLanguage,
+      localMediaState.micEnabled,
+      aiReadiness.state,
+      localAudioTrack,
+    ],
   );
 
-  const { activeSubtitle, history: subtitleHistory, sendSpeechText } = useSubtitle(
+  const {
+    activeSubtitle,
+    activeSubtitles,
+    history: subtitleHistory,
+    sendSpeechText,
+    pipelineStatuses,
+  } = useSubtitle(
     session.meetingId,
     session.participantId,
     subtitleOptions,
   );
+
+  // ── Audio Booth (Client-side zero-server-cost simultaneous translation TTS) ──
+  const [isAudioBoothEnabled, setIsAudioBoothEnabled] = useState<boolean>(() => {
+    return localStorage.getItem('ai-audio-booth-enabled') === 'true';
+  });
+
+  const handleToggleAudioBooth = useCallback(() => {
+    setIsAudioBoothEnabled((prev) => {
+      const next = !prev;
+      localStorage.setItem('ai-audio-booth-enabled', String(next));
+      return next;
+    });
+  }, []);
+
+  useAudioBooth({
+    enabled: isAudioBoothEnabled,
+    history: subtitleHistory,
+    currentUserId: session.participantId,
+    targetLanguage: subtitleOptions.targetLanguage,
+  });
 
   // ── Toggle Handlers — with in-flight lock to prevent NegotiationError ──
   const handleToggleMic = useCallback(async () => {
@@ -580,7 +721,12 @@ export const MeetingShell: React.FC<MeetingShellProps> = ({ session, onLeaveRoom
       {enableWebRtcDebug && <WebRtcDiagnostics />}
 
       {/* Header Top Bar */}
-      <MeetingTopBar meetingCode={session.meetingCode} connectionState={connectionState} />
+      <MeetingTopBar
+        meetingCode={session.meetingCode}
+        connectionState={connectionState}
+        isHost={session.role === 'host'}
+        onOpenAdmission={() => setIsDetailsOpen(true)}
+      />
 
       {/* Connecting / Reconnecting Status Banner */}
       {isRoomConnecting && (
@@ -594,12 +740,25 @@ export const MeetingShell: React.FC<MeetingShellProps> = ({ session, onLeaveRoom
         </div>
       )}
 
+      <AiReadinessBanner state={aiReadiness.state} onRetry={aiReadiness.retry} />
+
       {/* Main Stage & Right Panel Drawer Container */}
       <div className="flex-1 flex overflow-hidden relative">
         <main className="flex-1 h-full relative overflow-hidden flex flex-col">
-          <MeetingStage layoutMode={layoutMode} meetingCode={session.meetingCode} />
+          <MeetingStage
+            layoutMode={layoutMode}
+            meetingCode={session.meetingCode}
+            pipelineStatuses={pipelineStatuses}
+          />
 
-          <SubtitleOverlay subtitle={activeSubtitle} />
+          <SubtitleOverlay
+            subtitle={activeSubtitle}
+            subtitles={activeSubtitles}
+            pipelineStatuses={pipelineStatuses}
+          />
+
+          {/* Floating Reactions Overlay */}
+          <FloatingReactionsOverlay reactions={reactions} />
         </main>
 
         {/* Right Participants Side Drawer */}
@@ -615,6 +774,12 @@ export const MeetingShell: React.FC<MeetingShellProps> = ({ session, onLeaveRoom
           isOpen={isSubtitlePanelOpen}
           onClose={() => setIsSubtitlePanelOpen(false)}
           onSendSpeechText={sendSpeechText}
+          chatMessages={chatMessages}
+          onSendChatMessage={handleSendChatMessage}
+          currentUserId={session.participantId}
+          meetingCode={session.meetingCode}
+          isAudioBoothEnabled={isAudioBoothEnabled}
+          onToggleAudioBooth={handleToggleAudioBooth}
         />
       </div>
 
@@ -638,6 +803,9 @@ export const MeetingShell: React.FC<MeetingShellProps> = ({ session, onLeaveRoom
         isSubtitlePanelOpen={isSubtitlePanelOpen}
         subtitleCount={subtitleHistory.length}
         numParticipants={participants.length}
+        onSendReaction={handleSendReaction}
+        isAudioBoothEnabled={isAudioBoothEnabled}
+        onToggleAudioBooth={handleToggleAudioBooth}
       />
 
       {/* Pure Audio Renderer for LiveKit WebRTC Audio Streams (no useTracks dependency) */}
@@ -700,6 +868,8 @@ export const MeetingShell: React.FC<MeetingShellProps> = ({ session, onLeaveRoom
       {isDetailsOpen && (
         <MeetingDetailsDialog
           meetingCode={session.meetingCode}
+          role={session.role}
+          hostToken={session.hostToken}
           onClose={() => setIsDetailsOpen(false)}
         />
       )}

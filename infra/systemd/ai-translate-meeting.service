@@ -1,0 +1,18 @@
+[Unit]
+Description=AI-Translate-Meeting Self-Hosted Workspace
+Requires=docker.service
+After=docker.service network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+WorkingDirectory=/opt/ai-translate-meeting/current
+ExecStart=/usr/bin/docker compose --file /opt/ai-translate-meeting/current/docker-compose.production.yml --env-file /opt/ai-translate-meeting/shared/.env.production up -d
+ExecStop=/usr/bin/docker compose --file /opt/ai-translate-meeting/current/docker-compose.production.yml --env-file /opt/ai-translate-meeting/shared/.env.production down
+ExecReload=/usr/bin/docker compose --file /opt/ai-translate-meeting/current/docker-compose.production.yml --env-file /opt/ai-translate-meeting/shared/.env.production up -d --remove-orphans
+TimeoutStartSec=300
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

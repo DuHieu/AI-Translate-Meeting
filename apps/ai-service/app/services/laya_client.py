@@ -1,5 +1,7 @@
+import asyncio
 import logging
-from typing import Any
+import re
+from typing import Any, Optional
 import httpx
 from app.config.settings import settings
 
@@ -21,6 +23,33 @@ MEETING_QUESTIONS: dict[str, Any] = {
         "criteria": {
             "false": "debate, proposal, suggestion, or brainstorming without final consensus",
             "true": "explicit confirmation of a choice, approval, agreement, or closing of a debate",
+        },
+    },
+}
+
+DOMAIN_QUESTIONS: dict[str, Any] = {
+    "is_engineering": {
+        "type": "noul",
+        "instructions": "Does this statement discuss software development, system architecture, database, servers, deployment, or code?",
+        "criteria": {
+            "false": "business terms, casual chat, greetings",
+            "true": "software, hardware, cloud, coding, database, API, deployment, bug fix",
+        },
+    },
+    "is_business": {
+        "type": "noul",
+        "instructions": "Does this statement discuss contracts, budgets, deadlines, deliverables, or business agreements?",
+        "criteria": {
+            "false": "technical architecture or casual chit-chat",
+            "true": "budget, contracts, deadlines, deliverables, milestones, business planning",
+        },
+    },
+    "terminology_sensitive": {
+        "type": "noul",
+        "instructions": "Does this statement contain strict acronyms, exact product names, or technical jargon?",
+        "criteria": {
+            "false": "common everyday conversation",
+            "true": "specific acronyms, system names, product names, or technical parameters",
         },
     },
 }
@@ -88,9 +117,8 @@ class LayaDecisionClient:
             response = await client.post("/v1/systemone", json=payload)
             if response.status_code != 200:
                 logger.warning(
-                    "Laya server returned status %s for text: %s",
+                    "Laya server returned status %s",
                     response.status_code,
-                    text[:40],
                 )
                 return [], 0.0
 
@@ -102,29 +130,131 @@ class LayaDecisionClient:
 
             # 1. Action Item check
             action_ans = answers.get("action_item", {})
-            action_prob = float(action_ans.get("noul", 0.0))
+            action_prob = float(action_ans.get("noul", action_ans.get("confidence", action_ans.get("answer_confidence", 0.0))))
             if action_prob >= threshold:
                 tags.append("action_item")
                 max_prob = max(max_prob, action_prob)
 
             # 2. Decision check
             decision_ans = answers.get("decision_made", {})
-            decision_prob = float(decision_ans.get("noul", 0.0))
+            decision_prob = float(decision_ans.get("noul", decision_ans.get("confidence", decision_ans.get("answer_confidence", 0.0))))
             if decision_prob >= threshold:
                 tags.append("decision")
                 max_prob = max(max_prob, decision_prob)
 
             if tags:
                 logger.info(
-                    "Laya tagged sentence tags=%s prob=%.2f text='%s'",
+                    "Laya tagged sentence tags=%s prob=%.2f",
                     tags,
                     max_prob,
-                    text[:50],
                 )
 
             return tags, round(max_prob, 3)
 
-        except Exception as ex:
+        except Exception:
             # Fallback gracefully so meeting subtitles never stutter or freeze
-            logger.debug("Laya service unavailable or timed out: %s", ex)
+            logger.debug("Laya service unavailable or timed out")
             return [], 0.0
+
+    async def classify_domain_and_terminology(
+        self,
+        text: str,
+        timeout_ms: Optional[int] = None,
+        default_domain: str = "general",
+    ) -> tuple[str, str]:
+        """
+        Fast-path Laya classification for meeting domain and terminology sensitivity.
+        Enforces a strict short timeout (default: settings.LAYA_CLASSIFICATION_TIMEOUT_MS).
+        Guaranteed to return quickly without blocking translation or failing.
+
+        Returns:
+            (domain, terminology_sensitivity)
+            e.g. ("engineering", "high") or ("business", "normal") or ("general", "normal")
+        """
+        heuristic_domain, sensitivity = self.classify_domain_locally(
+            text,
+            default_domain=default_domain,
+        )
+        if not text or not text.strip():
+            return heuristic_domain, sensitivity
+
+        clean_text = text.strip()
+
+        classification_enabled = (
+            self.enabled
+            and getattr(settings, "LAYA_TRANSLATION_CLASSIFICATION_ENABLED", True)
+        )
+        if not classification_enabled:
+            return heuristic_domain, sensitivity
+
+        timeout_sec = (timeout_ms or getattr(settings, "LAYA_CLASSIFICATION_TIMEOUT_MS", 100)) / 1000.0
+
+        async def _call_laya() -> tuple[str, str]:
+            client = await self._get_client()
+            payload = {
+                "state": {"body": clean_text},
+                "questions": DOMAIN_QUESTIONS,
+                "model": "multilingual",
+            }
+            resp = await client.post("/v1/systemone", json=payload)
+            if resp.status_code != 200:
+                return heuristic_domain, sensitivity
+
+            answers = resp.json().get("answers", {})
+            eng_prob = float(answers.get("is_engineering", {}).get("noul", 0.0))
+            biz_prob = float(answers.get("is_business", {}).get("noul", 0.0))
+            term_prob = float(answers.get("terminology_sensitive", {}).get("noul", 0.0))
+
+            detected_domain = heuristic_domain
+            if eng_prob >= 0.70 and eng_prob > biz_prob:
+                detected_domain = "engineering"
+            elif biz_prob >= 0.70:
+                detected_domain = "business"
+
+            detected_sensitivity = "high" if (term_prob >= 0.70 or detected_domain == "engineering") else sensitivity
+            return detected_domain, detected_sensitivity
+
+        try:
+            domain, sens = await asyncio.wait_for(_call_laya(), timeout=timeout_sec)
+            return domain, sens
+        except asyncio.TimeoutError:
+            logger.debug("Laya domain classification timed out (>%dms). Using heuristic.", int(timeout_sec * 1000))
+            return heuristic_domain, sensitivity
+        except Exception:
+            logger.debug("Laya domain classification failed; using heuristic")
+            return heuristic_domain, sensitivity
+
+    def classify_domain_locally(
+        self,
+        text: str,
+        default_domain: str = "general",
+    ) -> tuple[str, str]:
+        """Classify domain without network I/O for the subtitle critical path."""
+        if not text or not text.strip():
+            return default_domain, "normal"
+
+        clean_text = text.strip()
+        lower_text = clean_text.lower()
+        heuristic_domain = default_domain
+        engineering_keywords = {
+            "triển khai", "mã nguồn", "cơ sở dữ liệu", "kiểm thử", "độ trễ",
+            "bộ nhớ đệm", "api", "database", "docker", "redis", "webrtc",
+            "server", "websocket", "bug", "deploy", "code", "k8s", "git",
+            "マイクロサービス", "デプロイ", "データベース", "キャッシュ"
+        }
+        business_keywords = {
+            "hợp đồng", "thống nhất", "ngân sách", "thời hạn", "hạn chót",
+            "tiến độ", "kế hoạch", "biên bản", "bàn giao", "quyết định",
+            "contract", "deadline", "budget", "client", "milestone",
+            "会議", "合意", "進捗", "締め切り", "予算"
+        }
+
+        if any(kw in lower_text for kw in engineering_keywords):
+            heuristic_domain = "engineering"
+        elif any(kw in lower_text for kw in business_keywords):
+            heuristic_domain = "business"
+
+        # Check terminology sensitivity
+        has_acronym = bool(re.search(r"\b[A-Z0-9]{2,}\b", clean_text))
+        sensitivity = "high" if (has_acronym or heuristic_domain == "engineering") else "normal"
+        return heuristic_domain, sensitivity

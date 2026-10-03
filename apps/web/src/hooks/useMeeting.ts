@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { meetingService } from '../services/meetingService';
-import { JoinMeetingResponse, SupportedLanguage } from '../types/meeting';
+import { JoinMeetingResult, SupportedLanguage } from '../types/meeting';
 
 export function useMeeting() {
   const [loading, setLoading] = useState(false);
@@ -21,7 +21,7 @@ export function useMeeting() {
     }
   }, []);
 
-  const joinMeeting = useCallback(async (meetingCode: string, displayName: string, spokenLanguage: SupportedLanguage = 'vi', targetLanguage: SupportedLanguage = 'ja'): Promise<JoinMeetingResponse> => {
+  const joinMeeting = useCallback(async (meetingCode: string, displayName: string, spokenLanguage: SupportedLanguage = 'vi', targetLanguage: SupportedLanguage = 'ja'): Promise<JoinMeetingResult> => {
     setLoading(true);
     setError(null);
     try {

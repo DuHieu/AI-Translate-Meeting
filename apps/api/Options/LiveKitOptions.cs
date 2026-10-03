@@ -1,14 +1,23 @@
+using System.ComponentModel.DataAnnotations;
+
 namespace AITranslateMeeting.Api.Options;
 
 public sealed class LiveKitOptions
 {
     public const string SectionName = "LiveKit";
 
-    public string InternalUrl { get; set; } = "http://livekit:7880";
+    [Required]
+    public string InternalUrl { get; set; } = string.Empty;
 
-    public string PublicUrl { get; set; } = "ws://127.0.0.1:7880";
+    [Required]
+    public string PublicUrl { get; set; } = string.Empty;
 
-    public string ApiKey { get; set; } = "devkey";
+    [Required, MinLength(3)]
+    public string ApiKey { get; set; } = string.Empty;
 
-    public string ApiSecret { get; set; } = "devsecret_aitranslate_meeting_secret_key_32chars";
+    [Required, MinLength(32)]
+    public string ApiSecret { get; set; } = string.Empty;
+
+    [Range(5, 1440)]
+    public int TokenTtlMinutes { get; set; } = 60;
 }

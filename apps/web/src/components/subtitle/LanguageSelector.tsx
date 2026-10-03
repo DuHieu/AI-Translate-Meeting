@@ -1,5 +1,5 @@
 import React from 'react';
-import { LanguageCode } from '../../types/meeting';
+import { LanguageCode, SUPPORTED_LANGUAGES_LIST } from '../../types/meeting';
 
 interface LanguageSelectorProps {
   value: LanguageCode;
@@ -16,9 +16,11 @@ export const LanguageSelector: React.FC<LanguageSelectorProps> = ({ value, onCha
         onChange={(e) => onChange(e.target.value as LanguageCode)}
         className="bg-slate-800 border border-slate-700 text-slate-100 text-sm rounded-lg p-2.5 focus:ring-sky-500 focus:border-sky-500 outline-none transition"
       >
-        <option value="vi">vi - Vietnamese</option>
-        <option value="en">en - English</option>
-        <option value="ja">ja - Japanese</option>
+        {SUPPORTED_LANGUAGES_LIST.map((lang) => (
+          <option key={lang.code} value={lang.code}>
+            {lang.code} - {lang.name} ({lang.nativeName})
+          </option>
+        ))}
       </select>
     </div>
   );
