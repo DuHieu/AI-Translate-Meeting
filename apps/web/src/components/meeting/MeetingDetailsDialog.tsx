@@ -43,7 +43,7 @@ export const MeetingDetailsDialog: React.FC<MeetingDetailsDialogProps> = ({
   }, [loadAdmissions]);
 
   const handleCopy = () => {
-    const text = `Join AI Translate Meeting\nMeeting code: ${meetingCode}`;
+    const text = `Tham gia phòng họp ViMeet (vimeet.vn)\nMã phòng: ${meetingCode}`;
     navigator.clipboard.writeText(text);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);

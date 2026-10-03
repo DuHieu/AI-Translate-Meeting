@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { meetingApi } from '../api/meetingApi';
-import { Video, Plus, ArrowRight, Sparkles, Globe, ShieldCheck } from 'lucide-react';
+import { Plus, ArrowRight, Sparkles, Globe, ShieldCheck } from 'lucide-react';
 import { admissionStorage } from '../utils/admissionStorage';
 import { SystemStatusModal } from '../components/system/SystemStatusModal';
 
@@ -16,7 +16,7 @@ export const HomePage: React.FC = () => {
     setLoading(true);
     setError(null);
     try {
-      const res = await meetingApi.createMeeting('AI Translate Meeting');
+      const res = await meetingApi.createMeeting('ViMeet');
       admissionStorage.saveHostToken(res.meetingCode, res.hostToken);
       navigate(`/prejoin/${res.meetingCode}`);
     } catch (err: unknown) {
@@ -42,12 +42,17 @@ export const HomePage: React.FC = () => {
       {/* Navbar */}
       <header className="h-16 border-b border-slate-800/80 px-6 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="flex items-center justify-center w-9 h-9 rounded-2xl bg-sky-500/10 text-sky-400 border border-sky-500/20">
-            <Video className="w-5 h-5" />
+          <div className="flex items-center justify-center w-9 h-9 rounded-2xl bg-sky-500/10 text-sky-400 border border-sky-500/20 font-bold text-lg">
+            V
           </div>
-          <span className="font-bold text-slate-100 text-base md:text-lg tracking-tight">
-            AI Translate Meeting
-          </span>
+          <div className="flex items-baseline gap-2">
+            <span className="font-extrabold text-slate-100 text-lg md:text-xl tracking-tight">
+              ViMeet
+            </span>
+            <span className="text-[11px] font-mono text-sky-400 font-semibold bg-sky-500/10 px-2 py-0.5 rounded-full border border-sky-500/20">
+              vimeet.vn
+            </span>
+          </div>
         </div>
 
         <div className="flex items-center gap-3">
@@ -146,7 +151,7 @@ export const HomePage: React.FC = () => {
       {/* Footer */}
       <footer className="border-t border-slate-900 py-4 px-6 text-xs text-slate-500">
         <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2">
-          <span>AI Translate Meeting — Self-Hosted Private Workspace</span>
+          <span>ViMeet (vimeet.vn) — Nền tảng họp trực tuyến song ngữ AI</span>
           <div className="flex items-center gap-4 text-[11px]">
             <span>Zero Raw Audio (RAM-only)</span>
             <span>•</span>

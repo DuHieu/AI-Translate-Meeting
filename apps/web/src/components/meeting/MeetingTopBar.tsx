@@ -49,9 +49,14 @@ export const MeetingTopBar: React.FC<MeetingTopBarProps> = ({
         <div className="flex items-center justify-center w-7 h-7 rounded-lg bg-blue-600 text-white shrink-0">
           <Zap className="w-3.5 h-3.5" />
         </div>
-        <span className="font-semibold text-zinc-100 text-sm tracking-tight">
-          AI Translate Meeting
-        </span>
+        <div className="flex items-center gap-1.5">
+          <span className="font-bold text-zinc-100 text-sm tracking-tight">
+            ViMeet
+          </span>
+          <span className="text-[10px] font-mono text-sky-400 font-semibold bg-sky-500/10 px-1.5 py-0.2 rounded border border-sky-500/20">
+            vimeet.vn
+          </span>
+        </div>
       </div>
 
       {/* Right-side controls */}

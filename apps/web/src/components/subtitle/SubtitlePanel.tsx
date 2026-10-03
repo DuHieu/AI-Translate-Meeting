@@ -215,9 +215,9 @@ export const SubtitlePanel: React.FC<SubtitlePanelProps> = ({
     const recap = recapResult || generateMeetingRecap(history, taggedItems);
 
     const lines = [
-      '# Biên bản cuộc họp thông minh - AI Meeting Minutes',
+      '# ViMeet (vimeet.vn) - Biên bản cuộc họp thông minh',
       `*Thời gian xuất: ${new Date().toLocaleString()}*`,
-      `*Phòng họp: ${meetingCode || 'AI Translate Meeting'}*`,
+      `*Phòng họp: ${meetingCode || 'ViMeet'}*`,
       `*Ngưỡng tin cậy Laya: ${Math.round(threshold * 100)}%*`,
       '',
       '## 1. Tóm tắt điều hành (Executive Highlights):',
@@ -291,14 +291,14 @@ export const SubtitlePanel: React.FC<SubtitlePanelProps> = ({
     });
     const header = [
       '=====================================================',
-      '       AI TRANSLATE MEETING - BIÊN BẢN PHỤ ĐỀ       ',
+      '          ViMeet (vimeet.vn) - BIÊN BẢN PHỤ ĐỀ       ',
       `  Thời gian xuất: ${new Date().toLocaleString()}`,
-      `  Phòng họp: ${meetingCode || 'AI-Translate-Meeting'}`,
+      `  Phòng họp: ${meetingCode || 'ViMeet'}`,
       `  Tổng số câu thoại: ${history.length}`,
       '=====================================================',
       '',
     ];
-    downloadFile(header.join('\n') + lines.join('\n'), `transcript-${meetingCode || 'meeting'}.txt`, 'text/plain;charset=utf-8');
+    downloadFile(header.join('\n') + lines.join('\n'), `transcript-${meetingCode || 'vimeet'}.txt`, 'text/plain;charset=utf-8');
   };
 
   const handleExportSrt = () => {
@@ -310,7 +310,7 @@ export const SubtitlePanel: React.FC<SubtitlePanelProps> = ({
       const original = item.originalText && item.originalText !== item.translatedText ? `\n${item.originalText}` : '';
       return `${idx + 1}\n${start} --> ${end}\n[${speaker}] ${item.translatedText}${original}\n`;
     });
-    downloadFile(blocks.join('\n'), `subtitles-${meetingCode || 'meeting'}.srt`, 'text/plain;charset=utf-8');
+    downloadFile(blocks.join('\n'), `subtitles-${meetingCode || 'vimeet'}.srt`, 'text/plain;charset=utf-8');
   };
 
   const handleExportWord = () => {
@@ -323,7 +323,7 @@ export const SubtitlePanel: React.FC<SubtitlePanelProps> = ({
       <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
       <head>
         <meta charset="utf-8">
-        <title>Biên Bản Cuộc Họp - ${meetingCode || 'AI Translate Meeting'}</title>
+        <title>Biên Bản Cuộc Họp - ${meetingCode || 'ViMeet'}</title>
         <style>
           body { font-family: 'Segoe UI', Calibri, sans-serif; font-size: 11pt; line-height: 1.6; color: #1e293b; padding: 24px; }
           h1 { color: #0284c7; font-size: 18pt; border-bottom: 2px solid #0284c7; padding-bottom: 6px; }

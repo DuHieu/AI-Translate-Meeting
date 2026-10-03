@@ -31,7 +31,7 @@ export const MeetingHeader: React.FC<MeetingHeaderProps> = ({ meetingCode, conne
         <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-sky-500/10 text-sky-400 border border-sky-500/20">
           <Video className="w-4 h-4" />
         </div>
-        <h1 className="font-semibold text-slate-100 text-sm md:text-base tracking-tight">AI Translate Meeting</h1>
+        <h1 className="font-semibold text-slate-100 text-sm md:text-base tracking-tight">ViMeet</h1>
       </div>
 
       <div className="flex items-center gap-3">
