@@ -61,9 +61,19 @@ export const MeetingRoom: React.FC<MeetingRoomProps> = ({ session, onLeaveComple
     }
   };
 
+  const serverUrl = React.useMemo(() => {
+    // When served over HTTPS (e.g. Cloudflare Quick Tunnel or custom domain),
+    // browsers forbid insecure ws:// endpoints (Mixed Content).
+    // Route LiveKit signaling through the secure same-origin reverse proxy (/rtc) if session.liveKitUrl is localhost/127.0.0.1
+    if (window.location.protocol === 'https:' && (session.liveKitUrl.includes('127.0.0.1') || session.liveKitUrl.includes('localhost'))) {
+      return window.location.origin;
+    }
+    return session.liveKitUrl;
+  }, [session.liveKitUrl]);
+
   return (
     <LiveKitRoom
-      serverUrl={session.liveKitUrl}
+      serverUrl={serverUrl}
       token={session.token}
       connect={true}
       // Avoid concurrent audio+video publish on signal connect.
