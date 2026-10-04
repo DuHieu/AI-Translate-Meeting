@@ -37,11 +37,11 @@ export interface BrandingConfigDto {
 }
 
 export const DEFAULT_BRANDING_CONFIG: BrandingConfigDto = {
-  brandName: 'ViMeet',
+  brandName: 'LayaMeet',
   slogan: 'Nền tảng họp trực tuyến thông minh song ngữ',
   logoUrl: null,
   primaryColor: '#0284c7',
-  copyrightText: '© ViMeet',
+  copyrightText: '© LayaMeet',
 };
 
 export class ApiError extends Error {
@@ -257,4 +257,63 @@ export const meetingApi = {
     });
     return handleResponse<MeetingMinutesResponse>(res);
   },
+
+  async createPaymentOrder(
+    planId: string,
+    meetingCode?: string,
+    customerEmail?: string,
+    customerName?: string,
+  ): Promise<PaymentOrderResponse> {
+    const res = await fetch(`${API_BASE_URL}/api/billing/create-order`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ planId, meetingCode, customerEmail, customerName }),
+    });
+    return handleResponse<PaymentOrderResponse>(res);
+  },
+
+  async getPaymentOrder(orderCode: string): Promise<PaymentOrderResponse> {
+    const res = await fetch(`${API_BASE_URL}/api/billing/order/${encodeURIComponent(orderCode.trim())}`, {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' },
+    });
+    return handleResponse<PaymentOrderResponse>(res);
+  },
+
+  async submitEnterpriseLead(data: CreateLeadRequest): Promise<CreateLeadResponse> {
+    const res = await fetch(`${API_BASE_URL}/api/system/lead`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+    return handleResponse<CreateLeadResponse>(res);
+  },
 };
+
+export interface PaymentOrderResponse {
+  orderCode: string;
+  amount: number;
+  planName: string;
+  status: string;
+  qrUrl: string;
+  bankId: string;
+  accountNumber: string;
+  accountName: string;
+  createdAt: string;
+}
+
+export interface CreateLeadRequest {
+  fullName: string;
+  email: string;
+  company?: string;
+  teamSize?: string;
+  languagePair?: string;
+  deploymentModel?: string;
+  notes?: string;
+}
+
+export interface CreateLeadResponse {
+  success: boolean;
+  message: string;
+  submittedAtUtc: string;
+}

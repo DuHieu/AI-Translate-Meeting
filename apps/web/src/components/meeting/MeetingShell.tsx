@@ -35,6 +35,8 @@ import { MeetingDetailsDialog } from './MeetingDetailsDialog';
 import { PermissionBlockedModal } from './PermissionBlockedModal';
 import { ConnectionErrorModal } from './ConnectionErrorModal';
 import { PostMeetingModal } from './PostMeetingModal';
+import { UpgradeRequiredModal } from './UpgradeRequiredModal';
+import { CheckoutModal } from '../common/CheckoutModal';
 import { WebRtcDiagnostics } from './WebRtcDiagnostics';
 import { SubtitleOverlay } from '../subtitle/SubtitleOverlay';
 import { SubtitlePanel } from '../subtitle/SubtitlePanel';
@@ -64,6 +66,8 @@ interface MeetingShellProps {
   session: MeetingSessionData;
   onLeaveRoom: () => void;
   meetingEnded?: boolean;
+  isProPlan?: boolean;
+  onUpgrade?: () => void;
 }
 
 interface LocalMediaState {
@@ -74,6 +78,8 @@ interface LocalMediaState {
 }
 
 const enableWebRtcDebug = import.meta.env.VITE_ENABLE_WEBRTC_DEBUG === 'true';
+const FREE_MEETING_LIMIT_SECONDS = 40 * 60;
+const FREE_MEETING_WARNING_SECONDS = 5 * 60;
 
 const AUDIO_PUBLISH_OPTIONS: TrackPublishOptions = {
   audioPreset: AudioPresets.speech,
@@ -148,7 +154,10 @@ export const MeetingShell: React.FC<MeetingShellProps> = ({
   session,
   onLeaveRoom,
   meetingEnded = false,
+  isProPlan: initialProPlan = false,
+  onUpgrade,
 }) => {
+  const [isProPlan, setIsProPlan] = useState<boolean>(initialProPlan);
   const room = useRoomContext();
   const connectionState = useConnectionState();
   const {
@@ -218,6 +227,100 @@ export const MeetingShell: React.FC<MeetingShellProps> = ({
   const recordingDownloadUrlRef = useRef<string | null>(null);
 
   const [audioBoothToast, setAudioBoothToast] = useState<string | null>(null);
+  const [timeRemainingSeconds, setTimeRemainingSeconds] = useState<number | null>(
+    isProPlan ? null : FREE_MEETING_LIMIT_SECONDS,
+  );
+  const [isTimeExpired, setIsTimeExpired] = useState(false);
+  const [isUpgradeModalOpen, setIsUpgradeModalOpen] = useState(false);
+  const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
+  const [meetingLimitWarning, setMeetingLimitWarning] = useState<string | null>(null);
+  const meetingStartedAtRef = useRef<number | null>(null);
+  const hasShownTimeWarningRef = useRef(false);
+  const meetingTimerStorageKey = `layameet:free-limit-start:${session.meetingId}:${session.participantId}`;
+
+  useEffect(() => {
+    if (isProPlan) {
+      meetingStartedAtRef.current = null;
+      hasShownTimeWarningRef.current = false;
+      sessionStorage.removeItem(meetingTimerStorageKey);
+      setTimeRemainingSeconds(null);
+      setIsTimeExpired(false);
+      setIsUpgradeModalOpen(false);
+      setMeetingLimitWarning(null);
+      return;
+    }
+
+    if (meetingStartedAtRef.current === null) {
+      if (connectionState !== ConnectionState.Connected) return;
+
+      const now = Date.now();
+      const storedStart = Number(sessionStorage.getItem(meetingTimerStorageKey));
+      const meetingStartedAt = Number.isFinite(storedStart)
+        && storedStart > 0
+        && storedStart <= now
+        ? storedStart
+        : now;
+
+      meetingStartedAtRef.current = meetingStartedAt;
+      sessionStorage.setItem(meetingTimerStorageKey, meetingStartedAt.toString());
+    }
+
+    const updateTimeRemaining = () => {
+      const startedAt = meetingStartedAtRef.current;
+      if (startedAt === null) return;
+
+      const elapsedSeconds = Math.floor((Date.now() - startedAt) / 1000);
+      const remainingSeconds = Math.max(0, FREE_MEETING_LIMIT_SECONDS - elapsedSeconds);
+      setTimeRemainingSeconds(remainingSeconds);
+
+      if (
+        remainingSeconds <= FREE_MEETING_WARNING_SECONDS
+        && remainingSeconds > 0
+        && !hasShownTimeWarningRef.current
+      ) {
+        hasShownTimeWarningRef.current = true;
+        setMeetingLimitWarning('Chỉ còn 5 phút miễn phí. Nâng cấp LayaMeet Pro để tiếp tục họp không giới hạn.');
+      }
+
+      if (remainingSeconds === 0) {
+        setIsTimeExpired(true);
+        setIsUpgradeModalOpen(true);
+      }
+    };
+
+    updateTimeRemaining();
+    const timerId = window.setInterval(updateTimeRemaining, 1000);
+    return () => window.clearInterval(timerId);
+  }, [connectionState, isProPlan, meetingTimerStorageKey]);
+
+  useEffect(() => {
+    if (!meetingLimitWarning) return;
+    const timeoutId = window.setTimeout(() => setMeetingLimitWarning(null), 8000);
+    return () => window.clearTimeout(timeoutId);
+  }, [meetingLimitWarning]);
+
+  const handleOpenUpgradeModal = useCallback(() => {
+    setIsUpgradeModalOpen(true);
+  }, []);
+
+  const handleCloseUpgradeModal = useCallback(() => {
+    if (!isTimeExpired) setIsUpgradeModalOpen(false);
+  }, [isTimeExpired]);
+
+  const handlePaymentSuccess = useCallback(() => {
+    setIsProPlan(true);
+    setTimeRemainingSeconds(null);
+    setIsTimeExpired(false);
+    setIsUpgradeModalOpen(false);
+    setIsCheckoutOpen(false);
+  }, []);
+
+  const handleUpgrade = useCallback(() => {
+    setIsCheckoutOpen(true);
+    if (onUpgrade) {
+      onUpgrade();
+    }
+  }, [onUpgrade]);
 
   useEffect(() => {
     let isActive = true;
@@ -1110,6 +1213,9 @@ export const MeetingShell: React.FC<MeetingShellProps> = ({
         branding={branding}
         isRecording={isRecording}
         isE2eeEnabled={sidecarPreferences.e2eeEnabled}
+        isProPlan={isProPlan}
+        timeRemainingSeconds={timeRemainingSeconds}
+        onOpenUpgradeModal={handleOpenUpgradeModal}
       />
 
       {/* Connecting / Reconnecting Status Banner */}
@@ -1235,6 +1341,25 @@ export const MeetingShell: React.FC<MeetingShellProps> = ({
         </div>
       )}
 
+      {meetingLimitWarning && (
+        <div
+          role="alert"
+          aria-live="assertive"
+          className="fixed bottom-24 left-1/2 z-[90] flex w-[calc(100%-2rem)] max-w-md -translate-x-1/2 items-start gap-3 rounded-xl border border-amber-400/50 bg-amber-950/95 px-4 py-3 text-sm text-amber-100 shadow-2xl"
+        >
+          <span aria-hidden="true">⏳</span>
+          <span className="flex-1">{meetingLimitWarning}</span>
+          <button
+            type="button"
+            onClick={() => setMeetingLimitWarning(null)}
+            aria-label="Đóng cảnh báo thời lượng"
+            className="rounded p-0.5 text-amber-300 transition hover:bg-amber-900 hover:text-white focus:outline-none focus:ring-2 focus:ring-amber-300"
+          >
+            ×
+          </button>
+        </div>
+      )}
+
       {recordingError && (
         <div role="alert" className="fixed bottom-24 left-1/2 z-50 flex max-w-sm -translate-x-1/2 items-center gap-3 rounded-2xl border border-red-500/40 bg-slate-900/95 px-4 py-3 text-xs text-slate-200 shadow-xl">
           <span>{recordingError}</span>
@@ -1307,6 +1432,22 @@ export const MeetingShell: React.FC<MeetingShellProps> = ({
           onClose={() => setIsDetailsOpen(false)}
         />
       )}
+
+      <UpgradeRequiredModal
+        isOpen={isUpgradeModalOpen}
+        isTimeExpired={isTimeExpired}
+        onUpgrade={handleUpgrade}
+        onLeaveMeeting={onLeaveRoom}
+        onClose={handleCloseUpgradeModal}
+      />
+
+      <CheckoutModal
+        isOpen={isCheckoutOpen}
+        onClose={() => setIsCheckoutOpen(false)}
+        meetingCode={session.meetingCode}
+        initialPlanId="pro"
+        onPaymentSuccess={handlePaymentSuccess}
+      />
 
       <PostMeetingModal
         isOpen={isPostMeetingOpen}

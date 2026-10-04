@@ -33,7 +33,7 @@ export const LegalModal: React.FC<LegalModalProps> = ({ isOpen, type, onClose })
             )}
             <div>
               <h3 className="text-base font-bold text-zinc-950 dark:text-white">
-                {isPrivacy ? 'Chính Sách Quyền Riêng Tư & Bảo Mật Dữ Liệu' : 'Điều Khoản Dịch Vụ Nền Tảng ViMeet'}
+                {isPrivacy ? 'Chính Sách Quyền Riêng Tư & Bảo Mật Dữ Liệu' : 'Điều Khoản Dịch Vụ Nền Tảng LayaMeet'}
               </h3>
               <p className="text-xs text-zinc-500 dark:text-zinc-400">
                 {isPrivacy ? 'Bảo vệ dữ liệu cuộc họp theo chuẩn Zero Raw Audio Storage' : 'Quy định sử dụng và cam kết chất lượng dịch vụ (SLA)'}
@@ -61,7 +61,7 @@ export const LegalModal: React.FC<LegalModalProps> = ({ isOpen, type, onClose })
                   <span>Nguyên Tắc Cốt Lõi: Không Bao Giờ Lưu Trữ File Âm Thanh</span>
                 </div>
                 <p className="text-[11px] text-emerald-700 dark:text-emerald-300">
-                  ViMeet xử lý luồng âm thanh theo các audio chunk 350ms trực tiếp trong bộ nhớ RAM, giải phóng ngay lập tức sau khi mô hình Whisper tạo phụ đề. Không có bất kỳ bản ghi âm nào được ghi xuống ổ cứng hoặc gửi tới các dịch vụ đám mây bên thứ ba.
+                  LayaMeet xử lý luồng âm thanh theo các audio chunk 350ms trực tiếp trong bộ nhớ RAM, giải phóng ngay lập tức sau khi mô hình Whisper tạo phụ đề. Không có bất kỳ bản ghi âm nào được ghi xuống ổ cứng hoặc gửi tới các dịch vụ đám mây bên thứ ba.
                 </p>
               </div>
 
@@ -91,14 +91,14 @@ export const LegalModal: React.FC<LegalModalProps> = ({ isOpen, type, onClose })
               <div>
                 <h4 className="font-bold text-zinc-950 dark:text-white text-sm mb-1.5">1. Phạm Vi Dịch Vụ</h4>
                 <p>
-                  ViMeet cung cấp giải pháp họp trực tuyến hỗ trợ phụ đề song ngữ thời gian thực, tổng hợp biên bản họp và trích xuất Action Items bằng AI. Chúng tôi cam kết duy trì độ sẵn sàng hệ thống (Uptime SLA) tối thiểu 99.9% cho các gói dịch vụ trả phí.
+                  LayaMeet cung cấp giải pháp họp trực tuyến hỗ trợ phụ đề song ngữ thời gian thực, tổng hợp biên bản họp và trích xuất Action Items bằng AI. Chúng tôi cam kết duy trì độ sẵn sàng hệ thống (Uptime SLA) tối thiểu 99.9% cho các gói dịch vụ trả phí.
                 </p>
               </div>
 
               <div>
                 <h4 className="font-bold text-zinc-950 dark:text-white text-sm mb-1.5">2. Trách Nhiệm Về Nội Dung Cuộc Họp</h4>
                 <p>
-                  Khách hàng giữ toàn quyền sở hữu đối với nội dung cuộc họp, các phụ đề được tạo ra và biên bản trích xuất. ViMeet không can thiệp, không kiểm duyệt và không sử dụng dữ liệu hội thoại của khách hàng để huấn luyện các mô hình công cộng.
+                  Khách hàng giữ toàn quyền sở hữu đối với nội dung cuộc họp, các phụ đề được tạo ra và biên bản trích xuất. LayaMeet không can thiệp, không kiểm duyệt và không sử dụng dữ liệu hội thoại của khách hàng để huấn luyện các mô hình công cộng.
                 </p>
               </div>
 

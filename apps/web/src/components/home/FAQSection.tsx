@@ -8,9 +8,9 @@ interface FAQItem {
 
 const FAQS: FAQItem[] = [
   {
-    question: 'ViMeet hỗ trợ những ngôn ngữ nào trong phòng họp?',
+    question: 'LayaMeet hỗ trợ những ngôn ngữ nào trong phòng họp?',
     answer:
-      'ViMeet ứng dụng ma trận Any-to-Any đa chiều: không giới hạn ở một cặp ngôn ngữ song phương cố định. Trong cùng một phòng họp có thể có đồng thời người nói tiếng Việt, Nhật, Anh, Trung, Thái, Lào... Mỗi thành viên tự do chọn ngôn ngữ nghe/đọc phụ đề riêng biệt cho mình mà không ảnh hưởng đến những người khác.',
+      'LayaMeet ứng dụng ma trận Any-to-Any đa chiều: không giới hạn ở một cặp ngôn ngữ song phương cố định. Trong cùng một phòng họp có thể có đồng thời người nói tiếng Việt, Nhật, Anh, Trung, Thái, Lào... Mỗi thành viên tự do chọn ngôn ngữ nghe/đọc phụ đề riêng biệt cho mình mà không ảnh hưởng đến những người khác.',
   },
   {
     question: 'Dữ liệu âm thanh và nội dung cuộc họp có được bảo mật không?',
@@ -23,14 +23,14 @@ const FAQS: FAQItem[] = [
       'Nhờ cơ chế audio chunking siêu ngắn 350ms kết hợp mô hình Whisper tối ưu int8 đa luồng và bộ nhớ đệm phân tán Redis, thời gian hiển thị phụ đề sơ bộ (TTFS) trung bình chỉ ~964ms và độ trễ phụ đề dịch thuật mục tiêu dưới 350ms, đảm bảo cuộc trò chuyện diễn ra tự nhiên như phiên dịch viên trực tiếp.',
   },
   {
-    question: 'ViMeet có tự động ghi biên bản họp và trích xuất việc cần làm không?',
+    question: 'LayaMeet có tự động ghi biên bản họp và trích xuất việc cần làm không?',
     answer:
       'Có. Động cơ phân tích Laya Sidecar hoạt động độc lập bất đồng bộ ngoài luồng phụ đề chính, tự động phát hiện các quyết định quan trọng (Decisions) và phân loại công việc cần làm (Action Items) gán cho từng người. Bạn có thể xuất biên bản họp ra định dạng Markdown chỉ với 1 cú click.',
   },
   {
     question: 'Doanh nghiệp có thể dùng thử PoC (Proof of Concept) trước khi ký hợp đồng không?',
     answer:
-      'Hoàn toàn có thể. Bên cạnh gói Community miễn phí trọn đời cho nhóm nhỏ, ViMeet cung cấp chương trình dùng thử PoC 14 ngày không rủi ro cho khối doanh nghiệp và cam kết hoàn tiền 100% nếu không đáp ứng tiêu chuẩn SLA.',
+      'Hoàn toàn có thể. Bên cạnh gói Community miễn phí trọn đời cho nhóm nhỏ, LayaMeet cung cấp chương trình dùng thử PoC 14 ngày không rủi ro cho khối doanh nghiệp và cam kết hoàn tiền 100% nếu không đáp ứng tiêu chuẩn SLA.',
   },
 ];
 
@@ -51,7 +51,7 @@ export const FAQSection: React.FC = () => {
             <span>Câu Hỏi Thường Gặp (FAQ)</span>
           </div>
           <h2 className="text-2xl sm:text-3xl font-bold text-zinc-950 dark:text-white tracking-tight">
-            Giải đáp thắc mắc về nền tảng <span className="text-blue-600 dark:text-blue-400">ViMeet</span>
+            Giải đáp thắc mắc về nền tảng <span className="text-blue-600 dark:text-blue-400">LayaMeet</span>
           </h2>
           <p className="text-xs sm:text-sm text-zinc-600 dark:text-zinc-400">
             Mọi điều bạn cần biết về kiến trúc Any-to-Any đa ngôn ngữ, cam kết bảo mật On-Premise và hiệu năng thời gian thực.

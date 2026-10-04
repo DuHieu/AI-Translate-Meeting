@@ -225,7 +225,7 @@ export const EnterpriseSsoModal: React.FC<EnterpriseSsoModalProps> = ({
           {domainValidation && !domainValidation.allowed && (
             <div className="flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 p-2.5 text-xs text-amber-800 dark:border-amber-900/60 dark:bg-amber-950/30 dark:text-amber-300">
               <LockKeyhole className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
-              <span>Domain này chưa được quản trị viên ViMeet cho phép.</span>
+              <span>Domain này chưa được quản trị viên LayaMeet cho phép.</span>
             </div>
           )}
         </div>
@@ -276,7 +276,7 @@ export const EnterpriseSsoModal: React.FC<EnterpriseSsoModalProps> = ({
         </div>
 
         <p className="text-[11px] leading-relaxed text-zinc-500 dark:text-zinc-400">
-          ViMeet chỉ dùng email để kiểm tra chính sách domain. Việc xác thực tài khoản được thực hiện bởi nhà cung cấp SSO của doanh nghiệp.
+          LayaMeet chỉ dùng email để kiểm tra chính sách domain. Việc xác thực tài khoản được thực hiện bởi nhà cung cấp SSO của doanh nghiệp.
         </p>
       </div>
     </dialog>

@@ -246,6 +246,75 @@ public sealed class SystemControllerTests
         Assert.True(lic.GetProperty("allowedFeatures").GetArrayLength() >= 2);
     }
 
+    [Fact]
+    public async Task SubmitLead_WithValidPayload_ReturnsOkAndLogsAudit()
+    {
+        await using var factory = CreateFactory("pilot");
+        using var client = factory.CreateClient();
+
+        var request = new
+        {
+            fullName = "Doanh Nghiep Test",
+            email = "contact@corp-test.vn",
+            company = "Test Corporation",
+            teamSize = "50-200",
+            languagePair = "VI-JA",
+            deploymentModel = "on-premise",
+            notes = "Need air-gapped deployment on Ubuntu 22.04"
+        };
+
+        using var content = new StringContent(
+            JsonSerializer.Serialize(request),
+            System.Text.Encoding.UTF8,
+            "application/json");
+
+        using var response = await client.PostAsync("/api/system/lead", content);
+        var body = await response.Content.ReadAsStringAsync();
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        using var doc = JsonDocument.Parse(body);
+        var root = doc.RootElement;
+
+        Assert.True(root.GetProperty("success").GetBoolean());
+        Assert.Contains("ghi nhận", root.GetProperty("message").GetString()!);
+
+        // Verify audit event captured
+        using var auditResponse = await client.GetAsync("/api/system/audit?limit=10");
+        var auditBody = await auditResponse.Content.ReadAsStringAsync();
+        Assert.Contains("EnterpriseLeadCaptured", auditBody);
+        Assert.Contains("contact@corp-test.vn", auditBody);
+    }
+
+    [Fact]
+    public async Task SubmitLead_WithMissingEmailOrName_ReturnsBadRequestProblemDetails()
+    {
+        await using var factory = CreateFactory("pilot");
+        using var client = factory.CreateClient();
+
+        var request = new
+        {
+            fullName = "",
+            email = "invalid-email",
+            company = "Test Co"
+        };
+
+        using var content = new StringContent(
+            JsonSerializer.Serialize(request),
+            System.Text.Encoding.UTF8,
+            "application/json");
+
+        using var response = await client.PostAsync("/api/system/lead", content);
+        var body = await response.Content.ReadAsStringAsync();
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        Assert.Equal("application/problem+json", response.Content.Headers.ContentType?.MediaType);
+
+        using var doc = JsonDocument.Parse(body);
+        var root = doc.RootElement;
+        Assert.Equal(400, root.GetProperty("status").GetInt32());
+    }
+
     private static WebApplicationFactory<Program> CreateFactory(string profile)
     {
         return new WebApplicationFactory<Program>().WithWebHostBuilder(builder =>

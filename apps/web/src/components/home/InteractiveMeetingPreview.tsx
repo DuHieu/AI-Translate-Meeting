@@ -173,9 +173,9 @@ export const InteractiveMeetingPreview: React.FC = () => {
   const translatedText = currentTurn.translations[selectedLang] || currentTurn.translations.VI;
 
   return (
-    <div className="w-full md:max-w-md bg-white dark:bg-[#18181b] border border-zinc-200 dark:border-[#333336] rounded-2xl overflow-hidden shrink-0 shadow-xl transition-all">
+    <div className="w-full sm:w-[480px] lg:w-[520px] xl:w-[560px] bg-white dark:bg-[#18181b] border border-zinc-200 dark:border-[#333336] rounded-2xl overflow-hidden shrink-0 shadow-2xl transition-all">
       {/* ── Studio Top Chrome Bar ─────────────────────────────── */}
-      <div className="px-3.5 py-2.5 bg-zinc-50 dark:bg-[#121214] border-b border-zinc-200 dark:border-[#2b2b2e] flex items-center justify-between select-none">
+      <div className="px-4 py-3 bg-zinc-50 dark:bg-[#121214] border-b border-zinc-200 dark:border-[#2b2b2e] flex items-center justify-between select-none">
         <div className="flex items-center gap-2">
           {/* Mac-style subtle window controls */}
           <div className="flex items-center gap-1.5">
@@ -185,7 +185,7 @@ export const InteractiveMeetingPreview: React.FC = () => {
           </div>
           <span className="text-[11px] font-mono text-zinc-600 dark:text-zinc-400 pl-1 flex items-center gap-1.5">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-            <span className="font-semibold text-blue-600 dark:text-blue-400">ViMeet</span>
+            <span className="font-semibold text-blue-600 dark:text-blue-400">LayaMeet</span>
             <span className="text-zinc-400 dark:text-zinc-600">/</span>
             <span>global-polyglot-room</span>
           </span>
@@ -389,7 +389,7 @@ export const InteractiveMeetingPreview: React.FC = () => {
             <div className="min-w-0 flex-1">
               <div className="flex items-center justify-between gap-1 mb-0.5">
                 <span className="text-[10px] font-semibold tracking-wide uppercase text-blue-700 dark:text-blue-400">
-                  ViMeet AI (Laya) · Action Item ({currentTurn.actionItem.confidence})
+                  LayaMeet AI (Laya) · Action Item ({currentTurn.actionItem.confidence})
                 </span>
                 <span className="text-[9px] text-zinc-500 dark:text-zinc-400">Auto-logged</span>
               </div>
@@ -405,7 +405,7 @@ export const InteractiveMeetingPreview: React.FC = () => {
       <div className="px-3.5 py-2.5 bg-zinc-50 dark:bg-[#121214] border-t border-zinc-200 dark:border-[#2b2b2e] flex items-center justify-between text-[10px] font-mono text-zinc-500 dark:text-zinc-400">
         <div className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400">
           <ShieldCheck className="w-3.5 h-3.5" />
-          <span>ViMeet On-Prem (int8)</span>
+          <span>LayaMeet On-Prem (int8)</span>
         </div>
         <div className="flex items-center gap-3">
           <span>Chunk: 350ms</span>

@@ -13,7 +13,7 @@ import {
   Radio,
   BookOpen
 } from 'lucide-react';
-import { ViMeetLogo } from '../components/common/ViMeetLogo';
+import { LayaMeetLogo } from '../components/common/LayaMeetLogo';
 import { ThemeToggle } from '../components/common/ThemeToggle';
 import { Footer } from '../components/common/Footer';
 import { LegalModal } from '../components/common/LegalModal';
@@ -28,7 +28,7 @@ const SNIPPETS: Record<string, CodeSnippet> = {
   createRoom: {
     title: '1. Khởi tạo phiên họp (REST API)',
     language: 'bash',
-    code: `curl -X POST https://api.vimeet.vn/api/meetings \\
+    code: `curl -X POST https://api.layameet.com/api/meetings \\
   -H "Content-Type: application/json" \\
   -H "X-Host-Key: your_enterprise_host_key" \\
   -d '{
@@ -39,7 +39,7 @@ const SNIPPETS: Record<string, CodeSnippet> = {
     title: '2. Kết nối luồng phụ đề WebSocket Real-time',
     language: 'javascript',
     code: `// Kết nối WebSocket Audio Streaming & Subtitle Stream
-const ws = new WebSocket("wss://api.vimeet.vn/ws/transcribe?room=ROOM_CODE");
+const ws = new WebSocket("wss://api.layameet.com/ws/transcribe?room=ROOM_CODE");
 
 ws.onopen = () => {
   // Gửi Auth Frame với Admission Token & Cấu hình ngôn ngữ
@@ -75,7 +75,7 @@ workletNode.port.onmessage = (e) => {
   dockerDeploy: {
     title: '4. Tự triển khai On-Premise (Docker Compose)',
     language: 'yaml',
-    code: `# docker-compose.yml - ViMeet Enterprise Edge
+    code: `# docker-compose.yml - LayaMeet Enterprise Edge
 version: '3.8'
 
 services:
@@ -84,15 +84,15 @@ services:
     command: --config /etc/livekit.yaml
     ports: ["7880:7880", "7882:7882/udp"]
 
-  vimeet-api:
-    image: ghcr.io/du-hieu/vimeet-api:latest
+  layameet-api:
+    image: ghcr.io/du-hieu/layameet-api:latest
     environment:
       - ASPNETCORE_ENVIRONMENT=Production
       - LiveKit__ApiKey=\${LIVEKIT_API_KEY}
       - LiveKit__ApiSecret=\${LIVEKIT_API_SECRET}
 
-  vimeet-ai-engine:
-    image: ghcr.io/du-hieu/vimeet-ai-service:latest
+  layameet-ai-engine:
+    image: ghcr.io/du-hieu/layameet-ai-service:latest
     deploy:
       resources:
         reservations:
@@ -126,7 +126,7 @@ export const DevelopersPage: React.FC = () => {
             <span className="hidden sm:inline">Trang chủ</span>
           </Link>
           <div className="h-4 w-px bg-zinc-300 dark:bg-zinc-800" />
-          <ViMeetLogo size="md" showBadge={true} />
+          <LayaMeetLogo size="md" showBadge={true} />
           <span className="px-2 py-0.5 rounded text-[11px] font-mono bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20 font-semibold">
             DevHub
           </span>
@@ -152,7 +152,7 @@ export const DevelopersPage: React.FC = () => {
         <div className="space-y-4">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 dark:bg-blue-950/40 border border-blue-200/80 dark:border-blue-800/60 text-blue-700 dark:text-blue-300 text-xs font-semibold">
             <Terminal className="w-3.5 h-3.5" />
-            <span>ViMeet Open Developer Ecosystem</span>
+            <span>LayaMeet Open Developer Ecosystem</span>
           </div>
 
           <h1 className="text-3xl sm:text-4xl font-black text-zinc-950 dark:text-white tracking-tight">
@@ -295,7 +295,7 @@ export const DevelopersPage: React.FC = () => {
           </div>
 
           <p className="text-xs sm:text-sm text-zinc-700 dark:text-zinc-300 leading-relaxed">
-            ViMeet áp dụng mô hình <strong>Open-Core (Dual-License)</strong>:
+            LayaMeet áp dụng mô hình <strong>Open-Core (Dual-License)</strong>:
           </p>
 
           <ul className="text-xs sm:text-sm text-zinc-600 dark:text-zinc-400 space-y-2 list-disc pl-5 leading-relaxed">

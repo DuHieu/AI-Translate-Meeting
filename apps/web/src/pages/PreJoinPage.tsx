@@ -11,7 +11,7 @@ import {
   SUPPORTED_LANGUAGES_LIST,
 } from '../types/meeting';
 import { Video, Mic, MicOff, VideoOff, LogIn, ArrowLeft, BookOpen, Code2, Briefcase, Globe } from 'lucide-react';
-import { ViMeetLogo } from '../components/common/ViMeetLogo';
+import { LayaMeetLogo } from '../components/common/LayaMeetLogo';
 import { ThemeToggle } from '../components/common/ThemeToggle';
 
 export const PreJoinPage: React.FC = () => {
@@ -364,7 +364,7 @@ export const PreJoinPage: React.FC = () => {
         {/* ── Header ──────────────────────────────────────────────── */}
         <div className="flex items-center justify-between px-4 py-3 md:px-6 md:py-4 border-b border-[#2e2e30] dark:border-[#2e2e30] border-zinc-200">
           <div className="flex items-center gap-3">
-            <ViMeetLogo size="sm" showWordmark={false} />
+            <LayaMeetLogo size="sm" showWordmark={false} />
             <div>
               <h1 className="text-sm font-semibold text-zinc-100 dark:text-zinc-100 text-zinc-900 leading-none">Chuẩn bị tham gia</h1>
               <p className="text-xs text-zinc-500 dark:text-zinc-500 text-zinc-500 mt-0.5">

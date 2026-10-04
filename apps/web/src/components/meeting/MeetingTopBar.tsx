@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { ConnectionState } from 'livekit-client';
 import { Copy, Check, ShieldCheck } from 'lucide-react';
 import { NetworkQualityIndicator } from './NetworkQualityIndicator';
-import { ViMeetLogo } from '../common/ViMeetLogo';
+import { LayaMeetLogo } from '../common/LayaMeetLogo';
 import { ThemeToggle } from '../common/ThemeToggle';
 import type { BrandingConfigDto } from '../../api/meetingApi';
 
@@ -14,6 +14,18 @@ interface MeetingTopBarProps {
   branding: BrandingConfigDto;
   isRecording?: boolean;
   isE2eeEnabled?: boolean;
+  isProPlan?: boolean;
+  timeRemainingSeconds?: number | null;
+  onOpenUpgradeModal?: () => void;
+}
+
+const FREE_MEETING_WARNING_SECONDS = 5 * 60;
+
+function formatRemainingTime(seconds: number): string {
+  const safeSeconds = Math.max(0, Math.floor(seconds));
+  const minutes = Math.floor(safeSeconds / 60);
+  const remainingSeconds = safeSeconds % 60;
+  return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
 }
 
 export const MeetingTopBar: React.FC<MeetingTopBarProps> = ({
@@ -24,6 +36,9 @@ export const MeetingTopBar: React.FC<MeetingTopBarProps> = ({
   branding,
   isRecording = false,
   isE2eeEnabled = false,
+  isProPlan = false,
+  timeRemainingSeconds = null,
+  onOpenUpgradeModal,
 }) => {
   const [copied, setCopied] = useState(false);
 
@@ -50,6 +65,9 @@ export const MeetingTopBar: React.FC<MeetingTopBarProps> = ({
   };
 
   const status = getStatusInfo();
+  const hasFreeCountdown = !isProPlan && timeRemainingSeconds !== null;
+  const isTimeWarning = hasFreeCountdown
+    && timeRemainingSeconds <= FREE_MEETING_WARNING_SECONDS;
 
   return (
     <header className="h-12 border-b border-[#2e2e30] dark:border-[#2e2e30] border-zinc-200 bg-[#0f0f10] dark:bg-[#0f0f10] bg-white px-3 sm:px-5 flex items-center justify-between z-20 shrink-0 select-none transition-colors">
@@ -61,8 +79,8 @@ export const MeetingTopBar: React.FC<MeetingTopBarProps> = ({
             alt={`${branding.brandName} logo`}
             className="h-7 max-w-24 shrink-0 object-contain"
           />
-        ) : branding.brandName === 'ViMeet' ? (
-          <ViMeetLogo size="sm" showWordmark={false} showBadge={false} />
+        ) : branding.brandName === 'LayaMeet' ? (
+          <LayaMeetLogo size="sm" showWordmark={false} showBadge={false} />
         ) : (
           <span
             aria-hidden="true"
@@ -79,6 +97,35 @@ export const MeetingTopBar: React.FC<MeetingTopBarProps> = ({
 
       {/* Right-side controls */}
       <div className="flex items-center gap-1.5 sm:gap-2">
+        {isProPlan ? (
+          <div
+            role="status"
+            aria-label="Gói LayaMeet Pro không giới hạn thời lượng"
+            className="flex items-center rounded-lg border border-sky-500/40 bg-sky-950/70 px-2.5 py-1 text-xs font-semibold text-sky-300"
+          >
+            Pro Unlimited ⚡
+          </div>
+        ) : hasFreeCountdown ? (
+          <button
+            type="button"
+            onClick={onOpenUpgradeModal}
+            disabled={!onOpenUpgradeModal}
+            aria-label={`Gói miễn phí, còn ${formatRemainingTime(timeRemainingSeconds)}. Mở tùy chọn nâng cấp.`}
+            title="Nâng cấp để họp không giới hạn"
+            className={`flex items-center rounded-lg border px-2.5 py-1 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-zinc-950 disabled:cursor-default ${
+              isTimeWarning
+                ? 'border-amber-400/60 bg-amber-950/80 text-amber-200 hover:bg-amber-900/80 focus:ring-amber-400'
+                : 'border-zinc-600 bg-zinc-900 text-zinc-200 hover:border-sky-500/60 hover:text-sky-200 focus:ring-sky-500'
+            }`}
+          >
+            <span className="hidden sm:inline">Free ·&nbsp;</span>
+            <span aria-hidden="true">⏳&nbsp;</span>
+            <span className="font-mono tabular-nums">
+              {formatRemainingTime(timeRemainingSeconds)}
+            </span>
+          </button>
+        ) : null}
+
         {isE2eeEnabled && (
           <div
             role="status"

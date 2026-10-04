@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { ViMeetLogo } from './ViMeetLogo';
+import { LayaMeetLogo } from './LayaMeetLogo';
 import { ShieldCheck, Activity, Heart } from 'lucide-react';
 
 interface FooterProps {
@@ -17,11 +17,11 @@ export const Footer: React.FC<FooterProps> = ({
   return (
     <footer className="border-t border-zinc-200 dark:border-[#2e2e30] bg-[#fcfcfd] dark:bg-[#0c0c0d] transition-colors text-zinc-600 dark:text-zinc-400">
       {/* ── Main Multi-Column Links Section ──────────────────────── */}
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 py-12 md:py-16">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-16">
         <div className="grid grid-cols-2 md:grid-cols-5 gap-8 items-start">
           {/* Col 1: Brand & Slogan (2 cols on md) */}
           <div className="col-span-2 space-y-4">
-            <ViMeetLogo size="md" showBadge={true} />
+            <LayaMeetLogo size="md" showBadge={true} />
             <p className="text-xs text-zinc-500 dark:text-zinc-400 max-w-sm leading-relaxed">
               Nền tảng họp trực tuyến thông minh đa ngôn ngữ toàn cầu. Phá vỡ mọi rào cản giao tiếp: người tham gia tự do phát biểu tiếng mẹ đẻ và nhận phụ đề bản dịch tức thì theo đúng ngôn ngữ của riêng mình.
             </p>
@@ -179,7 +179,7 @@ export const Footer: React.FC<FooterProps> = ({
       <div className="border-t border-zinc-200/80 dark:border-zinc-800/80 py-5 px-4 sm:px-6 bg-zinc-100/50 dark:bg-[#080809]">
         <div className="max-w-5xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-zinc-500 dark:text-zinc-500 text-center sm:text-left">
           <div>
-            <span>© 2026 ViMeet Platform (vimeet.vn). Bản quyền thuộc về Đội ngũ Kỹ thuật.</span>
+            <span>© 2026 LayaMeet Platform (layameet.com). Bản quyền thuộc về Đội ngũ Kỹ thuật.</span>
           </div>
           <div className="flex items-center gap-4 text-[11px]">
             <span className="flex items-center gap-1 text-zinc-400">

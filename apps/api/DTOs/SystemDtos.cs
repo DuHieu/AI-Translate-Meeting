@@ -80,3 +80,19 @@ public sealed record SystemStatusResponseDto(
     SystemLicenseInfoDto License,
     DateTime Timestamp
 );
+
+public sealed record CreateLeadRequest(
+    string FullName,
+    string Email,
+    string? Company = null,
+    string? TeamSize = null,
+    string? LanguagePair = null,
+    string? DeploymentModel = null,
+    string? Notes = null
+);
+
+public sealed record CreateLeadResponse(
+    bool Success,
+    string Message,
+    DateTime SubmittedAtUtc
+);

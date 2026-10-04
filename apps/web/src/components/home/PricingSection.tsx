@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Check, Zap, ShieldCheck, ArrowRight, HelpCircle } from 'lucide-react';
+import { CheckoutModal } from '../common/CheckoutModal';
 
 interface PricingTier {
   id: string;
@@ -82,16 +83,17 @@ interface PricingSectionProps {
 
 export const PricingSection: React.FC<PricingSectionProps> = ({ onSelectTier, onContactClick }) => {
   const [isAnnual, setIsAnnual] = useState(true);
+  const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('vi-VN').format(amount) + 'đ';
   };
 
   return (
-    <section id="pricing" className="border-t border-zinc-200 dark:border-[#2e2e30] py-14 md:py-20 relative overflow-hidden bg-white/40 dark:bg-[#0f0f10]/40 transition-colors">
-      <div className="max-w-5xl mx-auto px-4 sm:px-6">
+    <section id="pricing" className="border-t border-zinc-200 dark:border-[#2e2e30] py-16 md:py-24 relative overflow-hidden bg-white/40 dark:bg-[#0f0f10]/40 transition-colors">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
-        <div className="text-center max-w-2xl mx-auto space-y-3 mb-10">
+        <div className="text-center max-w-3xl mx-auto space-y-3 mb-12">
           <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-blue-50 dark:bg-blue-950/40 border border-blue-200/80 dark:border-blue-800/60 text-blue-700 dark:text-blue-300 text-xs font-semibold">
             <Zap className="w-3 h-3" />
             <span>Bảng Giá &amp; Gói Triển Khai</span>
@@ -205,7 +207,9 @@ export const PricingSection: React.FC<PricingSectionProps> = ({ onSelectTier, on
                   <button
                     type="button"
                     onClick={() => {
-                      if (tier.id === 'enterprise' && onContactClick) {
+                      if (tier.id === 'pro') {
+                        setIsCheckoutOpen(true);
+                      } else if (tier.id === 'enterprise' && onContactClick) {
                         onContactClick();
                       } else if (onSelectTier) {
                         onSelectTier(tier.id);
@@ -245,6 +249,12 @@ export const PricingSection: React.FC<PricingSectionProps> = ({ onSelectTier, on
             <span>Cần tư vấn hạ tầng VPS / Server riêng?</span>
           </button>
         </div>
+
+        <CheckoutModal
+          isOpen={isCheckoutOpen}
+          onClose={() => setIsCheckoutOpen(false)}
+          initialPlanId="pro"
+        />
       </div>
     </section>
   );

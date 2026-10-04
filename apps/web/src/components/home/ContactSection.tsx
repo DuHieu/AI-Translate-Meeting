@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Mail, Phone, MapPin, Send, CheckCircle2, Clock, ShieldCheck, MessageSquare } from 'lucide-react';
+import { Mail, Phone, MapPin, Send, CheckCircle2, Clock, ShieldCheck, MessageSquare, AlertCircle } from 'lucide-react';
+import { meetingApi } from '../../api/meetingApi';
 
 export const ContactSection: React.FC = () => {
   const [formData, setFormData] = useState({
@@ -14,22 +15,27 @@ export const ContactSection: React.FC = () => {
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
-    // Simulate API submission
-    setTimeout(() => {
-      setIsSubmitting(false);
+    setErrorMessage(null);
+    try {
+      await meetingApi.submitEnterpriseLead(formData);
       setIsSubmitted(true);
-    }, 800);
+    } catch (err) {
+      setErrorMessage(err instanceof Error ? err.message : 'Không thể gửi yêu cầu. Vui lòng thử lại sau.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
-    <section id="contact" className="border-t border-zinc-200 dark:border-[#2e2e30] py-14 md:py-20 relative bg-zinc-50/60 dark:bg-[#121214]/60 transition-colors">
-      <div className="max-w-5xl mx-auto px-4 sm:px-6">
+    <section id="contact" className="border-t border-zinc-200 dark:border-[#2e2e30] py-16 md:py-24 relative bg-zinc-50/60 dark:bg-[#121214]/60 transition-colors">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
-        <div className="text-center max-w-2xl mx-auto space-y-3 mb-12">
+        <div className="text-center max-w-3xl mx-auto space-y-3 mb-12">
           <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-blue-50 dark:bg-blue-950/40 border border-blue-200/80 dark:border-blue-800/60 text-blue-700 dark:text-blue-300 text-xs font-semibold">
             <MessageSquare className="w-3 h-3" />
             <span>Liên Hệ &amp; Tư Vấn Triển Khai</span>
@@ -60,9 +66,9 @@ export const ContactSection: React.FC = () => {
                   <div>
                     <div className="font-semibold text-zinc-900 dark:text-zinc-100">Email hỗ trợ &amp; kinh doanh</div>
                     <div className="text-zinc-500 dark:text-zinc-400 font-mono mt-0.5">
-                      <a href="mailto:contact@vimeet.vn" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">contact@vimeet.vn</a>
+                      <a href="mailto:contact@layameet.com" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">contact@layameet.com</a>
                       <span className="mx-1.5 text-zinc-300 dark:text-zinc-700">·</span>
-                      <a href="mailto:sales@vimeet.vn" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">sales@vimeet.vn</a>
+                      <a href="mailto:sales@layameet.com" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">sales@layameet.com</a>
                     </div>
                   </div>
                 </div>
@@ -127,7 +133,7 @@ export const ContactSection: React.FC = () => {
                   Yêu Cầu Đã Được Gửi Thành Công!
                 </h3>
                 <p className="text-xs text-zinc-600 dark:text-zinc-400 max-w-md mx-auto leading-relaxed">
-                  Cảm ơn bạn đã quan tâm đến ViMeet. Kỹ sư tư vấn giải pháp của chúng tôi sẽ liên hệ lại qua email <strong>{formData.email}</strong> trong thời gian sớm nhất.
+                  Cảm ơn bạn đã quan tâm đến LayaMeet. Kỹ sư tư vấn giải pháp của chúng tôi sẽ liên hệ lại qua email <strong>{formData.email}</strong> trong thời gian sớm nhất.
                 </p>
                 <button
                   type="button"
@@ -251,6 +257,13 @@ export const ContactSection: React.FC = () => {
                     className="w-full px-3 py-2 text-xs rounded-lg border border-zinc-200 dark:border-[#333336] bg-zinc-50/50 dark:bg-[#121214] text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-blue-500 transition-colors resize-none"
                   />
                 </div>
+
+                {errorMessage && (
+                  <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-600 dark:text-red-400 text-xs flex items-center gap-2">
+                    <AlertCircle className="w-4 h-4 shrink-0" />
+                    <span>{errorMessage}</span>
+                  </div>
+                )}
 
                 <button
                   type="submit"

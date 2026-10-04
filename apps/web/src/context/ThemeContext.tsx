@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Theme, ThemeContext } from './theme-context-def';
 
-const THEME_STORAGE_KEY = 'vimeet_theme';
+const THEME_STORAGE_KEY = 'layameet_theme';
 
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [theme, setThemeState] = useState<Theme>(() => {

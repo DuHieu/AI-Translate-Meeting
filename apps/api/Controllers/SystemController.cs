@@ -150,4 +150,70 @@ public sealed class SystemController : ControllerBase
             EndedGhostMeetings: result.EndedGhostMeetings
         ));
     }
+
+    [HttpPost("lead")]
+    [ProducesResponseType(typeof(CreateLeadResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<CreateLeadResponse>> SubmitLeadAsync(
+        [FromBody] CreateLeadRequest request,
+        CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(request.FullName))
+        {
+            return BadRequest(new ProblemDetails
+            {
+                Title = "Invalid Name",
+                Detail = "Họ và tên không được để trống.",
+                Status = StatusCodes.Status400BadRequest
+            });
+        }
+
+        if (string.IsNullOrWhiteSpace(request.Email) || !request.Email.Contains('@') || !request.Email.Contains('.'))
+        {
+            return BadRequest(new ProblemDetails
+            {
+                Title = "Invalid Email",
+                Detail = "Email không hợp lệ.",
+                Status = StatusCodes.Status400BadRequest
+            });
+        }
+
+        _auditLogService.LogEvent(
+            "EnterpriseLeadCaptured",
+            meetingId: null,
+            participantId: request.Email.Trim(),
+            details: $"Lead: {request.FullName.Trim()} ({request.Company ?? "Individual"}), deployment={request.DeploymentModel ?? "on-premise"}, team={request.TeamSize ?? "unknown"}, lang={request.LanguagePair ?? "unknown"}"
+        );
+
+        var webhookUrl = _configuration["LeadCapture:WebhookUrl"]
+            ?? _configuration["ENTERPRISE_LEAD_WEBHOOK_URL"];
+        if (!string.IsNullOrWhiteSpace(webhookUrl) && Uri.TryCreate(webhookUrl, UriKind.Absolute, out var uri))
+        {
+            try
+            {
+                using var httpClient = new HttpClient { Timeout = TimeSpan.FromSeconds(5) };
+                var payload = new
+                {
+                    event_type = "lead.captured",
+                    lead = request,
+                    timestamp = DateTime.UtcNow
+                };
+                using var content = new StringContent(
+                    System.Text.Json.JsonSerializer.Serialize(payload),
+                    System.Text.Encoding.UTF8,
+                    "application/json");
+                await httpClient.PostAsync(uri, content, cancellationToken);
+            }
+            catch
+            {
+                // Non-blocking: webhook delivery failure should not fail customer submission
+            }
+        }
+
+        return Ok(new CreateLeadResponse(
+            Success: true,
+            Message: "Yêu cầu tư vấn đã được ghi nhận thành công. Kỹ sư tư vấn sẽ liên hệ lại với bạn trong vòng 2 giờ.",
+            SubmittedAtUtc: DateTime.UtcNow
+        ));
+    }
 }
