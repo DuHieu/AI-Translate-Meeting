@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
-import { X, Check, Copy, Zap, Clock, ShieldCheck, Loader2 } from 'lucide-react';
+import { X, Check, Copy, Zap, ShieldCheck, Loader2 } from 'lucide-react';
 import { meetingApi, PaymentOrderResponse } from '../../api/meetingApi';
 
 export interface CheckoutModalProps {
@@ -17,7 +17,6 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
   initialPlanId = 'pro',
   onPaymentSuccess,
 }) => {
-  const [selectedPlan, setSelectedPlan] = useState<string>(initialPlanId);
   const [order, setOrder] = useState<PaymentOrderResponse | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isPaid, setIsPaid] = useState<boolean>(false);
@@ -39,7 +38,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
 
   useEffect(() => {
     if (isOpen) {
-      fetchOrder(selectedPlan);
+      fetchOrder(initialPlanId || 'pro');
     } else {
       if (pollingRef.current) {
         window.clearInterval(pollingRef.current);
@@ -48,7 +47,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
       setOrder(null);
       setIsPaid(false);
     }
-  }, [isOpen, selectedPlan, fetchOrder]);
+  }, [isOpen, initialPlanId, fetchOrder]);
 
   // Polling order status
   useEffect(() => {
@@ -108,78 +107,24 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
             <span className="rounded-md bg-sky-500/15 px-2 py-0.5 text-xs font-semibold text-sky-400">VietQR Napas 247</span>
             <span className="text-xs text-zinc-400">Tự động kích hoạt trong 3s</span>
           </div>
-          <h2 className="mt-2 text-xl font-bold text-white">Nâng cấp LayaMeet Pro</h2>
+          <h2 className="mt-2 text-xl font-bold text-white">Nâng cấp Gói Tháng LayaMeet Pro</h2>
         </div>
 
-        {/* Plan Selector */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 mb-5">
-          <button
-            type="button"
-            onClick={() => setSelectedPlan('pro')}
-            className={`rounded-xl border p-2.5 text-left transition cursor-pointer ${
-              selectedPlan === 'pro'
-                ? 'border-sky-500 bg-sky-950/40 ring-1 ring-sky-500/30'
-                : 'border-zinc-800 bg-zinc-900/40 hover:border-zinc-700'
-            }`}
-          >
-            <div className="flex items-center justify-between">
-              <span className="text-[11px] font-semibold text-sky-400">Team Pro</span>
-              <Zap className="h-3.5 w-3.5 text-sky-400" />
+        {/* Single Monthly Plan Highlight */}
+        <div className="rounded-xl border border-sky-500/50 bg-sky-950/30 p-3.5 mb-5 flex items-center justify-between">
+          <div>
+            <div className="flex items-center gap-1.5">
+              <Zap className="h-4 w-4 text-sky-400" />
+              <span className="text-xs font-bold text-sky-400 uppercase tracking-wide">Gói LayaMeet Pro 1 Tháng</span>
             </div>
-            <p className="mt-1 text-xs font-bold text-white">499.000đ / tháng</p>
-            <p className="text-[10px] text-zinc-400">Không giới hạn</p>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setSelectedPlan('pass')}
-            className={`rounded-xl border p-2.5 text-left transition cursor-pointer ${
-              selectedPlan === 'pass'
-                ? 'border-sky-500 bg-sky-950/40 ring-1 ring-sky-500/30'
-                : 'border-zinc-800 bg-zinc-900/40 hover:border-zinc-700'
-            }`}
-          >
-            <div className="flex items-center justify-between">
-              <span className="text-[11px] font-semibold text-amber-400">Vé 24h</span>
-              <Clock className="h-3.5 w-3.5 text-amber-400" />
-            </div>
-            <p className="mt-1 text-xs font-bold text-white">99.000đ / 24h</p>
-            <p className="text-[10px] text-zinc-400">Dùng trong ngày</p>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setSelectedPlan('pass_1h')}
-            className={`rounded-xl border p-2.5 text-left transition cursor-pointer ${
-              selectedPlan === 'pass_1h'
-                ? 'border-sky-500 bg-sky-950/40 ring-1 ring-sky-500/30'
-                : 'border-zinc-800 bg-zinc-900/40 hover:border-zinc-700'
-            }`}
-          >
-            <div className="flex items-center justify-between">
-              <span className="text-[11px] font-semibold text-emerald-400">Vé 1 Giờ</span>
-              <Zap className="h-3.5 w-3.5 text-emerald-400" />
-            </div>
-            <p className="mt-1 text-xs font-bold text-white">39.000đ / 1h</p>
-            <p className="text-[10px] text-zinc-400">Họp gấp 1 giờ</p>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setSelectedPlan('credits_500m')}
-            className={`rounded-xl border p-2.5 text-left transition cursor-pointer ${
-              selectedPlan === 'credits_500m'
-                ? 'border-sky-500 bg-sky-950/40 ring-1 ring-sky-500/30'
-                : 'border-zinc-800 bg-zinc-900/40 hover:border-zinc-700'
-            }`}
-          >
-            <div className="flex items-center justify-between">
-              <span className="text-[11px] font-semibold text-purple-400">500 Phút AI</span>
-              <Clock className="h-3.5 w-3.5 text-purple-400" />
-            </div>
-            <p className="mt-1 text-xs font-bold text-white">199.000đ</p>
-            <p className="text-[10px] text-zinc-400">Trừ theo phút nói</p>
-          </button>
+            <p className="mt-1 text-xs text-zinc-300">
+              Không giới hạn thời lượng họp &amp; số phút dịch AI · Xuất biên bản Markdown/PDF
+            </p>
+          </div>
+          <div className="text-right shrink-0 ml-4">
+            <p className="text-base font-black text-white font-mono">99.000đ / tháng</p>
+            <p className="text-[10px] text-emerald-400 font-semibold">Rẻ hơn Zoom 75%</p>
+          </div>
         </div>
 
         {isPaid ? (

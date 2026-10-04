@@ -50,7 +50,7 @@
 | **00:00 - 00:06** | Màn hình Zoom đếm ngược 40 phút và tự ngắt giữa lúc đang bàn việc quan trọng. Mọi người ức chế. | *"Đang họp dở thì Zoom báo hết 40 phút bị văng ra ngoài, phải tạo lại link từ đầu cực kỳ mất thời gian."* | ❌ Zoom: Giới hạn 40 phút, ngắt ngang cuộc họp |
 | **00:07 - 00:15** | Bảng giá Zoom hiện 400.000đ/tháng (gần 5 triệu/năm), tính năng AI phải mua thêm gói đắt đỏ. | *"Chưa kể bản quyền mỗi tháng cả mấy trăm nghìn, mà muốn có AI dịch thuật hay tóm tắt thì lại bắt mua thêm add-on."* | 💸 Chi phí Zoom bản quyền quá đắt đỏ |
 | **00:16 - 00:30** | Chuyển sang giao diện **LayaMeet.com**: Tạo phòng 1-click không cần tải app, giao diện mượt mà, hỗ trợ quét VietQR linh hoạt. | *"Đổi sang LayaMeet: Không cần cài app, chạy thẳng trên web. Có sẵn AI dịch trực tiếp hơn 50 thứ tiếng, âm thanh trong veo kể cả lúc mạng yếu."* | ✅ LayaMeet: 100% WebRTC, AI dịch song ngữ tích hợp sẵn |
-| **00:31 - 00:40** | Hiển thị mã QR ngân hàng VietQR quét 29k/giờ hoặc gói Pro cực kỳ tiết kiệm. | *"Cần nâng cấp thì quét VietQR 3 giây là xong, giá chỉ bằng 1 cốc trà sữa. Quá hời cho đội nhóm và dân làm việc tự do."* | 📲 VietQR tự động - Giá bằng 1 cốc cafe |
+| **00:31 - 00:40** | Hiển thị mã QR ngân hàng VietQR nâng cấp gói Tháng Pro 99.000đ/tháng siêu tiết kiệm. | *"Dùng bản Free đã ngon, cần nâng cấp Gói Tháng Không Giới Hạn thì quét VietQR 3 giây chỉ 99k/tháng — rẻ bằng 1/4 Zoom!"* | 📲 Gói Tháng Pro 99k - Rẻ hơn Zoom 75% |
 
 * **Hashtags:** `#sosanh #zoom #layameet #congnghe2026 #vanphong #sme`
 

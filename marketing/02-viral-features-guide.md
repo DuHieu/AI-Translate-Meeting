@@ -54,31 +54,27 @@ Doanh nghiệp lớn hoặc khách hàng nước ngoài đã có sẵn quy đị
 
 ## 3. CỖ MÁY THU TIỀN TỰ ĐỘNG (MONETIZATION & CONVERSION MATRIX)
 
-Hệ thống đã có sẵn `BillingController.cs` và `CheckoutModal.tsx` hỗ trợ VietQR tự động 100%. Chiến lược định giá được thiết kế để "chuyển đổi không ma sát" (Frictionless Conversion):
+Hệ thống đã có sẵn `BillingController.cs` và `CheckoutModal.tsx` hỗ trợ VietQR tự động 100%. Chiến lược định giá được tinh gọn tối đa **chỉ gồm 2 gói (Free & Gói Tháng)** để triệt tiêu hoàn toàn sự phân vân của người dùng (Zero Decision Paralysis):
 
 ```text
 ┌────────────────────────────────────────────────────────────────────────┐
-│                        PHỄU CHUYỂN ĐỔI DOANH THU                       │
+│                 PHỄU CHUYỂN ĐỔI DOANH THU (2 GÓI DUY NHẤT)             │
 ├───────────────────┬───────────────────┬────────────────────────────────┤
 │ Gói Dịch Vụ       │ Mức Giá (VNĐ)     │ Điểm Kích Hoạt (Trigger Point) │
 ├───────────────────┼───────────────────┼────────────────────────────────┤
-│ Vé Họp Nhanh (1H) │ 29.000 đ          │ Hết 40 phút miễn phí, cuộc họp │
-│                   │                   │ đang cao trào cần thêm 1 tiếng │
+│ Gói Free          │ 0 đ               │ Họp 1-on-1 không giới hạn,     │
+│ (Mồi câu Viral)   │ (Miễn phí 100%)   │ họp nhóm ≤ 40 phút, AI dịch    │
+│                   │                   │ kèm Watermark thương hiệu      │
 ├───────────────────┼───────────────────┼────────────────────────────────┤
-│ Vé 24 Giờ         │ 99.000 đ          │ Dành cho ngày tổ chức Workshop │
-│                   │                   │ hoặc phỏng vấn nhiều ứng viên  │
-├───────────────────┼───────────────────┼────────────────────────────────┤
-│ Team Pro (Tháng)  │ 499.000 đ/tháng   │ Nhóm dự án, công ty Outsourcing│
-│                   │                   │ họp cố định hằng ngày          │
-├───────────────────┼───────────────────┼────────────────────────────────┤
-│ Enterprise        │ Báo giá dự án     │ Cơ quan, ngân hàng cần cài     │
-│ On-Premise        │ (15 - 50 triệu)   │ Server riêng qua Docker/Script │
+│ Gói Tháng Pro     │ 99.000 đ/tháng    │ Không giới hạn thời lượng họp  │
+│ (Chuyển đổi chính)│ (Năm: 79k/tháng)  │ nhóm & phút AI dịch, xóa       │
+│                   │                   │ Watermark, xuất biên bản PDF   │
 └───────────────────┴───────────────────┴────────────────────────────────┘
 ```
 
-### Yếu tố then chốt tạo doanh thu nhanh:
-1. **Gói "Vé 1 Giờ - 29.000đ":** Mức giá tâm lý cực rẻ (bằng 1 ly trà đá hoặc bánh mì). Khi cuộc họp bị ngắt ở phút 40 và khách hàng đang nói dở, người dùng sẵn sàng quét VietQR ngay trong 3 giây để tiếp tục mà không đắn đo.
-2. **VietQR Động Napas 247:** Khách hàng không cần đăng ký thẻ tín dụng Visa/MasterCard. Chỉ cần mở app ngân hàng (Vietcombank, MB, Techcombank...) quét là hệ thống tự động kích hoạt ngay lập tức qua Webhook.
+### Yếu tố then chốt tạo doanh thu & hút User nhanh:
+1. **Loại bỏ hoàn toàn các gói lẻ gây rối:** Người dùng chỉ đứng trước 2 lựa chọn đơn giản: Dùng **Free** mỗi ngày hoặc nâng cấp **Gói Tháng Pro 99.000đ** (rẻ bằng 1/4 so với bản quyền Zoom Pro ~400.000đ/tháng).
+2. **VietQR Động Napas 247:** Khách hàng không cần đăng ký thẻ tín dụng Visa/MasterCard. Chỉ cần mở app ngân hàng quét mã 99.000đ là hệ thống tự động kích hoạt gói Pro ngay lập tức trong 3 giây.
 
 ---
 

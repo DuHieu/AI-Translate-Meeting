@@ -1,6 +1,6 @@
 # 💼 BỘ KỊCH BẢN B2B PITCHING & COLD OUTREACH PLAYBOOK CHO LAYAMEET
 
-> **Mục tiêu:** Chốt hợp đồng B2B gói **Team Pro (499.000đ/tháng)** và **Enterprise On-Premise (15.000.000đ - 50.000.000đ/năm)** với các doanh nghiệp, công ty IT Outsourcing và trung tâm đào tạo trực tuyến.
+> **Mục tiêu:** Chốt hợp đồng gói **LayaMeet Pro Tháng (99.000đ/tháng)** cho đội nhóm SME/Outsourcing và gói **Enterprise On-Premise** cho các doanh nghiệp lớn cần cài đặt máy chủ riêng.
 
 ---
 
@@ -122,4 +122,4 @@ Website: https://layameet.com/developers
 | :--- | :--- |
 | *"Công ty anh quen dùng Zoom / Google Meet rồi, không muốn đổi."* | *"Dạ em hiểu, khách hàng lớn thì rất khó đổi phần mềm. Chính vì vậy bên em có tính năng **Phụ đề nổi PiP**. Anh vẫn họp trên Zoom của khách bình thường, chỉ cần mở cửa sổ phụ đề LayaMeet đè lên là có thể đọc dịch thuật trực tiếp mà không cần khách hàng phải đổi sang nền tảng khác ạ!"* |
 | *"Dịch bằng AI liệu có chuẩn thuật ngữ công nghệ không?"* | *"Mô hình AI của LayaMeet đã được huấn luyện riêng trên tập dữ liệu kỹ thuật IT (API, Docker, Microservices, Deployment...). Em gửi anh link test trực tiếp 3 phút là anh sẽ thấy độ chính xác vượt trội so với Google Dịch thông thường ạ."* |
-| *"Chi phí thế nào, có đắt không?"* | *"Gói cơ bản bên em cho phép dùng thử miễn phí. Gói Pro cho cả đội nhóm chỉ 499k/tháng thanh toán linh hoạt qua VietQR, rẻ hơn rất nhiều so với bản quyền Zoom mà lại có sẵn AI không giới hạn ạ."* |
+| *"Chi phí thế nào, có đắt không?"* | *"Bên em chỉ có 2 gói cực kỳ đơn giản: Gói Free dùng miễn phí mỗi ngày, và Gói Tháng Pro không giới hạn chỉ 99.000đ/tháng thanh toán qua VietQR — rẻ bằng 1/4 bản quyền Zoom Pro mà đã tích hợp sẵn AI dịch thuật không giới hạn ạ."* |

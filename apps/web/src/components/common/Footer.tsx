@@ -101,14 +101,14 @@ export const Footer: React.FC<FooterProps> = ({
             </div>
             <ul className="space-y-2 text-zinc-500 dark:text-zinc-400">
               <li>
-                <a href="#contact" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
-                  Outsourcing Việt - Nhật
-                </a>
+                <Link to="/hop-song-ngu-tieng-nhat" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+                  Họp Song Ngữ Việt - Nhật
+                </Link>
               </li>
               <li>
-                <a href="#contact" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
-                  Doanh nghiệp FDI Đa Quốc Gia
-                </a>
+                <Link to="/hop-song-ngu-tieng-anh" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+                  Họp Song Ngữ Việt - Anh
+                </Link>
               </li>
               <li>
                 <a href="#contact" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">

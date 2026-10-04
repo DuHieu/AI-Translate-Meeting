@@ -42,7 +42,7 @@ public sealed class BillingController : ControllerBase
             return Problem(
                 statusCode: StatusCodes.Status400BadRequest,
                 title: "Invalid payment plan",
-                detail: "PlanId must be either 'pro' or 'pass'.");
+                detail: "PlanId must be 'pro' (Gói LayaMeet Pro 1 Tháng).");
         }
 
         try

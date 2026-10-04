@@ -6,6 +6,8 @@ Allow: /#pricing
 Allow: /#faq
 Allow: /#contact
 Allow: /developers
+Allow: /hop-song-ngu-tieng-nhat
+Allow: /hop-song-ngu-tieng-anh
 
 # Disallow private meeting rooms and streaming endpoints for privacy and security
 Disallow: /meeting/

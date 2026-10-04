@@ -9,6 +9,7 @@ const PreJoinPage = lazy(() => import('./pages/PreJoinPage').then((module) => ({
 const MeetingPage = lazy(() => import('./pages/MeetingPage').then((module) => ({ default: module.MeetingPage })));
 const DevelopersPage = lazy(() => import('./pages/DevelopersPage').then((module) => ({ default: module.DevelopersPage })));
 const AdminDashboardPage = lazy(() => import('./pages/AdminDashboardPage').then((module) => ({ default: module.AdminDashboardPage })));
+const LanguagePairLandingPage = lazy(() => import('./pages/LanguagePairLandingPage').then((module) => ({ default: module.LanguagePairLandingPage })));
 
 const PageFallback: React.FC = () => (
   <div className="min-h-screen bg-[#0f0f10] text-zinc-200 flex items-center justify-center">
@@ -29,6 +30,8 @@ export const App: React.FC = () => {
               <Route path="/" element={<HomePage />} />
               <Route path="/admin" element={<AdminDashboardPage />} />
               <Route path="/developers" element={<DevelopersPage />} />
+              <Route path="/hop-song-ngu-tieng-nhat" element={<LanguagePairLandingPage variant="japanese" />} />
+              <Route path="/hop-song-ngu-tieng-anh" element={<LanguagePairLandingPage variant="english" />} />
               <Route path="/prejoin/:meetingCode" element={<PreJoinPage />} />
               <Route path="/join/:meetingCode" element={<PreJoinPage />} />
               <Route path="/meeting/:meetingCode" element={<MeetingPage />} />

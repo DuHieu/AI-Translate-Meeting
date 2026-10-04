@@ -28,14 +28,14 @@ public sealed class BillingService : IBillingService
 
     private static readonly IReadOnlyList<PlanInfoDto> Plans =
     [
-        new("pro", "Gói Team Pro 1 Tháng", 499_000, "1 tháng không giới hạn",
-            ["Không giới hạn thời lượng họp", "Dịch thuật ma trận đa chiều TTFS <350ms", "Laya AI Action Items & Decisions", "Xuất biên bản họp tự động", "Redis Cache phân tán"]),
-        new("pass", "Vé Họp Không Giới Hạn 24h", 99_000, "24 giờ sử dụng liên tục",
-            ["Không giới hạn thời lượng trong 24h", "Dịch thời gian thực tiếng Việt / Anh / Nhật", "AI Action Items", "Dành cho hội thảo & workshop"]),
-        new("pass_1h", "Vé 1 Giờ Họp Pro", 39_000, "1 giờ họp cấp tốc",
-            ["Gỡ bỏ giới hạn 40 phút ngay lập tức", "Dịch phụ đề song ngữ chuẩn xác", "Kích hoạt tức thì qua VietQR"]),
-        new("credits_500m", "Gói 500 Phút Dịch Thuật AI", 199_000, "500 phút dùng linh hoạt",
-            ["Trừ theo số phút nói thực tế", "Hạn dùng 1 năm", "Không lãng phí khi họp ít", "Hỗ trợ dịch bất kỳ ngôn ngữ nào"])
+        new("pro", "Gói LayaMeet Pro 1 Tháng", 99_000, "1 tháng không giới hạn",
+            [
+                "Không giới hạn thời lượng mọi cuộc họp",
+                "Không giới hạn số phút dịch thuật AI đa chiều (TTFS <350ms)",
+                "Laya AI tự động trích xuất Action Items & Decisions",
+                "Xuất biên bản họp tự động (Markdown / Word / PDF)",
+                "Xóa watermark thương hiệu & Hỗ trợ ưu tiên 24/7"
+            ])
     ];
 
     public BillingService(
@@ -129,8 +129,7 @@ public sealed class BillingService : IBillingService
         var normalized = planId?.Trim().ToLowerInvariant();
         var found = Plans.FirstOrDefault(p =>
             string.Equals(p.PlanId, normalized, StringComparison.OrdinalIgnoreCase) ||
-            (normalized == "pro_monthly" && p.PlanId == "pro") ||
-            (normalized == "pass_24h" && p.PlanId == "pass"));
+            ((normalized == "pro_monthly" || normalized == "monthly") && p.PlanId == "pro"));
 
         if (found != null)
         {

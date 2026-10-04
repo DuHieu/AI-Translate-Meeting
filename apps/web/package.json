@@ -8,10 +8,11 @@
   },
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build && node scripts/verify-bundle.mjs",
+    "build": "tsc && vite build && node scripts/verify-bundle.mjs && node scripts/prerender.mjs",
     "verify:bundle": "node scripts/verify-bundle.mjs",
     "lint": "eslint . --ext ts,tsx",
     "audit:seo": "node scripts/audit-seo.mjs",
+    "seo:indexnow": "node scripts/ping-indexnow.mjs",
     "preview": "vite preview"
   },
   "dependencies": {

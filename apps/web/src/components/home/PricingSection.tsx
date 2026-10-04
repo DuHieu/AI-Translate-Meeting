@@ -19,60 +19,43 @@ interface PricingTier {
 
 const PRICING_TIERS: PricingTier[] = [
   {
-    id: 'starter',
-    name: 'Community',
-    desc: 'Dành cho lập trình viên và nhóm nhỏ tự triển khai thử nghiệm trên máy chủ nội bộ.',
+    id: 'free',
+    name: 'Free',
+    badge: 'Miễn Phí Vĩnh Viễn',
+    desc: 'Dành cho cá nhân, freelancer và sinh viên họp trực tuyến dịch song ngữ mỗi ngày.',
     monthlyPrice: 0,
     annualPrice: 0,
-    priceNote: 'Miễn phí vĩnh viễn (Open-Source Core)',
-    ctaText: 'Tải Docker Compose',
+    priceNote: 'Miễn phí 100% · Không cần thẻ ngân hàng',
+    ctaText: 'Tạo Phòng Họp Ngay',
     ctaVariant: 'secondary',
     features: [
-      'Tối đa 2 phòng họp đồng thời',
-      'Nhận dạng giọng nói Whisper (int8 CPU)',
-      'Phụ đề đa ngôn ngữ thời gian thực (50+ ngôn ngữ)',
-      'Xử lý âm thanh RAM-only (Không lưu file)',
-      'Hỗ trợ qua cộng đồng GitHub & Discord',
+      'Họp 1-on-1 không giới hạn thời gian',
+      'Họp nhóm (từ 3 người) tối đa 40 phút / cuộc',
+      'Phụ đề AI dịch trực tiếp 50+ ngôn ngữ (<350ms)',
+      'Cửa sổ phụ đề nổi (PiP) đè lên Zoom / Google Meet',
+      'Tóm tắt biên bản họp & chia sẻ nhanh Zalo / Slack',
+      'Xử lý âm thanh RAM-only (Không lưu file ghi âm)',
     ],
   },
   {
     id: 'pro',
-    name: 'Team Pro',
-    badge: 'Khuyên Dùng Cho SME',
+    name: 'Gói Tháng Pro',
+    badge: 'Khuyên Dùng · Rẻ Hơn Zoom 75%',
     popular: true,
-    desc: 'Lý tưởng cho các công ty Outsourcing, nhóm dự án đa quốc gia họp hằng ngày.',
-    monthlyPrice: 499000,
-    annualPrice: 399000,
-    priceNote: 'trên mỗi phòng họp / tháng',
-    ctaText: 'Đăng Ký Gói Pro',
+    desc: 'Dành cho Freelancer chuyên nghiệp, nhóm dự án IT Outsourcing và giảng viên ngoại ngữ.',
+    monthlyPrice: 99000,
+    annualPrice: 79000,
+    priceNote: 'trên mỗi tài khoản Host / tháng',
+    ctaText: 'Đăng Ký Gói Tháng (99.000đ)',
     ctaVariant: 'primary',
     features: [
-      'Không giới hạn thời lượng cuộc họp',
-      'Dịch thuật ma trận đa chiều (Any-to-Any, TTFS <350ms)',
+      'Không giới hạn thời lượng cho mọi cuộc họp nhóm',
+      'Không giới hạn số phút dịch thuật AI đa chiều (Any-to-Any)',
       'Tự do chọn ngôn ngữ phụ đề riêng cho từng người tham gia',
       'Laya AI tự động trích xuất Action Items & Decisions',
       'Xuất biên bản họp tự động (Markdown / Word / PDF)',
-      'Bộ nhớ đệm dịch thuật Redis Cache phân tán',
-      'Hỗ trợ kỹ thuật ưu tiên 24/7 qua Slack / Zalo',
-    ],
-  },
-  {
-    id: 'enterprise',
-    name: 'Enterprise On-Prem',
-    badge: 'Bảo Mật Cấp Ngân Hàng',
-    desc: 'Dành cho tập đoàn, tài chính, cơ quan yêu cầu cài đặt 100% trong mạng LAN nội bộ.',
-    monthlyPrice: null,
-    annualPrice: null,
-    priceNote: 'May đo & Báo giá theo hạ tầng',
-    ctaText: 'Liên Hệ Đội Ngũ Kỹ Thuật',
-    ctaVariant: 'outline',
-    features: [
-      'Triển khai 100% On-Premise trên máy chủ riêng (LAN/Air-gapped)',
-      'Cam kết Zero Data Cloud (Không một byte âm thanh rời nội bộ)',
-      'Tăng tốc phần cứng GPU NVIDIA CUDA cho >50 phòng đồng thời',
-      'Tùy chỉnh từ điển thuật ngữ kỹ thuật chuyên ngành riêng',
-      'Tích hợp SSO / LDAP / Active Directory doanh nghiệp',
-      'Ký hợp đồng dịch vụ SLA 99.9% & Cam kết bảo mật NDA',
+      'Xóa watermark thương hiệu trên phụ đề & biên bản xuất ra',
+      'Hỗ trợ kỹ thuật ưu tiên 24/7 qua Zalo / Slack',
     ],
   },
 ];
@@ -83,7 +66,7 @@ interface PricingSectionProps {
 }
 
 export const PricingSection: React.FC<PricingSectionProps> = ({ onSelectTier, onContactClick }) => {
-  const [isAnnual, setIsAnnual] = useState(true);
+  const [isAnnual, setIsAnnual] = useState(false);
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
   const [isDemoModalOpen, setIsDemoModalOpen] = useState(false);
 
@@ -105,13 +88,13 @@ export const PricingSection: React.FC<PricingSectionProps> = ({ onSelectTier, on
         <div className="text-center max-w-3xl mx-auto space-y-3 mb-12">
           <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-blue-50 dark:bg-blue-950/40 border border-blue-200/80 dark:border-blue-800/60 text-blue-700 dark:text-blue-300 text-xs font-semibold">
             <Zap className="w-3 h-3" />
-            <span>Bảng Giá &amp; Gói Triển Khai</span>
+            <span>Bảng Giá Đơn Giản &amp; Minh Bạch</span>
           </div>
           <h2 className="text-2xl sm:text-3xl font-extrabold text-zinc-950 dark:text-white tracking-tight">
-            Đầu tư thông minh cho giao tiếp không rào cản
+            Chỉ 2 gói duy nhất: Miễn phí hoặc Không giới hạn
           </h2>
           <p className="text-sm text-zinc-600 dark:text-zinc-400">
-            Linh hoạt từ tự triển khai Docker mã nguồn mở đến hệ thống On-Premise bảo mật chuyên sâu cho doanh nghiệp.
+            Bắt đầu miễn phí ngay lập tức, nâng cấp gói tháng chỉ với 99.000đ khi bạn cần họp nhóm không giới hạn.
           </p>
 
           {/* Billing Interval Switcher */}
@@ -144,7 +127,7 @@ export const PricingSection: React.FC<PricingSectionProps> = ({ onSelectTier, on
         </div>
 
         {/* Pricing Cards Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-stretch">
+        <div className="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-6 items-stretch">
           {PRICING_TIERS.map((tier) => {
             const price = isAnnual ? tier.annualPrice : tier.monthlyPrice;
 

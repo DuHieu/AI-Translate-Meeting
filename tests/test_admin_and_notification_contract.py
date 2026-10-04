@@ -25,13 +25,12 @@ def test_notification_dispatcher_contract() -> None:
     assert "WebhookUrl" in source
 
 
-def test_billing_service_exposes_pay_as_you_go_plans() -> None:
+def test_billing_service_exposes_monthly_pro_plan() -> None:
     source = read_api("Services/BillingService.cs")
 
-    assert "pass_1h" in source
-    assert "credits_500m" in source
-    assert "Vé 1 Giờ Họp Pro" in source
-    assert "Gói 500 Phút Dịch Thuật AI" in source
+    assert '"pro"' in source
+    assert "Gói LayaMeet Pro 1 Tháng" in source
+    assert "99_000" in source
     assert "GetAvailablePlans" in source
 
 
@@ -57,10 +56,8 @@ def test_web_admin_dashboard_and_expanded_checkout_contract() -> None:
     assert "getAdminLeads" in api_source
     assert "testAdminNotification" in api_source
 
-    assert "pass_1h" in checkout_source
-    assert "credits_500m" in checkout_source
-    assert "Vé 1 Giờ" in checkout_source
-    assert "500 Phút AI" in checkout_source
+    assert "Gói LayaMeet Pro 1 Tháng" in checkout_source
+    assert "99.000đ / tháng" in checkout_source
 
     assert 'path="/admin"' in app_source
     assert "AdminDashboardPage" in app_source

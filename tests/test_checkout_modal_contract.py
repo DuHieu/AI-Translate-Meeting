@@ -62,8 +62,8 @@ def test_checkout_modal_supports_vietqr_and_pending_order_polling() -> None:
     ):
         assert label in source
     assert "navigator.clipboard.writeText" in source
-    assert "499.000đ / tháng" in source
-    assert "99.000đ / 24h" in source
+    assert "99.000đ / tháng" in source
+    assert "Gói LayaMeet Pro 1 Tháng" in source
 
 
 def test_checkout_modal_is_wired_into_meeting_and_pricing() -> None:

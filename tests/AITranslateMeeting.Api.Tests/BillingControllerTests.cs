@@ -23,14 +23,14 @@ public sealed class BillingControllerTests
         var ok = Assert.IsType<OkObjectResult>(result.Result);
         var order = Assert.IsType<PaymentOrderResponse>(ok.Value);
         Assert.Matches("^VM[A-Z0-9]+$", order.OrderCode);
-        Assert.Equal(499_000, order.Amount);
-        Assert.Equal("Gói Team Pro 1 Tháng", order.PlanName);
+        Assert.Equal(99_000, order.Amount);
+        Assert.Equal("Gói LayaMeet Pro 1 Tháng", order.PlanName);
         Assert.Equal("pending", order.Status);
         Assert.Equal("MB", order.BankId);
         Assert.Equal("0901234567", order.AccountNumber);
         Assert.Equal("CONG TY VIMEET", order.AccountName);
         Assert.Equal(
-            $"https://img.vietqr.io/image/MB-0901234567-compact2.png?amount=499000&addInfo={order.OrderCode}&accountName=CONG%20TY%20VIMEET",
+            $"https://img.vietqr.io/image/MB-0901234567-compact2.png?amount=99000&addInfo={order.OrderCode}&accountName=CONG%20TY%20VIMEET",
             order.QrUrl);
         Assert.InRange(order.CreatedAt, DateTime.UtcNow.AddMinutes(-1), DateTime.UtcNow);
     }
@@ -39,7 +39,7 @@ public sealed class BillingControllerTests
     public void GetOrder_AfterCreation_ReturnsPendingOrder()
     {
         var controller = CreateController();
-        var created = CreateOrder(controller, "pass");
+        var created = CreateOrder(controller, "pro_monthly");
 
         var result = controller.GetOrder(created.OrderCode);
 
@@ -47,7 +47,7 @@ public sealed class BillingControllerTests
         var order = Assert.IsType<PaymentOrderResponse>(ok.Value);
         Assert.Equal(created.OrderCode, order.OrderCode);
         Assert.Equal(99_000, order.Amount);
-        Assert.Equal("Vé Họp Không Giới Hạn 24h", order.PlanName);
+        Assert.Equal("Gói LayaMeet Pro 1 Tháng", order.PlanName);
         Assert.Equal("pending", order.Status);
     }
 
