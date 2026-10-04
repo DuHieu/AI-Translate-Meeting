@@ -33,10 +33,10 @@ export const LegalModal: React.FC<LegalModalProps> = ({ isOpen, type, onClose })
             )}
             <div>
               <h3 className="text-base font-bold text-zinc-950 dark:text-white">
-                {isPrivacy ? 'Chính Sách Quyền Riêng Tư & Bảo Mật Dữ Liệu' : 'Điều Khoản Dịch Vụ Nền Tảng LayaMeet'}
+                {isPrivacy ? 'Chính Sách Quyền Riêng Tư & Bảo Mật Dữ Liệu' : 'Điều Khoản Dịch Vụ, Thanh Toán & Hoàn Tiền'}
               </h3>
               <p className="text-xs text-zinc-500 dark:text-zinc-400">
-                {isPrivacy ? 'Bảo vệ dữ liệu cuộc họp theo chuẩn Zero Raw Audio Storage' : 'Quy định sử dụng và cam kết chất lượng dịch vụ (SLA)'}
+                {isPrivacy ? 'Bảo vệ dữ liệu theo chuẩn Zero Raw Audio & Nghị định 13/2023/NĐ-CP' : 'Quy định sử dụng, kích hoạt dịch vụ số và cam kết hoàn tiền (SLA)'}
               </p>
             </div>
           </div>
@@ -66,7 +66,7 @@ export const LegalModal: React.FC<LegalModalProps> = ({ isOpen, type, onClose })
               </div>
 
               <div>
-                <h4 className="font-bold text-zinc-950 dark:text-white text-sm mb-1.5">1. Thu Thập Dữ Liệu Tối Giểu</h4>
+                <h4 className="font-bold text-zinc-950 dark:text-white text-sm mb-1.5">1. Thu Thập Dữ Liệu Tối Thiểu</h4>
                 <p>
                   Hệ thống chỉ xử lý các thông tin cần thiết phục vụ phiên họp: Tên hiển thị người tham gia, mã phòng họp (Room Code), cài đặt ngôn ngữ đích hiển thị phụ đề và văn bản phụ đề/biên bản họp do người dùng chủ động yêu cầu xuất file.
                 </p>
@@ -92,6 +92,13 @@ export const LegalModal: React.FC<LegalModalProps> = ({ isOpen, type, onClose })
                   LayaMeet sử dụng cookie thiết yếu duy trì phiên phòng họp và Google Analytics 4 tuân thủ tiêu chuẩn Google Consent Mode v2. Toàn bộ địa chỉ IP được ẩn danh (IP Anonymization) và không thu thập bất kỳ thông tin nhận dạng cá nhân (PII) nào. Bạn có thể thay đổi tùy chọn cookie bất kỳ lúc nào tại chân trang.
                 </p>
               </div>
+
+              <div>
+                <h4 className="font-bold text-zinc-950 dark:text-white text-sm mb-1.5">5. Tuân Thủ Nghị Định 13/2023/NĐ-CP &amp; Bảo Mật Giao Dịch</h4>
+                <p>
+                  Chúng tôi tuân thủ đầy đủ Nghị định 13/2023/NĐ-CP về Bảo vệ dữ liệu cá nhân tại Việt Nam. LayaMeet không thu thập hay lưu trữ số thẻ tín dụng/thẻ ngân hàng của người dùng; mọi giao dịch nâng cấp đều thực hiện trực tiếp trên ứng dụng ngân hàng của khách hàng thông qua tiêu chuẩn VietQR Napas 247.
+                </p>
+              </div>
             </>
           ) : (
             <>
@@ -110,16 +117,30 @@ export const LegalModal: React.FC<LegalModalProps> = ({ isOpen, type, onClose })
               </div>
 
               <div>
-                <h4 className="font-bold text-zinc-950 dark:text-white text-sm mb-1.5">3. Tiêu Chuẩn Phản Hồi Kỹ Thuật (SLA)</h4>
+                <h4 className="font-bold text-zinc-950 dark:text-white text-sm mb-1.5">3. Phương Thức Thanh Toán &amp; Biểu Phí Minh Bạch</h4>
                 <p>
-                  Mọi yêu cầu hỗ trợ kỹ thuật từ khách hàng doanh nghiệp gói Team Pro và Enterprise được cam kết phản hồi trong vòng 2 giờ làm việc và xử lý sự cố cấp độ nghiêm trọng trong vòng 4 giờ.
+                  Nền tảng áp dụng mô hình 2 gói dịch vụ minh bạch: <strong>Gói Free (0 VNĐ)</strong> và <strong>Gói Tháng Pro (99.000 VNĐ/tháng)</strong>. Thanh toán được thực hiện qua hình thức chuyển khoản ngân hàng nội địa bằng mã QR động tiêu chuẩn <strong>VietQR Napas 247</strong> với mã định danh đơn hàng duy nhất (định dạng <code>VM...</code>).
                 </p>
               </div>
 
               <div>
-                <h4 className="font-bold text-zinc-950 dark:text-white text-sm mb-1.5">4. Nâng Cấp &amp; Bản Quyền</h4>
+                <h4 className="font-bold text-zinc-950 dark:text-white text-sm mb-1.5">4. Chính Sách Giao Nhận &amp; Kích Hoạt Dịch Vụ Số</h4>
                 <p>
-                  Khách hàng triển khai gói On-Premise được cấp quyền sử dụng mã nguồn đóng gói, hỗ trợ cập nhật các phiên bản mô hình STT (Faster-Whisper int8) và cập nhật bảo mật định kỳ 12 tháng.
+                  LayaMeet là dịch vụ phần mềm trực tuyến trên nền tảng đám mây (SaaS), không phát sinh vận chuyển hàng hóa vật lý. Ngay sau khi hệ thống nhận được xác nhận thanh toán thành công qua VietQR, quyền lợi <strong>Gói Tháng Pro</strong> được kích hoạt tự động trong vòng <strong>3 – 30 giây</strong> trực tiếp trên phòng họp và thiết bị của khách hàng.
+                </p>
+              </div>
+
+              <div>
+                <h4 className="font-bold text-zinc-950 dark:text-white text-sm mb-1.5">5. Chính Sách Hoàn Tiền &amp; Giải Quyết Khiếu Nại (Refund Policy)</h4>
+                <p>
+                  Khách hàng được cam kết <strong>hoàn tiền 100%</strong> trong vòng 24 giờ làm việc trong các trường hợp: (a) Đã chuyển khoản thành công nhưng hệ thống gặp sự cố kỹ thuật không thể kích hoạt dịch vụ; (b) Chuyển khoản nhầm hoặc thừa số tiền so với giá trị đơn hàng; hoặc (c) Dịch vụ gián đoạn quá thời gian cam kết SLA. Mọi yêu cầu hỗ trợ hoàn tiền xin gửi về <strong>support@layameet.com</strong> kèm mã đơn hàng <code>VM...</code>.
+                </p>
+              </div>
+
+              <div>
+                <h4 className="font-bold text-zinc-950 dark:text-white text-sm mb-1.5">6. Triển Khai On-Premise &amp; Chế Độ Thử Nghiệm (Pilot/Beta)</h4>
+                <p>
+                  Đối với khách hàng doanh nghiệp triển khai gói On-Premise trên máy chủ riêng, quyền sử dụng và bảo trì SLA được thực hiện theo hợp đồng thương mại và cam kết bảo mật (NDA) ký kết trực tiếp giữa hai bên.
                 </p>
               </div>
             </>

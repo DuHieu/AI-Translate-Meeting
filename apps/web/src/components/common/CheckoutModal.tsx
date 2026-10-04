@@ -204,11 +204,16 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
           </div>
         )}
 
-        <div className="mt-4 flex items-center justify-between text-[11px] text-zinc-500">
-          <span className="flex items-center gap-1">
-            <ShieldCheck className="h-3.5 w-3.5 text-sky-500" /> Bảo mật giao dịch Napas 247
-          </span>
-          <span>Hỗ trợ kỹ thuật 24/7</span>
+        <div className="mt-4 space-y-1.5 border-t border-zinc-800/80 pt-3 text-[11px] text-zinc-400">
+          <div className="flex items-center justify-between">
+            <span className="flex items-center gap-1 text-zinc-300">
+              <ShieldCheck className="h-3.5 w-3.5 text-sky-500" /> Bảo mật giao dịch Napas 247 · Hoàn tiền 100% nếu lỗi kích hoạt
+            </span>
+            <span>Hỗ trợ: support@layameet.com</span>
+          </div>
+          <p className="text-[10px] text-zinc-500">
+            Dịch vụ phần mềm trực tuyến (SaaS) kích hoạt tự động ngay sau khi chuyển khoản đúng nội dung đơn hàng.
+          </p>
         </div>
       </div>
     </div>

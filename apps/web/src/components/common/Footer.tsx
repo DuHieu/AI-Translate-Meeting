@@ -165,6 +165,15 @@ export const Footer: React.FC<FooterProps> = ({
               <li>
                 <button
                   type="button"
+                  onClick={onOpenTermsModal}
+                  className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors text-left cursor-pointer"
+                >
+                  Chính sách Thanh toán &amp; Hoàn tiền
+                </button>
+              </li>
+              <li>
+                <button
+                  type="button"
                   onClick={() => window.dispatchEvent(new CustomEvent('layameet:open-cookie-settings'))}
                   className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors text-left cursor-pointer"
                 >
@@ -192,39 +201,50 @@ export const Footer: React.FC<FooterProps> = ({
                 </Link>
               </li>
               <li>
-                <span className="font-mono text-[10px] text-zinc-400">RFC 7807 Compliant</span>
+                <span className="font-mono text-[10px] text-zinc-400">RFC 7807 · NĐ 13/2023/NĐ-CP</span>
               </li>
             </ul>
           </div>
         </div>
       </div>
 
-      {/* ── Sub-footer Copyright Bar ────────────────────────────── */}
+      {/* ── Sub-footer Copyright & Regulatory Compliance Bar ─────────────────── */}
       <div className="border-t border-zinc-200/80 dark:border-zinc-800/80 py-4 sm:py-5 px-4 sm:px-6 bg-zinc-100/50 dark:bg-[#080809]">
-        <div className="max-w-5xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2 sm:gap-3 text-xs text-zinc-500 dark:text-zinc-500 text-center sm:text-left">
-          <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3">
-            <div>
-              <span className="sm:hidden">© 2026 LayaMeet Platform</span>
-              <span className="hidden sm:inline">© 2026 LayaMeet Platform (layameet.com).</span>
+        <div className="max-w-5xl mx-auto space-y-2.5">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-2 sm:gap-3 text-xs text-zinc-500 dark:text-zinc-500 text-center sm:text-left">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3">
+              <div>
+                <span className="sm:hidden">© 2026 LayaMeet Platform</span>
+                <span className="hidden sm:inline">© 2026 LayaMeet Platform (layameet.com).</span>
+              </div>
+              <div className="flex items-center justify-center gap-2 text-[11px] text-zinc-600 dark:text-zinc-400">
+                <Link to="/" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors font-medium">Tiếng Việt</Link>
+                <span className="text-zinc-300 dark:text-zinc-700">·</span>
+                <Link to="/ja" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors font-medium">日本語</Link>
+                <span className="text-zinc-300 dark:text-zinc-700">·</span>
+                <Link to="/en" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors font-medium">English</Link>
+              </div>
             </div>
-            <div className="flex items-center justify-center gap-2 text-[11px] text-zinc-600 dark:text-zinc-400">
-              <Link to="/" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors font-medium">Tiếng Việt</Link>
+            <div className="flex items-center justify-center gap-2 sm:gap-3 text-[11px] text-zinc-400">
+              <span className="flex items-center gap-1">
+                <span>Made with</span>
+                <Heart className="w-3 h-3 text-red-500 fill-red-500 shrink-0" />
+                <span className="hidden md:inline">for Global Polyglot Teams (VN · JP · US · CN · TH · LA...)</span>
+                <span className="hidden sm:inline md:hidden">for Global Teams</span>
+              </span>
               <span className="text-zinc-300 dark:text-zinc-700">·</span>
-              <Link to="/ja" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors font-medium">日本語</Link>
-              <span className="text-zinc-300 dark:text-zinc-700">·</span>
-              <Link to="/en" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors font-medium">English</Link>
+              <span className="font-mono">v2.4.0</span>
+              <span className="hidden sm:inline font-mono text-[10px] text-zinc-400">(Stable)</span>
             </div>
           </div>
-          <div className="flex items-center justify-center gap-2 sm:gap-3 text-[11px] text-zinc-400">
-            <span className="flex items-center gap-1">
-              <span>Made with</span>
-              <Heart className="w-3 h-3 text-red-500 fill-red-500 shrink-0" />
-              <span className="hidden md:inline">for Global Polyglot Teams (VN · JP · US · CN · TH · LA...)</span>
-              <span className="hidden sm:inline md:hidden">for Global Teams</span>
+
+          <div className="pt-2 border-t border-zinc-200/50 dark:border-zinc-800/50 text-[11px] text-zinc-400 dark:text-zinc-500 text-center sm:text-left flex flex-col sm:flex-row sm:items-center justify-between gap-1">
+            <span>
+              Đơn vị vận hành: <strong>Dự Án Công Nghệ LayaMeet Việt Nam (Phiên bản Thử nghiệm Pilot/Beta)</strong> · Hỗ trợ &amp; Khiếu nại: <a href="mailto:support@layameet.com" className="underline hover:text-zinc-300">support@layameet.com</a>
             </span>
-            <span className="text-zinc-300 dark:text-zinc-700">·</span>
-            <span className="font-mono">v2.4.0</span>
-            <span className="hidden sm:inline font-mono text-[10px] text-zinc-400">(Stable)</span>
+            <span>
+              Kích hoạt dịch vụ số tức thì qua VietQR · Cam kết hoàn tiền 100% nếu lỗi kỹ thuật
+            </span>
           </div>
         </div>
       </div>
