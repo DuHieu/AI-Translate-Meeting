@@ -22,11 +22,13 @@ export interface WebVitalMetric {
 
 let isInitialized = false;
 
+export const DEFAULT_GA_MEASUREMENT_ID = 'G-81BYTQEBXR';
+
 /**
- * Get Google Analytics Measurement ID from environment
+ * Get Google Analytics Measurement ID from environment or default
  */
-export function getMeasurementId(): string | undefined {
-  return import.meta.env.VITE_GA_MEASUREMENT_ID as string | undefined;
+export function getMeasurementId(): string {
+  return (import.meta.env.VITE_GA_MEASUREMENT_ID as string | undefined) || DEFAULT_GA_MEASUREMENT_ID;
 }
 
 /**
@@ -38,32 +40,25 @@ export function initAnalytics(): void {
   }
 
   const measurementId = getMeasurementId();
-  if (!measurementId) {
-    if (import.meta.env.DEV) {
-      console.info('[Analytics] VITE_GA_MEASUREMENT_ID not configured. Running in Mock Logger mode.');
-    }
-    initPerformanceObservers();
-    isInitialized = true;
-    return;
+
+  // If window.gtag is not already loaded by index.html, inject it
+  if (!window.gtag && measurementId) {
+    window.dataLayer = window.dataLayer || [];
+    window.gtag = function gtag(...args: unknown[]) {
+      window.dataLayer?.push(args);
+    };
+
+    window.gtag('js', new Date());
+    window.gtag('config', measurementId, {
+      anonymize_ip: true,
+      send_page_view: false, // Handle page views explicitly via React Router
+    });
+
+    const script = document.createElement('script');
+    script.async = true;
+    script.src = `https://www.googletagmanager.com/gtag/js?id=${encodeURIComponent(measurementId)}`;
+    document.head.appendChild(script);
   }
-
-  // Initialize window.dataLayer
-  window.dataLayer = window.dataLayer || [];
-  window.gtag = function gtag(...args: unknown[]) {
-    window.dataLayer?.push(args);
-  };
-
-  window.gtag('js', new Date());
-  window.gtag('config', measurementId, {
-    anonymize_ip: true,
-    send_page_view: false, // Handle page views explicitly via React Router
-  });
-
-  // Inject async script tag
-  const script = document.createElement('script');
-  script.async = true;
-  script.src = `https://www.googletagmanager.com/gtag/js?id=${encodeURIComponent(measurementId)}`;
-  document.head.appendChild(script);
 
   initPerformanceObservers();
   isInitialized = true;

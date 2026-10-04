@@ -13,12 +13,20 @@ import {
   Bell,
   ArrowLeft,
   KeyRound,
+  Server,
+  Activity,
+  Cpu,
+  AlertTriangle,
+  Sliders,
+  HardDrive,
+  Zap,
 } from 'lucide-react';
 import {
   meetingApi,
   AdminMetricsResponse,
   PaymentOrderResponse,
   EnterpriseLeadRecord,
+  InfraMetricsResponse,
 } from '../api/meetingApi';
 
 export const AdminDashboardPage: React.FC = () => {
@@ -32,26 +40,51 @@ export const AdminDashboardPage: React.FC = () => {
   const [metrics, setMetrics] = useState<AdminMetricsResponse | null>(null);
   const [orders, setOrders] = useState<PaymentOrderResponse[]>([]);
   const [leads, setLeads] = useState<EnterpriseLeadRecord[]>([]);
-  const [activeTab, setActiveTab] = useState<'orders' | 'leads' | 'notifications'>('orders');
+  const [infraMetrics, setInfraMetrics] = useState<InfraMetricsResponse | null>(null);
+  const [activeTab, setActiveTab] = useState<'orders' | 'leads' | 'notifications' | 'infra'>('orders');
 
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [isInfraLoading, setIsInfraLoading] = useState<boolean>(false);
+  const [autoRefreshInfra, setAutoRefreshInfra] = useState<boolean>(true);
+  const [targetCcu, setTargetCcu] = useState<number>(50);
+
   const [testNotificationResult, setTestNotificationResult] = useState<{
     status: 'idle' | 'sending' | 'success' | 'error';
     message?: string;
   }>({ status: 'idle' });
 
+  const [testAlertResult, setTestAlertResult] = useState<{
+    status: 'idle' | 'sending' | 'success' | 'error';
+    message?: string;
+  }>({ status: 'idle' });
+
+  const loadInfraData = useCallback(async (key: string) => {
+    if (!key) return;
+    setIsInfraLoading(true);
+    try {
+      const data = await meetingApi.getAdminInfraMetrics(key);
+      setInfraMetrics(data);
+    } catch (err) {
+      console.warn('Failed to load infra metrics:', err);
+    } finally {
+      setIsInfraLoading(false);
+    }
+  }, []);
+
   const loadDashboardData = useCallback(async (key: string) => {
     setIsLoading(true);
     setAuthError(null);
     try {
-      const [m, o, l] = await Promise.all([
+      const [m, o, l, infra] = await Promise.all([
         meetingApi.getAdminMetrics(key),
         meetingApi.getAdminOrders(key),
         meetingApi.getAdminLeads(key),
+        meetingApi.getAdminInfraMetrics(key).catch(() => null),
       ]);
       setMetrics(m);
       setOrders(o);
       setLeads(l);
+      if (infra) setInfraMetrics(infra);
       setIsAuthenticated(true);
       sessionStorage.setItem('layameet_admin_key', key);
     } catch (err) {
@@ -70,6 +103,15 @@ export const AdminDashboardPage: React.FC = () => {
     }
   }, [adminKey, loadDashboardData]);
 
+  // Auto-refresh infra metrics every 10s if viewing infra tab
+  useEffect(() => {
+    if (!isAuthenticated || !adminKey || activeTab !== 'infra' || !autoRefreshInfra) return;
+    const interval = setInterval(() => {
+      loadInfraData(adminKey);
+    }, 10000);
+    return () => clearInterval(interval);
+  }, [isAuthenticated, adminKey, activeTab, autoRefreshInfra, loadInfraData]);
+
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
     if (!keyInput.trim()) return;
@@ -83,6 +125,7 @@ export const AdminDashboardPage: React.FC = () => {
     setMetrics(null);
     setOrders([]);
     setLeads([]);
+    setInfraMetrics(null);
   };
 
   const handleTestNotification = async () => {
@@ -98,6 +141,23 @@ export const AdminDashboardPage: React.FC = () => {
       setTestNotificationResult({
         status: 'error',
         message: err instanceof Error ? err.message : 'Lỗi khi gửi thông báo thử nghiệm.',
+      });
+    }
+  };
+
+  const handleTestAlert = async (severity: 'warning' | 'critical') => {
+    if (!adminKey) return;
+    setTestAlertResult({ status: 'sending' });
+    try {
+      const res = await meetingApi.testAdminAlert(adminKey, severity);
+      setTestAlertResult({
+        status: res.success ? 'success' : 'error',
+        message: res.message,
+      });
+    } catch (err) {
+      setTestAlertResult({
+        status: 'error',
+        message: err instanceof Error ? err.message : 'Lỗi khi gửi cảnh báo thử nghiệm.',
       });
     }
   };
@@ -180,7 +240,7 @@ export const AdminDashboardPage: React.FC = () => {
             <div className="h-7 w-7 rounded-lg bg-blue-600 flex items-center justify-center font-bold text-white text-xs">
               LM
             </div>
-            <span className="font-bold text-sm text-white">LayaMeet Admin Console</span>
+            <span className="font-bold text-sm text-white">ViMeet Admin Console</span>
             <span className="rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-[10px] font-semibold px-2 py-0.5">
               Live Production
             </span>
@@ -314,6 +374,32 @@ export const AdminDashboardPage: React.FC = () => {
           >
             <Bell className="h-4 w-4" />
             <span>Thông Báo Telegram &amp; Webhook</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setActiveTab('infra');
+              if (adminKey) loadInfraData(adminKey);
+            }}
+            className={`pb-3 font-semibold text-xs sm:text-sm border-b-2 transition flex items-center gap-2 whitespace-nowrap cursor-pointer ${
+              activeTab === 'infra'
+                ? 'border-blue-500 text-blue-400'
+                : 'border-transparent text-zinc-400 hover:text-zinc-200'
+            }`}
+          >
+            <Server className="h-4 w-4" />
+            <span>Hạ Tầng &amp; Cảnh Báo Sớm</span>
+            {infraMetrics && (
+              <span
+                className={`h-2 w-2 rounded-full ${
+                  infraMetrics.systemStatus === 'critical'
+                    ? 'bg-red-500 animate-ping'
+                    : infraMetrics.systemStatus === 'warning'
+                    ? 'bg-amber-400'
+                    : 'bg-emerald-400'
+                }`}
+              />
+            )}
           </button>
         </div>
 
@@ -528,6 +614,432 @@ export const AdminDashboardPage: React.FC = () => {
                 <div className="rounded-xl border border-red-500/30 bg-red-950/20 p-3 text-xs text-red-400 flex items-center gap-2">
                   <ShieldAlert className="h-4 w-4 shrink-0" />
                   <span>{testNotificationResult.message}</span>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Tab 4: Infrastructure & Early Warning System */}
+        {activeTab === 'infra' && (
+          <div className="space-y-6">
+            {/* Top Bar: System Status & Controls */}
+            <div className="rounded-2xl border border-zinc-800 bg-zinc-900/40 p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <div className="p-3 rounded-2xl bg-blue-500/10 text-blue-400">
+                  <Activity className="h-6 w-6" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h2 className="text-base font-bold text-white">Sức Khỏe Hạ Tầng LayaMeet</h2>
+                    {infraMetrics?.systemStatus === 'critical' ? (
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-red-500/20 text-red-400 border border-red-500/30">
+                        <span className="h-1.5 w-1.5 rounded-full bg-red-500 animate-ping" />
+                        NGUY CƠ QUÁ TẢI (CRITICAL)
+                      </span>
+                    ) : infraMetrics?.systemStatus === 'warning' ? (
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-500/20 text-amber-400 border border-amber-500/30">
+                        <span className="h-1.5 w-1.5 rounded-full bg-amber-400" />
+                        CẢNH BÁO SỚM (WARNING)
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                        <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+                        HOẠT ĐỘNG ỔN ĐỊNH (NORMAL)
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-xs text-zinc-400 mt-0.5">
+                    Tự động đo đạc tải tiến trình, dung lượng phòng họp và trạng thái dịch vụ nền tảng.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3 w-full md:w-auto justify-end">
+                <label className="flex items-center gap-2 text-xs text-zinc-400 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={autoRefreshInfra}
+                    onChange={(e) => setAutoRefreshInfra(e.target.checked)}
+                    className="rounded border-zinc-700 bg-zinc-800 text-blue-500 focus:ring-0 cursor-pointer"
+                  />
+                  <span>Tự động cập nhật (10s)</span>
+                </label>
+                <button
+                  type="button"
+                  onClick={() => adminKey && loadInfraData(adminKey)}
+                  disabled={isInfraLoading}
+                  className="px-3 py-1.5 rounded-xl border border-zinc-700 hover:border-zinc-600 bg-zinc-800/60 hover:bg-zinc-800 text-xs font-semibold text-zinc-200 flex items-center gap-1.5 transition cursor-pointer"
+                >
+                  <RefreshCw className={`h-3.5 w-3.5 ${isInfraLoading ? 'animate-spin' : ''}`} />
+                  <span>Làm mới</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Active Alerts Banner if any */}
+            {infraMetrics?.activeAlerts && infraMetrics.activeAlerts.length > 0 && (
+              <div className="rounded-2xl border border-amber-500/30 bg-amber-950/20 p-4 space-y-2">
+                <div className="flex items-center gap-2 text-amber-400 font-bold text-xs uppercase tracking-wider">
+                  <AlertTriangle className="h-4 w-4" />
+                  <span>Phát Hiện Dấu Hiệu Quá Tải Cần Lưu Ý ({infraMetrics.activeAlerts.length})</span>
+                </div>
+                <ul className="list-disc list-inside space-y-1 text-xs text-amber-200/90 pl-1">
+                  {infraMetrics.activeAlerts.map((alert, idx) => (
+                    <li key={idx}>{alert}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {/* Live Vitals Grid (4 Metrics) */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              {/* Vitals 1: Process Memory */}
+              <div className="rounded-2xl border border-zinc-800 bg-zinc-900/40 p-5 space-y-3">
+                <div className="flex items-center justify-between text-zinc-400">
+                  <span className="text-xs font-semibold">RAM Tiến Trình (.NET &amp; API)</span>
+                  <div className="p-2 rounded-xl bg-blue-500/10 text-blue-400">
+                    <Cpu className="h-4 w-4" />
+                  </div>
+                </div>
+                <div className="text-2xl font-black text-white font-mono">
+                  {infraMetrics?.processMemoryMb ?? 0} <span className="text-sm font-normal text-zinc-400">MB</span>
+                </div>
+                <div className="space-y-1.5">
+                  <div className="h-1.5 w-full rounded-full bg-zinc-800 overflow-hidden">
+                    <div
+                      className={`h-full rounded-full transition-all duration-500 ${
+                        (infraMetrics?.processMemoryMb ?? 0) >= 2000
+                          ? 'bg-red-500'
+                          : (infraMetrics?.processMemoryMb ?? 0) >= 1200
+                          ? 'bg-amber-400'
+                          : 'bg-blue-500'
+                      }`}
+                      style={{
+                        width: `${Math.min(100, Math.round(((infraMetrics?.processMemoryMb ?? 0) / 2500) * 100))}%`,
+                      }}
+                    />
+                  </div>
+                  <div className="text-[11px] text-zinc-500 flex justify-between">
+                    <span>GC Heap: {infraMetrics?.gcAllocatedMb ?? 0} MB</span>
+                    <span>Ngưỡng &lt; 1,500 MB</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Vitals 2: Room Capacity */}
+              <div className="rounded-2xl border border-zinc-800 bg-zinc-900/40 p-5 space-y-3">
+                <div className="flex items-center justify-between text-zinc-400">
+                  <span className="text-xs font-semibold">Dung Lượng Phòng Họp</span>
+                  <div className="p-2 rounded-xl bg-violet-500/10 text-violet-400">
+                    <Video className="h-4 w-4" />
+                  </div>
+                </div>
+                <div className="text-2xl font-black text-white font-mono">
+                  {infraMetrics?.activeRooms ?? 0} <span className="text-sm font-normal text-zinc-400">/ {infraMetrics?.maxConcurrentRooms ?? 25}</span>
+                </div>
+                <div className="space-y-1.5">
+                  <div className="h-1.5 w-full rounded-full bg-zinc-800 overflow-hidden">
+                    <div
+                      className={`h-full rounded-full transition-all duration-500 ${
+                        (infraMetrics?.roomCapacityPercent ?? 0) >= 90
+                          ? 'bg-red-500'
+                          : (infraMetrics?.roomCapacityPercent ?? 0) >= 70
+                          ? 'bg-amber-400'
+                          : 'bg-violet-500'
+                      }`}
+                      style={{ width: `${Math.min(100, infraMetrics?.roomCapacityPercent ?? 0)}%` }}
+                    />
+                  </div>
+                  <div className="text-[11px] text-zinc-500 flex justify-between">
+                    <span>Tải: {infraMetrics?.roomCapacityPercent ?? 0}%</span>
+                    <span>{infraMetrics?.activeParticipants ?? 0} người đang họp</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Vitals 3: PostgreSQL Database */}
+              <div className="rounded-2xl border border-zinc-800 bg-zinc-900/40 p-5 space-y-3">
+                <div className="flex items-center justify-between text-zinc-400">
+                  <span className="text-xs font-semibold">PostgreSQL Database</span>
+                  <div className="p-2 rounded-xl bg-emerald-500/10 text-emerald-400">
+                    <HardDrive className="h-4 w-4" />
+                  </div>
+                </div>
+                <div className="text-2xl font-black capitalize text-emerald-400 font-mono">
+                  {infraMetrics?.databaseStatus ?? 'healthy'}
+                </div>
+                <div className="text-[11px] text-zinc-500">
+                  PostgreSQL 16 Alpine • Pool sẵn sàng
+                </div>
+              </div>
+
+              {/* Vitals 4: Redis Distributed Cache */}
+              <div className="rounded-2xl border border-zinc-800 bg-zinc-900/40 p-5 space-y-3">
+                <div className="flex items-center justify-between text-zinc-400">
+                  <span className="text-xs font-semibold">Redis Cache &amp; STT Buffer</span>
+                  <div className="p-2 rounded-xl bg-amber-500/10 text-amber-400">
+                    <Zap className="h-4 w-4" />
+                  </div>
+                </div>
+                <div className="text-2xl font-black text-white font-mono flex items-baseline gap-2">
+                  <span className="capitalize text-emerald-400">{infraMetrics?.redisStatus ?? 'healthy'}</span>
+                  {infraMetrics?.redisLatencyMs != null && (
+                    <span className="text-xs font-normal text-zinc-400">({infraMetrics.redisLatencyMs} ms)</span>
+                  )}
+                </div>
+                <div className="text-[11px] text-zinc-500">
+                  Bộ nhớ đệm dịch thuật &amp; Rate limiting
+                </div>
+              </div>
+            </div>
+
+            {/* Health Indicators Breakdown */}
+            <div className="rounded-2xl border border-zinc-800 bg-zinc-900/30 overflow-hidden shadow-sm">
+              <div className="p-4 border-b border-zinc-800/80 flex items-center justify-between">
+                <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                  <Server className="h-4 w-4 text-blue-400" />
+                  <span>Trạng Thái Chi Tiết Từng Thành Phần Hạ Tầng</span>
+                </h3>
+                <span className="text-xs text-zinc-400">Cập nhật lúc: {infraMetrics ? new Date(infraMetrics.timestampUtc).toLocaleTimeString('vi-VN') : '--'}</span>
+              </div>
+              <div className="divide-y divide-zinc-800/60">
+                {infraMetrics?.indicators.map((ind, i) => (
+                  <div key={i} className="p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
+                    <div className="flex items-center gap-3">
+                      <span
+                        className={`h-2.5 w-2.5 rounded-full shrink-0 ${
+                          ind.status === 'critical'
+                            ? 'bg-red-500 animate-pulse'
+                            : ind.status === 'warning'
+                            ? 'bg-amber-400'
+                            : 'bg-emerald-400'
+                        }`}
+                      />
+                      <div>
+                        <div className="font-semibold text-white">{ind.component}</div>
+                        <div className="text-zinc-400 text-[11px] mt-0.5">{ind.message}</div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3 self-end sm:self-auto">
+                      {ind.value != null && (
+                        <span className="font-mono text-zinc-300 font-semibold">
+                          {ind.value} {ind.unit ?? ''}
+                        </span>
+                      )}
+                      <span
+                        className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                          ind.status === 'critical'
+                            ? 'bg-red-500/20 text-red-400 border border-red-500/30'
+                            : ind.status === 'warning'
+                            ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
+                            : 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                        }`}
+                      >
+                        {ind.status}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Interactive Capacity & Scale Calculator */}
+            <div className="rounded-2xl border border-zinc-800 bg-gradient-to-b from-zinc-900/60 to-zinc-950 p-6 space-y-6">
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-2 border-b border-zinc-800 pb-4">
+                <div>
+                  <h3 className="text-base font-bold text-white flex items-center gap-2">
+                    <Sliders className="h-5 w-5 text-blue-400" />
+                    <span>Bộ Tính Toán &amp; Quy Hoạch Nâng Cấp VPS (Capacity Calculator)</span>
+                  </h3>
+                  <p className="text-xs text-zinc-400 mt-1">
+                    Kéo thanh trượt số người họp đồng thời (CCU) để hệ thống tự động tính toán cấu hình máy chủ và chi phí thuê VPS tối ưu.
+                  </p>
+                </div>
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  {[25, 50, 100, 250, 500].map((preset) => (
+                    <button
+                      key={preset}
+                      type="button"
+                      onClick={() => setTargetCcu(preset)}
+                      className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition cursor-pointer ${
+                        targetCcu === preset
+                          ? 'bg-blue-600 text-white'
+                          : 'bg-zinc-800 text-zinc-300 hover:bg-zinc-700'
+                      }`}
+                    >
+                      {preset} CCU
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Slider Row */}
+              <div className="space-y-3">
+                <div className="flex justify-between items-center text-xs">
+                  <span className="text-zinc-400 font-semibold">Số Người Họp Đồng Thời Mục Tiêu:</span>
+                  <span className="font-mono text-xl font-black text-blue-400">{targetCcu} <span className="text-xs text-zinc-400 font-normal">người (CCU)</span></span>
+                </div>
+                <input
+                  type="range"
+                  min="10"
+                  max="500"
+                  step="10"
+                  value={targetCcu}
+                  onChange={(e) => setTargetCcu(Number(e.target.value))}
+                  className="w-full h-2 bg-zinc-800 rounded-lg appearance-none cursor-pointer accent-blue-500"
+                />
+                <div className="flex justify-between text-[11px] text-zinc-500">
+                  <span>10 CCU (Nhóm nhỏ)</span>
+                  <span>100 CCU (Công ty vừa)</span>
+                  <span>500 CCU (Hội thảo lớn)</span>
+                </div>
+              </div>
+
+              {/* Calculated Results Cards */}
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 pt-2">
+                {/* 1. vCPU Cores */}
+                <div className="rounded-xl border border-zinc-800/80 bg-zinc-900/40 p-4 space-y-1">
+                  <div className="text-[11px] text-zinc-400 uppercase font-semibold tracking-wider">Cấu Hình vCPU</div>
+                  <div className="text-lg font-black text-white font-mono">
+                    {targetCcu <= 25
+                      ? '2 - 4 vCPU'
+                      : targetCcu <= 75
+                      ? '8 vCPU'
+                      : targetCcu <= 150
+                      ? '16 vCPU'
+                      : '32+ vCPU'}
+                  </div>
+                  <div className="text-[11px] text-zinc-500">
+                    Faster-whisper int8 đa luồng
+                  </div>
+                </div>
+
+                {/* 2. RAM GB */}
+                <div className="rounded-xl border border-zinc-800/80 bg-zinc-900/40 p-4 space-y-1">
+                  <div className="text-[11px] text-zinc-400 uppercase font-semibold tracking-wider">Bộ Nhớ RAM</div>
+                  <div className="text-lg font-black text-white font-mono">
+                    {targetCcu <= 25
+                      ? '4 - 8 GB'
+                      : targetCcu <= 75
+                      ? '16 GB'
+                      : targetCcu <= 150
+                      ? '32 GB'
+                      : '64+ GB'}
+                  </div>
+                  <div className="text-[11px] text-zinc-500">
+                    RAM-only (Zero raw audio storage)
+                  </div>
+                </div>
+
+                {/* 3. Bandwidth */}
+                <div className="rounded-xl border border-zinc-800/80 bg-zinc-900/40 p-4 space-y-1">
+                  <div className="text-[11px] text-zinc-400 uppercase font-semibold tracking-wider">Băng Thông Mạng</div>
+                  <div className="text-lg font-black text-white font-mono">
+                    ~{Math.round(targetCcu * 0.8)} <span className="text-xs text-zinc-400 font-normal">Mbps</span>
+                  </div>
+                  <div className="text-[11px] text-zinc-500">
+                    WebRTC SFU Outbound stream
+                  </div>
+                </div>
+
+                {/* 4. Estimated Hosting Cost */}
+                <div className="rounded-xl border border-blue-500/20 bg-blue-950/20 p-4 space-y-1">
+                  <div className="text-[11px] text-blue-400 uppercase font-semibold tracking-wider">Ước Tính Chi Phí VPS</div>
+                  <div className="text-lg font-black text-emerald-400 font-mono">
+                    ${targetCcu <= 25 ? 15 : targetCcu <= 75 ? 45 : targetCcu <= 150 ? 150 : targetCcu <= 300 ? 350 : 700} <span className="text-xs text-zinc-400 font-normal">/ tháng</span>
+                  </div>
+                  <div className="text-[11px] text-zinc-400">
+                    ~{formatCurrency((targetCcu <= 25 ? 15 : targetCcu <= 75 ? 45 : targetCcu <= 150 ? 150 : targetCcu <= 300 ? 350 : 700) * 25500)} / tháng
+                  </div>
+                </div>
+              </div>
+
+              {/* Recommendation Callout */}
+              <div className="rounded-xl border border-zinc-800 bg-zinc-950 p-4 text-xs text-zinc-300 space-y-1.5">
+                <div className="font-semibold text-white flex items-center gap-2">
+                  <CheckCircle2 className="h-4 w-4 text-emerald-400" />
+                  <span>Khuyến Nghị Lựa Chọn Hạ Tầng Cho Mức {targetCcu} CCU:</span>
+                </div>
+                <p className="text-zinc-400 leading-relaxed text-[11px]">
+                  {targetCcu <= 25 &&
+                    'VPS cơ bản (Hetzner CX22 / DigitalOcean 4GB). Đủ tải mượt mà cho 3–6 phòng họp nhỏ hoàn toàn bằng CPU mà không cần GPU.'}
+                  {targetCcu > 25 && targetCcu <= 75 &&
+                    'VPS tiêu chuẩn (Hetzner CCX23 / OVH Advance-1). Tối ưu cho doanh nghiệp vừa 10–20 phòng họp đồng thời, giữ độ trễ phụ đề dưới 350ms.'}
+                  {targetCcu > 75 && targetCcu <= 150 &&
+                    'Dedicated Server hoặc VPS GPU (RunPod / Lambda Labs / AWS g4dn.xlarge). Khuyến nghị thêm 1 card GPU Nvidia T4 để tránh quá tải CPU khi dịch đa luồng.'}
+                  {targetCcu > 150 &&
+                    'Kiến trúc phân tán Multi-node (Tách riêng LiveKit SFU node và AI Worker node có GPU A10G/L4). Đảm bảo khả năng chịu lỗi cao và co giãn theo lưu lượng.'}
+                </p>
+              </div>
+            </div>
+
+            {/* Early Warning Alert Testing Console */}
+            <div className="rounded-2xl border border-zinc-800 bg-zinc-900/40 p-6 space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-base font-bold text-white flex items-center gap-2">
+                    <Send className="h-5 w-5 text-amber-400" />
+                    <span>Kiểm Thử Luồng Cảnh Báo Sớm Tránh Sập Server (Alert Console)</span>
+                  </h3>
+                  <p className="text-xs text-zinc-400 mt-0.5">
+                    Gửi tín hiệu cảnh báo khẩn tới bot Telegram để xác thực quản trị viên nhận được cảnh báo trước khi xảy ra sự cố.
+                  </p>
+                </div>
+                <div>
+                  {infraMetrics?.telegramConfigured ? (
+                    <span className="rounded-full bg-emerald-500/15 text-emerald-400 text-xs font-semibold px-3 py-1 border border-emerald-500/20">
+                      Telegram Đã Kết Nối
+                    </span>
+                  ) : (
+                    <span className="rounded-full bg-zinc-800 text-zinc-400 text-xs font-semibold px-3 py-1">
+                      Telegram Chưa Cấu Hình
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => handleTestAlert('warning')}
+                  disabled={testAlertResult.status === 'sending'}
+                  className="py-2.5 px-4 rounded-xl bg-amber-600/80 hover:bg-amber-600 disabled:opacity-50 text-white font-semibold text-xs flex items-center justify-center gap-2 transition cursor-pointer shadow-md shadow-amber-600/20"
+                >
+                  <AlertTriangle className="h-4 w-4" />
+                  <span>
+                    {testAlertResult.status === 'sending'
+                      ? 'Đang gửi tín hiệu...'
+                      : 'Bắn Thử Cảnh Báo Mức WARNING ⚠️'}
+                  </span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => handleTestAlert('critical')}
+                  disabled={testAlertResult.status === 'sending'}
+                  className="py-2.5 px-4 rounded-xl bg-red-600 hover:bg-red-500 disabled:opacity-50 text-white font-semibold text-xs flex items-center justify-center gap-2 transition cursor-pointer shadow-md shadow-red-600/20"
+                >
+                  <ShieldAlert className="h-4 w-4" />
+                  <span>
+                    {testAlertResult.status === 'sending'
+                      ? 'Đang gửi tín hiệu...'
+                      : 'Bắn Thử Cảnh Báo Mức CRITICAL 🚨'}
+                  </span>
+                </button>
+              </div>
+
+              {testAlertResult.status === 'success' && (
+                <div className="rounded-xl border border-emerald-500/30 bg-emerald-950/20 p-3 text-xs text-emerald-400 flex items-center gap-2">
+                  <CheckCircle2 className="h-4 w-4 shrink-0" />
+                  <span>{testAlertResult.message}</span>
+                </div>
+              )}
+
+              {testAlertResult.status === 'error' && (
+                <div className="rounded-xl border border-red-500/30 bg-red-950/20 p-3 text-xs text-red-400 flex items-center gap-2">
+                  <ShieldAlert className="h-4 w-4 shrink-0" />
+                  <span>{testAlertResult.message}</span>
                 </div>
               )}
             </div>

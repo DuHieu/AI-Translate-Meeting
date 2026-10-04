@@ -340,6 +340,33 @@ export const meetingApi = {
     });
     return handleResponse<{ success: boolean; message: string }>(res);
   },
+
+  async getAdminInfraMetrics(adminKey: string): Promise<InfraMetricsResponse> {
+    const res = await fetch(`${API_BASE_URL}/api/admin/infra-metrics`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Admin-Key': adminKey.trim(),
+      },
+    });
+    return handleResponse<InfraMetricsResponse>(res);
+  },
+
+  async testAdminAlert(
+    adminKey: string,
+    severity: 'warning' | 'critical',
+    customMessage?: string
+  ): Promise<{ success: boolean; severity: string; message: string }> {
+    const res = await fetch(`${API_BASE_URL}/api/admin/test-alert`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Admin-Key': adminKey.trim(),
+      },
+      body: JSON.stringify({ severity, customMessage }),
+    });
+    return handleResponse<{ success: boolean; severity: string; message: string }>(res);
+  },
 };
 
 export interface PaymentOrderResponse {
@@ -400,3 +427,29 @@ export interface PlanInfoDto {
   durationDescription: string;
   features: string[];
 }
+
+export interface InfraHealthIndicator {
+  component: string;
+  status: 'healthy' | 'warning' | 'critical';
+  message: string;
+  value?: number;
+  unit?: string;
+}
+
+export interface InfraMetricsResponse {
+  systemStatus: 'normal' | 'warning' | 'critical';
+  processMemoryMb: number;
+  gcAllocatedMb: number;
+  activeRooms: number;
+  activeParticipants: number;
+  maxConcurrentRooms: number;
+  roomCapacityPercent: number;
+  databaseStatus: string;
+  redisStatus: string;
+  redisLatencyMs?: number;
+  indicators: InfraHealthIndicator[];
+  activeAlerts: string[];
+  telegramConfigured: boolean;
+  timestampUtc: string;
+}
+

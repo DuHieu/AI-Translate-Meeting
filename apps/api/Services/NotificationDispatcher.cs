@@ -11,6 +11,12 @@ public interface INotificationDispatcher
     Task DispatchPaymentSuccessAsync(PaymentOrderResponse order, CancellationToken cancellationToken = default);
     Task DispatchEnterpriseLeadAsync(EnterpriseLeadRecord lead, CancellationToken cancellationToken = default);
     Task<bool> SendTestNotificationAsync(string message, CancellationToken cancellationToken = default);
+    Task<bool> DispatchSystemAlertAsync(
+        string severity,
+        string title,
+        string detail,
+        IReadOnlyDictionary<string, string>? metrics = null,
+        CancellationToken cancellationToken = default);
     bool IsTelegramConfigured { get; }
     bool IsWebhookConfigured { get; }
 }
@@ -86,6 +92,52 @@ public sealed class NotificationDispatcher : INotificationDispatcher
         var formatted = $"🧪 <b>[ViMeet Test Notification]</b>\n{message}\n<i>Timestamp: {DateTime.UtcNow:yyyy-MM-dd HH:mm:ss} UTC</i>";
         var tgOk = await SendTelegramMessageAsync(formatted, cancellationToken);
         var whOk = await SendWebhookPayloadAsync("test.ping", new { message, timestamp = DateTime.UtcNow }, cancellationToken);
+        return tgOk || whOk;
+    }
+
+    public async Task<bool> DispatchSystemAlertAsync(
+        string severity,
+        string title,
+        string detail,
+        IReadOnlyDictionary<string, string>? metrics = null,
+        CancellationToken cancellationToken = default)
+    {
+        var icon = severity.ToLowerInvariant() switch
+        {
+            "critical" => "🚨",
+            "warning" => "⚠️",
+            _ => "ℹ️"
+        };
+
+        var sb = new StringBuilder();
+        sb.AppendLine($"{icon} <b>[LayaMeet Cảnh Báo Hạ Tầng - {severity.ToUpperInvariant()}]</b>");
+        sb.AppendLine($"• Tiêu đề: <b>{title}</b>");
+        sb.AppendLine($"• Chi tiết: {detail}");
+
+        if (metrics != null && metrics.Count > 0)
+        {
+            sb.AppendLine("• <b>Chỉ số đo đạc:</b>");
+            foreach (var kvp in metrics)
+            {
+                sb.AppendLine($"  - {kvp.Key}: <code>{kvp.Value}</code>");
+            }
+        }
+
+        sb.AppendLine($"<i>Timestamp: {DateTime.UtcNow:yyyy-MM-dd HH:mm:ss} UTC</i>");
+
+        var message = sb.ToString();
+        _logger.LogWarning("Dispatching system alert ({Severity}): {Title} - {Detail}", severity, title, detail);
+
+        var tgOk = await SendTelegramMessageAsync(message, cancellationToken);
+        var whOk = await SendWebhookPayloadAsync($"system.alert.{severity.ToLowerInvariant()}", new
+        {
+            severity,
+            title,
+            detail,
+            metrics,
+            timestamp = DateTime.UtcNow
+        }, cancellationToken);
+
         return tgOk || whOk;
     }
 

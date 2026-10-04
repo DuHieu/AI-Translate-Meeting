@@ -95,6 +95,54 @@ public sealed class AdminControllerTests
         Assert.True(doc.RootElement.TryGetProperty("message", out _));
     }
 
+    [Fact]
+    public async Task GetInfraMetrics_WhenAuthorized_ReturnsInfraMetricsData()
+    {
+        await using var factory = CreateFactory();
+        using var client = factory.CreateClient();
+        client.DefaultRequestHeaders.Add("X-Admin-Key", TestAdminKey);
+
+        using var response = await client.GetAsync("/api/admin/infra-metrics");
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        var body = await response.Content.ReadAsStringAsync();
+        using var doc = JsonDocument.Parse(body);
+        var root = doc.RootElement;
+
+        Assert.True(root.TryGetProperty("systemStatus", out var statusProp));
+        Assert.False(string.IsNullOrWhiteSpace(statusProp.GetString()));
+        Assert.True(root.TryGetProperty("processMemoryMb", out _));
+        Assert.True(root.TryGetProperty("activeRooms", out _));
+        Assert.True(root.TryGetProperty("maxConcurrentRooms", out _));
+        Assert.True(root.TryGetProperty("roomCapacityPercent", out _));
+        Assert.True(root.TryGetProperty("indicators", out var indProp));
+        Assert.Equal(JsonValueKind.Array, indProp.ValueKind);
+    }
+
+    [Fact]
+    public async Task TestAlert_WhenAuthorized_ReturnsSuccessResult()
+    {
+        await using var factory = CreateFactory();
+        using var client = factory.CreateClient();
+        client.DefaultRequestHeaders.Add("X-Admin-Key", TestAdminKey);
+
+        using var content = new StringContent(
+            JsonSerializer.Serialize(new { severity = "warning", customMessage = "Test alert from unit test" }),
+            System.Text.Encoding.UTF8,
+            "application/json");
+
+        using var response = await client.PostAsync("/api/admin/test-alert", content);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        var body = await response.Content.ReadAsStringAsync();
+        using var doc = JsonDocument.Parse(body);
+        var root = doc.RootElement;
+
+        Assert.True(root.TryGetProperty("severity", out var sevProp));
+        Assert.Equal("warning", sevProp.GetString());
+        Assert.True(root.TryGetProperty("message", out _));
+    }
+
     private static WebApplicationFactory<Program> CreateFactory()
     {
         return new WebApplicationFactory<Program>().WithWebHostBuilder(builder =>

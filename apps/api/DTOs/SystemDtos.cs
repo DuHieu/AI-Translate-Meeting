@@ -119,3 +119,34 @@ public sealed record AdminMetricsResponse(
     bool WebhookConfigured,
     DateTime GeneratedAtUtc
 );
+
+public sealed record InfraHealthIndicator(
+    string Component,
+    string Status,
+    string Message,
+    double? Value = null,
+    string? Unit = null
+);
+
+public sealed record InfraMetricsResponse(
+    string SystemStatus,
+    double ProcessMemoryMb,
+    double GcAllocatedMb,
+    int ActiveRooms,
+    int ActiveParticipants,
+    int MaxConcurrentRooms,
+    double RoomCapacityPercent,
+    string DatabaseStatus,
+    string RedisStatus,
+    double? RedisLatencyMs,
+    IReadOnlyList<InfraHealthIndicator> Indicators,
+    IReadOnlyList<string> ActiveAlerts,
+    bool TelegramConfigured,
+    DateTime TimestampUtc
+);
+
+public sealed record TriggerAlertRequest(
+    string Severity,
+    string? CustomMessage = null
+);
+

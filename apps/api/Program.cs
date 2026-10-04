@@ -182,6 +182,8 @@ builder.Services.AddHttpClient();
 builder.Services.AddSingleton<INotificationDispatcher, NotificationDispatcher>();
 builder.Services.AddSingleton<IBillingService, BillingService>();
 builder.Services.AddSingleton<ILeadService, LeadService>();
+builder.Services.AddScoped<IInfraMetricsService, InfraMetricsService>();
+builder.Services.AddHostedService<InfraMonitoringBackgroundService>();
 
 var redisConn = builder.Configuration.GetSection("Redis")["ConnectionString"];
 if (!string.IsNullOrWhiteSpace(redisConn))
