@@ -1,6 +1,7 @@
 using AITranslateMeeting.Api.DTOs;
 using AITranslateMeeting.Api.Services;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
 
 namespace AITranslateMeeting.Api.Controllers;
@@ -19,6 +20,7 @@ public sealed class BillingController : ControllerBase
     {
     }
 
+    [ActivatorUtilitiesConstructor]
     public BillingController(IBillingService billingService)
     {
         _billingService = billingService;
