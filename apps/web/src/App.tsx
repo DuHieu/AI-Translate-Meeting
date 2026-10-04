@@ -30,6 +30,8 @@ export const App: React.FC = () => {
           <Suspense fallback={<PageFallback />}>
             <Routes>
               <Route path="/" element={<HomePage />} />
+              <Route path="/ja" element={<HomePage forcedLanguage="ja" />} />
+              <Route path="/en" element={<HomePage forcedLanguage="en" />} />
               <Route path="/admin" element={<AdminDashboardPage />} />
               <Route path="/developers" element={<DevelopersPage />} />
               <Route path="/hop-song-ngu-tieng-nhat" element={<LanguagePairLandingPage variant="japanese" />} />

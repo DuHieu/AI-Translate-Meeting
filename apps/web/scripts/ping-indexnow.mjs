@@ -14,6 +14,8 @@ const urlList = [
   `https://${HOST}/hop-song-ngu-tieng-anh`,
   `https://${HOST}/so-sanh/layameet-vs-zoom`,
   `https://${HOST}/so-sanh/layameet-vs-google-meet`,
+  `https://${HOST}/ja`,
+  `https://${HOST}/en`,
 ];
 
 async function pingIndexNow() {

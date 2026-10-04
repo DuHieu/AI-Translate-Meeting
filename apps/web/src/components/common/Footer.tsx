@@ -202,9 +202,18 @@ export const Footer: React.FC<FooterProps> = ({
       {/* ── Sub-footer Copyright Bar ────────────────────────────── */}
       <div className="border-t border-zinc-200/80 dark:border-zinc-800/80 py-4 sm:py-5 px-4 sm:px-6 bg-zinc-100/50 dark:bg-[#080809]">
         <div className="max-w-5xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2 sm:gap-3 text-xs text-zinc-500 dark:text-zinc-500 text-center sm:text-left">
-          <div>
-            <span className="sm:hidden">© 2026 LayaMeet Platform</span>
-            <span className="hidden sm:inline">© 2026 LayaMeet Platform (layameet.com). Bản quyền thuộc về Đội ngũ Kỹ thuật.</span>
+          <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3">
+            <div>
+              <span className="sm:hidden">© 2026 LayaMeet Platform</span>
+              <span className="hidden sm:inline">© 2026 LayaMeet Platform (layameet.com).</span>
+            </div>
+            <div className="flex items-center justify-center gap-2 text-[11px] text-zinc-600 dark:text-zinc-400">
+              <Link to="/" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors font-medium">Tiếng Việt</Link>
+              <span className="text-zinc-300 dark:text-zinc-700">·</span>
+              <Link to="/ja" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors font-medium">日本語</Link>
+              <span className="text-zinc-300 dark:text-zinc-700">·</span>
+              <Link to="/en" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors font-medium">English</Link>
+            </div>
           </div>
           <div className="flex items-center justify-center gap-2 sm:gap-3 text-[11px] text-zinc-400">
             <span className="flex items-center gap-1">

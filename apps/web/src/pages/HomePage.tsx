@@ -14,6 +14,7 @@ import { Footer } from '../components/common/Footer';
 import { LegalModal } from '../components/common/LegalModal';
 import { EnterpriseSsoModal } from '../components/home/EnterpriseSsoModal';
 import { useLanguage } from '../context/language-context-def';
+import { AppLanguage } from '../i18n';
 import { LanguageSwitcher } from '../components/common/LanguageSwitcher';
 import { NeuralLinguisticBackground } from '../components/common/NeuralLinguisticBackground';
 
@@ -41,16 +42,72 @@ const FEATURES = [
   },
 ];
 
-export const HomePage: React.FC = () => {
+export interface HomePageProps {
+  forcedLanguage?: AppLanguage;
+}
+
+export const HomePage: React.FC<HomePageProps> = ({ forcedLanguage }) => {
   const SHOW_ENTERPRISE_SSO = false; // Tạm thời ẩn Enterprise SSO để tránh lỗi 404 khi chưa cấu hình SSO provider
   const navigate = useNavigate();
-  const { t } = useLanguage();
+  const { language, setLanguage, t } = useLanguage();
   const [meetingCodeInput, setMeetingCodeInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isStatusModalOpen, setIsStatusModalOpen] = useState(false);
   const [isEnterpriseSsoOpen, setIsEnterpriseSsoOpen] = useState(false);
   const [legalModalType, setLegalModalType] = useState<'privacy' | 'terms' | null>(null);
+
+  // Sync forcedLanguage if navigating via /ja or /en
+  useEffect(() => {
+    if (forcedLanguage && language !== forcedLanguage) {
+      setLanguage(forcedLanguage);
+    }
+  }, [forcedLanguage, language, setLanguage]);
+
+  // Dynamically update International Meta Tags (SEO & Crawlers)
+  useEffect(() => {
+    const currentLang = forcedLanguage || language;
+    const descMeta = document.querySelector('meta[name="description"]');
+    const canonicalLink = document.querySelector('link[rel="canonical"]');
+
+    if (currentLang === 'ja') {
+      document.title = 'LayaMeet - AI多言語オンライン会議＆リアルタイム字幕翻訳 | layameet.com';
+      document.documentElement.lang = 'ja';
+      if (descMeta) {
+        descMeta.setAttribute(
+          'content',
+          '超低遅延AI多言語Web会議プラットフォーム。ベトナム語・日本語・英語のリアルタイム双方向字幕翻訳（遅延350ms未満）、完全RAMメモリ処理（音声ファイル保存なし）、自動議事録・Action Items抽出。'
+        );
+      }
+      if (canonicalLink) {
+        canonicalLink.setAttribute('href', 'https://layameet.com/ja');
+      }
+    } else if (currentLang === 'en') {
+      document.title = 'LayaMeet - Real-Time AI Bilingual Meeting & Live Subtitle Translation | layameet.com';
+      document.documentElement.lang = 'en';
+      if (descMeta) {
+        descMeta.setAttribute(
+          'content',
+          'Ultra-low latency AI multilingual video meeting platform. Real-time bilingual subtitle translation (<350ms), 100% RAM-only audio processing (zero file storage), and instant meeting minutes with Action Items.'
+        );
+      }
+      if (canonicalLink) {
+        canonicalLink.setAttribute('href', 'https://layameet.com/en');
+      }
+    } else {
+      document.title = 'LayaMeet - Nền tảng Họp Trực Tuyến Song Ngữ AI & Dịch Trực Tiếp Real-Time | layameet.com';
+      document.documentElement.lang = 'vi';
+      if (descMeta) {
+        descMeta.setAttribute(
+          'content',
+          'Nền tảng họp trực tuyến thông minh song ngữ thời gian thực. Tự do phát biểu tiếng mẹ đẻ, nhận phụ đề bản dịch tức thì <350ms, bảo mật On-Premise RAM-only và tự động trích xuất biên bản họp.'
+        );
+      }
+      if (canonicalLink) {
+        canonicalLink.setAttribute('href', 'https://layameet.com/');
+      }
+    }
+  }, [forcedLanguage, language]);
 
   useEffect(() => {
     const handleOpenPrivacy = () => setLegalModalType('privacy');

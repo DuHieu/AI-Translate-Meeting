@@ -10,6 +10,8 @@ Allow: /hop-song-ngu-tieng-nhat
 Allow: /hop-song-ngu-tieng-anh
 Allow: /so-sanh/layameet-vs-zoom
 Allow: /so-sanh/layameet-vs-google-meet
+Allow: /ja
+Allow: /en
 
 # Disallow private meeting rooms and streaming endpoints for privacy and security
 Disallow: /meeting/

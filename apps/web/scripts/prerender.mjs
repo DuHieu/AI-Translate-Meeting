@@ -47,6 +47,24 @@ const ROUTES = [
     ogTitle: 'So Sánh LayaMeet vs Google Meet: Đâu Là Công Cụ Họp Song Ngữ Tốt Hơn?',
     ogDescription: 'Đối chiếu tính năng phụ đề dịch song ngữ tức thì hai chiều, quyền riêng tư dữ liệu và biên bản cuộc họp giữa LayaMeet và Google Meet.',
   },
+  {
+    route: 'ja',
+    lang: 'ja',
+    title: 'LayaMeet - AI多言語オンライン会議＆リアルタイム字幕翻訳 | layameet.com',
+    description: '超低遅延AI多言語Web会議プラットフォーム。ベトナム語・日本語・英語のリアルタイム双方向字幕翻訳（遅延350ms未満）、完全RAMメモリ処理（音声ファイル保存なし）、自動議事録・Action Items抽出。',
+    canonical: 'https://layameet.com/ja',
+    ogTitle: 'LayaMeet - AI多言語オンライン会議＆リアルタイム字幕翻訳',
+    ogDescription: '母国語で、想いをそのままに。超低遅延リアルタイム字幕翻訳と完全RAM-onlyセキュリティの次世代会議システム。',
+  },
+  {
+    route: 'en',
+    lang: 'en',
+    title: 'LayaMeet - Real-Time AI Bilingual Meeting & Live Subtitle Translation | layameet.com',
+    description: 'Ultra-low latency AI multilingual video meeting platform. Real-time bilingual subtitle translation (<350ms), 100% RAM-only audio processing (zero file storage), and instant meeting minutes with Action Items.',
+    canonical: 'https://layameet.com/en',
+    ogTitle: 'LayaMeet - Real-Time AI Bilingual Meeting & Live Subtitles',
+    ogDescription: 'Speak freely in your native language with instant bilingual subtitles (<350ms) and zero raw audio storage (RAM-only).',
+  },
 ];
 
 async function generatePrerenderPages() {
@@ -58,6 +76,11 @@ async function generatePrerenderPages() {
     await mkdir(targetDir, { recursive: true });
 
     let html = template;
+
+    // Replace HTML Lang if localized
+    if (page.lang) {
+      html = html.replace(/<html\s+lang=["'][^"']*["']/i, `<html lang="${page.lang}"`);
+    }
 
     // Replace Title
     html = html.replace(/<title>[\s\S]*?<\/title>/i, `<title>${page.title}</title>`);
