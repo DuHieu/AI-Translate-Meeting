@@ -39,6 +39,7 @@ import { WebRtcDiagnostics } from './WebRtcDiagnostics';
 import { SubtitleOverlay } from '../subtitle/SubtitleOverlay';
 import { SubtitlePanel } from '../subtitle/SubtitlePanel';
 import { FloatingReactionsOverlay } from './FloatingReactionsOverlay';
+import { FloatingSubtitleWidget } from './FloatingSubtitleWidget';
 import { useSubtitle } from '../../hooks/useSubtitle';
 import { useAiReadiness } from '../../hooks/useAiReadiness';
 import { useAudioBooth } from '../../hooks/useAudioBooth';
@@ -92,6 +93,10 @@ const DEFAULT_SIDECAR_PREFERENCES: SidecarPreferences = {
   showActions: false,
   showRecap: false,
   showChat: false,
+  fileSharing: true,
+  meetingRecording: true,
+  e2eeEnabled: false,
+  floatingSubtitleWidget: true,
   audioBooth: false,
   showOriginal: false,
 };
@@ -103,6 +108,36 @@ function loadSidecarPreferences(): SidecarPreferences {
   } catch {
     return DEFAULT_SIDECAR_PREFERENCES;
   }
+}
+
+function getRecordingMimeType(): string | undefined {
+  if (
+    typeof MediaRecorder === 'undefined'
+    || typeof MediaRecorder.isTypeSupported !== 'function'
+  ) return undefined;
+
+  return [
+    'video/webm;codecs=vp9,opus',
+    'video/webm;codecs=vp8,opus',
+    'video/webm',
+  ].find((mimeType) => MediaRecorder.isTypeSupported(mimeType));
+}
+
+function parseChatAttachment(value: unknown): ChatMessage['attachment'] {
+  if (!value || typeof value !== 'object') return undefined;
+
+  const attachment = value as Record<string, unknown>;
+  if (typeof attachment.name !== 'string' || typeof attachment.size !== 'number') {
+    return undefined;
+  }
+
+  return {
+    name: attachment.name,
+    size: attachment.size,
+    ...(typeof attachment.summaryTranslation === 'string'
+      ? { summaryTranslation: attachment.summaryTranslation }
+      : {}),
+  };
 }
 
 function isPublicationActive(publication?: LocalTrackPublication): boolean {
@@ -166,12 +201,21 @@ export const MeetingShell: React.FC<MeetingShellProps> = ({
   const [isLayoutMenuOpen, setIsLayoutMenuOpen] = useState(false);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const [isPostMeetingOpen, setIsPostMeetingOpen] = useState(false);
+  const [isFloatingSubtitleActive, setIsFloatingSubtitleActive] = useState<boolean>(false);
+  const [isRecording, setIsRecording] = useState<boolean>(false);
+  const [recordingDownloadUrl, setRecordingDownloadUrl] = useState<string | null>(null);
+  const [recordingError, setRecordingError] = useState<string | null>(null);
   const [sidecarPreferences, setSidecarPreferences] = useState<SidecarPreferences>(loadSidecarPreferences);
   const [subtitleTargetLanguage, setSubtitleTargetLanguage] = useState<SupportedLanguage>(session.targetLanguage);
   const [subtitleToken, setSubtitleToken] = useState(session.subtitleToken);
   const [isUpdatingSubtitleLanguage, setIsUpdatingSubtitleLanguage] = useState(false);
   const [subtitleLanguageError, setSubtitleLanguageError] = useState<string | null>(null);
   const [branding, setBranding] = useState<BrandingConfigDto>(DEFAULT_BRANDING_CONFIG);
+  const recordingSessionRef = useRef<{
+    recorder: MediaRecorder;
+    stream: MediaStream;
+  } | null>(null);
+  const recordingDownloadUrlRef = useRef<string | null>(null);
 
   const [audioBoothToast, setAudioBoothToast] = useState<string | null>(null);
 
@@ -196,6 +240,113 @@ export const MeetingShell: React.FC<MeetingShellProps> = ({
   const handleSidecarPreferencesChange = useCallback((preferences: SidecarPreferences) => {
     setSidecarPreferences(preferences);
     localStorage.setItem(SIDECAR_PREFERENCES_KEY, JSON.stringify(preferences));
+  }, []);
+
+  const handleToggleFloatingSubtitle = useCallback(() => {
+    if (!sidecarPreferences.floatingSubtitleWidget) return;
+    setIsFloatingSubtitleActive((active) => !active);
+  }, [sidecarPreferences.floatingSubtitleWidget]);
+
+  useEffect(() => {
+    if (!sidecarPreferences.floatingSubtitleWidget) {
+      setIsFloatingSubtitleActive(false);
+    }
+  }, [sidecarPreferences.floatingSubtitleWidget]);
+
+  const stopMeetingRecording = useCallback(() => {
+    const session = recordingSessionRef.current;
+    if (!session) {
+      setIsRecording(false);
+      return;
+    }
+
+    if (session.recorder.state !== 'inactive') {
+      session.recorder.stop();
+    }
+    session.stream.getTracks().forEach((track) => track.stop());
+    setIsRecording(false);
+  }, []);
+
+  const handleToggleRecording = useCallback(async () => {
+    if (!sidecarPreferences.meetingRecording) return;
+
+    const activeSession = recordingSessionRef.current;
+    if (activeSession?.recorder.state === 'recording') {
+      stopMeetingRecording();
+      return;
+    }
+    if (activeSession) return;
+
+    if (!navigator.mediaDevices?.getDisplayMedia || typeof MediaRecorder === 'undefined') {
+      setRecordingError('Trình duyệt này chưa hỗ trợ ghi hình cuộc họp.');
+      return;
+    }
+
+    setRecordingError(null);
+    let displayStream: MediaStream | null = null;
+    try {
+      displayStream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: true });
+      const mimeType = getRecordingMimeType();
+      const recorder = new MediaRecorder(displayStream, mimeType ? { mimeType } : undefined);
+      const chunks: Blob[] = [];
+
+      recorder.ondataavailable = (event) => {
+        if (event.data.size > 0) chunks.push(event.data);
+      };
+      recorder.onstop = () => {
+        displayStream?.getTracks().forEach((track) => track.stop());
+        if (recordingSessionRef.current?.recorder === recorder) {
+          recordingSessionRef.current = null;
+        }
+        setIsRecording(false);
+
+        const recording = new Blob(chunks, { type: recorder.mimeType || 'video/webm' });
+        if (recording.size === 0) {
+          setRecordingError('Không nhận được dữ liệu video để xuất.');
+          return;
+        }
+
+        const nextUrl = URL.createObjectURL(recording);
+        if (recordingDownloadUrlRef.current) {
+          URL.revokeObjectURL(recordingDownloadUrlRef.current);
+        }
+        recordingDownloadUrlRef.current = nextUrl;
+        setRecordingDownloadUrl(nextUrl);
+      };
+
+      displayStream.getVideoTracks()[0]?.addEventListener('ended', () => {
+        if (recorder.state !== 'inactive') recorder.stop();
+      }, { once: true });
+
+      recorder.start(1000);
+      recordingSessionRef.current = { recorder, stream: displayStream };
+      setIsRecording(true);
+    } catch (error) {
+      displayStream?.getTracks().forEach((track) => track.stop());
+      setIsRecording(false);
+      setRecordingError(
+        error instanceof DOMException && error.name === 'NotAllowedError'
+          ? 'Bạn đã hủy hoặc chưa cấp quyền chia sẻ màn hình để ghi hình.'
+          : 'Không thể bắt đầu ghi hình cuộc họp.',
+      );
+    }
+  }, [sidecarPreferences.meetingRecording, stopMeetingRecording]);
+
+  useEffect(() => {
+    if (!sidecarPreferences.meetingRecording) stopMeetingRecording();
+  }, [sidecarPreferences.meetingRecording, stopMeetingRecording]);
+
+  useEffect(() => () => {
+    const session = recordingSessionRef.current;
+    if (session) {
+      session.recorder.ondataavailable = null;
+      session.recorder.onstop = null;
+      if (session.recorder.state !== 'inactive') session.recorder.stop();
+      session.stream.getTracks().forEach((track) => track.stop());
+    }
+    if (recordingDownloadUrlRef.current) {
+      URL.revokeObjectURL(recordingDownloadUrlRef.current);
+    }
   }, []);
 
   const handleToggleAudioBooth = useCallback(() => {
@@ -269,6 +420,7 @@ export const MeetingShell: React.FC<MeetingShellProps> = ({
               timestamp: typeof record.timestamp === 'string'
                 ? record.timestamp
                 : new Date().toISOString(),
+              attachment: parseChatAttachment(record.attachment),
             },
           ]);
         } else if (isCollaborationDataMessage(data) && data.type === 'RAISE_HAND') {
@@ -319,14 +471,15 @@ export const MeetingShell: React.FC<MeetingShellProps> = ({
   }, [room, showFloatingReaction]);
 
   const handleSendChatMessage = useCallback(
-    async (text: string) => {
-      if (!room || !text.trim()) return;
+    async (text: string, attachment?: ChatMessage['attachment']) => {
+      if (!room || (!text.trim() && !attachment)) return;
       const msg: ChatMessage = {
         id: `msg-${Date.now()}-${Math.random().toString(36).slice(2)}`,
         senderId: session.participantId,
         senderName: session.displayName || 'You',
         text: text.trim(),
         timestamp: new Date().toISOString(),
+        attachment,
       };
       setChatMessages((prev) => [...prev, msg]);
       try {
@@ -912,6 +1065,11 @@ export const MeetingShell: React.FC<MeetingShellProps> = ({
     window.location.assign(`/join/${session.meetingCode}`);
   };
 
+  const handleOpenPostMeeting = () => {
+    stopMeetingRecording();
+    setIsPostMeetingOpen(true);
+  };
+
   const handleSelectLayout = (mode: LayoutMode) => {
     setLayoutMode(mode);
     localStorage.setItem('meeting-layout-mode', mode);
@@ -950,6 +1108,8 @@ export const MeetingShell: React.FC<MeetingShellProps> = ({
         isHost={session.role === 'host'}
         onOpenAdmission={() => setIsDetailsOpen(true)}
         branding={branding}
+        isRecording={isRecording}
+        isE2eeEnabled={sidecarPreferences.e2eeEnabled}
       />
 
       {/* Connecting / Reconnecting Status Banner */}
@@ -1015,6 +1175,13 @@ export const MeetingShell: React.FC<MeetingShellProps> = ({
         />
       </div>
 
+      {isFloatingSubtitleActive && sidecarPreferences.floatingSubtitleWidget && (
+        <FloatingSubtitleWidget
+          subtitles={subtitleHistory}
+          onClose={() => setIsFloatingSubtitleActive(false)}
+        />
+      )}
+
       {/* Floating Bottom Control Bar */}
       <MeetingBottomBar
         meetingCode={session.meetingCode}
@@ -1028,7 +1195,7 @@ export const MeetingShell: React.FC<MeetingShellProps> = ({
         onToggleMic={handleToggleMic}
         onToggleCamera={handleToggleCamera}
         onToggleScreenShare={handleToggleScreenShare}
-        onLeaveRoom={() => setIsPostMeetingOpen(true)}
+        onLeaveRoom={handleOpenPostMeeting}
         onOpenPeoplePanel={handleTogglePeoplePanel}
         onToggleSubtitlePanel={handleToggleSubtitlePanel}
         onOpenSettings={() => setIsSettingsOpen(true)}
@@ -1041,6 +1208,12 @@ export const MeetingShell: React.FC<MeetingShellProps> = ({
         onSendReaction={handleSendReaction}
         isAudioBoothActive={sidecarPreferences.audioBooth}
         onToggleAudioBooth={handleToggleAudioBooth}
+        isRecordingEnabled={sidecarPreferences.meetingRecording}
+        isRecording={isRecording}
+        onToggleRecording={handleToggleRecording}
+        isFloatingSubtitleEnabled={sidecarPreferences.floatingSubtitleWidget}
+        isFloatingSubtitleActive={isFloatingSubtitleActive}
+        onToggleFloatingSubtitle={handleToggleFloatingSubtitle}
       />
 
       {/* Pure Audio Renderer for LiveKit WebRTC Audio Streams (no useTracks dependency) */}
@@ -1059,6 +1232,20 @@ export const MeetingShell: React.FC<MeetingShellProps> = ({
         <div className="fixed bottom-20 left-1/2 -translate-x-1/2 z-50 bg-slate-850/95 border border-sky-500/50 text-slate-100 text-xs px-4 py-2.5 rounded-2xl shadow-2xl flex items-center gap-2 max-w-md pointer-events-none transition-all">
           <span className="text-sky-400 font-bold">🎧 Audio Booth:</span>
           <span>{audioBoothToast}</span>
+        </div>
+      )}
+
+      {recordingError && (
+        <div role="alert" className="fixed bottom-24 left-1/2 z-50 flex max-w-sm -translate-x-1/2 items-center gap-3 rounded-2xl border border-red-500/40 bg-slate-900/95 px-4 py-3 text-xs text-slate-200 shadow-xl">
+          <span>{recordingError}</span>
+          <button
+            type="button"
+            onClick={() => setRecordingError(null)}
+            aria-label="Đóng thông báo ghi hình"
+            className="ml-auto text-slate-400 transition hover:text-white"
+          >
+            ×
+          </button>
         </div>
       )}
 
@@ -1126,6 +1313,7 @@ export const MeetingShell: React.FC<MeetingShellProps> = ({
         meetingCode={session.meetingCode}
         recap={postMeetingRecap}
         branding={branding}
+        recordingDownloadUrl={recordingDownloadUrl}
         onClose={() => setIsPostMeetingOpen(false)}
         onLeaveRoom={onLeaveRoom}
       />

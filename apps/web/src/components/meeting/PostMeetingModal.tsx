@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { CheckCircle2, Copy, Download, ListTodo, LogOut, Save, X } from 'lucide-react';
+import { CheckCircle2, Copy, Download, ListTodo, LogOut, Save, Video, X } from 'lucide-react';
 import { meetingApi } from '../../api/meetingApi';
 import type { BrandingConfigDto } from '../../api/meetingApi';
 import type { SaveMeetingMinutesRequest } from '../../types/meeting';
@@ -10,6 +10,7 @@ interface PostMeetingModalProps {
   meetingCode: string;
   recap: GeneratedRecap;
   branding: BrandingConfigDto;
+  recordingDownloadUrl?: string | null;
   onClose: () => void;
   onLeaveRoom: () => void;
 }
@@ -53,6 +54,7 @@ export const PostMeetingModal: React.FC<PostMeetingModalProps> = ({
   meetingCode,
   recap,
   branding,
+  recordingDownloadUrl,
   onClose,
   onLeaveRoom,
 }) => {
@@ -165,6 +167,25 @@ export const PostMeetingModal: React.FC<PostMeetingModalProps> = ({
         </header>
 
         <div className="grid flex-1 gap-4 overflow-y-auto p-5 sm:p-6 lg:grid-cols-2">
+          {recordingDownloadUrl && (
+            <section className="flex flex-wrap items-center gap-3 rounded-xl border border-red-900/70 bg-red-950/20 p-4 lg:col-span-2">
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-red-500/15 text-red-300">
+                <Video className="h-5 w-5" aria-hidden="true" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <h3 className="text-sm font-semibold text-zinc-100">Bản ghi cuộc họp</h3>
+                <p className="mt-1 text-xs text-zinc-400">Video WebM đã sẵn sàng để lưu về thiết bị.</p>
+              </div>
+              <a
+                href={recordingDownloadUrl}
+                download={`meeting-recording-${meetingCode.toLowerCase()}.webm`}
+                className="inline-flex min-h-11 items-center gap-2 rounded-lg bg-red-600 px-3 py-2 text-sm font-medium text-white hover:bg-red-500 focus:outline-none focus:ring-2 focus:ring-red-400"
+              >
+                <Download className="h-4 w-4" /> Tải video
+              </a>
+            </section>
+          )}
+
           <section className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-4 lg:col-span-2">
             <h3 className="mb-3 text-sm font-semibold text-zinc-100">Executive highlights</h3>
             <ul className="space-y-2 text-sm leading-6 text-zinc-300">

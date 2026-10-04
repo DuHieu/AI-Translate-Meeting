@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   AlertTriangle,
   Bell,
@@ -11,6 +11,7 @@ import {
   ListTodo,
   MessageCircle,
   MoreHorizontal,
+  Paperclip,
   Send,
   Sparkles,
   X,
@@ -32,7 +33,7 @@ interface SubtitlePanelProps {
   isOpen: boolean;
   onClose: () => void;
   chatMessages?: ChatMessage[];
-  onSendChatMessage?: (text: string) => void;
+  onSendChatMessage?: (text: string, attachment?: ChatMessage['attachment']) => void;
   currentUserId?: string;
   meetingCode?: string;
   initialTab?: SidecarTab;
@@ -62,6 +63,12 @@ function formatSrtTimestamp(isoString: string, offsetSeconds: number): string {
   return `${String(time.getUTCHours()).padStart(2, '0')}:${String(time.getUTCMinutes()).padStart(2, '0')}:${String(time.getUTCSeconds()).padStart(2, '0')},${String(time.getUTCMilliseconds()).padStart(3, '0')}`;
 }
 
+function formatFileSize(size: number): string {
+  if (size < 1024) return `${size} B`;
+  if (size < 1024 * 1024) return `${(size / 1024).toFixed(1)} KB`;
+  return `${(size / (1024 * 1024)).toFixed(1)} MB`;
+}
+
 export const SubtitlePanel: React.FC<SubtitlePanelProps> = ({
   history,
   getExportHistory,
@@ -83,6 +90,8 @@ export const SubtitlePanel: React.FC<SubtitlePanelProps> = ({
   const [activeTab, setActiveTab] = useState<SidecarTab>(initialTab);
   const [isExportMenuOpen, setIsExportMenuOpen] = useState(false);
   const [chatInput, setChatInput] = useState('');
+  const [pendingAttachment, setPendingAttachment] = useState<ChatMessage['attachment']>();
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [recapResult, setRecapResult] = useState<GeneratedRecap | null>(null);
   const [isGeneratingRecap, setIsGeneratingRecap] = useState(false);
   const [chimeEnabled, setChimeEnabled] = useState(
@@ -209,12 +218,35 @@ export const SubtitlePanel: React.FC<SubtitlePanelProps> = ({
     localStorage.setItem('ai-action-chime-enabled', String(next));
   };
 
+  useEffect(() => {
+    if (preferences.fileSharing) return;
+    setPendingAttachment(undefined);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  }, [preferences.fileSharing]);
+
+  const handleFileSelected = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    setPendingAttachment({
+      name: file.name,
+      size: file.size,
+      summaryTranslation: 'AI đang xử lý bản dịch tóm tắt cho tài liệu này.',
+    });
+  };
+
+  const clearPendingAttachment = () => {
+    setPendingAttachment(undefined);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
   const handleSendChat = (event: React.FormEvent) => {
     event.preventDefault();
     const value = chatInput.trim();
-    if (!value || !onSendChatMessage) return;
-    onSendChatMessage(value);
+    if ((!value && !pendingAttachment) || !onSendChatMessage) return;
+    onSendChatMessage(value, pendingAttachment);
     setChatInput('');
+    clearPendingAttachment();
   };
 
   if (!isOpen) return null;
@@ -551,15 +583,50 @@ export const SubtitlePanel: React.FC<SubtitlePanelProps> = ({
               return (
                 <div key={message.id} className={`flex flex-col ${isMe ? 'items-end' : 'items-start'}`}>
                   <span className="mb-1 px-1 text-[10px] text-zinc-500">{message.senderName}</span>
-                  <p className={`max-w-[85%] rounded-xl px-3 py-2 text-xs leading-5 ${isMe ? 'bg-sky-600 text-white' : 'bg-white/[0.06] text-zinc-200'}`}>{message.text}</p>
+                  <div className={`max-w-[85%] space-y-2 rounded-xl px-3 py-2 text-xs leading-5 ${isMe ? 'bg-sky-600 text-white' : 'bg-white/[0.06] text-zinc-200'}`}>
+                    {message.text && <p>{message.text}</p>}
+                    {message.attachment && (
+                      <>
+                        <div className={`flex items-center gap-2 rounded-lg border px-2.5 py-2 ${isMe ? 'border-white/20 bg-white/10' : 'border-white/10 bg-black/20'}`}>
+                          <FileText className="h-4 w-4 shrink-0" />
+                          <span className="min-w-0">
+                            <span className="block truncate font-medium">{message.attachment.name}</span>
+                            <span className={`block text-[10px] ${isMe ? 'text-sky-100' : 'text-zinc-500'}`}>{formatFileSize(message.attachment.size)}</span>
+                          </span>
+                        </div>
+                        {message.attachment.summaryTranslation && (
+                          <div className={`rounded-lg border px-2.5 py-2 ${isMe ? 'border-white/20 bg-white/10' : 'border-sky-500/20 bg-sky-950/30'}`}>
+                            <span className={`mb-1 flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wide ${isMe ? 'text-sky-100' : 'text-sky-400'}`}>
+                              <Sparkles className="h-3 w-3" /> Tóm tắt dịch AI
+                            </span>
+                            <p>{message.attachment.summaryTranslation}</p>
+                          </div>
+                        )}
+                      </>
+                    )}
+                  </div>
                 </div>
               );
             })}
           </div>
           {onSendChatMessage && (
-            <form onSubmit={handleSendChat} className="flex gap-2 border-t border-white/[0.08] p-3">
-              <input value={chatInput} onChange={(event) => setChatInput(event.target.value)} aria-label="Tin nhắn" placeholder="Nhập tin nhắn…" className="min-w-0 flex-1 rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2 text-xs text-zinc-100 outline-none focus:border-sky-500" />
-              <button type="submit" disabled={!chatInput.trim()} aria-label="Gửi tin nhắn" className="rounded-xl bg-sky-600 p-2.5 text-white disabled:opacity-40"><Send className="h-4 w-4" /></button>
+            <form onSubmit={handleSendChat} className="border-t border-white/[0.08] p-3">
+              {pendingAttachment && (
+                <div className="mb-2 flex items-center justify-between gap-2 rounded-lg border border-sky-500/20 bg-sky-950/20 px-2.5 py-2 text-xs text-zinc-300">
+                  <span className="min-w-0 truncate"><Paperclip className="mr-1.5 inline h-3.5 w-3.5" />{pendingAttachment.name}</span>
+                  <button type="button" onClick={clearPendingAttachment} aria-label="Bỏ tệp đính kèm" className="shrink-0 rounded p-1 text-zinc-500 hover:bg-white/[0.06] hover:text-zinc-200"><X className="h-3.5 w-3.5" /></button>
+                </div>
+              )}
+              <div className="flex gap-2">
+                {preferences.fileSharing && (
+                  <>
+                    <input ref={fileInputRef} type="file" accept=".pdf,.txt,image/*" onChange={handleFileSelected} className="hidden" aria-label="Chọn tệp đính kèm" />
+                    <button type="button" onClick={() => fileInputRef.current?.click()} aria-label="Đính kèm tệp" className="rounded-xl border border-white/10 bg-white/[0.04] p-2.5 text-zinc-400 transition hover:border-sky-500/40 hover:text-sky-300"><Paperclip className="h-4 w-4" /></button>
+                  </>
+                )}
+                <input value={chatInput} onChange={(event) => setChatInput(event.target.value)} aria-label="Tin nhắn" placeholder="Nhập tin nhắn…" className="min-w-0 flex-1 rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2 text-xs text-zinc-100 outline-none focus:border-sky-500" />
+                <button type="submit" disabled={!chatInput.trim() && !pendingAttachment} aria-label="Gửi tin nhắn" className="rounded-xl bg-sky-600 p-2.5 text-white disabled:opacity-40"><Send className="h-4 w-4" /></button>
+              </div>
             </form>
           )}
         </div>

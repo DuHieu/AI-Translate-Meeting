@@ -249,6 +249,10 @@ export const MeetingSettingsDialog: React.FC<MeetingSettingsDialogProps> = ({
                 ['showActions', 'Việc làm & quyết định', 'Mở tab phân tích của Laya'],
                 ['showRecap', 'Tóm tắt AI', 'Mở tab tổng hợp cuộc họp'],
                 ['showChat', 'Tin nhắn', 'Mở tab chat trong sidecar'],
+                ['fileSharing', 'Chia sẻ tệp & tài liệu', 'Cho phép đính kèm tệp và dịch nhanh trong chat'],
+                ['meetingRecording', 'Ghi hình cuộc họp', 'Cho phép ghi lại video và phụ đề để xuất sau cuộc họp'],
+                ['e2eeEnabled', 'Mã hóa đầu cuối (E2EE)', 'Bảo vệ âm thanh & hình ảnh bằng khóa mã hóa riêng tư giữa các đầu cuối'],
+                ['floatingSubtitleWidget', 'Cửa sổ phụ đề nổi (PiP)', 'Cho phép mở phụ đề nổi để xem khi dùng Google Meet hoặc Zoom'],
                 ['audioBooth', 'Audio Booth', 'Đọc bản dịch bằng giọng máy'],
               ] as Array<[keyof SidecarPreferences, string, string]>).map(([key, label, description]) => (
                 <label key={key} className="flex cursor-pointer items-center justify-between rounded-xl border border-slate-800 px-3 py-3 hover:bg-slate-800/40">

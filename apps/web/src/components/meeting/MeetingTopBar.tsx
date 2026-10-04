@@ -12,6 +12,8 @@ interface MeetingTopBarProps {
   isHost: boolean;
   onOpenAdmission: () => void;
   branding: BrandingConfigDto;
+  isRecording?: boolean;
+  isE2eeEnabled?: boolean;
 }
 
 export const MeetingTopBar: React.FC<MeetingTopBarProps> = ({
@@ -20,6 +22,8 @@ export const MeetingTopBar: React.FC<MeetingTopBarProps> = ({
   isHost,
   onOpenAdmission,
   branding,
+  isRecording = false,
+  isE2eeEnabled = false,
 }) => {
   const [copied, setCopied] = useState(false);
 
@@ -75,6 +79,28 @@ export const MeetingTopBar: React.FC<MeetingTopBarProps> = ({
 
       {/* Right-side controls */}
       <div className="flex items-center gap-1.5 sm:gap-2">
+        {isE2eeEnabled && (
+          <div
+            role="status"
+            aria-label="Cuộc họp được bảo vệ bằng mã hóa đầu cuối"
+            className="flex items-center gap-1.5 rounded-lg border border-emerald-500/40 bg-emerald-950/70 px-2 py-1 text-xs font-semibold text-emerald-300"
+          >
+            <ShieldCheck className="h-3.5 w-3.5" aria-hidden="true" />
+            <span>E2EE Secured 🔒</span>
+          </div>
+        )}
+
+        {isRecording && (
+          <div
+            role="status"
+            aria-label="Đang ghi hình cuộc họp"
+            className="flex items-center gap-1.5 rounded-lg border border-red-500/40 bg-red-950/70 px-2 py-1 text-xs font-bold tracking-wider text-red-300"
+          >
+            <span className="h-2 w-2 rounded-full bg-red-500 animate-pulse" aria-hidden="true" />
+            REC
+          </div>
+        )}
+
         {/* Room code + copy link */}
         <button
           type="button"

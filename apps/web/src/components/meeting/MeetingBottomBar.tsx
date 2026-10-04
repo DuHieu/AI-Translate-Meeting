@@ -16,6 +16,8 @@ import {
   Headphones,
   Hand,
   HandMetal,
+  CircleDot,
+  Tv2,
 } from 'lucide-react';
 import { LocalAudioTrack } from 'livekit-client';
 import { MeetingControlButton } from './MeetingControlButton';
@@ -50,6 +52,12 @@ interface MeetingBottomBarProps {
   onSendReaction?: (emoji: string) => void;
   isAudioBoothActive?: boolean;
   onToggleAudioBooth?: () => void;
+  isRecordingEnabled?: boolean;
+  isRecording?: boolean;
+  onToggleRecording?: () => void;
+  isFloatingSubtitleEnabled?: boolean;
+  isFloatingSubtitleActive?: boolean;
+  onToggleFloatingSubtitle?: () => void;
 }
 
 export const MeetingBottomBar: React.FC<MeetingBottomBarProps> = ({
@@ -77,6 +85,12 @@ export const MeetingBottomBar: React.FC<MeetingBottomBarProps> = ({
   onSendReaction,
   isAudioBoothActive = false,
   onToggleAudioBooth,
+  isRecordingEnabled = false,
+  isRecording = false,
+  onToggleRecording,
+  isFloatingSubtitleEnabled = false,
+  isFloatingSubtitleActive = false,
+  onToggleFloatingSubtitle,
 }) => {
   const [currentTime, setCurrentTime] = useState('');
   const [isAudioMenuOpen, setIsAudioMenuOpen] = useState(false);
@@ -256,6 +270,16 @@ export const MeetingBottomBar: React.FC<MeetingBottomBarProps> = ({
             active={isSubtitlePanelOpen}
           />
 
+          {isFloatingSubtitleEnabled && onToggleFloatingSubtitle && (
+            <MeetingControlButton
+              icon={<Tv2 className="w-[18px] h-[18px]" />}
+              label="Phụ đề nổi"
+              tooltip={isFloatingSubtitleActive ? 'Thu nhỏ phụ đề nổi' : 'Mở phụ đề nổi'}
+              onClick={onToggleFloatingSubtitle}
+              active={isFloatingSubtitleActive}
+            />
+          )}
+
           {/* Audio Booth (Cabin Phiên Dịch) toggle */}
           {onToggleAudioBooth && (
             <MeetingControlButton
@@ -268,6 +292,17 @@ export const MeetingBottomBar: React.FC<MeetingBottomBarProps> = ({
               }
               onClick={onToggleAudioBooth}
               active={isAudioBoothActive}
+            />
+          )}
+
+          {/* Local meeting recording */}
+          {isRecordingEnabled && onToggleRecording && (
+            <MeetingControlButton
+              icon={<CircleDot className={`w-[18px] h-[18px] ${isRecording ? 'animate-pulse' : ''}`} />}
+              label={isRecording ? 'Dừng ghi' : 'Ghi hình'}
+              tooltip={isRecording ? 'Dừng ghi hình cuộc họp' : 'Ghi video và phụ đề cuộc họp'}
+              onClick={onToggleRecording}
+              danger={isRecording}
             />
           )}
 

@@ -128,6 +128,10 @@ export interface SidecarPreferences {
   showActions: boolean;
   showRecap: boolean;
   showChat: boolean;
+  fileSharing: boolean;
+  meetingRecording: boolean;
+  e2eeEnabled: boolean;
+  floatingSubtitleWidget: boolean;
   audioBooth: boolean;
   showOriginal: boolean;
 }
@@ -184,6 +188,11 @@ export interface ChatMessage {
   senderName: string;
   text: string;
   timestamp: string;
+  attachment?: {
+    name: string;
+    size: number;
+    summaryTranslation?: string;
+  };
 }
 
 export interface RaiseHandDataMessage {

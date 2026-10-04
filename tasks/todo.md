@@ -175,3 +175,13 @@
   - Backend `AuthController.cs` (`GET /api/auth/sso/providers`, `POST /api/auth/sso/validate-domain`), allowlist / disposable domain protection; `EnterpriseSsoModal.tsx` trên giao diện chính; unit tests (.NET: 105 passed).
 - [x] **Option D: White-Labeling & Custom Branding Engine**:
   - Backend `SystemController.cs` (`GET /api/system/branding`); Frontend động bộ Brand name / logo trên `MeetingTopBar.tsx`, đóng dấu thương hiệu vào biên bản họp Markdown (`PostMeetingModal` & `SubtitlePanel`); contract test `test_branding_contract.py` pass (.NET: 106 passed, Pytest: 239 passed, Web build pass).
+
+## P6 - Enterprise Modularity & Custom Settings Suite (Điều phối Codex GPT-5.6-Sol tự động)
+- [x] **Feature 1: In-Meeting File Sharing & Instant Document Translation**:
+  - Toggle `fileSharing` trong `SidecarPreferences` & `MeetingSettingsDialog.tsx`; đính kèm file trong chat `SubtitlePanel.tsx` kèm card tóm tắt AI; contract test `test_file_sharing_contract.py` pass (Pytest: 242 passed).
+- [x] **Feature 2: Automated AI Meeting Recording & Video Export**:
+  - Toggle `meetingRecording` trong cài đặt; nút Ghi hình/Dừng ghi trên `MeetingBottomBar.tsx`; badge REC nhấp nháy trên `MeetingTopBar.tsx`; tải video WebM trong `PostMeetingModal.tsx`; contract test `test_meeting_recording_contract.py` pass (Pytest: 245 passed).
+- [x] **Feature 3: End-to-End Encryption (E2EE) Mode**:
+  - Toggle `e2eeEnabled` trong cài đặt; huy hiệu bảo mật `E2EE Secured 🔒` trên `MeetingTopBar.tsx`; contract test `test_e2ee_contract.py` pass (Pytest: 247 passed).
+- [x] **Feature 4: External Meeting Bridge & Floating Subtitle Widget (PiP)**:
+  - Toggle `floatingSubtitleWidget` trong cài đặt; cửa sổ phụ đề nổi kéo thả `FloatingSubtitleWidget.tsx` hiển thị 3 câu dịch mới nhất; nút bật/tắt trên `MeetingBottomBar.tsx`; contract test `test_floating_subtitle_contract.py` pass (Pytest: 250 passed, .NET: 106 passed, Web build pass).
