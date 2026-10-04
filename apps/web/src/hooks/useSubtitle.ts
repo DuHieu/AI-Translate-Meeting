@@ -44,7 +44,7 @@ export function useSubtitle(meetingId?: string, participantId?: string, options?
       participantName,
       sourceLanguage,
       targetLanguage,
-      domain: localStorage.getItem('ai-meeting-domain') || 'engineering',
+      domain: localStorage.getItem('ai-meeting-domain') || 'general',
       initialPrompt: localStorage.getItem('ai-meeting-initial-prompt') || '',
     });
 

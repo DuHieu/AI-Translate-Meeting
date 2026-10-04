@@ -167,7 +167,7 @@ export class SubtitleWebSocketService {
           if (isRecord(data) && data.type === 'authenticated') {
             this.isAuthenticated = true;
             this.reconnectAttempts = 0;
-            const activeDomain = options.domain || localStorage.getItem('ai-meeting-domain') || 'engineering';
+            const activeDomain = options.domain || localStorage.getItem('ai-meeting-domain') || 'general';
             const activeInitialPrompt = options.initialPrompt || localStorage.getItem('ai-meeting-initial-prompt') || '';
             if (activeDomain || activeInitialPrompt) {
               this.sendConfig(activeDomain, activeInitialPrompt);

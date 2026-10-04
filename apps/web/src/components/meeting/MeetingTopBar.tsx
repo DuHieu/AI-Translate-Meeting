@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { ConnectionState } from 'livekit-client';
-import { Copy, Check, ShieldCheck } from 'lucide-react';
+import { Copy, Check, ShieldCheck, QrCode } from 'lucide-react';
 import { NetworkQualityIndicator } from './NetworkQualityIndicator';
 import { LayaMeetLogo } from '../common/LayaMeetLogo';
 import { ThemeToggle } from '../common/ThemeToggle';
+import { ShareMeetingModal } from './ShareMeetingModal';
 import type { BrandingConfigDto } from '../../api/meetingApi';
 
 interface MeetingTopBarProps {
@@ -41,6 +42,7 @@ export const MeetingTopBar: React.FC<MeetingTopBarProps> = ({
   onOpenUpgradeModal,
 }) => {
   const [copied, setCopied] = useState(false);
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
 
   const handleCopyCode = () => {
     const inviteUrl = `${window.location.origin}/prejoin/${meetingCode}`;
@@ -168,6 +170,17 @@ export const MeetingTopBar: React.FC<MeetingTopBarProps> = ({
           )}
         </button>
 
+        {/* QR Code & Invite Share modal trigger */}
+        <button
+          type="button"
+          onClick={() => setIsShareModalOpen(true)}
+          title="Mở mã QR và chia sẻ link họp"
+          className="bg-[#1a1a1b] hover:bg-[#222224] dark:bg-[#1a1a1b] dark:hover:bg-[#222224] bg-zinc-100 hover:bg-zinc-200 border border-[#3a3a3d] dark:border-[#3a3a3d] border-zinc-300 px-2 sm:px-2.5 py-1.5 rounded-lg text-xs font-medium text-zinc-300 dark:text-zinc-300 text-zinc-700 hover:text-sky-400 dark:hover:text-sky-400 flex items-center gap-1.5 transition-colors cursor-pointer"
+        >
+          <QrCode className="w-3.5 h-3.5 text-sky-400" />
+          <span className="hidden sm:inline">Mời &amp; QR</span>
+        </button>
+
         {/* Admission button (host only) */}
         {isHost && (
           <button
@@ -193,6 +206,14 @@ export const MeetingTopBar: React.FC<MeetingTopBarProps> = ({
           <span>{status.text}</span>
         </div>
       </div>
+
+      {/* Share & Mobile QR Modal */}
+      <ShareMeetingModal
+        isOpen={isShareModalOpen}
+        onClose={() => setIsShareModalOpen(false)}
+        meetingCode={meetingCode}
+        meetingTitle={branding.brandName}
+      />
     </header>
   );
 };

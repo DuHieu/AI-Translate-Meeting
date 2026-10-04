@@ -3,6 +3,7 @@ import { AlertTriangle, Sparkles, X } from 'lucide-react';
 import { PipelineStatusMessage, SubtitleMessage } from '../../types/subtitle';
 import { formatTimestamp } from '../../utils';
 import { LIVE_SUBTITLE_LIMIT } from './LiveSubtitleView';
+import { getUserSettings, subscribeUserSettings, UserMeetingSettings } from '../../utils/userSettings';
 
 interface SubtitleOverlayProps {
   subtitle?: SubtitleMessage | null;
@@ -18,6 +19,12 @@ export const SubtitleOverlay: React.FC<SubtitleOverlayProps> = ({
   showOriginal,
 }) => {
   const [isMobileSheetOpen, setIsMobileSheetOpen] = useState(false);
+  const [settings, setSettings] = useState<UserMeetingSettings>(() => getUserSettings());
+
+  useEffect(() => {
+    return subscribeUserSettings((newSettings) => setSettings(newSettings));
+  }, []);
+
   const translatingCount = Object.values(pipelineStatuses || {}).filter(
     (status) => status.phase === 'translating',
   ).length;
@@ -39,6 +46,28 @@ export const SubtitleOverlay: React.FC<SubtitleOverlayProps> = ({
 
   const isRisk = subtitle?.tags?.includes('critical_risk');
 
+  const fontSizeClass = {
+    sm: 'text-xs sm:text-sm',
+    md: 'text-sm sm:text-base',
+    lg: 'text-base sm:text-lg',
+    xl: 'text-lg sm:text-xl font-bold',
+  }[settings.subtitleFontSize] || 'text-sm sm:text-base';
+
+  const bgOpacityClass = {
+    light: 'bg-black/50',
+    medium: 'bg-black/80',
+    heavy: 'bg-black/95',
+  }[settings.subtitleBgOpacity] || 'bg-black/80';
+
+  const shouldShowOriginal =
+    settings.subtitleDisplayMode === 'original_only' ||
+    (settings.subtitleDisplayMode === 'bilingual' && showOriginal);
+
+  const primaryText =
+    settings.subtitleDisplayMode === 'original_only'
+      ? subtitle?.originalText || subtitle?.translatedText
+      : subtitle?.translatedText;
+
   return (
     <>
       <div className="pointer-events-none absolute bottom-[72px] left-1/2 z-30 w-full max-w-3xl -translate-x-1/2 px-3 sm:px-4">
@@ -55,7 +84,7 @@ export const SubtitleOverlay: React.FC<SubtitleOverlayProps> = ({
             className={`relative w-full rounded-xl border px-4 py-3 text-left shadow-xl backdrop-blur-md transition-all ${
               isRisk
                 ? 'border-rose-500/80 bg-black/90 shadow-[0_0_20px_rgba(244,63,94,0.35)]'
-                : 'border-white/15 bg-black/80'
+                : `border-white/15 ${bgOpacityClass}`
             }`}
           >
             <div className="mb-1 flex items-center justify-between">
@@ -68,10 +97,10 @@ export const SubtitleOverlay: React.FC<SubtitleOverlayProps> = ({
                 </span>
               )}
             </div>
-            <span className="line-clamp-2 block text-sm font-medium leading-5 text-white sm:text-base">
-              {subtitle.translatedText}
+            <span className={`line-clamp-2 block font-medium leading-relaxed text-white ${fontSizeClass}`}>
+              {primaryText}
             </span>
-            {showOriginal && subtitle.originalText && subtitle.originalText !== subtitle.translatedText && (
+            {shouldShowOriginal && settings.subtitleDisplayMode === 'bilingual' && subtitle.originalText && subtitle.originalText !== subtitle.translatedText && (
               <span className="mt-1 block truncate text-xs italic text-zinc-400">{subtitle.originalText}</span>
             )}
             <button

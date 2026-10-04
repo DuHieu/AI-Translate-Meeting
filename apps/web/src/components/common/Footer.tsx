@@ -181,19 +181,22 @@ export const Footer: React.FC<FooterProps> = ({
       </div>
 
       {/* ── Sub-footer Copyright Bar ────────────────────────────── */}
-      <div className="border-t border-zinc-200/80 dark:border-zinc-800/80 py-5 px-4 sm:px-6 bg-zinc-100/50 dark:bg-[#080809]">
-        <div className="max-w-5xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-zinc-500 dark:text-zinc-500 text-center sm:text-left">
+      <div className="border-t border-zinc-200/80 dark:border-zinc-800/80 py-4 sm:py-5 px-4 sm:px-6 bg-zinc-100/50 dark:bg-[#080809]">
+        <div className="max-w-5xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2 sm:gap-3 text-xs text-zinc-500 dark:text-zinc-500 text-center sm:text-left">
           <div>
-            <span>© 2026 LayaMeet Platform (layameet.com). Bản quyền thuộc về Đội ngũ Kỹ thuật.</span>
+            <span className="sm:hidden">© 2026 LayaMeet Platform</span>
+            <span className="hidden sm:inline">© 2026 LayaMeet Platform (layameet.com). Bản quyền thuộc về Đội ngũ Kỹ thuật.</span>
           </div>
-          <div className="flex items-center gap-4 text-[11px]">
-            <span className="flex items-center gap-1 text-zinc-400">
+          <div className="flex items-center justify-center gap-2 sm:gap-3 text-[11px] text-zinc-400">
+            <span className="flex items-center gap-1">
               <span>Made with</span>
-              <Heart className="w-3 h-3 text-red-500 fill-red-500" />
-              <span>for Global Polyglot Teams (VN · JP · US · CN · TH · LA...)</span>
+              <Heart className="w-3 h-3 text-red-500 fill-red-500 shrink-0" />
+              <span className="hidden md:inline">for Global Polyglot Teams (VN · JP · US · CN · TH · LA...)</span>
+              <span className="hidden sm:inline md:hidden">for Global Teams</span>
             </span>
             <span className="text-zinc-300 dark:text-zinc-700">·</span>
-            <span className="font-mono text-zinc-400">v2.4.0 (Stable)</span>
+            <span className="font-mono">v2.4.0</span>
+            <span className="hidden sm:inline font-mono text-[10px] text-zinc-400">(Stable)</span>
           </div>
         </div>
       </div>

@@ -57,4 +57,58 @@ public class LiveKitServiceTests
             DateTime.UtcNow.AddMinutes(55),
             DateTime.UtcNow.AddMinutes(65));
     }
+
+    [Fact]
+    public void GetPublicUrl_ReturnsConfiguredUrl_WhenExplicitNonLocalhost()
+    {
+        var options = new LiveKitOptions
+        {
+            ApiKey = "devkey",
+            ApiSecret = new string('x', 32),
+            InternalUrl = "http://livekit:7880",
+            PublicUrl = "wss://livekit.layameet.com",
+            TokenTtlMinutes = 60
+        };
+        var service = new LiveKitService(Microsoft.Extensions.Options.Options.Create(options));
+
+        Assert.Equal("wss://livekit.layameet.com", service.GetPublicUrl());
+    }
+
+    [Fact]
+    public void GetPublicUrl_ResolvesDynamicallyFromHttpContext_WhenLocalhostDefault()
+    {
+        var options = new LiveKitOptions
+        {
+            ApiKey = "devkey",
+            ApiSecret = new string('x', 32),
+            InternalUrl = "http://livekit:7880",
+            PublicUrl = "ws://127.0.0.1:7880",
+            TokenTtlMinutes = 60
+        };
+
+        var httpContext = new Microsoft.AspNetCore.Http.DefaultHttpContext();
+        httpContext.Request.Headers["X-Forwarded-Host"] = "layameet.com";
+        httpContext.Request.Headers["X-Forwarded-Proto"] = "https";
+
+        var accessor = new Microsoft.AspNetCore.Http.HttpContextAccessor { HttpContext = httpContext };
+        var service = new LiveKitService(Microsoft.Extensions.Options.Options.Create(options), accessor);
+
+        Assert.Equal("wss://layameet.com", service.GetPublicUrl());
+    }
+
+    [Fact]
+    public void GetPublicUrl_FallsBackToDefault_WhenNoHttpContext()
+    {
+        var options = new LiveKitOptions
+        {
+            ApiKey = "devkey",
+            ApiSecret = new string('x', 32),
+            InternalUrl = "http://livekit:7880",
+            PublicUrl = "ws://127.0.0.1:7880",
+            TokenTtlMinutes = 60
+        };
+
+        var service = new LiveKitService(Microsoft.Extensions.Options.Options.Create(options));
+        Assert.Equal("ws://127.0.0.1:7880", service.GetPublicUrl());
+    }
 }

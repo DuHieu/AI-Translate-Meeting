@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { X, Mic, Video, Settings as SettingsIcon, Sparkles, BookOpen, Plus, Trash2, Download, Upload, Check } from 'lucide-react';
+import { X, Mic, Video, Settings as SettingsIcon, Sparkles, BookOpen, Plus, Trash2, Download, Upload, Check, Languages, Volume2, Key, Sliders } from 'lucide-react';
 import { useRoomContext } from '@livekit/components-react';
 import { SidecarPreferences } from '../../types/meeting';
 import {
@@ -10,6 +10,17 @@ import {
   exportCustomSkillsToJson,
   MeetingRecapSkill,
 } from '../../utils/recapSkillManager';
+import {
+  getUserSettings,
+  saveUserSettings,
+  UserMeetingSettings,
+  SubtitleDisplayMode,
+  SubtitleFontSize,
+  SubtitleBgOpacity,
+  VadSensitivity,
+  GlossaryDomain,
+  ByokProvider,
+} from '../../utils/userSettings';
 
 interface MeetingSettingsDialogProps {
   onClose: () => void;
@@ -23,7 +34,13 @@ export const MeetingSettingsDialog: React.FC<MeetingSettingsDialogProps> = ({
   onSidecarPreferencesChange,
 }) => {
   const room = useRoomContext();
-  const [activeTab, setActiveTab] = useState<'audio' | 'video' | 'sidecar' | 'skills'>('audio');
+  const [activeTab, setActiveTab] = useState<'audio' | 'video' | 'subtitles' | 'sidecar' | 'skills'>('audio');
+  const [userSettings, setUserSettings] = useState<UserMeetingSettings>(() => getUserSettings());
+
+  const handleUpdateSetting = <K extends keyof UserMeetingSettings>(key: K, value: UserMeetingSettings[K]) => {
+    const updated = saveUserSettings({ [key]: value });
+    setUserSettings(updated);
+  };
 
   const [audioDevices, setAudioDevices] = useState<MediaDeviceInfo[]>([]);
   const [videoDevices, setVideoDevices] = useState<MediaDeviceInfo[]>([]);
@@ -173,6 +190,15 @@ export const MeetingSettingsDialog: React.FC<MeetingSettingsDialogProps> = ({
           </button>
           <button
             type="button"
+            onClick={() => setActiveTab('subtitles')}
+            className={`pb-2.5 font-medium text-sm border-b-2 transition flex items-center gap-2 whitespace-nowrap ${
+              activeTab === 'subtitles' ? 'border-sky-400 text-sky-400' : 'border-transparent text-slate-400'
+            }`}
+          >
+            <Languages className="w-4 h-4" /> Phụ đề &amp; Dịch AI
+          </button>
+          <button
+            type="button"
             onClick={() => setActiveTab('sidecar')}
             className={`pb-2.5 font-medium text-sm border-b-2 transition flex items-center gap-2 whitespace-nowrap ${
               activeTab === 'sidecar' ? 'border-sky-400 text-sky-400' : 'border-transparent text-slate-400'
@@ -194,23 +220,244 @@ export const MeetingSettingsDialog: React.FC<MeetingSettingsDialogProps> = ({
         {/* Tab Content */}
         <div className="space-y-4 flex-1 overflow-y-auto pr-1">
           {activeTab === 'audio' && (
-            <div>
-              <label className="block text-xs font-medium text-slate-400 mb-2">Microphone</label>
-              <select
-                value={selectedAudioId}
-                onChange={(e) => handleAudioChange(e.target.value)}
-                className="w-full bg-slate-800 border border-slate-700 text-slate-100 text-sm rounded-xl p-3 outline-none focus:ring-2 focus:ring-sky-500"
-              >
-                {audioDevices.length > 0 ? (
-                  audioDevices.map((d) => (
-                    <option key={d.deviceId} value={d.deviceId}>
-                      {d.label || `Microphone ${d.deviceId.slice(0, 5)}`}
-                    </option>
-                  ))
-                ) : (
-                  <option value="">Default Microphone</option>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-xs font-medium text-slate-400 mb-2">Microphone</label>
+                <select
+                  value={selectedAudioId}
+                  onChange={(e) => handleAudioChange(e.target.value)}
+                  className="w-full bg-slate-800 border border-slate-700 text-slate-100 text-sm rounded-xl p-3 outline-none focus:ring-2 focus:ring-sky-500"
+                >
+                  {audioDevices.length > 0 ? (
+                    audioDevices.map((d) => (
+                      <option key={d.deviceId} value={d.deviceId}>
+                        {d.label || `Microphone ${d.deviceId.slice(0, 5)}`}
+                      </option>
+                    ))
+                  ) : (
+                    <option value="">Default Microphone</option>
+                  )}
+                </select>
+              </div>
+
+              {/* VAD Sensitivity */}
+              <div className="rounded-xl border border-slate-700 bg-slate-800/60 p-3 space-y-2">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Sliders className="w-4 h-4 text-sky-400" />
+                    <div>
+                      <p className="text-sm font-medium text-slate-200">Độ nhạy Micro &amp; Lọc tiếng ồn (VAD)</p>
+                      <p className="text-xs text-slate-500">Điều chỉnh ngưỡng nhận diện giọng nói và lọc tạp âm nền</p>
+                    </div>
+                  </div>
+                </div>
+                <div className="grid grid-cols-3 gap-2 pt-1">
+                  {(['low', 'medium', 'high'] as VadSensitivity[]).map((level) => {
+                    const label = level === 'low' ? 'Nhẹ (Nhạy)' : level === 'medium' ? 'Tiêu chuẩn' : 'Mạnh (Lọc cao)';
+                    return (
+                      <button
+                        key={level}
+                        type="button"
+                        onClick={() => handleUpdateSetting('vadSensitivity', level)}
+                        className={`py-2 px-3 rounded-lg text-xs font-medium transition cursor-pointer ${
+                          userSettings.vadSensitivity === level
+                            ? 'bg-sky-500 text-white font-semibold'
+                            : 'bg-slate-700/60 text-slate-300 hover:bg-slate-700'
+                        }`}
+                      >
+                        {label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Audio Ducking */}
+              <div className="flex items-center justify-between rounded-xl border border-slate-700 bg-slate-800/60 p-3">
+                <div className="flex items-center gap-2">
+                  <Volume2 className="w-4 h-4 text-sky-400" />
+                  <div>
+                    <p className="text-sm font-medium text-slate-200">Tự động giảm âm nền (Audio Ducking)</p>
+                    <p className="text-xs text-slate-500">Tự động hạ âm lượng video/media khi có người phát biểu</p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => handleUpdateSetting('audioDuckingEnabled', !userSettings.audioDuckingEnabled)}
+                  className={`w-11 h-6 flex items-center rounded-full p-1 transition-colors cursor-pointer ${
+                    userSettings.audioDuckingEnabled ? 'bg-sky-500' : 'bg-slate-700'
+                  }`}
+                >
+                  <div
+                    className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform ${
+                      userSettings.audioDuckingEnabled ? 'translate-x-5' : 'translate-x-0'
+                    }`}
+                  />
+                </button>
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'subtitles' && (
+            <div className="space-y-4">
+              {/* Subtitle Display Mode */}
+              <div className="rounded-xl border border-slate-700 bg-slate-800/60 p-3 space-y-2">
+                <div>
+                  <p className="text-sm font-medium text-slate-200">Chế độ hiển thị phụ đề</p>
+                  <p className="text-xs text-slate-500">Tùy biến hiển thị câu nói gốc và bản dịch thời gian thực</p>
+                </div>
+                <div className="grid grid-cols-3 gap-2 pt-1">
+                  {([
+                    ['bilingual', 'Song ngữ'],
+                    ['translation_only', 'Chỉ dịch'],
+                    ['original_only', 'Chỉ câu gốc'],
+                  ] as [SubtitleDisplayMode, string][]).map(([mode, label]) => (
+                    <button
+                      key={mode}
+                      type="button"
+                      onClick={() => handleUpdateSetting('subtitleDisplayMode', mode)}
+                      className={`py-2 px-3 rounded-lg text-xs font-medium transition cursor-pointer ${
+                        userSettings.subtitleDisplayMode === mode
+                          ? 'bg-sky-500 text-white font-semibold'
+                          : 'bg-slate-700/60 text-slate-300 hover:bg-slate-700'
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Subtitle Font Size */}
+              <div className="rounded-xl border border-slate-700 bg-slate-800/60 p-3 space-y-2">
+                <div>
+                  <p className="text-sm font-medium text-slate-200">Kích thước chữ phụ đề</p>
+                  <p className="text-xs text-slate-500">Tối ưu cho người cận thị hoặc màn hình thuyết trình lớn</p>
+                </div>
+                <div className="grid grid-cols-4 gap-2 pt-1">
+                  {([
+                    ['sm', 'Nhỏ (14px)'],
+                    ['md', 'Vừa (18px)'],
+                    ['lg', 'Lớn (22px)'],
+                    ['xl', 'Cực lớn (26px)'],
+                  ] as [SubtitleFontSize, string][]).map(([size, label]) => (
+                    <button
+                      key={size}
+                      type="button"
+                      onClick={() => handleUpdateSetting('subtitleFontSize', size)}
+                      className={`py-2 px-2 rounded-lg text-xs font-medium transition cursor-pointer text-center ${
+                        userSettings.subtitleFontSize === size
+                          ? 'bg-sky-500 text-white font-semibold'
+                          : 'bg-slate-700/60 text-slate-300 hover:bg-slate-700'
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Subtitle Background Opacity */}
+              <div className="rounded-xl border border-slate-700 bg-slate-800/60 p-3 space-y-2">
+                <div>
+                  <p className="text-sm font-medium text-slate-200">Độ mờ nền phụ đề</p>
+                  <p className="text-xs text-slate-500">Đảm bảo độ tương phản rõ nét trên các nền video phức tạp</p>
+                </div>
+                <div className="grid grid-cols-3 gap-2 pt-1">
+                  {([
+                    ['light', 'Trong suốt (50%)'],
+                    ['medium', 'Tiêu chuẩn (80%)'],
+                    ['heavy', 'Tối đậm (95%)'],
+                  ] as [SubtitleBgOpacity, string][]).map(([opacity, label]) => (
+                    <button
+                      key={opacity}
+                      type="button"
+                      onClick={() => handleUpdateSetting('subtitleBgOpacity', opacity)}
+                      className={`py-2 px-3 rounded-lg text-xs font-medium transition cursor-pointer ${
+                        userSettings.subtitleBgOpacity === opacity
+                          ? 'bg-sky-500 text-white font-semibold'
+                          : 'bg-slate-700/60 text-slate-300 hover:bg-slate-700'
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Glossary Domain */}
+              <div className="rounded-xl border border-slate-700 bg-slate-800/60 p-3 space-y-2">
+                <div>
+                  <p className="text-sm font-medium text-slate-200">Từ điển thuật ngữ chuyên ngành</p>
+                  <p className="text-xs text-slate-500">Ưu tiên dịch chuẩn các từ viết tắt và thuật ngữ riêng</p>
+                </div>
+                <select
+                  value={userSettings.glossaryDomain}
+                  onChange={(e) => handleUpdateSetting('glossaryDomain', e.target.value as GlossaryDomain)}
+                  className="w-full bg-slate-800 border border-slate-700 text-slate-100 text-xs rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-sky-500"
+                >
+                  <option value="general">Tổng quát (Hội thoại đời sống &amp; chung)</option>
+                  <option value="it">Công nghệ thông tin (IT / Phần mềm / Cloud / DevOps)</option>
+                  <option value="business">Kinh doanh &amp; Tài chính (Fintech / Hợp đồng / Kế toán)</option>
+                </select>
+              </div>
+
+              {/* BYOK (Bring Your Own Key) */}
+              <div className="rounded-xl border border-slate-700 bg-slate-800/60 p-3 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Key className="w-4 h-4 text-amber-400" />
+                    <div>
+                      <p className="text-sm font-medium text-slate-200">Tùy chọn API cá nhân (BYOK)</p>
+                      <p className="text-xs text-slate-500">Sử dụng API Key riêng cho các mô hình dịch chuyên sâu</p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleUpdateSetting('byokEnabled', !userSettings.byokEnabled)}
+                    className={`w-11 h-6 flex items-center rounded-full p-1 transition-colors cursor-pointer ${
+                      userSettings.byokEnabled ? 'bg-amber-500' : 'bg-slate-700'
+                    }`}
+                  >
+                    <div
+                      className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform ${
+                        userSettings.byokEnabled ? 'translate-x-5' : 'translate-x-0'
+                      }`}
+                    />
+                  </button>
+                </div>
+
+                {userSettings.byokEnabled && (
+                  <div className="space-y-2 pt-2 border-t border-slate-700/60">
+                    <div className="grid grid-cols-3 gap-2">
+                      {(['openai', 'deepl', 'gemini'] as ByokProvider[]).map((prov) => (
+                        <button
+                          key={prov}
+                          type="button"
+                          onClick={() => handleUpdateSetting('byokProvider', prov)}
+                          className={`py-1.5 px-2 rounded-lg text-xs font-medium uppercase transition cursor-pointer ${
+                            userSettings.byokProvider === prov
+                              ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40'
+                              : 'bg-slate-700/40 text-slate-400 hover:bg-slate-700'
+                          }`}
+                        >
+                          {prov}
+                        </button>
+                      ))}
+                    </div>
+                    <input
+                      type="password"
+                      placeholder="Nhập API Key cá nhân của bạn..."
+                      value={userSettings.byokApiKey}
+                      onChange={(e) => handleUpdateSetting('byokApiKey', e.target.value)}
+                      className="w-full bg-slate-900 border border-slate-700 text-slate-100 text-xs rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-amber-500"
+                    />
+                    <p className="text-[11px] text-slate-500">
+                      * Key được bảo mật trên bộ nhớ trình duyệt client của bạn, không lưu trữ trên máy chủ công khai.
+                    </p>
+                  </div>
                 )}
-              </select>
+              </div>
             </div>
           )}
 

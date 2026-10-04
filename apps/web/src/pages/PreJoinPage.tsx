@@ -10,9 +10,26 @@ import {
   SupportedLanguage,
   SUPPORTED_LANGUAGES_LIST,
 } from '../types/meeting';
-import { Video, Mic, MicOff, VideoOff, LogIn, ArrowLeft, BookOpen, Code2, Briefcase, Globe } from 'lucide-react';
+import { Video, Mic, MicOff, VideoOff, LogIn, ArrowLeft, BookOpen, ChevronDown, ChevronUp, SlidersHorizontal } from 'lucide-react';
 import { LayaMeetLogo } from '../components/common/LayaMeetLogo';
 import { ThemeToggle } from '../components/common/ThemeToggle';
+
+interface GlossaryDomainOption {
+  id: string;
+  name: string;
+  desc: string;
+}
+
+// Extensible glossary domains matrix for enterprise meetings
+const GLOSSARY_DOMAINS: GlossaryDomainOption[] = [
+  { id: 'general', name: 'Tổng quát / Đa lĩnh vực (Mặc định)', desc: 'Hội thoại thông thường, họp nội bộ, giao tiếp đa ngành' },
+  { id: 'engineering', name: 'Công nghệ thông tin (IT / Tech)', desc: 'Lập trình, hệ thống, kiến trúc hạ tầng phần mềm' },
+  { id: 'business', name: 'Kinh doanh & Thương mại', desc: 'Bán hàng, đối tác, đàm phán hợp đồng thương mại' },
+  { id: 'finance', name: 'Tài chính & Ngân hàng', desc: 'Kế toán, kiểm toán, ngân sách, báo cáo tài chính' },
+  { id: 'manufacturing', name: 'Sản xuất & Chuỗi cung ứng', desc: 'Quy trình nhà máy, QA/QC, xuất nhập khẩu, logistics' },
+  { id: 'healthcare', name: 'Y tế & Dược phẩm', desc: 'Thuật ngữ y khoa, nghiên cứu lâm sàng, sức khỏe' },
+  { id: 'legal', name: 'Pháp lý & Tuân thủ', desc: 'Điều khoản pháp lý, sở hữu trí tuệ, hợp đồng kinh tế' },
+];
 
 export const PreJoinPage: React.FC = () => {
   const { meetingCode } = useParams<{ meetingCode: string }>();
@@ -23,11 +40,12 @@ export const PreJoinPage: React.FC = () => {
   const [targetLanguage, setTargetLanguage] = useState<SupportedLanguage>('ja');
 
   const [meetingDomain, setMeetingDomain] = useState<string>(() => {
-    return localStorage.getItem('ai-meeting-domain') || 'engineering';
+    return localStorage.getItem('ai-meeting-domain') || 'general';
   });
   const [customKeywords, setCustomKeywords] = useState<string>(() => {
-    return localStorage.getItem('ai-meeting-initial-prompt') || 'PR, Git, Docker, Kubernetes, Refactor, 仕様書, 単体テスト';
+    return localStorage.getItem('ai-meeting-initial-prompt') || '';
   });
+  const [showAdvancedSettings, setShowAdvancedSettings] = useState(false);
 
   const [isMicOn, setIsMicOn] = useState(true);
   const [isCameraOn, setIsCameraOn] = useState(true);
@@ -544,7 +562,7 @@ export const PreJoinPage: React.FC = () => {
               <input
                 id="display-name"
                 type="text"
-                placeholder="e.g. Hieu / Tanaka"
+                placeholder="Nhập họ và tên của bạn"
                 value={displayName}
                 onChange={(e) => setDisplayName(e.target.value)}
                 className="w-full bg-zinc-50 dark:bg-[#111112] border border-zinc-300 dark:border-[#3a3a3d] text-zinc-900 dark:text-zinc-100 text-sm rounded-lg px-3 py-2.5 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/30 transition placeholder-zinc-400 dark:placeholder-zinc-600 shadow-xs"
@@ -556,7 +574,7 @@ export const PreJoinPage: React.FC = () => {
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label htmlFor="spoken-lang" className="block text-xs font-medium text-zinc-600 dark:text-zinc-400 mb-1.5">
-                  Ngôn ngữ nói
+                  Ngôn ngữ bạn nói
                 </label>
                 <select
                   id="spoken-lang"
@@ -573,7 +591,7 @@ export const PreJoinPage: React.FC = () => {
               </div>
               <div>
                 <label htmlFor="target-lang" className="block text-xs font-medium text-zinc-600 dark:text-zinc-400 mb-1.5">
-                  Dịch sang
+                  Xem phụ đề bằng
                 </label>
                 <select
                   id="target-lang"
@@ -590,55 +608,71 @@ export const PreJoinPage: React.FC = () => {
               </div>
             </div>
 
-            {/* Domain glossary */}
-            <div>
-              <div className="flex items-center gap-1.5 mb-2">
-                <BookOpen className="w-3.5 h-3.5 text-zinc-500" />
-                <span className="text-xs font-medium text-zinc-600 dark:text-zinc-400">Từ điển chuyên ngành</span>
-              </div>
-              <div className="grid grid-cols-3 gap-2 mb-2">
-                {[
-                  { id: 'engineering', label: 'IT / Kỹ thuật', icon: Code2 },
-                  { id: 'business', label: 'Kinh doanh', icon: Briefcase },
-                  { id: 'general', label: 'Tổng quát', icon: Globe },
-                ].map((item) => {
-                  const Icon = item.icon;
-                  const isSelected = meetingDomain === item.id;
-                  return (
-                    <button
-                      key={item.id}
-                      type="button"
-                      onClick={() => {
-                        setMeetingDomain(item.id);
-                        localStorage.setItem('ai-meeting-domain', item.id);
-                        if (item.id === 'engineering' && !customKeywords) {
-                          const kw = 'PR, Git, Docker, Kubernetes, Refactor, 仕様書, 単体テスト';
-                          setCustomKeywords(kw);
-                          localStorage.setItem('ai-meeting-initial-prompt', kw);
-                        }
+            {/* Collapsible Domain glossary (Advanced options) */}
+            <div className="pt-0.5">
+              <button
+                type="button"
+                onClick={() => setShowAdvancedSettings(!showAdvancedSettings)}
+                className="flex items-center gap-1.5 text-xs text-zinc-500 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-200 transition-colors cursor-pointer select-none py-1"
+              >
+                <SlidersHorizontal className="w-3.5 h-3.5 text-zinc-400" />
+                <span>Tùy chọn nâng cao (Từ điển chuyên ngành)</span>
+                {showAdvancedSettings ? (
+                  <ChevronUp className="w-3.5 h-3.5 text-zinc-400" />
+                ) : (
+                  <ChevronDown className="w-3.5 h-3.5 text-zinc-400" />
+                )}
+              </button>
+
+              {showAdvancedSettings && (
+                <div className="mt-2.5 p-3.5 rounded-lg bg-zinc-100/60 dark:bg-[#151516] border border-zinc-200/80 dark:border-[#2a2a2c] space-y-3">
+                  <div>
+                    <div className="flex items-center gap-1.5 mb-1.5 text-xs font-medium text-zinc-700 dark:text-zinc-300">
+                      <BookOpen className="w-3.5 h-3.5 text-blue-500" />
+                      <label htmlFor="glossary-domain">Lĩnh vực thuật ngữ cuộc họp:</label>
+                    </div>
+                    <select
+                      id="glossary-domain"
+                      value={meetingDomain}
+                      onChange={(e) => {
+                        const newDomain = e.target.value;
+                        setMeetingDomain(newDomain);
+                        localStorage.setItem('ai-meeting-domain', newDomain);
                       }}
-                      className={`p-2 rounded-lg text-[11px] font-medium flex flex-col items-center gap-1.5 border transition-colors cursor-pointer shadow-xs ${
-                        isSelected
-                          ? 'bg-blue-600/15 border-blue-500/40 text-blue-600 dark:text-blue-400'
-                          : 'bg-zinc-50 dark:bg-[#111112] border-zinc-200 dark:border-[#2e2e30] text-zinc-600 dark:text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-300 hover:border-zinc-300 dark:hover:border-[#3a3a3d]'
-                      }`}
+                      className="w-full bg-white dark:bg-[#1a1a1b] border border-zinc-300 dark:border-[#3a3a3d] text-zinc-900 dark:text-zinc-200 text-xs rounded-lg px-2.5 py-2 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/30 transition shadow-xs"
                     >
-                      <Icon className="w-3.5 h-3.5" />
-                      <span>{item.label}</span>
-                    </button>
-                  );
-                })}
-              </div>
-              <input
-                type="text"
-                value={customKeywords}
-                onChange={(e) => {
-                  setCustomKeywords(e.target.value);
-                  localStorage.setItem('ai-meeting-initial-prompt', e.target.value);
-                }}
-                placeholder="e.g. PR, Docker, Kubernetes, 仕様書..."
-                className="w-full bg-zinc-50 dark:bg-[#111112] border border-zinc-200 dark:border-[#2e2e30] text-zinc-900 dark:text-zinc-300 text-xs rounded-lg px-2.5 py-2 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/30 transition placeholder-zinc-400 dark:placeholder-zinc-600 shadow-xs"
-              />
+                      {GLOSSARY_DOMAINS.map((domain) => (
+                        <option key={domain.id} value={domain.id}>
+                          {domain.name}
+                        </option>
+                      ))}
+                    </select>
+                    <p className="text-[11px] text-zinc-500 dark:text-zinc-400 mt-1">
+                      {GLOSSARY_DOMAINS.find((d) => d.id === meetingDomain)?.desc || ''}
+                    </p>
+                  </div>
+
+                  <div>
+                    <label htmlFor="custom-keywords" className="block text-xs font-medium text-zinc-700 dark:text-zinc-300 mb-1.5">
+                      Từ khóa chuyên ngành bổ trợ (Tùy chọn):
+                    </label>
+                    <input
+                      id="custom-keywords"
+                      type="text"
+                      value={customKeywords}
+                      onChange={(e) => {
+                        setCustomKeywords(e.target.value);
+                        localStorage.setItem('ai-meeting-initial-prompt', e.target.value);
+                      }}
+                      placeholder="Ví dụ: SLA, KPI, Opex, Capex (phân cách bằng dấu phẩy)..."
+                      className="w-full bg-white dark:bg-[#1a1a1b] border border-zinc-300 dark:border-[#3a3a3d] text-zinc-900 dark:text-zinc-200 text-xs rounded-lg px-2.5 py-2 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/30 transition placeholder-zinc-400 dark:placeholder-zinc-600 shadow-xs"
+                    />
+                    <p className="text-[10px] text-zinc-400 dark:text-zinc-500 mt-1">
+                      Cung cấp thêm từ viết tắt hoặc thuật ngữ riêng của dự án để AI nhận dạng chính xác hơn.
+                    </p>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Invite token */}

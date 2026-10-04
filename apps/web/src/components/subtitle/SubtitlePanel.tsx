@@ -212,6 +212,52 @@ export const SubtitlePanel: React.FC<SubtitlePanelProps> = ({
     downloadFile(content, `bien-ban-hop-${meetingCode || 'mom'}.md`);
   };
 
+  const handleDownloadMinutesDirect = () => {
+    let recap = recapResult;
+    if (!recap) {
+      recap = generateMeetingRecap(
+        history.filter((item) => item.isFinal),
+        taggedItems,
+        selectedSkillId
+      );
+      setRecapResult(recap);
+    }
+
+    const content = [
+      `# ${branding.brandName} — Biên Bản Cuộc Họp - ${meetingCode || branding.brandName}`,
+      `_${branding.copyrightText}_`,
+      '',
+      `*Thời gian tạo: ${recap.generatedAt} | Kỹ năng: ${recap.activeSkillName || 'Executive MoM'}*`,
+      '',
+      '## 1. Tóm Tắt Điều Hành',
+      ...recap.executiveHighlights.map((h) => `- ${h}`),
+      '',
+      ...(recap.decisions && recap.decisions.length > 0 ? [
+        '## 2. Quyết Định Then Chốt',
+        ...recap.decisions.map((d) => `- [x] ${d}`),
+        '',
+      ] : []),
+      ...(recap.actionItems && recap.actionItems.length > 0 ? [
+        '## 3. Phân Công Nhiệm Vụ (Action Items)',
+        ...recap.actionItems.map((a) => `- [ ] **${a.task}** ${a.owner ? `(Phụ trách: ${a.owner})` : ''} ${a.deadline ? `[Hạn chót: ${a.deadline}]` : ''} [${a.priority || 'Medium'}]`),
+        '',
+      ] : []),
+      '## 4. Trọng Tâm Thảo Luận',
+      ...recap.topics.map((t) => `### ${t.title} (${t.category} - ${t.utteranceCount} câu)\n${t.samplePoints.map((p) => `> ${p}`).join('\n')}`),
+      '',
+      ...(recap.blockersAndRisks && recap.blockersAndRisks.length > 0 ? [
+        '## 5. Điểm Nghẽn & Rủi Ro Cần Theo Dõi',
+        ...recap.blockersAndRisks.map((b) => `- ⚠️ ${b}`),
+        '',
+      ] : []),
+      '## 6. Thống Kê Tham Gia',
+      ...recap.speakerStats.map((s) => `- **${s.name}**: ${s.percentage}% (${s.utteranceCount} phát biểu, ~${s.wordCount} từ)`),
+    ].join('\n');
+
+    downloadFile(content, `bien-ban-hop-${meetingCode || 'mom'}.md`);
+    setIsExportMenuOpen(false);
+  };
+
   const toggleChime = () => {
     const next = !chimeEnabled;
     setChimeEnabled(next);
@@ -290,7 +336,8 @@ export const SubtitlePanel: React.FC<SubtitlePanelProps> = ({
               <MoreHorizontal className="h-4 w-4" />
             </button>
             {isExportMenuOpen && (
-              <div className="absolute right-0 top-10 z-10 w-48 rounded-xl border border-white/10 bg-[#1b1b1d] p-1.5 shadow-xl">
+              <div className="absolute right-0 top-10 z-10 w-52 rounded-xl border border-white/10 bg-[#1b1b1d] p-1.5 shadow-xl">
+                <button type="button" onClick={handleDownloadMinutesDirect} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-xs text-sky-300 hover:bg-white/[0.06]"><FileCheck className="h-3.5 w-3.5 text-sky-400" /> Xuất biên bản họp (.md)</button>
                 <button type="button" onClick={handleDownloadTranscript} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-xs text-zinc-300 hover:bg-white/[0.06]"><Download className="h-3.5 w-3.5" /> Tải transcript (.txt)</button>
                 <button type="button" onClick={handleExportSrt} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-xs text-zinc-300 hover:bg-white/[0.06]"><FileText className="h-3.5 w-3.5" /> Tải phụ đề (.srt)</button>
               </div>

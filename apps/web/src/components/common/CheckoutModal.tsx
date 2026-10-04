@@ -108,7 +108,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
             <span className="rounded-md bg-sky-500/15 px-2 py-0.5 text-xs font-semibold text-sky-400">VietQR Napas 247</span>
             <span className="text-xs text-zinc-400">Tự động kích hoạt trong 3s</span>
           </div>
-          <h2 className="mt-2 text-xl font-bold text-white">Nâng cấp ViMeet Pro</h2>
+          <h2 className="mt-2 text-xl font-bold text-white">Nâng cấp LayaMeet Pro</h2>
         </div>
 
         {/* Plan Selector */}

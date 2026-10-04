@@ -2,6 +2,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 using AITranslateMeeting.Api.Options;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 
@@ -16,13 +17,44 @@ public interface ILiveKitService
 public class LiveKitService : ILiveKitService
 {
     private readonly LiveKitOptions _options;
+    private readonly IHttpContextAccessor? _httpContextAccessor;
 
-    public LiveKitService(IOptions<LiveKitOptions> options)
+    public LiveKitService(IOptions<LiveKitOptions> options, IHttpContextAccessor? httpContextAccessor = null)
     {
         _options = options.Value;
+        _httpContextAccessor = httpContextAccessor;
     }
 
-    public string GetPublicUrl() => _options.PublicUrl;
+    public string GetPublicUrl()
+    {
+        // 1. If explicit non-localhost public URL is configured in options/environment, use it
+        if (!string.IsNullOrWhiteSpace(_options.PublicUrl) &&
+            !_options.PublicUrl.Contains("127.0.0.1") &&
+            !_options.PublicUrl.Contains("localhost"))
+        {
+            return _options.PublicUrl;
+        }
+
+        // 2. If running behind a reverse proxy or public domain, dynamically resolve from incoming request
+        var httpContext = _httpContextAccessor?.HttpContext;
+        if (httpContext != null)
+        {
+            var host = httpContext.Request.Headers["X-Forwarded-Host"].FirstOrDefault()
+                ?? httpContext.Request.Host.Value;
+            var proto = httpContext.Request.Headers["X-Forwarded-Proto"].FirstOrDefault()
+                ?? httpContext.Request.Scheme;
+
+            if (!string.IsNullOrWhiteSpace(host) &&
+                !host.Contains("localhost", StringComparison.OrdinalIgnoreCase) &&
+                !host.Contains("127.0.0.1"))
+            {
+                var scheme = proto.Equals("https", StringComparison.OrdinalIgnoreCase) ? "wss" : "ws";
+                return $"{scheme}://{host}";
+            }
+        }
+
+        return _options.PublicUrl;
+    }
 
     public string GenerateAccessToken(string roomName, string identity, string displayName)
     {

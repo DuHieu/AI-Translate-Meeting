@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Check, Zap, ShieldCheck, ArrowRight, HelpCircle } from 'lucide-react';
 import { CheckoutModal } from '../common/CheckoutModal';
+import { EnterpriseDemoModal } from './EnterpriseDemoModal';
 
 interface PricingTier {
   id: string;
@@ -84,6 +85,14 @@ interface PricingSectionProps {
 export const PricingSection: React.FC<PricingSectionProps> = ({ onSelectTier, onContactClick }) => {
   const [isAnnual, setIsAnnual] = useState(true);
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
+  const [isDemoModalOpen, setIsDemoModalOpen] = useState(false);
+
+  const handleEnterpriseClick = () => {
+    if (onContactClick) {
+      onContactClick();
+    }
+    setIsDemoModalOpen(true);
+  };
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('vi-VN').format(amount) + 'đ';
@@ -209,8 +218,8 @@ export const PricingSection: React.FC<PricingSectionProps> = ({ onSelectTier, on
                     onClick={() => {
                       if (tier.id === 'pro') {
                         setIsCheckoutOpen(true);
-                      } else if (tier.id === 'enterprise' && onContactClick) {
-                        onContactClick();
+                      } else if (tier.id === 'enterprise') {
+                        handleEnterpriseClick();
                       } else if (onSelectTier) {
                         onSelectTier(tier.id);
                       }
@@ -242,7 +251,7 @@ export const PricingSection: React.FC<PricingSectionProps> = ({ onSelectTier, on
           </div>
           <button
             type="button"
-            onClick={onContactClick}
+            onClick={handleEnterpriseClick}
             className="text-blue-600 dark:text-blue-400 font-semibold hover:underline shrink-0 cursor-pointer flex items-center gap-1"
           >
             <HelpCircle className="w-3.5 h-3.5" />
@@ -254,6 +263,11 @@ export const PricingSection: React.FC<PricingSectionProps> = ({ onSelectTier, on
           isOpen={isCheckoutOpen}
           onClose={() => setIsCheckoutOpen(false)}
           initialPlanId="pro"
+        />
+
+        <EnterpriseDemoModal
+          isOpen={isDemoModalOpen}
+          onClose={() => setIsDemoModalOpen(false)}
         />
       </div>
     </section>
