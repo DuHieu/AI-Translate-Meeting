@@ -33,4 +33,18 @@
     <xhtml:link rel="alternate" hreflang="vi" href="https://layameet.com/hop-song-ngu-tieng-anh" />
     <xhtml:link rel="alternate" hreflang="en" href="https://layameet.com/hop-song-ngu-tieng-anh" />
   </url>
+  <url>
+    <loc>https://layameet.com/so-sanh/layameet-vs-zoom</loc>
+    <lastmod>2026-10-05</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.85</priority>
+    <xhtml:link rel="alternate" hreflang="vi" href="https://layameet.com/so-sanh/layameet-vs-zoom" />
+  </url>
+  <url>
+    <loc>https://layameet.com/so-sanh/layameet-vs-google-meet</loc>
+    <lastmod>2026-10-05</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.85</priority>
+    <xhtml:link rel="alternate" hreflang="vi" href="https://layameet.com/so-sanh/layameet-vs-google-meet" />
+  </url>
 </urlset>

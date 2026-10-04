@@ -111,6 +111,16 @@ export const Footer: React.FC<FooterProps> = ({
                 </Link>
               </li>
               <li>
+                <Link to="/so-sanh/layameet-vs-zoom" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+                  So Sánh vs Zoom
+                </Link>
+              </li>
+              <li>
+                <Link to="/so-sanh/layameet-vs-google-meet" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+                  So Sánh vs Google Meet
+                </Link>
+              </li>
+              <li>
                 <a href="#contact" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
                   Họp C-Level Bảo Mật Cao
                 </a>

@@ -8,6 +8,8 @@ Allow: /#contact
 Allow: /developers
 Allow: /hop-song-ngu-tieng-nhat
 Allow: /hop-song-ngu-tieng-anh
+Allow: /so-sanh/layameet-vs-zoom
+Allow: /so-sanh/layameet-vs-google-meet
 
 # Disallow private meeting rooms and streaming endpoints for privacy and security
 Disallow: /meeting/

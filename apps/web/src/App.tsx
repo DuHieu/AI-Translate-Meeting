@@ -10,6 +10,8 @@ const MeetingPage = lazy(() => import('./pages/MeetingPage').then((module) => ({
 const DevelopersPage = lazy(() => import('./pages/DevelopersPage').then((module) => ({ default: module.DevelopersPage })));
 const AdminDashboardPage = lazy(() => import('./pages/AdminDashboardPage').then((module) => ({ default: module.AdminDashboardPage })));
 const LanguagePairLandingPage = lazy(() => import('./pages/LanguagePairLandingPage').then((module) => ({ default: module.LanguagePairLandingPage })));
+const ComparisonLandingPage = lazy(() => import('./pages/ComparisonLandingPage').then((module) => ({ default: module.ComparisonLandingPage })));
+const PublicRecapPage = lazy(() => import('./pages/PublicRecapPage').then((module) => ({ default: module.PublicRecapPage })));
 
 const PageFallback: React.FC = () => (
   <div className="min-h-screen bg-[#0f0f10] text-zinc-200 flex items-center justify-center">
@@ -32,9 +34,12 @@ export const App: React.FC = () => {
               <Route path="/developers" element={<DevelopersPage />} />
               <Route path="/hop-song-ngu-tieng-nhat" element={<LanguagePairLandingPage variant="japanese" />} />
               <Route path="/hop-song-ngu-tieng-anh" element={<LanguagePairLandingPage variant="english" />} />
+              <Route path="/so-sanh/layameet-vs-zoom" element={<ComparisonLandingPage competitor="zoom" />} />
+              <Route path="/so-sanh/layameet-vs-google-meet" element={<ComparisonLandingPage competitor="google-meet" />} />
               <Route path="/prejoin/:meetingCode" element={<PreJoinPage />} />
               <Route path="/join/:meetingCode" element={<PreJoinPage />} />
               <Route path="/meeting/:meetingCode" element={<MeetingPage />} />
+              <Route path="/recap/:meetingCode" element={<PublicRecapPage />} />
             </Routes>
           </Suspense>
           <CookieConsentBanner />
