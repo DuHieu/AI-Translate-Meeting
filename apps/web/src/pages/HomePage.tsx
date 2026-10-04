@@ -15,6 +15,7 @@ import { LegalModal } from '../components/common/LegalModal';
 import { EnterpriseSsoModal } from '../components/home/EnterpriseSsoModal';
 import { useLanguage } from '../context/language-context-def';
 import { LanguageSwitcher } from '../components/common/LanguageSwitcher';
+import { NeuralLinguisticBackground } from '../components/common/NeuralLinguisticBackground';
 
 // Feature highlights — language-agnostic, applies to any language pair
 const FEATURES = [
@@ -41,6 +42,7 @@ const FEATURES = [
 ];
 
 export const HomePage: React.FC = () => {
+  const SHOW_ENTERPRISE_SSO = false; // Tạm thời ẩn Enterprise SSO để tránh lỗi 404 khi chưa cấu hình SSO provider
   const navigate = useNavigate();
   const { t } = useLanguage();
   const [meetingCodeInput, setMeetingCodeInput] = useState('');
@@ -77,20 +79,20 @@ export const HomePage: React.FC = () => {
 
   return (
     <div className="relative min-h-screen bg-zinc-50 dark:bg-[#0f0f10] text-zinc-900 dark:text-zinc-100 flex flex-col font-sans transition-colors overflow-x-hidden">
-      {/* ── Background Atmospheric Light & Engineering Mesh Layers ── */}
+      {/* ── Interactive Neural Linguistic Synapse Network (Mouse reactive) ── */}
+      <NeuralLinguisticBackground />
+
+      {/* ── Background Atmospheric Light Layer (Full Viewport, No Cutoff) ── */}
       <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden" aria-hidden="true">
-        {/* Ambient radial diffuse glow */}
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-[720px] ambient-hero-glow" />
+        {/* Ambient radial diffuse glow - 100% full bleed across ultra-wide monitors */}
+        <div className="absolute top-0 left-0 right-0 w-full h-[850px] ambient-hero-glow" />
 
         {/* Dynamic decorative light flares */}
-        <div className="absolute -top-32 left-1/4 w-96 h-96 bg-blue-500/10 dark:bg-blue-600/15 rounded-full blur-3xl" />
-        <div className="absolute -top-20 right-1/4 w-96 h-96 bg-indigo-500/10 dark:bg-indigo-600/15 rounded-full blur-3xl" />
-
-        {/* Precision engineering line mesh with radial fade mask */}
-        <div className="absolute inset-0 bg-grid-mesh mask-radial-faded opacity-90 dark:opacity-80" />
+        <div className="absolute -top-32 left-1/4 w-[500px] h-[500px] bg-blue-500/10 dark:bg-blue-600/15 rounded-full blur-3xl" />
+        <div className="absolute -top-20 right-1/4 w-[500px] h-[500px] bg-indigo-500/10 dark:bg-indigo-600/15 rounded-full blur-3xl" />
 
         {/* Top horizon light beam below navbar */}
-        <div className="absolute top-12 left-0 right-0 h-px bg-gradient-to-r from-transparent via-blue-500/30 dark:via-blue-400/50 to-transparent" />
+        <div className="absolute top-14 left-0 right-0 h-px bg-gradient-to-r from-transparent via-blue-500/30 dark:via-blue-400/50 to-transparent" />
       </div>
 
       {/* ── Fixed Navbar ────────────────────────────────────────── */}
@@ -187,14 +189,16 @@ export const HomePage: React.FC = () => {
                 <span>{loading ? t.hero.btnCreating : t.hero.btnCreate}</span>
               </button>
 
-              <button
-                type="button"
-                onClick={() => setIsEnterpriseSsoOpen(true)}
-                className="w-full sm:w-auto whitespace-nowrap px-5 py-3 bg-white hover:bg-zinc-50 dark:bg-[#1a1a1b] dark:hover:bg-[#222224] text-zinc-800 dark:text-zinc-100 font-semibold rounded-xl transition-colors flex items-center justify-center gap-2 text-sm sm:text-base cursor-pointer border border-zinc-300 dark:border-[#3a3a3d] shadow-xs"
-              >
-                <Building2 className="w-5 h-5 shrink-0 text-blue-600 dark:text-blue-400" />
-                <span>{t.hero.btnEnterpriseSso}</span>
-              </button>
+              {SHOW_ENTERPRISE_SSO && (
+                <button
+                  type="button"
+                  onClick={() => setIsEnterpriseSsoOpen(true)}
+                  className="w-full sm:w-auto whitespace-nowrap px-5 py-3 bg-white hover:bg-zinc-50 dark:bg-[#1a1a1b] dark:hover:bg-[#222224] text-zinc-800 dark:text-zinc-100 font-semibold rounded-xl transition-colors flex items-center justify-center gap-2 text-sm sm:text-base cursor-pointer border border-zinc-300 dark:border-[#3a3a3d] shadow-xs"
+                >
+                  <Building2 className="w-5 h-5 shrink-0 text-blue-600 dark:text-blue-400" />
+                  <span>{t.hero.btnEnterpriseSso}</span>
+                </button>
+              )}
 
               <form onSubmit={handleJoinWithCode} className="w-full sm:w-auto flex items-center gap-2">
                 <input
@@ -300,10 +304,12 @@ export const HomePage: React.FC = () => {
         onClose={() => setIsStatusModalOpen(false)}
       />
 
-      <EnterpriseSsoModal
-        isOpen={isEnterpriseSsoOpen}
-        onClose={() => setIsEnterpriseSsoOpen(false)}
-      />
+      {SHOW_ENTERPRISE_SSO && (
+        <EnterpriseSsoModal
+          isOpen={isEnterpriseSsoOpen}
+          onClose={() => setIsEnterpriseSsoOpen(false)}
+        />
+      )}
 
       {/* Legal & Terms Modal */}
       <LegalModal

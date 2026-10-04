@@ -96,7 +96,13 @@ export const EnterpriseSsoModal: React.FC<EnterpriseSsoModalProps> = ({
       .catch((err: unknown) => {
         if (active) {
           setProviders([]);
-          setError(err instanceof Error ? err.message : 'Không thể tải cấu hình SSO.');
+          setError(
+            err instanceof Error && err.message.includes('404')
+              ? 'Tính năng Enterprise SSO đang tạm ẩn hoặc chưa được kích hoạt trên hệ thống này.'
+              : err instanceof Error
+              ? err.message
+              : 'Không thể tải cấu hình SSO.',
+          );
         }
       })
       .finally(() => {
@@ -122,7 +128,13 @@ export const EnterpriseSsoModal: React.FC<EnterpriseSsoModalProps> = ({
       const result = await meetingApi.validateEnterpriseDomain(email);
       setDomainValidation(result);
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Không thể xác minh domain doanh nghiệp.');
+      setError(
+        err instanceof Error && err.message.includes('404')
+          ? 'Máy chủ chưa kích hoạt chính sách xác minh domain SSO nội bộ.'
+          : err instanceof Error
+          ? err.message
+          : 'Không thể xác minh domain doanh nghiệp.',
+      );
     } finally {
       setValidatingDomain(false);
     }
