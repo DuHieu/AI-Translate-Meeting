@@ -1,6 +1,7 @@
-using System.Collections.Concurrent;
 using AITranslateMeeting.Api.DTOs;
+using AITranslateMeeting.Api.Services;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace AITranslateMeeting.Api.Controllers;
 
@@ -8,18 +9,26 @@ namespace AITranslateMeeting.Api.Controllers;
 [Route("api/[controller]")]
 public sealed class BillingController : ControllerBase
 {
-    private static readonly ConcurrentDictionary<string, PaymentOrderResponse> Orders =
-        new(StringComparer.OrdinalIgnoreCase);
-
-    private readonly string _bankId;
-    private readonly string _accountNumber;
-    private readonly string _accountName;
+    private readonly IBillingService _billingService;
 
     public BillingController(IConfiguration configuration)
+        : this(new BillingService(
+            configuration,
+            new NotificationDispatcher(configuration, NullLogger<NotificationDispatcher>.Instance),
+            NullLogger<BillingService>.Instance))
     {
-        _bankId = ReadConfiguration(configuration, "Billing:BankId", "MB");
-        _accountNumber = ReadConfiguration(configuration, "Billing:AccountNumber", "0901234567");
-        _accountName = ReadConfiguration(configuration, "Billing:AccountName", "CONG TY VIMEET");
+    }
+
+    public BillingController(IBillingService billingService)
+    {
+        _billingService = billingService;
+    }
+
+    [HttpGet("plans")]
+    [ProducesResponseType(typeof(IReadOnlyList<PlanInfoDto>), StatusCodes.Status200OK)]
+    public ActionResult<IReadOnlyList<PlanInfoDto>> GetPlans()
+    {
+        return Ok(_billingService.GetAvailablePlans());
     }
 
     [HttpPost("create-order")]
@@ -28,7 +37,7 @@ public sealed class BillingController : ControllerBase
     public ActionResult<PaymentOrderResponse> CreateOrder(
         [FromBody] CreatePaymentOrderRequest request)
     {
-        if (!TryGetPlan(request.PlanId, out var amount, out var planName))
+        if (!BillingService.TryResolvePlan(request.PlanId, out _))
         {
             return Problem(
                 statusCode: StatusCodes.Status400BadRequest,
@@ -36,25 +45,18 @@ public sealed class BillingController : ControllerBase
                 detail: "PlanId must be either 'pro' or 'pass'.");
         }
 
-        PaymentOrderResponse order;
-        do
+        try
         {
-            var orderCode = $"VM{Guid.NewGuid():N}"[..14].ToUpperInvariant();
-            var qrUrl = BuildQrUrl(orderCode, amount);
-            order = new PaymentOrderResponse(
-                orderCode,
-                amount,
-                planName,
-                "pending",
-                qrUrl,
-                _bankId,
-                _accountNumber,
-                _accountName,
-                DateTime.UtcNow);
+            var order = _billingService.CreateOrder(request);
+            return Ok(order);
         }
-        while (!Orders.TryAdd(order.OrderCode, order));
-
-        return Ok(order);
+        catch (ArgumentException ex)
+        {
+            return Problem(
+                statusCode: StatusCodes.Status400BadRequest,
+                title: "Invalid payment plan",
+                detail: ex.Message);
+        }
     }
 
     [HttpGet("order/{orderCode}")]
@@ -62,7 +64,8 @@ public sealed class BillingController : ControllerBase
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public ActionResult<PaymentOrderResponse> GetOrder([FromRoute] string orderCode)
     {
-        if (!Orders.TryGetValue(orderCode, out var order))
+        var order = _billingService.GetOrder(orderCode);
+        if (order == null)
         {
             return OrderNotFound(orderCode);
         }
@@ -73,23 +76,17 @@ public sealed class BillingController : ControllerBase
     [HttpPost("webhook")]
     [ProducesResponseType(typeof(PaymentOrderResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-    public ActionResult<PaymentOrderResponse> Webhook(
-        [FromBody] PaymentWebhookPayload payload)
+    public async Task<ActionResult<PaymentOrderResponse>> Webhook(
+        [FromBody] PaymentWebhookPayload payload,
+        CancellationToken cancellationToken = default)
     {
-        if (!Orders.TryGetValue(payload.OrderCode, out var order))
+        var paidOrder = await _billingService.MarkOrderPaidAsync(payload.OrderCode, cancellationToken);
+        if (paidOrder == null)
         {
             return OrderNotFound(payload.OrderCode);
         }
 
-        var paidOrder = order with { Status = "paid" };
-        Orders[order.OrderCode] = paidOrder;
         return Ok(paidOrder);
-    }
-
-    private string BuildQrUrl(string orderCode, int amount)
-    {
-        return $"https://img.vietqr.io/image/{Uri.EscapeDataString(_bankId)}-{Uri.EscapeDataString(_accountNumber)}-compact2.png" +
-               $"?amount={amount}&addInfo={Uri.EscapeDataString(orderCode)}&accountName={Uri.EscapeDataString(_accountName)}";
     }
 
     private ObjectResult OrderNotFound(string orderCode)
@@ -98,33 +95,5 @@ public sealed class BillingController : ControllerBase
             statusCode: StatusCodes.Status404NotFound,
             title: "Payment order not found",
             detail: $"Payment order '{orderCode}' was not found.");
-    }
-
-    private static string ReadConfiguration(
-        IConfiguration configuration,
-        string key,
-        string defaultValue)
-    {
-        var value = configuration[key];
-        return string.IsNullOrWhiteSpace(value) ? defaultValue : value.Trim();
-    }
-
-    private static bool TryGetPlan(string? planId, out int amount, out string planName)
-    {
-        switch (planId?.Trim().ToLowerInvariant())
-        {
-            case "pro":
-                amount = 499_000;
-                planName = "Gói Team Pro 1 Tháng";
-                return true;
-            case "pass":
-                amount = 99_000;
-                planName = "Vé Họp Không Giới Hạn 24h";
-                return true;
-            default:
-                amount = 0;
-                planName = string.Empty;
-                return false;
-        }
     }
 }

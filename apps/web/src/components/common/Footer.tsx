@@ -17,7 +17,7 @@ export const Footer: React.FC<FooterProps> = ({
   return (
     <footer className="border-t border-zinc-200 dark:border-[#2e2e30] bg-[#fcfcfd] dark:bg-[#0c0c0d] transition-colors text-zinc-600 dark:text-zinc-400">
       {/* ── Main Multi-Column Links Section ──────────────────────── */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-16">
+      <div className="max-w-[1536px] 2xl:max-w-[1720px] mx-auto px-4 sm:px-8 lg:px-12 2xl:px-16 py-12 md:py-16">
         <div className="grid grid-cols-2 md:grid-cols-5 gap-8 items-start">
           {/* Col 1: Brand & Slogan (2 cols on md) */}
           <div className="col-span-2 space-y-4">
@@ -166,6 +166,11 @@ export const Footer: React.FC<FooterProps> = ({
                 <a href="#contact" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
                   Liên hệ Kỹ thuật &amp; Báo giá
                 </a>
+              </li>
+              <li>
+                <Link to="/admin" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors flex items-center gap-1">
+                  <span>Quản trị &amp; Doanh thu</span>
+                </Link>
               </li>
               <li>
                 <span className="font-mono text-[10px] text-zinc-400">RFC 7807 Compliant</span>

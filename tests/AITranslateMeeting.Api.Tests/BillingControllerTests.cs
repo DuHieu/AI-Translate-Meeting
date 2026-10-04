@@ -52,12 +52,12 @@ public sealed class BillingControllerTests
     }
 
     [Fact]
-    public void Webhook_ForExistingOrder_MarksOrderAsPaid()
+    public async Task Webhook_ForExistingOrder_MarksOrderAsPaid()
     {
         var controller = CreateController();
         var created = CreateOrder(controller, "pro");
 
-        var webhookResult = controller.Webhook(new PaymentWebhookPayload(
+        var webhookResult = await controller.Webhook(new PaymentWebhookPayload(
             created.OrderCode,
             created.Amount,
             "paid",

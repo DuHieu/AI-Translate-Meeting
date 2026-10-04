@@ -177,6 +177,10 @@ builder.Services.Configure<DatabaseCleanupOptions>(builder.Configuration.GetSect
 builder.Services.Configure<HostSecurityOptions>(builder.Configuration.GetSection(HostSecurityOptions.SectionName));
 builder.Services.Configure<LicenseOptions>(builder.Configuration.GetSection(LicenseOptions.SectionName));
 builder.Services.AddSingleton<ILicenseService, LicenseService>();
+builder.Services.AddHttpClient();
+builder.Services.AddSingleton<INotificationDispatcher, NotificationDispatcher>();
+builder.Services.AddSingleton<IBillingService, BillingService>();
+builder.Services.AddSingleton<ILeadService, LeadService>();
 
 var redisConn = builder.Configuration.GetSection("Redis")["ConnectionString"];
 if (!string.IsNullOrWhiteSpace(redisConn))

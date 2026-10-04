@@ -25,3 +25,19 @@ public sealed record PaymentWebhookPayload(
     string Status,
     string? Signature
 );
+
+public sealed record BillingMetricsDto(
+    int TotalOrders,
+    int PaidOrders,
+    int PendingOrders,
+    long TotalRevenueVnd,
+    IReadOnlyList<PaymentOrderResponse> RecentOrders
+);
+
+public sealed record PlanInfoDto(
+    string PlanId,
+    string Name,
+    int PriceVnd,
+    string DurationDescription,
+    string[] Features
+);

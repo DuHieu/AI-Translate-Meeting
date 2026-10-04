@@ -11,22 +11,22 @@ interface LayaMeetLogoProps {
 export const LayaMeetLogo: React.FC<LayaMeetLogoProps> = ({
   size = 'md',
   showWordmark = true,
-  showBadge = false,
-  badgeText = 'layameet.com',
+  showBadge: _showBadge = false,
+  badgeText: _badgeText = 'layameet.com',
   className = '',
 }) => {
   const iconDimensions = {
-    sm: { box: 'w-6 h-6', icon: 14, text: 'text-sm', badge: 'text-[9px]' },
-    md: { box: 'w-8 h-8', icon: 18, text: 'text-base sm:text-lg', badge: 'text-[10px]' },
-    lg: { box: 'w-10 h-10', icon: 22, text: 'text-xl sm:text-2xl', badge: 'text-xs' },
-    xl: { box: 'w-12 h-12', icon: 26, text: 'text-2xl sm:text-3xl', badge: 'text-xs' },
+    sm: { box: 'w-6 h-6', icon: 14, text: 'text-sm' },
+    md: { box: 'w-8 h-8', icon: 18, text: 'text-base sm:text-lg' },
+    lg: { box: 'w-10 h-10', icon: 22, text: 'text-xl sm:text-2xl' },
+    xl: { box: 'w-12 h-12', icon: 26, text: 'text-2xl sm:text-3xl' },
   }[size];
 
   return (
     <div className={`flex items-center gap-2.5 select-none ${className}`}>
-      {/* Brand Icon: Polyglot Speech Convergence (Interlocking speech nodes with acoustic sound bars) */}
+      {/* Brand Icon: Geometric Letter 'L' Monogram with Acoustic Translation Bar */}
       <div
-        className={`${iconDimensions.box} rounded-xl bg-gradient-to-br from-blue-600 via-indigo-600 to-blue-700 text-white flex items-center justify-center shrink-0 shadow-sm shadow-blue-500/20 ring-1 ring-white/20 transition-all duration-200 group-hover:scale-105`}
+        className={`${iconDimensions.box} rounded-xl bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-800 text-white flex items-center justify-center shrink-0 shadow-md shadow-blue-500/25 ring-1 ring-white/20 transition-all duration-200 group-hover:scale-105`}
         aria-hidden="true"
       >
         <svg
@@ -36,37 +36,37 @@ export const LayaMeetLogo: React.FC<LayaMeetLogoProps> = ({
           fill="none"
           xmlns="http://www.w3.org/2000/svg"
         >
-          {/* Main conversation bubble */}
+          {/* Elegant geometric letter 'L' backbone */}
           <path
-            d="M2.5 11C2.5 6.30558 6.30558 2.5 11 2.5C15.6944 2.5 19.5 6.30558 19.5 11C19.5 12.9116 18.8688 14.6764 17.8056 16.0938L19 20.5L14.7289 19.28C13.5772 19.8592 12.3272 20.1775 11 20.1775C6.30558 20.1775 2.5 16.3719 2.5 11Z"
-            fill="currentColor"
-            fillOpacity="0.22"
-            stroke="currentColor"
-            strokeWidth="1.9"
+            d="M6.5 5.5V16.5C6.5 17.6046 7.39543 18.5 8.5 18.5H17.5"
+            stroke="#ffffff"
+            strokeWidth="2.8"
+            strokeLinecap="round"
             strokeLinejoin="round"
           />
-          {/* Audio Equalizer & Translation Voice Bars */}
-          <path d="M7 13V9" stroke="#ffffff" strokeWidth="2.4" strokeLinecap="round" />
-          <path d="M10 15.5V6.5" stroke="#ffffff" strokeWidth="2.4" strokeLinecap="round" />
-          <path d="M13 13.5V8.5" stroke="#93c5fd" strokeWidth="2.4" strokeLinecap="round" />
-          <path d="M16 12V10" stroke="#93c5fd" strokeWidth="2.4" strokeLinecap="round" />
+          {/* Translation bridge bar above the base */}
+          <path
+            d="M10.5 14.5H18"
+            stroke="#93c5fd"
+            strokeWidth="2.4"
+            strokeLinecap="round"
+          />
+          {/* Active meeting voice node */}
+          <circle cx="17" cy="8" r="1.5" fill="#60a5fa" />
         </svg>
       </div>
 
-      {/* Wordmark */}
+      {/* Custom Designed Wordmark: 'Laya' confident + 'Meet' blue accent */}
       {showWordmark && (
         <div className="flex items-center gap-2">
-          <div className="flex items-baseline tracking-tight font-bold text-zinc-950 dark:text-zinc-100">
-            <span className={iconDimensions.text}>LayaMeet</span>
-          </div>
-
-          {showBadge && (
-            <span
-              className={`hidden sm:inline font-mono font-medium px-1.5 py-0.5 rounded border ${iconDimensions.badge} bg-zinc-100 text-zinc-600 border-zinc-200 dark:bg-zinc-800 dark:text-zinc-400 dark:border-zinc-700`}
-            >
-              {badgeText}
+          <div className="flex items-baseline tracking-tight font-extrabold leading-none">
+            <span className={`${iconDimensions.text} text-zinc-950 dark:text-zinc-50 font-black tracking-[-0.03em]`}>
+              Laya
             </span>
-          )}
+            <span className={`${iconDimensions.text} text-blue-600 dark:text-blue-400 font-bold ml-0.5 tracking-[-0.01em]`}>
+              Meet
+            </span>
+          </div>
         </div>
       )}
     </div>

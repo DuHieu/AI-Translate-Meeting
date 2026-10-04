@@ -138,8 +138,8 @@ export const HomePage: React.FC = () => {
 
       {/* ── Hero ────────────────────────────────────────────────── */}
       <main className="relative z-10 flex-1 flex flex-col">
-        {/* Top hero section */}
-        <section id="hero" className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 pt-10 pb-12 md:pt-16 md:pb-20 lg:pt-20 lg:pb-24 flex flex-col lg:flex-row items-center justify-between gap-10 lg:gap-14 xl:gap-20">
+        {/* Top hero section: fluid full-width on large & ultra-wide screens */}
+        <section id="hero" className="w-full max-w-[1536px] 2xl:max-w-[1720px] mx-auto px-4 sm:px-8 lg:px-12 2xl:px-16 pt-8 pb-12 md:pt-14 md:pb-18 lg:pt-16 lg:pb-20 flex flex-col lg:flex-row items-center justify-between gap-10 lg:gap-16 xl:gap-24">
 
           {/* Left: Headline + CTA */}
           <div className="flex-1 w-full lg:max-w-xl xl:max-w-2xl space-y-6 text-center lg:text-left">
@@ -236,7 +236,7 @@ export const HomePage: React.FC = () => {
 
         {/* ── Features grid with LayaMeet branding ──────────────────── */}
         <section id="features" className="border-t border-[#2e2e30] dark:border-[#2e2e30] border-zinc-200 bg-[#0f0f10] dark:bg-[#0f0f10] bg-white/50 transition-colors py-14 md:py-20 lg:py-24">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="max-w-[1536px] 2xl:max-w-[1720px] mx-auto px-4 sm:px-8 lg:px-12 2xl:px-16">
             <div className="text-center max-w-3xl mx-auto mb-12 space-y-3">
               <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-zinc-900 dark:text-zinc-100 tracking-tight">
                 Vì sao doanh nghiệp tin chọn <span className="text-blue-600 dark:text-blue-400">LayaMeet</span>?

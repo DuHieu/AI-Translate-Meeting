@@ -108,43 +108,77 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
             <span className="rounded-md bg-sky-500/15 px-2 py-0.5 text-xs font-semibold text-sky-400">VietQR Napas 247</span>
             <span className="text-xs text-zinc-400">Tự động kích hoạt trong 3s</span>
           </div>
-          <h2 className="mt-2 text-xl font-bold text-white">Nâng cấp LayaMeet Pro</h2>
+          <h2 className="mt-2 text-xl font-bold text-white">Nâng cấp ViMeet Pro</h2>
         </div>
 
         {/* Plan Selector */}
-        <div className="grid grid-cols-2 gap-3 mb-5">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 mb-5">
           <button
             type="button"
             onClick={() => setSelectedPlan('pro')}
-            className={`rounded-xl border p-3 text-left transition ${
+            className={`rounded-xl border p-2.5 text-left transition cursor-pointer ${
               selectedPlan === 'pro'
-                ? 'border-sky-500 bg-sky-950/30'
+                ? 'border-sky-500 bg-sky-950/40 ring-1 ring-sky-500/30'
                 : 'border-zinc-800 bg-zinc-900/40 hover:border-zinc-700'
             }`}
           >
             <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold text-sky-400">Team Pro</span>
-              <Zap className="h-4 w-4 text-sky-400" />
+              <span className="text-[11px] font-semibold text-sky-400">Team Pro</span>
+              <Zap className="h-3.5 w-3.5 text-sky-400" />
             </div>
-            <p className="mt-1 text-sm font-bold text-white">499.000đ / tháng</p>
-            <p className="text-[11px] text-zinc-400">Họp không giới hạn, đầy đủ tính năng</p>
+            <p className="mt-1 text-xs font-bold text-white">499.000đ / tháng</p>
+            <p className="text-[10px] text-zinc-400">Không giới hạn</p>
           </button>
 
           <button
             type="button"
             onClick={() => setSelectedPlan('pass')}
-            className={`rounded-xl border p-3 text-left transition ${
+            className={`rounded-xl border p-2.5 text-left transition cursor-pointer ${
               selectedPlan === 'pass'
-                ? 'border-sky-500 bg-sky-950/30'
+                ? 'border-sky-500 bg-sky-950/40 ring-1 ring-sky-500/30'
                 : 'border-zinc-800 bg-zinc-900/40 hover:border-zinc-700'
             }`}
           >
             <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold text-amber-400">Vé 24h</span>
-              <Clock className="h-4 w-4 text-amber-400" />
+              <span className="text-[11px] font-semibold text-amber-400">Vé 24h</span>
+              <Clock className="h-3.5 w-3.5 text-amber-400" />
             </div>
-            <p className="mt-1 text-sm font-bold text-white">99.000đ / 24h</p>
-            <p className="text-[11px] text-zinc-400">Mở khóa phòng họp trong 1 ngày</p>
+            <p className="mt-1 text-xs font-bold text-white">99.000đ / 24h</p>
+            <p className="text-[10px] text-zinc-400">Dùng trong ngày</p>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setSelectedPlan('pass_1h')}
+            className={`rounded-xl border p-2.5 text-left transition cursor-pointer ${
+              selectedPlan === 'pass_1h'
+                ? 'border-sky-500 bg-sky-950/40 ring-1 ring-sky-500/30'
+                : 'border-zinc-800 bg-zinc-900/40 hover:border-zinc-700'
+            }`}
+          >
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-semibold text-emerald-400">Vé 1 Giờ</span>
+              <Zap className="h-3.5 w-3.5 text-emerald-400" />
+            </div>
+            <p className="mt-1 text-xs font-bold text-white">39.000đ / 1h</p>
+            <p className="text-[10px] text-zinc-400">Họp gấp 1 giờ</p>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setSelectedPlan('credits_500m')}
+            className={`rounded-xl border p-2.5 text-left transition cursor-pointer ${
+              selectedPlan === 'credits_500m'
+                ? 'border-sky-500 bg-sky-950/40 ring-1 ring-sky-500/30'
+                : 'border-zinc-800 bg-zinc-900/40 hover:border-zinc-700'
+            }`}
+          >
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-semibold text-purple-400">500 Phút AI</span>
+              <Clock className="h-3.5 w-3.5 text-purple-400" />
+            </div>
+            <p className="mt-1 text-xs font-bold text-white">199.000đ</p>
+            <p className="text-[10px] text-zinc-400">Trừ theo phút nói</p>
           </button>
         </div>
 

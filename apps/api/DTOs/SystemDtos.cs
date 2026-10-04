@@ -96,3 +96,26 @@ public sealed record CreateLeadResponse(
     string Message,
     DateTime SubmittedAtUtc
 );
+
+public sealed record EnterpriseLeadRecord(
+    Guid Id,
+    string FullName,
+    string Email,
+    string? Company,
+    string? TeamSize,
+    string? LanguagePair,
+    string? DeploymentModel,
+    string? Notes,
+    DateTime SubmittedAtUtc
+);
+
+public sealed record AdminMetricsResponse(
+    int ActiveMeetings,
+    int TotalOrders,
+    int PaidOrders,
+    long TotalRevenueVnd,
+    int TotalLeads,
+    bool TelegramConfigured,
+    bool WebhookConfigured,
+    DateTime GeneratedAtUtc
+);

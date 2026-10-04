@@ -27,6 +27,7 @@ public sealed class SystemController : ControllerBase
     private readonly IOptions<HostSecurityOptions> _hostSecurityOptions;
     private readonly IAuditLogService _auditLogService;
     private readonly ILicenseService _licenseService;
+    private readonly ILeadService _leadService;
 
     public SystemController(
         IReadinessEvaluator readinessEvaluator,
@@ -40,7 +41,8 @@ public sealed class SystemController : ControllerBase
         IOptions<AdmissionTokenOptions> admissionOptions,
         IOptions<HostSecurityOptions> hostSecurityOptions,
         IAuditLogService auditLogService,
-        ILicenseService licenseService)
+        ILicenseService licenseService,
+        ILeadService leadService)
     {
         _readinessEvaluator = readinessEvaluator;
         _databaseCleanupService = databaseCleanupService;
@@ -54,6 +56,7 @@ public sealed class SystemController : ControllerBase
         _hostSecurityOptions = hostSecurityOptions;
         _auditLogService = auditLogService;
         _licenseService = licenseService;
+        _leadService = leadService;
     }
 
     [HttpGet("branding")]
@@ -185,30 +188,7 @@ public sealed class SystemController : ControllerBase
             details: $"Lead: {request.FullName.Trim()} ({request.Company ?? "Individual"}), deployment={request.DeploymentModel ?? "on-premise"}, team={request.TeamSize ?? "unknown"}, lang={request.LanguagePair ?? "unknown"}"
         );
 
-        var webhookUrl = _configuration["LeadCapture:WebhookUrl"]
-            ?? _configuration["ENTERPRISE_LEAD_WEBHOOK_URL"];
-        if (!string.IsNullOrWhiteSpace(webhookUrl) && Uri.TryCreate(webhookUrl, UriKind.Absolute, out var uri))
-        {
-            try
-            {
-                using var httpClient = new HttpClient { Timeout = TimeSpan.FromSeconds(5) };
-                var payload = new
-                {
-                    event_type = "lead.captured",
-                    lead = request,
-                    timestamp = DateTime.UtcNow
-                };
-                using var content = new StringContent(
-                    System.Text.Json.JsonSerializer.Serialize(payload),
-                    System.Text.Encoding.UTF8,
-                    "application/json");
-                await httpClient.PostAsync(uri, content, cancellationToken);
-            }
-            catch
-            {
-                // Non-blocking: webhook delivery failure should not fail customer submission
-            }
-        }
+        await _leadService.SubmitLeadAsync(request, cancellationToken);
 
         return Ok(new CreateLeadResponse(
             Success: true,

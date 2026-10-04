@@ -288,6 +288,58 @@ export const meetingApi = {
     });
     return handleResponse<CreateLeadResponse>(res);
   },
+
+  async getBillingPlans(): Promise<PlanInfoDto[]> {
+    const res = await fetch(`${API_BASE_URL}/api/billing/plans`, {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' },
+    });
+    return handleResponse<PlanInfoDto[]>(res);
+  },
+
+  async getAdminMetrics(adminKey: string): Promise<AdminMetricsResponse> {
+    const res = await fetch(`${API_BASE_URL}/api/admin/metrics`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Admin-Key': adminKey.trim(),
+      },
+    });
+    return handleResponse<AdminMetricsResponse>(res);
+  },
+
+  async getAdminOrders(adminKey: string): Promise<PaymentOrderResponse[]> {
+    const res = await fetch(`${API_BASE_URL}/api/admin/orders`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Admin-Key': adminKey.trim(),
+      },
+    });
+    return handleResponse<PaymentOrderResponse[]>(res);
+  },
+
+  async getAdminLeads(adminKey: string): Promise<EnterpriseLeadRecord[]> {
+    const res = await fetch(`${API_BASE_URL}/api/admin/leads`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Admin-Key': adminKey.trim(),
+      },
+    });
+    return handleResponse<EnterpriseLeadRecord[]>(res);
+  },
+
+  async testAdminNotification(adminKey: string): Promise<{ success: boolean; message: string }> {
+    const res = await fetch(`${API_BASE_URL}/api/admin/test-notification`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Admin-Key': adminKey.trim(),
+      },
+    });
+    return handleResponse<{ success: boolean; message: string }>(res);
+  },
 };
 
 export interface PaymentOrderResponse {
@@ -316,4 +368,35 @@ export interface CreateLeadResponse {
   success: boolean;
   message: string;
   submittedAtUtc: string;
+}
+
+export interface AdminMetricsResponse {
+  activeMeetings: number;
+  totalOrders: number;
+  paidOrders: number;
+  totalRevenueVnd: number;
+  totalLeads: number;
+  telegramConfigured: boolean;
+  webhookConfigured: boolean;
+  generatedAtUtc: string;
+}
+
+export interface EnterpriseLeadRecord {
+  id: string;
+  fullName: string;
+  email: string;
+  company?: string;
+  teamSize?: string;
+  languagePair?: string;
+  deploymentModel?: string;
+  notes?: string;
+  submittedAtUtc: string;
+}
+
+export interface PlanInfoDto {
+  planId: string;
+  name: string;
+  priceVnd: number;
+  durationDescription: string;
+  features: string[];
 }

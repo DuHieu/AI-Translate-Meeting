@@ -173,7 +173,7 @@ export const InteractiveMeetingPreview: React.FC = () => {
   const translatedText = currentTurn.translations[selectedLang] || currentTurn.translations.VI;
 
   return (
-    <div className="w-full sm:w-[480px] lg:w-[520px] xl:w-[560px] bg-white dark:bg-[#18181b] border border-zinc-200 dark:border-[#333336] rounded-2xl overflow-hidden shrink-0 shadow-2xl transition-all">
+    <div className="w-full sm:w-[480px] lg:w-[540px] xl:w-[600px] 2xl:w-[660px] bg-white dark:bg-[#18181b] border border-zinc-200 dark:border-[#333336] rounded-2xl overflow-hidden shrink-0 shadow-2xl transition-all">
       {/* ── Studio Top Chrome Bar ─────────────────────────────── */}
       <div className="px-4 py-3 bg-zinc-50 dark:bg-[#121214] border-b border-zinc-200 dark:border-[#2b2b2e] flex items-center justify-between select-none">
         <div className="flex items-center gap-2">
