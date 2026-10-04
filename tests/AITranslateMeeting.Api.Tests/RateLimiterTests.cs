@@ -3,9 +3,12 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using AITranslateMeeting.Api.DTOs;
 using AITranslateMeeting.Api.Security;
-using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.AspNetCore.TestHost;
+using Microsoft.Extensions.DependencyInjection;
 using Xunit;
 
 namespace AITranslateMeeting.Api.Tests;
@@ -17,6 +20,26 @@ public sealed class RateLimiterTests : IClassFixture<WebApplicationFactory<Progr
     public RateLimiterTests(WebApplicationFactory<Program> factory)
     {
         _factory = factory;
+    }
+
+    private sealed class TestRemoteIpStartupFilter : IStartupFilter
+    {
+        public Action<IApplicationBuilder> Configure(Action<IApplicationBuilder> next)
+        {
+            return app =>
+            {
+                app.Use((context, nextMiddleware) =>
+                {
+                    if (context.Request.Headers.TryGetValue("X-Test-Remote-IP", out var val) &&
+                        IPAddress.TryParse(val.ToString(), out var ip))
+                    {
+                        context.Connection.RemoteIpAddress = ip;
+                    }
+                    return nextMiddleware();
+                });
+                next(app);
+            };
+        }
     }
 
     [Fact]
@@ -35,6 +58,10 @@ public sealed class RateLimiterTests : IClassFixture<WebApplicationFactory<Progr
             builder.UseSetting("SubtitleToken:SigningKey", new string('s', 32));
             builder.UseSetting("AdmissionToken:SigningKey", new string('a', 32));
             builder.UseSetting("SessionToken:SigningKey", new string('b', 32));
+            builder.ConfigureTestServices(services =>
+            {
+                services.AddSingleton<IStartupFilter>(new TestRemoteIpStartupFilter());
+            });
         }).CreateClient();
 
         // Policy for CreateMeeting is 10 requests per minute
@@ -45,6 +72,7 @@ public sealed class RateLimiterTests : IClassFixture<WebApplicationFactory<Progr
             {
                 Content = JsonContent.Create(new CreateMeetingRequestDto($"Meeting {i}"))
             };
+            request.Headers.Add("X-Test-Remote-IP", testIp);
             request.Headers.Add("X-Forwarded-For", testIp);
 
             lastResponse = await client.SendAsync(request);

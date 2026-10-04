@@ -1,0 +1,12 @@
+{
+  "timestamp": 1791096476,
+  "rooms": 1,
+  "participants_per_room": 6,
+  "total_participants": 6,
+  "successful_sessions": 6,
+  "failed_sessions": 0,
+  "cross_room_leakage_count": 0,
+  "total_wall_time_sec": 12.004269900004147,
+  "ttfs_p50_ms": 71.46779997856356,
+  "ttfs_p95_ms": 72.7539999934379
+}

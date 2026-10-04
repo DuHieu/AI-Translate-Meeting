@@ -163,5 +163,96 @@ public class DatabaseCleanupTests
 
         Assert.Equal(0, result.DeletedAdmissions);
         Assert.Equal(0, result.DeletedSessions);
+        Assert.Equal(0, result.EndedGhostMeetings);
+    }
+
+    [Fact]
+    public async Task CleanupExpiredRecordsAsync_ReapsGhostMeetingsOlderThanRetentionWindow()
+    {
+        var now = DateTime.UtcNow;
+
+        // 1. Ghost meeting: 30 hours old, 0 participants
+        var ghostMeeting = new Meeting
+        {
+            Id = Guid.NewGuid(),
+            MeetingCode = "GHOST1",
+            RoomName = "room-ghost1",
+            Name = "Ghost Meeting",
+            CreatedAt = now.AddHours(-30)
+        };
+        _context.Meetings.Add(ghostMeeting);
+
+        // 2. Abandoned meeting: 30 hours old, participant already left
+        var abandonedMeeting = new Meeting
+        {
+            Id = Guid.NewGuid(),
+            MeetingCode = "ABANDN",
+            RoomName = "room-abandn",
+            Name = "Abandoned Meeting",
+            CreatedAt = now.AddHours(-30)
+        };
+        _context.Meetings.Add(abandonedMeeting);
+        _context.MeetingParticipants.Add(new MeetingParticipant
+        {
+            Id = Guid.NewGuid(),
+            MeetingId = abandonedMeeting.Id,
+            Identity = "leaver",
+            DisplayName = "Leaver",
+            SpokenLanguage = "vi",
+            TargetLanguage = "en",
+            JoinedAt = now.AddHours(-30),
+            LeftAt = now.AddHours(-28)
+        });
+
+        // 3. Active old meeting: 30 hours old, but active participant (LeftAt is null)
+        var activeOldMeeting = new Meeting
+        {
+            Id = Guid.NewGuid(),
+            MeetingCode = "ACTOLD",
+            RoomName = "room-actold",
+            Name = "Active Old Meeting",
+            CreatedAt = now.AddHours(-30)
+        };
+        _context.Meetings.Add(activeOldMeeting);
+        _context.MeetingParticipants.Add(new MeetingParticipant
+        {
+            Id = Guid.NewGuid(),
+            MeetingId = activeOldMeeting.Id,
+            Identity = "still-in-room",
+            DisplayName = "Still In Room",
+            SpokenLanguage = "vi",
+            TargetLanguage = "en",
+            JoinedAt = now.AddHours(-30),
+            LeftAt = null
+        });
+
+        // 4. Fresh meeting: 2 hours old, 0 participants (within 24h retention window)
+        var freshMeeting = new Meeting
+        {
+            Id = Guid.NewGuid(),
+            MeetingCode = "FRESH1",
+            RoomName = "room-fresh1",
+            Name = "Fresh Meeting",
+            CreatedAt = now.AddHours(-2)
+        };
+        _context.Meetings.Add(freshMeeting);
+
+        await _context.SaveChangesAsync();
+
+        // Act
+        var result = await _cleanupService.CleanupExpiredRecordsAsync(TimeSpan.FromHours(24));
+
+        // Assert
+        Assert.Equal(2, result.EndedGhostMeetings);
+
+        var ghostInDb = await _context.Meetings.FindAsync(ghostMeeting.Id);
+        var abandonedInDb = await _context.Meetings.FindAsync(abandonedMeeting.Id);
+        var activeInDb = await _context.Meetings.FindAsync(activeOldMeeting.Id);
+        var freshInDb = await _context.Meetings.FindAsync(freshMeeting.Id);
+
+        Assert.NotNull(ghostInDb!.EndedAt);
+        Assert.NotNull(abandonedInDb!.EndedAt);
+        Assert.Null(activeInDb!.EndedAt);
+        Assert.Null(freshInDb!.EndedAt);
     }
 }

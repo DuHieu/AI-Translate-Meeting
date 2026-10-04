@@ -1,13 +1,170 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="vi" prefix="og: https://ogp.me/ns#">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>ViMeet - Họp trực tuyến song ngữ AI | vimeet.vn</title>
-    <meta name="description" content="ViMeet (vimeet.vn) - Nền tảng họp trực tuyến song ngữ thông minh thời gian thực. Họp không rào cản, tiếng gì cũng thông." />
+    <title>ViMeet - Nền tảng Họp Trực Tuyến Song Ngữ AI & Dịch Trực Tiếp Real-Time | vimeet.vn</title>
+    <meta name="description" content="ViMeet (vimeet.vn) - Nền tảng họp trực tuyến thông minh song ngữ thời gian thực. Tự do nói tiếng mẹ đẻ, dịch tức thì 50+ ngôn ngữ Any-to-Any, độ trễ &lt;350ms, bảo mật On-Premise RAM-only." />
+    <meta name="keywords" content="họp trực tuyến song ngữ, dịch trực tiếp cuộc họp, AI meeting translation, live subtitles, Any-to-Any polyglot, họp trực tuyến tiếng nhật, họp trực tuyến tiếng anh, whisper AI, vimeet" />
+    <meta name="author" content="ViMeet Team" />
+    <meta name="publisher" content="ViMeet AI" />
+    <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
+    <link rel="canonical" href="https://vimeet.vn/" />
+
+    <!-- Favicon & Icons -->
+    <link rel="icon" type="image/svg+xml" href="/vimeet-icon.svg" />
+    <link rel="apple-touch-icon" href="/vimeet-icon.svg" />
+    <link rel="manifest" href="/site.webmanifest" />
+
+    <!-- Theme Color -->
+    <meta name="theme-color" content="#0f0f10" media="(prefers-color-scheme: dark)" />
+    <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
+
+    <!-- Geo Tags -->
+    <meta name="geo.region" content="VN" />
+    <meta name="geo.placename" content="Hanoi" />
+
+    <!-- Open Graph Protocol (Facebook, Zalo, LinkedIn) -->
+    <meta property="og:site_name" content="ViMeet - Real-Time AI Meeting & Live Translation" />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://vimeet.vn/" />
+    <meta property="og:title" content="ViMeet - Nền tảng Họp Trực Tuyến Song Ngữ AI & Dịch Đa Ngữ Thời Gian Thực" />
+    <meta property="og:description" content="Phá vỡ rào cản ngôn ngữ cuộc họp doanh nghiệp. Dịch song song Any-to-Any 50+ ngôn ngữ (Việt, Nhật, Anh, Trung, Thái, Lào...), độ trễ &lt;350ms, bảo mật 100% On-Premise RAM-only." />
+    <meta property="og:image" content="https://vimeet.vn/og-image.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="ViMeet - Giao diện họp trực tuyến song ngữ AI đa ngôn ngữ Any-to-Any" />
+    <meta property="og:locale" content="vi_VN" />
+    <meta property="og:locale:alternate" content="en_US" />
+    <meta property="og:locale:alternate" content="ja_JP" />
+
+    <!-- Twitter Cards (X) -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:site" content="@vimeet_ai" />
+    <meta name="twitter:creator" content="@vimeet_ai" />
+    <meta name="twitter:title" content="ViMeet - Họp Trực Tuyến Song Ngữ AI Thời Gian Thực" />
+    <meta name="twitter:description" content="Họp trực tuyến không rào cản ngôn ngữ. Dịch đa chiều Any-to-Any &lt;350ms, STT Whisper AI, trích xuất Action Items tự động." />
+    <meta name="twitter:image" content="https://vimeet.vn/og-image.png" />
+    <meta name="twitter:image:alt" content="ViMeet AI Multilingual Real-Time Meeting Platform" />
+
+    <!-- JSON-LD Structured Data Schema -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "Organization",
+          "@id": "https://vimeet.vn/#organization",
+          "name": "ViMeet AI",
+          "url": "https://vimeet.vn/",
+          "logo": "https://vimeet.vn/vimeet-icon.svg",
+          "image": "https://vimeet.vn/og-image.png",
+          "description": "Nền tảng họp trực tuyến thông minh song ngữ thời gian thực Any-to-Any 50+ ngôn ngữ.",
+          "contactPoint": {
+            "@type": "ContactPoint",
+            "telephone": "+84-24-3999-8888",
+            "contactType": "customer support",
+            "email": "enterprise@vimeet.vn",
+            "availableLanguage": ["vi", "en", "ja"]
+          }
+        },
+        {
+          "@type": "WebSite",
+          "@id": "https://vimeet.vn/#website",
+          "url": "https://vimeet.vn/",
+          "name": "ViMeet",
+          "publisher": {
+            "@id": "https://vimeet.vn/#organization"
+          },
+          "inLanguage": ["vi-VN", "en-US", "ja-JP"]
+        },
+        {
+          "@type": "SoftwareApplication",
+          "@id": "https://vimeet.vn/#software",
+          "name": "ViMeet Real-Time AI Meeting",
+          "applicationCategory": "BusinessApplication",
+          "operatingSystem": "All (Web, Windows, macOS, Linux, iOS, Android)",
+          "url": "https://vimeet.vn/",
+          "offers": [
+            {
+              "@type": "Offer",
+              "name": "Community",
+              "price": "0",
+              "priceCurrency": "VND"
+            },
+            {
+              "@type": "Offer",
+              "name": "Team Pro",
+              "price": "399000",
+              "priceCurrency": "VND"
+            },
+            {
+              "@type": "Offer",
+              "name": "Enterprise On-Prem",
+              "price": "Contact",
+              "priceCurrency": "VND"
+            }
+          ],
+          "featureList": [
+            "Real-Time Whisper Speech-to-Text",
+            "Any-to-Any Live Translation (50+ Languages)",
+            "Ultra Low Latency <350ms",
+            "Zero Raw Audio Storage (RAM-only)",
+            "Laya Meeting Action Items & Decision Extraction",
+            "On-Premise & Air-gapped Deployment Support"
+          ]
+        },
+        {
+          "@type": "FAQPage",
+          "@id": "https://vimeet.vn/#faq",
+          "mainEntity": [
+            {
+              "@type": "Question",
+              "name": "ViMeet hỗ trợ những ngôn ngữ nào trong phòng họp?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "ViMeet ứng dụng ma trận Any-to-Any đa chiều: không giới hạn ở một cặp ngôn ngữ song phương cố định. Trong cùng một phòng họp có thể có đồng thời người nói tiếng Việt, Nhật, Anh, Trung, Thái, Lào... Mỗi thành viên tự do chọn ngôn ngữ nghe/đọc phụ đề riêng biệt cho mình mà không ảnh hưởng đến những người khác."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Dữ liệu âm thanh và nội dung cuộc họp có được bảo mật không?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Tuyệt đối an toàn với cam kết Zero Raw Audio Storage (RAM-only). Toàn bộ luồng âm thanh được xử lý trên RAM để nhận dạng giọng nói và dịch thuật, sau đó giải phóng ngay lập tức mà không bao giờ lưu trữ file âm thanh xuống đĩa. Doanh nghiệp cũng có thể chọn triển khai mô hình On-Premise Air-gapped hoàn toàn trong hạ tầng mạng nội bộ."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Độ trễ nhận dạng giọng nói và hiển thị phụ đề dịch thuật là bao nhiêu?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Nhờ cơ chế audio chunking siêu ngắn 350ms kết hợp mô hình Whisper tối ưu int8 đa luồng và bộ nhớ đệm phân tán Redis, thời gian hiển thị phụ đề sơ bộ (TTFS) trung bình chỉ ~964ms và độ trễ phụ đề dịch thuật mục tiêu dưới 350ms, đảm bảo cuộc trò chuyện diễn ra tự nhiên như phiên dịch viên trực tiếp."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "ViMeet có tự động ghi biên bản họp và trích xuất việc cần làm không?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Có. Động cơ phân tích Laya Sidecar hoạt động độc lập bất đồng bộ ngoài luồng phụ đề chính, tự động phát hiện các quyết định quan trọng (Decisions) và phân loại công việc cần làm (Action Items) gán cho từng người. Bạn có thể xuất biên bản họp ra định dạng Markdown chỉ với 1 cú click."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Doanh nghiệp có thể dùng thử PoC (Proof of Concept) trước khi ký hợp đồng không?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Hoàn toàn có thể. Bên cạnh gói Community miễn phí trọn đời cho nhóm nhỏ, ViMeet cung cấp chương trình dùng thử PoC 14 ngày không rủi ro cho khối doanh nghiệp và cam kết hoàn tiền 100% nếu không đáp ứng tiêu chuẩn SLA."
+              }
+            }
+          ]
+        }
+      ]
+    }
+    </script>
   </head>
-  <body class="bg-slate-900 text-slate-100 font-sans antialiased min-h-screen">
+  <body class="bg-zinc-50 dark:bg-[#0f0f10] text-zinc-900 dark:text-zinc-100 font-sans antialiased min-h-screen">
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

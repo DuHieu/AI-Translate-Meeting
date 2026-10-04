@@ -3,6 +3,8 @@ import logging
 from contextlib import asynccontextmanager, suppress
 from fastapi import FastAPI, WebSocket
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+from pydantic import BaseModel
 from app.api.health import router as health_router
 from app.api.glossary import router as glossary_router
 from app.config.settings import settings
@@ -14,6 +16,10 @@ from app.security.subtitle_token import (
     SubtitleTokenValidator,
 )
 from app.speech.whisper_service import SpeechToTextService
+from app.translation.glossary import (
+    get_room_glossary,
+    set_room_glossary,
+)
 from app.websocket.transcribe_handler import TranscribeWebSocketHandler
 
 logging.basicConfig(
@@ -66,11 +72,56 @@ app.add_middleware(
 app.include_router(health_router)
 app.include_router(glossary_router)
 
+
+class RoomGlossaryRequest(BaseModel):
+    terms: dict[str, str]
+
+
+class RoomGlossaryResponse(BaseModel):
+    meetingCode: str
+    terms: dict[str, str]
+
+
+@app.post("/api/glossary/{meeting_code}", response_model=RoomGlossaryResponse)
+async def update_room_glossary(
+    meeting_code: str,
+    request: RoomGlossaryRequest,
+):
+    """Creates or replaces the dynamic glossary for one meeting."""
+    try:
+        set_room_glossary(meeting_code, request.terms)
+    except (TypeError, ValueError) as exc:
+        return JSONResponse(
+            status_code=422,
+            media_type="application/problem+json",
+            content={
+                "type": "about:blank",
+                "title": "Invalid meeting glossary",
+                "status": 422,
+                "detail": str(exc),
+                "code": "glossary_invalid",
+            },
+        )
+
+    return RoomGlossaryResponse(
+        meetingCode=meeting_code,
+        terms=get_room_glossary(meeting_code),
+    )
+
+
+@app.get("/api/glossary/{meeting_code}", response_model=RoomGlossaryResponse)
+async def read_room_glossary(meeting_code: str):
+    """Returns the dynamic glossary registered for one meeting."""
+    return RoomGlossaryResponse(
+        meetingCode=meeting_code,
+        terms=get_room_glossary(meeting_code),
+    )
+
 ws_handler = TranscribeWebSocketHandler(stt=speech_to_text)
 ws_rate_limiter = WebSocketRateLimiter(
     redis_host=settings.REDIS_HOST,
     redis_port=settings.REDIS_PORT,
-    limit=30,
+    limit=settings.WS_RATE_LIMIT_PER_MINUTE,
     window_seconds=60,
 )
 trusted_proxy_ips = {
@@ -79,7 +130,9 @@ trusted_proxy_ips = {
     if value.strip()
 }
 
-SUPPORTED_LANGUAGES = frozenset({"vi", "en", "ja", "ko", "zh", "fr", "de", "es"})
+SUPPORTED_TARGET_LANGUAGES = frozenset({"vi", "en", "ja", "ko", "zh", "fr", "de", "es"})
+SUPPORTED_SOURCE_LANGUAGES = frozenset({"auto", "vi", "en", "ja", "ko", "zh", "fr", "de", "es"})
+SUPPORTED_LANGUAGES = SUPPORTED_TARGET_LANGUAGES
 DEFAULT_SOURCE_LANGUAGE = "vi"
 DEFAULT_TARGET_LANGUAGE = "en"
 DEFAULT_PARTICIPANT_NAME = "Participant"
@@ -123,12 +176,12 @@ def _normalize_metadata(auth_message: dict) -> tuple[str, str, str]:
     else:
         raise InvalidMetadataError()
 
-    # 2. Validate source language: vi, en, ja (case-insensitive)
+    # 2. Validate source language: auto, vi, en, ja, ... (case-insensitive)
     if raw_source is None:
         source_language = DEFAULT_SOURCE_LANGUAGE
     elif isinstance(raw_source, str):
         source_clean = raw_source.strip().lower()
-        if source_clean not in SUPPORTED_LANGUAGES:
+        if source_clean not in SUPPORTED_SOURCE_LANGUAGES:
             raise InvalidMetadataError()
         source_language = source_clean
     else:
@@ -139,7 +192,7 @@ def _normalize_metadata(auth_message: dict) -> tuple[str, str, str]:
         target_language = DEFAULT_TARGET_LANGUAGE
     elif isinstance(raw_target, str):
         target_clean = raw_target.strip().lower()
-        if target_clean not in SUPPORTED_LANGUAGES:
+        if target_clean not in SUPPORTED_TARGET_LANGUAGES:
             raise InvalidMetadataError()
         target_language = target_clean
     else:
@@ -198,9 +251,9 @@ async def websocket_endpoint(
         participant_name = DEFAULT_PARTICIPANT_NAME
         if claims.participant_name:
             participant_name = claims.participant_name.strip()[:MAX_PARTICIPANT_NAME_LENGTH] or DEFAULT_PARTICIPANT_NAME
-        if claims.source_language and claims.source_language.strip().lower() in SUPPORTED_LANGUAGES:
+        if claims.source_language and claims.source_language.strip().lower() in SUPPORTED_SOURCE_LANGUAGES:
             source_language = claims.source_language.strip().lower()
-        if claims.target_language and claims.target_language.strip().lower() in SUPPORTED_LANGUAGES:
+        if claims.target_language and claims.target_language.strip().lower() in SUPPORTED_TARGET_LANGUAGES:
             target_language = claims.target_language.strip().lower()
         websocket.state.livekit_identity = claims.livekit_identity or participantId
     except SubtitleTokenForbidden:

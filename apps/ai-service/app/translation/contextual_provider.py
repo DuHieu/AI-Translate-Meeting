@@ -8,7 +8,7 @@ from pydantic import BaseModel, Field
 
 from app.config.settings import settings
 from app.translation.base import TranslationProvider
-from app.translation.glossary import GlossaryManager
+from app.translation.glossary import GlossaryManager, normalize_language_code
 from app.translation.local_provider import LocalTranslationProvider
 
 logger = logging.getLogger("ai_service.translation.contextual")
@@ -123,8 +123,8 @@ class ContextualTranslationProvider(TranslationProvider):
         if not clean_text:
             return ""
 
-        s_lang = request.sourceLanguage.strip().lower()
-        t_lang = request.targetLanguage.strip().lower()
+        s_lang = normalize_language_code(request.sourceLanguage)
+        t_lang = normalize_language_code(request.targetLanguage)
 
         # Pass through if identical languages
         if s_lang == t_lang:
@@ -140,6 +140,7 @@ class ContextualTranslationProvider(TranslationProvider):
             t_lang,
             domain=request.domain or "general",
             terminology_sensitivity=request.terminologySensitivity or "normal",
+            room_id=request.meetingId,
         )
 
         # 3. Call translation engine within strict timeout
@@ -218,14 +219,19 @@ class ContextualTranslationProvider(TranslationProvider):
                 if pattern.search(text):
                     return target_text
 
-        # B. Apply glossary translation for specialized meeting domains
-        if glossary:
-            translated_with_glossary = self.glossary_manager.apply_glossary(text, glossary)
-            if translated_with_glossary != text:
-                return translated_with_glossary
+        # B. Exact glossary match for single-term utterances
+        clean_key = text.strip().lower()
+        if glossary and clean_key in glossary:
+            return glossary[clean_key]
 
-        # C. If external provider is configured or for arbitrary sentences, delegate to fallback provider
-        return await self.fallback_provider.translate(text, source_lang, target_lang)
+        # C. Full sentence translation via provider
+        translated = await self.fallback_provider.translate(text, source_lang, target_lang)
+
+        # D. Post-process to enforce target terminology
+        if glossary and translated:
+            translated = self.glossary_manager.enforce_target_terms(translated, glossary, target_lang)
+
+        return translated
 
     async def _fallback(
         self,
@@ -243,9 +249,10 @@ class ContextualTranslationProvider(TranslationProvider):
         except Exception as ex:
             logger.debug("Fallback provider failed: %s", ex)
 
-        # If fallback returns placeholder or fails, apply glossary rules
-        if glossary:
-            return self.glossary_manager.apply_glossary(original_text, glossary)
+        # If single term in glossary, return translated term
+        clean_key = original_text.strip().lower()
+        if glossary and clean_key in glossary:
+            return glossary[clean_key]
 
         return original_text
 

@@ -155,6 +155,19 @@ def test_self_hosted_all_in_one_setup_script_exists_and_conforms_to_contract() -
     assert "bootstrap-admin" in setup_sh
 
 
+def test_self_hosted_setup_supports_one_click_domain_and_tls_modes() -> None:
+    setup_sh = _read("scripts/setup-self-hosted.sh")
+
+    assert "--domain" in setup_sh
+    assert "--ssl-mode" in setup_sh
+    assert "letsencrypt" in setup_sh
+    assert "acme-v02.api.letsencrypt.org/directory" in setup_sh
+    assert "self-signed" in setup_sh
+    assert "tls internal" in setup_sh
+    assert "validate_domain" in setup_sh
+    assert "preflight.sh" in setup_sh
+
+
 def test_systemd_service_unit_template_exists() -> None:
     service = _read("infra/systemd/ai-translate-meeting.service")
 
@@ -177,3 +190,21 @@ def test_smoke_test_bash_supports_hardened_checks_and_domain() -> None:
     assert "meeting" in smoke_sh.lower()
 
 
+def test_smoke_test_bash_validates_public_tls_livekit_and_subtitle_contract() -> None:
+    smoke_sh = _read("scripts/smoke-test.sh")
+
+    for cli_flag in (
+        "--domain",
+        "--livekit-domain",
+        "--livekit-tcp-port",
+        "--livekit-udp-port",
+        "--insecure",
+    ):
+        assert cli_flag in smoke_sh
+
+    assert "https://" in smoke_sh
+    assert "wss://" in smoke_sh
+    assert "Connection: Upgrade" in smoke_sh
+    assert "nc -z" in smoke_sh
+    assert '"subtitleToken"' in smoke_sh
+    assert "/health/ready" in smoke_sh

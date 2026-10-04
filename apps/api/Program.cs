@@ -118,6 +118,11 @@ static string ResolveClientIp(HttpContext httpContext)
     return ClientIpResolver.Resolve(httpContext);
 }
 
+var rateLimitingSection = builder.Configuration.GetSection(RateLimitingOptions.SectionName);
+builder.Services.Configure<RateLimitingOptions>(rateLimitingSection);
+var rateLimitingOpts = rateLimitingSection.Get<RateLimitingOptions>() ?? new RateLimitingOptions();
+var rateLimitMultiplier = Math.Max(1, rateLimitingOpts.Multiplier);
+
 builder.Services.AddRateLimiter(options =>
 {
     options.AddPolicy("CreateMeeting", context => RateLimitPartition.GetFixedWindowLimiter(
@@ -125,7 +130,7 @@ builder.Services.AddRateLimiter(options =>
         factory: _ => new FixedWindowRateLimiterOptions
         {
             AutoReplenishment = true,
-            PermitLimit = 10,
+            PermitLimit = (rateLimitingOpts.PolicyLimits.TryGetValue("CreateMeeting", out var customCreate) ? customCreate : 10) * rateLimitMultiplier,
             QueueLimit = 0,
             Window = TimeSpan.FromMinutes(1)
         }));
@@ -134,7 +139,7 @@ builder.Services.AddRateLimiter(options =>
         factory: _ => new FixedWindowRateLimiterOptions
         {
             AutoReplenishment = true,
-            PermitLimit = 30,
+            PermitLimit = (rateLimitingOpts.PolicyLimits.TryGetValue("JoinAdmission", out var customJoin) ? customJoin : 30) * rateLimitMultiplier,
             QueueLimit = 0,
             Window = TimeSpan.FromMinutes(1)
         }));
@@ -143,12 +148,13 @@ builder.Services.AddRateLimiter(options =>
         factory: _ => new FixedWindowRateLimiterOptions
         {
             AutoReplenishment = true,
-            PermitLimit = 120,
+            PermitLimit = (rateLimitingOpts.PolicyLimits.TryGetValue("HostAdmission", out var customHost) ? customHost : 120) * rateLimitMultiplier,
             QueueLimit = 0,
             Window = TimeSpan.FromMinutes(1)
         }));
     options.OnRejected = async (context, cancellationToken) =>
     {
+        context.HttpContext.Response.Headers["Retry-After"] = "60";
         await Results.Problem(
             statusCode: StatusCodes.Status429TooManyRequests,
             title: "Too many requests",

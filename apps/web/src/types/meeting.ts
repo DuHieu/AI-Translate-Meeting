@@ -11,9 +11,9 @@ export const SUPPORTED_LANGUAGES_LIST: LanguageOption[] = [
   { code: 'vi', name: 'Vietnamese', nativeName: 'Tiếng Việt' },
   { code: 'en', name: 'English', nativeName: 'English' },
   { code: 'ja', name: 'Japanese', nativeName: '日本語' },
-  { code: 'ko', name: 'Korean', nativeName: '한국어' },
-  { code: 'zh', name: 'Chinese', nativeName: '中文' },
-  { code: 'fr', name: 'French', nativeName: 'Français' },
+  { code: 'ko', name: 'Korean', nativeName: 'Tiếng Hàn' },
+  { code: 'zh', name: 'Chinese', nativeName: 'Tiếng Trung' },
+  { code: 'fr', name: 'French', nativeName: 'Tiếng Pháp' },
   { code: 'de', name: 'German', nativeName: 'Deutsch' },
   { code: 'es', name: 'Spanish', nativeName: 'Español' },
 ];
@@ -119,6 +119,45 @@ export interface Participant {
   joinedAt: string;
 }
 
+export interface UpdateSubtitlePreferencesResponse {
+  targetLanguage: SupportedLanguage;
+  subtitleToken: string;
+}
+
+export interface SidecarPreferences {
+  showActions: boolean;
+  showRecap: boolean;
+  showChat: boolean;
+  audioBooth: boolean;
+  showOriginal: boolean;
+}
+
+export interface MeetingActionItem {
+  task: string;
+  owner?: string | null;
+  deadline?: string | null;
+  priority?: string | null;
+}
+
+export interface SaveMeetingMinutesRequest {
+  title: string;
+  summary: string;
+  markdownContent: string;
+  decisions?: string[] | null;
+  actionItems?: MeetingActionItem[] | null;
+}
+
+export interface MeetingMinutesResponse {
+  id: string;
+  meetingCode: string;
+  title: string;
+  summary: string;
+  markdownContent: string;
+  decisions: string[];
+  actionItems: MeetingActionItem[];
+  createdAt: string;
+}
+
 export interface MeetingSessionData {
   meetingCode: string;
   meetingId: string;
@@ -147,10 +186,43 @@ export interface ChatMessage {
   timestamp: string;
 }
 
+export interface RaiseHandDataMessage {
+  type: 'RAISE_HAND';
+  participantId: string;
+  raised: boolean;
+  timestamp: number;
+}
+
+export interface ReactionDataMessage {
+  type: 'REACTION';
+  emoji: string;
+  senderName: string;
+}
+
+export type CollaborationDataMessage = RaiseHandDataMessage | ReactionDataMessage;
+
+export function isCollaborationDataMessage(value: unknown): value is CollaborationDataMessage {
+  if (!value || typeof value !== 'object') return false;
+
+  const message = value as Record<string, unknown>;
+  if (message.type === 'RAISE_HAND') {
+    return (
+      typeof message.participantId === 'string' &&
+      typeof message.raised === 'boolean' &&
+      typeof message.timestamp === 'number'
+    );
+  }
+
+  return (
+    message.type === 'REACTION' &&
+    typeof message.emoji === 'string' &&
+    typeof message.senderName === 'string'
+  );
+}
+
 export interface FloatingReaction {
   id: string;
   emoji: string;
   senderName: string;
   leftPercent: number;
 }
-

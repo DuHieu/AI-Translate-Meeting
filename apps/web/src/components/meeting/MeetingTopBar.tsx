@@ -1,13 +1,17 @@
 import React, { useState } from 'react';
 import { ConnectionState } from 'livekit-client';
-import { Copy, Check, ShieldCheck, Zap } from 'lucide-react';
+import { Copy, Check, ShieldCheck } from 'lucide-react';
 import { NetworkQualityIndicator } from './NetworkQualityIndicator';
+import { ViMeetLogo } from '../common/ViMeetLogo';
+import { ThemeToggle } from '../common/ThemeToggle';
+import type { BrandingConfigDto } from '../../api/meetingApi';
 
 interface MeetingTopBarProps {
   meetingCode: string;
   connectionState: ConnectionState;
   isHost: boolean;
   onOpenAdmission: () => void;
+  branding: BrandingConfigDto;
 }
 
 export const MeetingTopBar: React.FC<MeetingTopBarProps> = ({
@@ -15,6 +19,7 @@ export const MeetingTopBar: React.FC<MeetingTopBarProps> = ({
   connectionState,
   isHost,
   onOpenAdmission,
+  branding,
 }) => {
   const [copied, setCopied] = useState(false);
 
@@ -43,40 +48,49 @@ export const MeetingTopBar: React.FC<MeetingTopBarProps> = ({
   const status = getStatusInfo();
 
   return (
-    <header className="h-12 border-b border-[#2e2e30] bg-[#0f0f10] px-4 md:px-5 flex items-center justify-between z-20 shrink-0 select-none">
-      {/* Product logo + title */}
-      <div className="flex items-center gap-2.5">
-        <div className="flex items-center justify-center w-7 h-7 rounded-lg bg-blue-600 text-white shrink-0">
-          <Zap className="w-3.5 h-3.5" />
-        </div>
-        <div className="flex items-center gap-1.5">
-          <span className="font-bold text-zinc-100 text-sm tracking-tight">
-            ViMeet
+    <header className="h-12 border-b border-[#2e2e30] dark:border-[#2e2e30] border-zinc-200 bg-[#0f0f10] dark:bg-[#0f0f10] bg-white px-3 sm:px-5 flex items-center justify-between z-20 shrink-0 select-none transition-colors">
+      {/* Brand identity */}
+      <div className="flex min-w-0 items-center gap-2.5" title={branding.slogan}>
+        {branding.logoUrl ? (
+          <img
+            src={branding.logoUrl}
+            alt={`${branding.brandName} logo`}
+            className="h-7 max-w-24 shrink-0 object-contain"
+          />
+        ) : branding.brandName === 'ViMeet' ? (
+          <ViMeetLogo size="sm" showWordmark={false} showBadge={false} />
+        ) : (
+          <span
+            aria-hidden="true"
+            className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-sm font-bold text-white"
+            style={{ backgroundColor: branding.primaryColor }}
+          >
+            {branding.brandName.charAt(0).toUpperCase()}
           </span>
-          <span className="text-[10px] font-mono text-sky-400 font-semibold bg-sky-500/10 px-1.5 py-0.2 rounded border border-sky-500/20">
-            vimeet.vn
-          </span>
-        </div>
+        )}
+        <span className="max-w-32 truncate text-sm font-bold tracking-tight text-zinc-950 dark:text-zinc-100 sm:max-w-48">
+          {branding.brandName}
+        </span>
       </div>
 
       {/* Right-side controls */}
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-1.5 sm:gap-2">
         {/* Room code + copy link */}
         <button
           type="button"
           onClick={handleCopyCode}
           title="Sao chép link mời phòng họp"
-          className="bg-[#1a1a1b] hover:bg-[#222224] border border-[#3a3a3d] px-3 py-1.5 rounded-lg text-xs font-mono text-zinc-300 flex items-center gap-1.5 transition-colors cursor-pointer"
+          className="bg-[#1a1a1b] hover:bg-[#222224] dark:bg-[#1a1a1b] dark:hover:bg-[#222224] bg-zinc-100 hover:bg-zinc-200 border border-[#3a3a3d] dark:border-[#3a3a3d] border-zinc-300 px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-mono text-zinc-300 dark:text-zinc-300 text-zinc-700 flex items-center gap-1.5 transition-colors cursor-pointer"
         >
           <span className="text-zinc-500">Phòng:</span>
-          <span className="text-zinc-100 font-semibold uppercase tracking-wider">{meetingCode}</span>
+          <span className="text-zinc-100 dark:text-zinc-100 text-zinc-900 font-semibold uppercase tracking-wider">{meetingCode}</span>
           {copied ? (
-            <span className="text-green-400 flex items-center gap-1 font-sans font-medium ml-0.5">
-              <Check className="w-3.5 h-3.5" /> Đã copy
+            <span className="text-green-500 dark:text-green-400 flex items-center gap-1 font-sans font-medium ml-0.5">
+              <Check className="w-3.5 h-3.5" /> <span className="hidden sm:inline">Đã copy</span>
             </span>
           ) : (
-            <span className="text-zinc-500 flex items-center gap-1 font-sans ml-0.5">
-              <Copy className="w-3.5 h-3.5" /> Copy link
+            <span className="text-zinc-500 dark:text-zinc-500 text-zinc-600 flex items-center gap-1 font-sans ml-0.5">
+              <Copy className="w-3.5 h-3.5" /> <span className="hidden sm:inline">Copy link</span>
             </span>
           )}
         </button>
@@ -87,7 +101,7 @@ export const MeetingTopBar: React.FC<MeetingTopBarProps> = ({
             type="button"
             onClick={onOpenAdmission}
             title="Quản lý invite và duyệt người tham gia"
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#1a1a1b] border border-[#3a3a3d] text-xs font-medium text-zinc-300 hover:bg-[#222224] hover:text-zinc-100 transition-colors cursor-pointer"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#1a1a1b] hover:bg-[#222224] dark:bg-[#1a1a1b] dark:hover:bg-[#222224] bg-zinc-100 hover:bg-zinc-200 border border-[#3a3a3d] dark:border-[#3a3a3d] border-zinc-300 text-xs font-medium text-zinc-300 dark:text-zinc-300 text-zinc-700 hover:text-zinc-100 dark:hover:text-zinc-100 hover:text-zinc-900 transition-colors cursor-pointer"
           >
             <ShieldCheck className="w-3.5 h-3.5 text-green-500" />
             <span className="hidden md:inline">Admission</span>
@@ -97,8 +111,11 @@ export const MeetingTopBar: React.FC<MeetingTopBarProps> = ({
         {/* Network quality */}
         <NetworkQualityIndicator />
 
+        {/* Light / Dark Mode Toggle */}
+        <ThemeToggle />
+
         {/* Connection status */}
-        <div className="hidden md:flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#1a1a1b] border border-[#2e2e30] text-xs text-zinc-400">
+        <div className="hidden md:flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#1a1a1b] dark:bg-[#1a1a1b] bg-zinc-100 border border-[#2e2e30] dark:border-[#2e2e30] border-zinc-300 text-xs text-zinc-400 dark:text-zinc-400 text-zinc-600">
           <span className={`w-1.5 h-1.5 rounded-full ${status.dot}`} />
           <span>{status.text}</span>
         </div>

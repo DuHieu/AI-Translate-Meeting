@@ -43,6 +43,7 @@ public interface IParticipantSessionService
 
     Task RevokeSessionAsync(Guid jti, CancellationToken ct = default);
     Task RevokeParticipantSessionsAsync(Guid meetingId, Guid participantId, CancellationToken ct = default);
+    Task RevokeMeetingSessionsAsync(Guid meetingId, CancellationToken ct = default);
     Task<int> CleanupExpiredSessionsAsync(TimeSpan olderThan, CancellationToken ct = default);
 }
 
@@ -231,6 +232,24 @@ public sealed class ParticipantSessionService : IParticipantSessionService
         var now = UtcNow();
         var sessions = await _context.ParticipantSessions
             .Where(s => s.MeetingId == meetingId && s.ParticipantId == participantId && s.RevokedAt == null)
+            .ToListAsync(ct);
+
+        foreach (var session in sessions)
+        {
+            session.RevokedAt = now;
+        }
+
+        if (sessions.Count > 0)
+        {
+            await _context.SaveChangesAsync(ct);
+        }
+    }
+
+    public async Task RevokeMeetingSessionsAsync(Guid meetingId, CancellationToken ct = default)
+    {
+        var now = UtcNow();
+        var sessions = await _context.ParticipantSessions
+            .Where(s => s.MeetingId == meetingId && s.RevokedAt == null)
             .ToListAsync(ct);
 
         foreach (var session in sessions)

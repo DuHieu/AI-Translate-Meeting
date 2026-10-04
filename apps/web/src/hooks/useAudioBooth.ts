@@ -33,7 +33,7 @@ export function useAudioBooth({
   history,
   currentUserId,
   targetLanguage,
-}: UseAudioBoothOptions): { isDucked: boolean } {
+}: UseAudioBoothOptions): { isDucked: boolean; isSpeaking: boolean } {
   const queueRef = useRef<AudioBoothQueueItem[]>([]);
   const isSpeakingRef = useRef<boolean>(false);
   const spokenIdsRef = useRef<Set<string>>(new Set());
@@ -64,6 +64,16 @@ export function useAudioBooth({
       return;
     }
 
+    // Dynamic speech rate calculation:
+    // 1.0x baseline; ramp to 1.12x - 1.25x if queue backlog or long sentence
+    const pendingCount = queueRef.current.length;
+    let speechRate = 1.0;
+    if (pendingCount > 1 || ageMs > 800) {
+      speechRate = 1.25;
+    } else if (pendingCount === 1 || nextItem.text.length > 50) {
+      speechRate = 1.12;
+    }
+
     isSpeakingRef.current = true;
     audioDuckingRegistry.setDucked(true);
 
@@ -76,7 +86,8 @@ export function useAudioBooth({
       () => {
         // Speech ended or errored
         processQueue();
-      }
+      },
+      speechRate
     );
 
     if (!spoken) {
@@ -147,5 +158,8 @@ export function useAudioBooth({
     };
   }, []);
 
-  return { isDucked: audioDuckingRegistry.getDucked() };
+  return {
+    isDucked: audioDuckingRegistry.getDucked(),
+    isSpeaking: isSpeakingRef.current,
+  };
 }

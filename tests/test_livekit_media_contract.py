@@ -18,8 +18,8 @@ def test_meeting_shell_publishes_initial_media_sequentially_with_selected_device
     meeting_shell = WEB_SRC / "components" / "meeting" / "MeetingShell.tsx"
     source = meeting_shell.read_text(encoding="utf-8")
 
-    mic_publish = "await localParticipant.setMicrophoneEnabled(true, buildAudioOptions())"
-    camera_publish = "await localParticipant.setCameraEnabled(true, buildVideoOptions())"
+    mic_publish = "await localParticipant.setMicrophoneEnabled(true, buildAudioOptions()"
+    camera_publish = "await localParticipant.setCameraEnabled(true, buildVideoOptions()"
 
     assert mic_publish in source
     assert camera_publish in source

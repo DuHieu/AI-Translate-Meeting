@@ -95,6 +95,26 @@ Hệ thống cung cấp 2 cấu hình mẫu chuẩn hóa, sử dụng chung ki�
 - **Bảo trì & Vận hành:** Kích hoạt sao lưu định kỳ, dọn dẹp retention hàng giờ (`DATABASE_CLEANUP_INTERVAL_HOURS=1`).
 - **Tuyên bố kỹ thuật:** *Khả năng chịu tải và số lượng phòng đồng thời phải được xác định qua kiểm thử tải (Load Test) tại hạ tầng cụ thể của khách hàng trước khi đưa vào vận hành đại trà.*
 
+### 3.3. Kết Quả Kiểm Thử Tải Thực Tế & Khuyến Nghị Phần Cứng (Benchmark Baseline)
+
+Dựa trên bộ công cụ kiểm thử tải giả lập đa phòng (`scripts/load-test.py` và `scripts/run-concurrency-test.ps1`):
+
+| Kịch bản kiểm thử | Quy mô | Tỷ lệ thành công | TTFS p50 | TTFS p95 | Zero Leakage | Tiêu chuẩn SLA |
+| :--- | :---: | :---: | :---: | :---: | :---: | :---: |
+| **Kịch bản 1: Single Room Fan-out** | 1 phòng, 6 người (1 speaker, 5 listeners) | 100% | 71.5 ms | 72.8 ms | PASSED (0) | Đạt (SLA < 2000ms) |
+| **Kịch bản 2: Multi-Room Isolation** | 3 phòng, 9 người (3 speakers, 6 listeners) | 100% | 89.5 ms | 169.5 ms | PASSED (0) | Đạt (Zero Cross-Room Leakage) |
+| **Kịch bản 3: Multi-Room Under Load** | 5 phòng, 15 người (5 speakers, 10 listeners) | 100% | 88.0 ms | 105.8 ms | PASSED (0) | Đạt (SLA < 2000ms) |
+
+**Định mức tài nguyên đo đạc thực tế:**
+- **AI Service (`faster-whisper` int8 CPU)**: Chiếm đỉnh ~400–430% CPU (tận dụng tối đa 4 lõi CPU đa luồng trong lúc phiên dịch), RAM ổn định ~770–860 MB.
+- **Backend API (.NET 8 Kestrel)**: Chiếm đỉnh ~30–40% CPU khi đồng thời cấp JWT/admissions cho hàng chục user, RAM ổn định ~150 MB.
+- **Media Server (LiveKit SFU)**: Chiếm đỉnh ~4–13% CPU, RAM ~40 MB.
+- **Cache & Storage Layer (Redis + Postgres)**: Redis RAM ~8.5 MB, Postgres RAM ~62 MB.
+
+**Khuyến nghị kích thước phần cứng (Hardware Sizing Guide):**
+1. **VPS 4 vCPU / 8 GB RAM (Profile Pilot)**: Phù hợp tối đa 3–5 phòng họp đồng thời, mỗi phòng 1–2 speaker luân phiên và 5–10 listeners.
+2. **VPS 8 vCPU / 16 GB RAM (Profile Business)**: Phục vụ ổn định 8–12 phòng họp đồng thời với đầy đủ Laya Decision/Action Item sidecar.
+
 ---
 
 ## 4. Gói Đề Xuất Thương Mại (Business Packaging Proposal)
@@ -127,6 +147,91 @@ Dành cho quản trị viên hệ thống (Sysadmin / DevOps) triển khai trên
        |
 [9. Operations] -> [10. Safe Rollback Ready]
 ```
+
+### Chia sẻ staging nhanh qua Cloudflare Tunnel (0 VNĐ)
+
+Dùng cách này khi cần gửi một URL HTTPS tạm thời để demo ViMeet qua Internet mà không mua domain hoặc trả phí tunnel.
+
+1. Khởi động ViMeet và kiểm tra `http://localhost:3000` truy cập được.
+2. Mở terminal khác và chạy đúng lệnh theo hệ điều hành:
+
+```powershell
+# Windows PowerShell; có thể đổi 3000 bằng --Port
+powershell -ExecutionPolicy Bypass -File .\scripts\start-tunnel.ps1 --Port 3000
+```
+
+```bash
+# Linux/macOS; có thể đổi cổng qua biến PORT
+PORT=3000 bash scripts/start-tunnel.sh
+```
+
+Script sẽ:
+
+- Kiểm tra service local trước khi mở tunnel.
+- Dùng `cloudflared` trong `PATH`; nếu chưa có thì tải binary chính thức về máy.
+- Chạy `cloudflared tunnel --url http://localhost:3000` và hiển thị URL dạng `https://<random>.trycloudflare.com`.
+
+Gửi URL đó cho người tham gia và giữ terminal đang chạy. Nhấn `Ctrl+C` để dừng; URL sẽ hết hiệu lực và lần chạy sau nhận hostname mới.
+
+**Giới hạn bắt buộc:** Quick Tunnel chỉ dành cho staging/demo, không có SLA và bất kỳ ai có URL đều có thể truy cập. Tunnel port 3000 xử lý HTTPS/WSS cho Web, API, subtitle và LiveKit signaling; luồng media WebRTC của LiveKit vẫn cần public ICE/TURN (`7881/tcp`, `7882/udp` hoặc TURN). Muốn họp audio/video đầy đủ qua Internet, dùng quy trình VPS public bên dưới. Tham khảo [tài liệu Cloudflare Quick Tunnels](https://developers.cloudflare.com/tunnel/get-started/quick-tunnels/).
+
+### Rehearsal staging 1 lệnh
+
+Điều kiện trước khi chạy:
+
+- Ubuntu 24.04/Debian, tối thiểu 4 vCPU, 8 GB RAM và 25 GB SSD trống.
+- Tạo DNS A/AAAA cho `staging.example.com` và `rtc.staging.example.com` cùng trỏ về VPS. `--domain staging.example.com` tự suy ra LiveKit domain là `rtc.staging.example.com`.
+- Mở firewall/security group: `80/tcp`, `443/tcp`, `443/udp`, `7881/tcp`, `7882/udp`.
+- Đăng nhập GHCR nếu image là private: `docker login ghcr.io`. Dùng commit SHA đã được workflow publish làm `--image-tag`, không dùng `latest` cho production.
+
+Chạy rehearsal bằng certificate self-signed của Caddy:
+
+```bash
+git clone https://github.com/DuHieu/AI-Translate-Meeting.git
+cd AI-Translate-Meeting
+git checkout <RELEASE_SHA>
+
+sudo bash scripts/setup-self-hosted.sh \
+  --domain staging.example.com \
+  --ssl-mode self-signed \
+  --profile pilot \
+  --image-namespace duhieu \
+  --image-tag <RELEASE_SHA> \
+  --non-interactive
+```
+
+Installer thực hiện theo thứ tự: validate domain/profile/TLS, kiểm tra Docker, sinh secret, chạy preflight, pull image, migrate, start service, readiness gate và smoke test. Self-signed chỉ dùng cho rehearsal; trình duyệt sẽ cảnh báo cho tới khi CA nội bộ được trust.
+
+Xác minh lại từ một máy khác ngoài VPS:
+
+```bash
+bash scripts/smoke-test.sh \
+  --domain staging.example.com \
+  --livekit-domain rtc.staging.example.com \
+  --livekit-tcp-port 7881 \
+  --livekit-udp-port 7882 \
+  --insecure
+```
+
+Khi chuyển sang production, DNS phải public và bỏ `--insecure`:
+
+```bash
+sudo bash scripts/setup-self-hosted.sh \
+  --domain meet.example.com \
+  --livekit-domain rtc.example.com \
+  --ssl-mode letsencrypt \
+  --email ops@example.com \
+  --profile business \
+  --image-namespace duhieu \
+  --image-tag <RELEASE_SHA> \
+  --non-interactive
+
+bash scripts/smoke-test.sh \
+  --domain meet.example.com \
+  --livekit-domain rtc.example.com
+```
+
+Không dùng `--insecure` ở production: smoke test phải xác minh được certificate chain thật qua HTTPS/WSS.
 
 ### Bước 1: Chạy kiểm tra tiền kiểm (Preflight)
 ```bash
@@ -177,11 +282,12 @@ docker compose --env-file /opt/ai-translate-meeting/shared/.env.production \
 
 ### Bước 8: Chạy kiểm tra sẵn sàng (Readiness & Smoke Test)
 ```bash
-powershell -ExecutionPolicy Bypass -File scripts/smoke-test.ps1
-# Hoặc kiểm tra qua curl endpoints:
-curl -f http://localhost:5000/health/ready
-curl -f http://localhost:8000/health/ready
+bash scripts/smoke-test.sh \
+  --domain meet.example.com \
+  --livekit-domain rtc.example.com
 ```
+
+Smoke test kiểm tra Web HTTPS, API/AI readiness, security headers, WSS proxy của subtitle và LiveKit, cổng media `7881/tcp` + `7882/udp`, cùng flow tạo phòng/join/cấp Subtitle JWT. Script không in JWT hoặc secret ra output.
 
 ### Bước 9: Hướng dẫn vận hành & Giám sát
 - **Admin Bootstrap Verification (CLI)**:
@@ -207,6 +313,20 @@ Khi phát hiện sự cố sau triển khai:
 ./scripts/rollback-production.sh /opt/ai-translate-meeting
 ```
 *Cam kết an toàn: Rollback chỉ phục hồi image và manifest của phiên bản ổn định liền trước; TUYỆT ĐỐI KHÔNG xóa database hoặc named volumes.*
+
+### Troubleshooting runbook
+
+| Triệu chứng | Kiểm tra nhanh | Cách xử lý |
+| :--- | :--- | :--- |
+| Let's Encrypt không cấp certificate | `docker compose -p ai-translate-meeting-production --env-file /opt/ai-translate-meeting/shared/.env.production -f /opt/ai-translate-meeting/current/docker-compose.production.yml logs caddy --tail 100` | Kiểm tra A/AAAA của cả hai domain, đồng hồ hệ thống, `80/tcp` và `443/tcp`; không đặt proxy CDN trước lần cấp certificate đầu tiên. |
+| Self-signed báo lỗi certificate | Chạy smoke với `--insecure` | Đây là hành vi dự kiến ở staging. Không dùng `--insecure` ở production; trust CA nội bộ nếu cần test bằng trình duyệt. |
+| LiveKit WSS trả `502/503` | Kiểm tra `wss://rtc.<domain>` và logs `caddy`, `livekit` | Xác nhận `LIVEKIT_DOMAIN`, container LiveKit healthy và Caddy reverse proxy tới `livekit:7880`. |
+| Có signaling nhưng không có audio/video | Từ mạng ngoài chạy smoke và kiểm tra `7881/tcp`, `7882/udp` | Mở cả firewall trên VPS và security group của cloud; tránh NAT/CGNAT chặn UDP. |
+| Subtitle WSS kết nối nhưng bị đóng `4401/4403` | Kiểm tra join response có `subtitleToken`; đồng bộ UTC trên VPS | Đảm bảo API và AI service dùng cùng `SUBTITLE_TOKEN_SIGNING_KEY`, issuer/audience đúng; không gọi endpoint `/subtitle-token` cũ. |
+| API/AI chưa ready | Chạy `bootstrap-admin.sh`; sau đó xem `docker compose` logs của `ai-service` | Chờ tải model Whisper lần đầu; kiểm tra RAM/disk/Redis/PostgreSQL. Không bỏ qua readiness gate. |
+| Deploy mới gây lỗi | `bash /opt/ai-translate-meeting/current/scripts/diagnostics.sh /opt/ai-translate-meeting` | Thu thập bundle đã sanitize, sau đó chạy `rollback-production.sh`; không xóa volume/database. |
+
+Sau mỗi deploy, lưu kết quả smoke test, image SHA và thời điểm triển khai. Không chụp hoặc gửi `.env.production`, JWT, license key hay log có secret.
 
 ---
 

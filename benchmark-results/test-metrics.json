@@ -1,0 +1,113 @@
+{
+  "start_time": 1791096195.9731853,
+  "total_elapsed_sec": 2.71,
+  "total_samples": 1,
+  "summary": {
+    "ai_translate_web": {
+      "avg_cpu_perc": 0.0,
+      "peak_cpu_perc": 0.0,
+      "avg_mem_mb": 8.05,
+      "peak_mem_mb": 8.05
+    },
+    "ai_translate_api": {
+      "avg_cpu_perc": 0.68,
+      "peak_cpu_perc": 0.68,
+      "avg_mem_mb": 145.7,
+      "peak_mem_mb": 145.7
+    },
+    "ai_translate_ai_service": {
+      "avg_cpu_perc": 0.14,
+      "peak_cpu_perc": 0.14,
+      "avg_mem_mb": 737.6,
+      "peak_mem_mb": 737.6
+    },
+    "ai_translate_livekit": {
+      "avg_cpu_perc": 0.04,
+      "peak_cpu_perc": 0.04,
+      "avg_mem_mb": 40.03,
+      "peak_mem_mb": 40.03
+    },
+    "ai_translate_laya": {
+      "avg_cpu_perc": 0.2,
+      "peak_cpu_perc": 0.2,
+      "avg_mem_mb": 1892.35,
+      "peak_mem_mb": 1892.35
+    },
+    "ai_translate_postgres": {
+      "avg_cpu_perc": 0.0,
+      "peak_cpu_perc": 0.0,
+      "avg_mem_mb": 37.75,
+      "peak_mem_mb": 37.75
+    },
+    "ai_translate_redis": {
+      "avg_cpu_perc": 5.41,
+      "peak_cpu_perc": 5.41,
+      "avg_mem_mb": 8.54,
+      "peak_mem_mb": 8.54
+    }
+  },
+  "timeline": [
+    {
+      "timestamp": 1791096195.9733589,
+      "elapsed_sec": 0.0,
+      "containers": [
+        {
+          "name": "ai_translate_web",
+          "cpu_perc": 0.0,
+          "mem_mb": 8.051,
+          "mem_perc": 0.1,
+          "pids": "9",
+          "net_io": "8MB / 27.9MB"
+        },
+        {
+          "name": "ai_translate_api",
+          "cpu_perc": 0.68,
+          "mem_mb": 145.7,
+          "mem_perc": 1.85,
+          "pids": "34",
+          "net_io": "869kB / 680kB"
+        },
+        {
+          "name": "ai_translate_ai_service",
+          "cpu_perc": 0.14,
+          "mem_mb": 737.6,
+          "mem_perc": 9.37,
+          "pids": "24",
+          "net_io": "4.36MB / 777kB"
+        },
+        {
+          "name": "ai_translate_livekit",
+          "cpu_perc": 0.04,
+          "mem_mb": 40.03,
+          "mem_perc": 0.51,
+          "pids": "14",
+          "net_io": "4.31GB / 189MB"
+        },
+        {
+          "name": "ai_translate_laya",
+          "cpu_perc": 0.2,
+          "mem_mb": 1892.352,
+          "mem_perc": 24.05,
+          "pids": "25",
+          "net_io": "115kB / 22kB"
+        },
+        {
+          "name": "ai_translate_postgres",
+          "cpu_perc": 0.0,
+          "mem_mb": 37.75,
+          "mem_perc": 0.48,
+          "pids": "6",
+          "net_io": "223kB / 250kB"
+        },
+        {
+          "name": "ai_translate_redis",
+          "cpu_perc": 5.41,
+          "mem_mb": 8.543,
+          "mem_perc": 0.11,
+          "pids": "6",
+          "net_io": "896kB / 997kB"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,18 @@
+# robots.txt for ViMeet (https://vimeet.vn)
+User-agent: *
+Allow: /
+Allow: /#features
+Allow: /#pricing
+Allow: /#faq
+Allow: /#contact
+Allow: /developers
+
+# Disallow private meeting rooms and streaming endpoints for privacy and security
+Disallow: /meeting/
+Disallow: /prejoin/
+Disallow: /api/
+Disallow: /ws/
+
+# Host and Sitemap
+Host: https://vimeet.vn
+Sitemap: https://vimeet.vn/sitemap.xml

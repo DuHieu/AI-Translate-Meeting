@@ -1,5 +1,6 @@
 using System.Data;
 using System.Security.Cryptography;
+using System.Text.Json;
 using AITranslateMeeting.Api.Data;
 using AITranslateMeeting.Api.DTOs;
 using AITranslateMeeting.Api.Entities;
@@ -20,7 +21,11 @@ public interface IMeetingService
     Task<IReadOnlyList<AdmissionRequestDto>> GetAdmissionsAsync(string meetingCode, string hostToken, CancellationToken ct = default);
     Task<AdmissionRequestDto> DecideAdmissionAsync(string meetingCode, Guid admissionId, string hostToken, AdmissionDecisionRequestDto request, CancellationToken ct = default);
     Task LeaveMeetingAsync(string meetingCode, LeaveMeetingRequestDto request, string? sessionToken = null, CancellationToken ct = default);
+    Task EndMeetingAsync(string meetingCode, string? sessionToken = null, CancellationToken ct = default);
     Task<IEnumerable<ParticipantDto>> GetActiveParticipantsAsync(string meetingCode, string? sessionToken = null, CancellationToken ct = default);
+    Task<UpdateSubtitlePreferencesResponseDto> UpdateSubtitlePreferencesAsync(string meetingCode, UpdateSubtitlePreferencesRequestDto request, string? sessionToken = null, CancellationToken ct = default);
+    Task<MeetingMinutesResponse> SaveMeetingMinutesAsync(string meetingCode, SaveMeetingMinutesRequest request, CancellationToken ct = default);
+    Task<MeetingMinutesResponse> GetMeetingMinutesAsync(string meetingCode, CancellationToken ct = default);
 }
 
 public sealed class MeetingService : IMeetingService
@@ -304,7 +309,7 @@ public sealed class MeetingService : IMeetingService
         string? sessionToken = null,
         CancellationToken ct = default)
     {
-        var meeting = await FindMeetingAsync(meetingCode, false, ct);
+        var meeting = await FindMeetingAsync(meetingCode, true, ct);
 
         if (string.IsNullOrWhiteSpace(sessionToken))
             throw Unauthorized("session_token_missing", "Session token is required.");
@@ -373,6 +378,51 @@ public sealed class MeetingService : IMeetingService
         {
             await _sessionTokenService.RevokeParticipantSessionsAsync(meeting.Id, request.ParticipantId, ct);
         }
+
+        var remainingActive = await _context.MeetingParticipants
+            .CountAsync(p => p.MeetingId == meeting.Id && p.LeftAt == null, ct);
+        if (remainingActive == 0 && meeting.EndedAt == null)
+        {
+            meeting.EndedAt = UtcNow();
+            await _context.SaveChangesAsync(ct);
+            _logger.LogInformation("Meeting {MeetingCode} automatically ended: all participants have left", meeting.MeetingCode);
+        }
+    }
+
+    public async Task EndMeetingAsync(
+        string meetingCode,
+        string? sessionToken = null,
+        CancellationToken ct = default)
+    {
+        var meeting = await FindMeetingAsync(meetingCode, true, ct);
+        if (meeting.EndedAt != null)
+        {
+            throw Conflict("meeting_ended", "Meeting has already ended.");
+        }
+
+        if (string.IsNullOrWhiteSpace(sessionToken))
+        {
+            throw Unauthorized("session_token_missing", "Session token or host token is required.");
+        }
+
+        await ValidateHostTokenAsync(sessionToken, meeting.Id, ct);
+
+        var now = UtcNow();
+        meeting.EndedAt = now;
+
+        var activeParticipants = await _context.MeetingParticipants
+            .Where(p => p.MeetingId == meeting.Id && p.LeftAt == null)
+            .ToListAsync(ct);
+
+        foreach (var participant in activeParticipants)
+        {
+            participant.LeftAt = now;
+        }
+
+        await _context.SaveChangesAsync(ct);
+        await _sessionTokenService.RevokeMeetingSessionsAsync(meeting.Id, ct);
+
+        _logger.LogInformation("Host ended meeting {MeetingCode} (ID: {MeetingId})", meeting.MeetingCode, meeting.Id);
     }
 
     public async Task<IEnumerable<ParticipantDto>> GetActiveParticipantsAsync(
@@ -399,6 +449,112 @@ public sealed class MeetingService : IMeetingService
                 p.TargetLanguage,
                 p.JoinedAt))
             .ToListAsync(ct);
+    }
+
+    public async Task<UpdateSubtitlePreferencesResponseDto> UpdateSubtitlePreferencesAsync(
+        string meetingCode,
+        UpdateSubtitlePreferencesRequestDto request,
+        string? sessionToken = null,
+        CancellationToken ct = default)
+    {
+        var meeting = await FindMeetingAsync(meetingCode, false, ct);
+        EnsureMeetingActive(meeting, meetingCode);
+
+        if (string.IsNullOrWhiteSpace(sessionToken))
+            throw Unauthorized("session_token_missing", "Session token is required.");
+
+        var claims = await _sessionTokenService.ValidateSessionTokenAsync(
+            sessionToken,
+            SessionScopes.Read,
+            meeting.Id,
+            ct);
+        var targetLanguage = NormalizeTargetLanguage(request.TargetLanguage);
+
+        var participant = await _context.MeetingParticipants.FirstOrDefaultAsync(
+            item => item.Id == claims.ParticipantId
+                && item.MeetingId == meeting.Id
+                && item.LeftAt == null,
+            ct) ?? throw new KeyNotFoundException("The active participant was not found in this meeting.");
+
+        participant.TargetLanguage = targetLanguage;
+        var subtitleToken = _subtitleTokenService.GenerateAccessToken(
+            meeting.Id,
+            participant.Id,
+            participant.DisplayName,
+            participant.SpokenLanguage,
+            participant.TargetLanguage,
+            participant.Identity);
+        await _context.SaveChangesAsync(ct);
+
+        _logger.LogInformation(
+            "Participant {ParticipantId} changed subtitle target language in meeting {MeetingCode}",
+            participant.Id,
+            meeting.MeetingCode);
+
+        return new UpdateSubtitlePreferencesResponseDto(targetLanguage, subtitleToken);
+    }
+
+    public async Task<MeetingMinutesResponse> SaveMeetingMinutesAsync(
+        string meetingCode,
+        SaveMeetingMinutesRequest request,
+        CancellationToken ct = default)
+    {
+        var meeting = await FindMeetingAsync(meetingCode, false, ct);
+        var title = request.Title?.Trim();
+        var summary = request.Summary?.Trim();
+        if (string.IsNullOrWhiteSpace(title))
+            throw new ArgumentException("Meeting minutes title cannot be empty.", nameof(request.Title));
+        if (title.Length > 200)
+            throw new ArgumentException("Meeting minutes title cannot exceed 200 characters.", nameof(request.Title));
+        if (string.IsNullOrWhiteSpace(summary))
+            throw new ArgumentException("Meeting minutes summary cannot be empty.", nameof(request.Summary));
+        if (summary.Length > 10000)
+            throw new ArgumentException("Meeting minutes summary cannot exceed 10000 characters.", nameof(request.Summary));
+        if (string.IsNullOrWhiteSpace(request.MarkdownContent))
+            throw new ArgumentException("Meeting minutes Markdown content cannot be empty.", nameof(request.MarkdownContent));
+
+        var decisions = request.Decisions ?? [];
+        var actionItems = request.ActionItems ?? [];
+        var minutes = await _context.MeetingMinutes
+            .FirstOrDefaultAsync(item => item.MeetingId == meeting.Id, ct);
+
+        if (minutes == null)
+        {
+            minutes = new MeetingMinute
+            {
+                Id = Guid.NewGuid(),
+                MeetingId = meeting.Id,
+                CreatedAt = UtcNow()
+            };
+            _context.MeetingMinutes.Add(minutes);
+        }
+
+        minutes.Title = title;
+        minutes.Summary = summary;
+        minutes.MarkdownContent = request.MarkdownContent;
+        minutes.DecisionsJson = JsonSerializer.Serialize(decisions);
+        minutes.ActionItemsJson = JsonSerializer.Serialize(actionItems);
+        await _context.SaveChangesAsync(ct);
+
+        _logger.LogInformation(
+            "Saved meeting minutes {MeetingMinutesId} for meeting {MeetingCode}",
+            minutes.Id,
+            meeting.MeetingCode);
+
+        return ToMeetingMinutesResponse(minutes, meeting.MeetingCode);
+    }
+
+    public async Task<MeetingMinutesResponse> GetMeetingMinutesAsync(
+        string meetingCode,
+        CancellationToken ct = default)
+    {
+        var meeting = await FindMeetingAsync(meetingCode, false, ct);
+        var minutes = await _context.MeetingMinutes
+            .AsNoTracking()
+            .FirstOrDefaultAsync(item => item.MeetingId == meeting.Id, ct)
+            ?? throw new KeyNotFoundException($"Meeting minutes for meeting '{meetingCode}' were not found.");
+
+        return ToMeetingMinutesResponse(minutes, meeting.MeetingCode);
     }
 
     private async Task<AdmissionPendingResponseDto> CreatePendingAdmissionAsync(
@@ -583,6 +739,31 @@ public sealed class MeetingService : IMeetingService
             throw new ArgumentException("Target language must be one of: 'vi', 'en', 'ja', 'ko', 'zh', 'fr', 'de', 'es'.", nameof(request.TargetLanguage));
 
         return (displayName, spokenLanguage, targetLanguage);
+    }
+
+    private static string NormalizeTargetLanguage(string? targetLanguage)
+    {
+        var normalized = targetLanguage?.Trim().ToLowerInvariant();
+        if (string.IsNullOrEmpty(normalized) || !ValidLanguages.Contains(normalized))
+            throw new ArgumentException("Target language must be one of: 'vi', 'en', 'ja', 'ko', 'zh', 'fr', 'de', 'es'.", nameof(targetLanguage));
+        return normalized;
+    }
+
+    private static MeetingMinutesResponse ToMeetingMinutesResponse(
+        MeetingMinute minutes,
+        string meetingCode)
+    {
+        var decisions = JsonSerializer.Deserialize<List<string>>(minutes.DecisionsJson) ?? [];
+        var actionItems = JsonSerializer.Deserialize<List<ActionItemDto>>(minutes.ActionItemsJson) ?? [];
+        return new MeetingMinutesResponse(
+            minutes.Id,
+            meetingCode,
+            minutes.Title,
+            minutes.Summary,
+            minutes.MarkdownContent,
+            decisions,
+            actionItems,
+            minutes.CreatedAt);
     }
 
     private async Task ValidateHostTokenAsync(string token, Guid meetingId, CancellationToken ct = default)

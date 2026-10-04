@@ -12,6 +12,7 @@ public class AppDbContext : DbContext
     public DbSet<Meeting> Meetings => Set<Meeting>();
     public DbSet<MeetingParticipant> MeetingParticipants => Set<MeetingParticipant>();
     public DbSet<MeetingAdmission> MeetingAdmissions => Set<MeetingAdmission>();
+    public DbSet<MeetingMinute> MeetingMinutes => Set<MeetingMinute>();
     public DbSet<ParticipantSession> ParticipantSessions => Set<ParticipantSession>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -32,6 +33,7 @@ public class AppDbContext : DbContext
 
             entity.HasIndex(e => e.MeetingCode).IsUnique();
             entity.HasIndex(e => e.RoomName).IsUnique();
+            entity.HasIndex(e => e.EndedAt);
 
             entity.HasMany(e => e.Participants)
                   .WithOne(p => p.Meeting)
@@ -84,6 +86,27 @@ public class AppDbContext : DbContext
 
             entity.HasIndex(e => new { e.MeetingId, e.Status });
             entity.HasIndex(e => e.ExpiresAt);
+        });
+
+        modelBuilder.Entity<MeetingMinute>(entity =>
+        {
+            entity.ToTable("meeting_minutes");
+
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.MeetingId).HasColumnName("meeting_id").IsRequired();
+            entity.Property(e => e.Title).HasColumnName("title").HasMaxLength(200).IsRequired();
+            entity.Property(e => e.Summary).HasColumnName("summary").HasColumnType("text").IsRequired();
+            entity.Property(e => e.MarkdownContent).HasColumnName("markdown_content").HasColumnType("text").IsRequired();
+            entity.Property(e => e.DecisionsJson).HasColumnName("decisions_json").HasColumnType("jsonb").IsRequired();
+            entity.Property(e => e.ActionItemsJson).HasColumnName("action_items_json").HasColumnType("jsonb").IsRequired();
+            entity.Property(e => e.CreatedAt).HasColumnName("created_at").IsRequired();
+
+            entity.HasIndex(e => e.MeetingId).IsUnique();
+            entity.HasOne(e => e.Meeting)
+                  .WithMany()
+                  .HasForeignKey(e => e.MeetingId)
+                  .OnDelete(DeleteBehavior.Cascade);
         });
 
         modelBuilder.Entity<ParticipantSession>(entity =>

@@ -19,6 +19,7 @@ setLogLevel(LogLevel.silent);
 
 export const MeetingRoom: React.FC<MeetingRoomProps> = ({ session, onLeaveComplete }) => {
   const [isLeaving, setIsLeaving] = useState(false);
+  const [meetingEnded, setMeetingEnded] = useState(false);
 
   // Safe JWT inspection without logging full token or secrets
   useEffect(() => {
@@ -47,7 +48,7 @@ export const MeetingRoom: React.FC<MeetingRoomProps> = ({ session, onLeaveComple
     }
   }, [session.token]);
 
-  const handleDisconnected = async () => {
+  const handleLeaveRoom = async () => {
     if (isLeaving) return;
     setIsLeaving(true);
 
@@ -59,6 +60,10 @@ export const MeetingRoom: React.FC<MeetingRoomProps> = ({ session, onLeaveComple
       meetingStorage.clearSession(session.meetingCode);
       onLeaveComplete();
     }
+  };
+
+  const handleDisconnected = () => {
+    if (!isLeaving) setMeetingEnded(true);
   };
 
   const serverUrl = React.useMemo(() => {
@@ -88,7 +93,11 @@ export const MeetingRoom: React.FC<MeetingRoomProps> = ({ session, onLeaveComple
       data-lk-theme="default"
       className="h-screen w-screen overflow-hidden bg-slate-950"
     >
-      <MeetingShell session={session} onLeaveRoom={handleDisconnected} />
+      <MeetingShell
+        session={session}
+        onLeaveRoom={handleLeaveRoom}
+        meetingEnded={meetingEnded}
+      />
     </LiveKitRoom>
   );
 };

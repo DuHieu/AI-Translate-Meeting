@@ -3,41 +3,69 @@
 @tailwind components;
 @tailwind utilities;
 
-/* ─── Slate Pro Design System ─────────────────────────────────────────────────
-   Inspired by Notion / Linear / Vercel dark theme.
-   Principles: solid surfaces, consistent border-radius, single blue accent,
-   no gradients, no glassmorphism, clear visual hierarchy.
+/* ─── Slate Pro Design System: Dark & Light Mode Tokens ──────────────────────
+   Principles: solid surfaces, consistent border-radius (8px/12px),
+   single blue accent, zero artificial neon glow, WCAG AA contrast.
    ─────────────────────────────────────────────────────────────────────────── */
+
 :root {
-  /* Backgrounds */
-  --bg-base:    #0f0f10;   /* page background */
-  --bg-surface: #1a1a1b;   /* card / panel surface */
-  --bg-raised:  #222224;   /* elevated element (dropdown, tooltip) */
-  --bg-overlay: #2a2a2c;   /* hover state */
+  /* Default: Clean Linear/Stripe-style Light Theme */
+  --bg-base:        #f9fafb;   /* slate-50 / zinc-50 */
+  --bg-surface:     #ffffff;   /* pure white card */
+  --bg-raised:      #f4f4f5;   /* zinc-100 */
+  --bg-overlay:     #e4e4e7;   /* zinc-200 */
 
-  /* Borders */
-  --border-subtle:  #2e2e30; /* dividers, low-key separators */
-  --border-default: #3a3a3d; /* input borders, card edges */
-  --border-strong:  #52525b; /* focused input, emphasis */
+  --border-subtle:  #e4e4e7;   /* subtle divider */
+  --border-default: #d4d4d8;   /* card edges */
+  --border-strong:  #a1a1aa;   /* input hover/focus */
 
-  /* Text */
-  --text-primary:   #f4f4f5; /* headings, main content */
-  --text-secondary: #a1a1aa; /* labels, descriptions */
-  --text-muted:     #71717a; /* placeholders, disabled */
+  --text-primary:   #09090b;   /* zinc-950 deep black */
+  --text-secondary: #52525b;   /* zinc-600 readable secondary */
+  --text-muted:     #71717a;   /* zinc-500 */
 
-  /* Accent: single blue used sparingly */
-  --accent:       #3b82f6; /* blue-500 */
-  --accent-hover: #2563eb; /* blue-600 */
-  --accent-muted: #1d4ed8; /* blue-700, for active rings */
-  --accent-dim:   rgba(59, 130, 246, 0.12); /* tinted backgrounds */
+  --accent:         #2563eb;   /* blue-600 for light mode contrast */
+  --accent-hover:   #1d4ed8;   /* blue-700 */
+  --accent-muted:   #1e40af;
+  --accent-dim:     rgba(37, 99, 235, 0.08);
 
-  /* Status */
-  --status-ok:   #22c55e; /* green-500 */
-  --status-warn: #f59e0b; /* amber-500 */
-  --status-err:  #ef4444; /* red-500  */
+  --status-ok:      #16a34a;
+  --status-warn:    #d97706;
+  --status-err:     #dc2626;
 
-  /* Spacing scale: 4 / 8 / 12 / 16 / 24 / 32 / 48px */
-  /* Border radius: 6px (sm), 8px (default), 12px (card), 9999px (pill) */
+  --grid-dot:       rgba(0, 0, 0, 0.06);
+  --grid-line:      rgba(0, 0, 0, 0.04);
+  --glow-primary:   rgba(37, 99, 235, 0.08);
+  --glow-secondary: rgba(99, 102, 241, 0.05);
+}
+
+html.dark {
+  /* Slate Pro Dark Theme */
+  --bg-base:        #0f0f10;   /* page canvas */
+  --bg-surface:     #1a1a1b;   /* card / panel surface */
+  --bg-raised:      #222224;   /* elevated element / button */
+  --bg-overlay:     #2a2a2c;   /* hover state */
+
+  --border-subtle:  #2e2e30;   /* dividers */
+  --border-default: #3a3a3d;   /* input borders, card frames */
+  --border-strong:  #52525b;   /* focus ring, emphasis */
+
+  --text-primary:   #f4f4f5;   /* headings, high-contrast content */
+  --text-secondary: #a1a1aa;   /* secondary labels */
+  --text-muted:     #71717a;   /* placeholders, disabled */
+
+  --accent:         #3b82f6;   /* blue-500 */
+  --accent-hover:   #2563eb;   /* blue-600 */
+  --accent-muted:   #1d4ed8;   /* blue-700 */
+  --accent-dim:     rgba(59, 130, 246, 0.12);
+
+  --status-ok:      #22c55e;
+  --status-warn:    #f59e0b;
+  --status-err:     #ef4444;
+
+  --grid-dot:       rgba(255, 255, 255, 0.06);
+  --grid-line:      rgba(255, 255, 255, 0.035);
+  --glow-primary:   rgba(37, 99, 235, 0.16);
+  --glow-secondary: rgba(139, 92, 246, 0.10);
 }
 
 body {
@@ -49,16 +77,41 @@ body {
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+/* ─── Engineering Grid & Mesh Backgrounds ──────────────────────────────────── */
+.bg-grid-subtle {
+  background-image: radial-gradient(var(--grid-dot) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+.bg-grid-mesh {
+  background-image: 
+    linear-gradient(to right, var(--grid-line) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--grid-line) 1px, transparent 1px);
+  background-size: 36px 36px;
+}
+
+.mask-radial-faded {
+  mask-image: radial-gradient(ellipse 90% 70% at 50% 25%, #000 40%, transparent 95%);
+  -webkit-mask-image: radial-gradient(ellipse 90% 70% at 50% 25%, #000 40%, transparent 95%);
+}
+
+.ambient-hero-glow {
+  background: 
+    radial-gradient(ellipse 800px 500px at 50% 0%, var(--glow-primary), transparent 70%),
+    radial-gradient(circle 450px at 85% 35%, var(--glow-secondary), transparent 60%);
 }
 
 /* ─── Scrollbar ────────────────────────────────────────────────────────────── */
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb {
-  background: var(--border-strong);
+  background: var(--border-default);
   border-radius: 9999px;
 }
-::-webkit-scrollbar-thumb:hover { background: #71717a; }
+::-webkit-scrollbar-thumb:hover { background: var(--border-strong); }
 
 /* ─── Emoji Reaction Float Animation ──────────────────────────────────────── */
 @keyframes floatUp {
@@ -70,24 +123,22 @@ body {
   animation: floatUp 2.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
-/* ─── Slate Pro Surface Utilities ─────────────────────────────────────────── */
-/* Use these instead of glass-island / glass-card */
+/* ─── Surface Utility Classes ─────────────────────────────────────────────── */
 .surface {
-  background: var(--bg-surface);
+  background-color: var(--bg-surface);
   border: 1px solid var(--border-default);
 }
 .surface-raised {
-  background: var(--bg-raised);
+  background-color: var(--bg-raised);
   border: 1px solid var(--border-default);
 }
 
-/* Legacy aliases kept so existing classes don't break immediately */
+/* Compatibility aliases */
 .glass-island {
-  background: var(--bg-surface);
+  background-color: var(--bg-surface);
   border: 1px solid var(--border-default);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
 }
 .glass-card {
-  background: var(--bg-raised);
+  background-color: var(--bg-raised);
   border: 1px solid var(--border-subtle);
 }

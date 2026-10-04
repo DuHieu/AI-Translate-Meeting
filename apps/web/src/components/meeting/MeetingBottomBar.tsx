@@ -14,6 +14,8 @@ import {
   ChevronUp,
   Smile,
   Headphones,
+  Hand,
+  HandMetal,
 } from 'lucide-react';
 import { LocalAudioTrack } from 'livekit-client';
 import { MeetingControlButton } from './MeetingControlButton';
@@ -24,6 +26,7 @@ import { useKeyboardShortcuts } from '../../hooks/useKeyboardShortcuts';
 interface MeetingBottomBarProps {
   meetingCode: string;
   isMicOn: boolean;
+  isSpeaking?: boolean;
   isCameraOn: boolean;
   isScreenSharing: boolean;
   microphoneTrack?: LocalAudioTrack | null;
@@ -42,14 +45,17 @@ interface MeetingBottomBarProps {
   isSubtitlePanelOpen: boolean;
   subtitleCount: number;
   numParticipants: number;
+  isHandRaised: boolean;
+  onToggleRaiseHand: () => void;
   onSendReaction?: (emoji: string) => void;
-  isAudioBoothEnabled?: boolean;
+  isAudioBoothActive?: boolean;
   onToggleAudioBooth?: () => void;
 }
 
 export const MeetingBottomBar: React.FC<MeetingBottomBarProps> = ({
   meetingCode,
   isMicOn,
+  isSpeaking = false,
   isCameraOn,
   isScreenSharing,
   microphoneTrack,
@@ -66,8 +72,10 @@ export const MeetingBottomBar: React.FC<MeetingBottomBarProps> = ({
   isSubtitlePanelOpen,
   subtitleCount,
   numParticipants,
+  isHandRaised,
+  onToggleRaiseHand,
   onSendReaction,
-  isAudioBoothEnabled,
+  isAudioBoothActive = false,
   onToggleAudioBooth,
 }) => {
   const [currentTime, setCurrentTime] = useState('');
@@ -97,14 +105,14 @@ export const MeetingBottomBar: React.FC<MeetingBottomBarProps> = ({
 
   return (
     // Slate Pro bottom bar: fixed edge-to-edge footer with solid surface and top border
-    <footer className="fixed bottom-0 left-0 right-0 h-14 z-30 select-none pointer-events-auto bg-[#0f0f10] border-t border-[#2e2e30]">
+    <footer className="fixed bottom-0 left-0 right-0 h-14 z-30 select-none pointer-events-auto bg-[#0f0f10] dark:bg-[#0f0f10] bg-white border-t border-[#2e2e30] dark:border-[#2e2e30] border-zinc-200 transition-colors">
       <div className="h-full px-3 md:px-4 flex items-center justify-between max-w-screen-xl mx-auto">
 
         {/* Left: Meeting info (desktop) */}
-        <div className="hidden lg:flex items-center gap-2 text-xs text-zinc-500 font-mono">
-          <span className="text-zinc-300 font-medium">{currentTime}</span>
-          <span className="text-[#3a3a3d]">|</span>
-          <span className="text-zinc-400 uppercase tracking-wider">{meetingCode}</span>
+        <div className="hidden lg:flex items-center gap-2 text-xs text-zinc-500 dark:text-zinc-500 text-zinc-600 font-mono">
+          <span className="text-zinc-300 dark:text-zinc-300 text-zinc-800 font-medium">{currentTime}</span>
+          <span className="text-[#3a3a3d] dark:text-[#3a3a3d] text-zinc-300">|</span>
+          <span className="text-zinc-400 dark:text-zinc-400 text-zinc-700 uppercase tracking-wider">{meetingCode}</span>
         </div>
 
         {/* Center: Primary media controls */}
@@ -113,7 +121,7 @@ export const MeetingBottomBar: React.FC<MeetingBottomBarProps> = ({
           {/* Microphone split control */}
           <div className={`relative flex items-center ${mediaDisabled ? 'opacity-50 pointer-events-none' : ''}`}>
             <div
-              className="flex items-center rounded-xl border border-[#3a3a3d] overflow-hidden bg-[#222224]"
+              className="flex items-center rounded-xl border border-[#3a3a3d] dark:border-[#3a3a3d] border-zinc-300 overflow-hidden bg-[#222224] dark:bg-[#222224] bg-zinc-100"
               title={mediaDisabled ? (isConnecting ? 'Đang kết nối phòng họp...' : 'Phòng họp chưa kết nối') : undefined}
             >
               <button
@@ -127,11 +135,39 @@ export const MeetingBottomBar: React.FC<MeetingBottomBarProps> = ({
                 }
                 className={`px-3 py-2.5 flex items-center justify-center transition-colors cursor-pointer ${
                   isMicOn
-                    ? 'text-zinc-300 hover:bg-[#2a2a2c] hover:text-zinc-100'
+                    ? 'text-zinc-300 dark:text-zinc-300 text-zinc-700 hover:bg-[#2a2a2c] dark:hover:bg-[#2a2a2c] hover:bg-zinc-200 hover:text-zinc-100 dark:hover:text-zinc-100 hover:text-zinc-900'
                     : 'bg-red-600 hover:bg-red-500 text-white'
                 }`}
               >
-                {isMicOn ? <Mic className="w-4.5 h-4.5 w-[18px] h-[18px]" /> : <MicOff className="w-[18px] h-[18px]" />}
+                {isMicOn ? (
+                  <>
+                    <Mic className="w-[18px] h-[18px]" />
+                    <div
+                      role="img"
+                      aria-label="Mức âm thanh microphone"
+                      title={isSpeaking ? 'Microphone đang nhận giọng nói' : 'Microphone đang bật'}
+                      className="ml-1 flex h-4 items-end gap-0.5"
+                    >
+                      <span
+                        className={`w-0.5 rounded-full bg-emerald-400 ${
+                          isSpeaking ? 'h-2 animate-bounce [animation-delay:-0.3s]' : 'h-1'
+                        }`}
+                      />
+                      <span
+                        className={`w-0.5 rounded-full bg-emerald-400 ${
+                          isSpeaking ? 'h-3 animate-bounce [animation-delay:-0.15s]' : 'h-2'
+                        }`}
+                      />
+                      <span
+                        className={`w-0.5 rounded-full bg-emerald-400 ${
+                          isSpeaking ? 'h-1.5 animate-bounce' : 'h-1'
+                        }`}
+                      />
+                    </div>
+                  </>
+                ) : (
+                  <MicOff className="w-[18px] h-[18px]" />
+                )}
               </button>
 
               <button
@@ -209,7 +245,7 @@ export const MeetingBottomBar: React.FC<MeetingBottomBarProps> = ({
           </div>
 
           {/* Separator */}
-          <div className="w-px h-6 bg-[#2e2e30] mx-0.5" />
+          <div className="hidden sm:block w-px h-6 bg-[#2e2e30] mx-0.5" />
 
           {/* Subtitle toggle */}
           <MeetingControlButton
@@ -220,33 +256,53 @@ export const MeetingBottomBar: React.FC<MeetingBottomBarProps> = ({
             active={isSubtitlePanelOpen}
           />
 
-          {/* Audio Booth (Zero-Server-Cost Live Translation TTS) */}
+          {/* Audio Booth (Cabin Phiên Dịch) toggle */}
           {onToggleAudioBooth && (
             <MeetingControlButton
               icon={<Headphones className="w-[18px] h-[18px]" />}
               label="Audio Booth"
-              tooltip={isAudioBoothEnabled ? 'Tắt Audio Booth (Dịch giọng nói)' : 'Bật Audio Booth (Dịch giọng nói)'}
+              tooltip={
+                isAudioBoothActive
+                  ? 'Tắt cabin phiên dịch giọng nói (Audio Booth)'
+                  : 'Bật cabin phiên dịch giọng nói (Audio Booth - Ducking -18dB)'
+              }
               onClick={onToggleAudioBooth}
-              active={isAudioBoothEnabled}
+              active={isAudioBoothActive}
             />
           )}
 
-          {/* Screen share */}
+          {/* Raise hand */}
           <MeetingControlButton
-            icon={isScreenSharing ? <MonitorOff className="w-[18px] h-[18px]" /> : <Monitor className="w-[18px] h-[18px]" />}
-            label="Share Screen"
-            tooltip={isScreenSharing ? 'Dừng chia sẻ màn hình' : 'Chia sẻ màn hình'}
-            onClick={onToggleScreenShare}
-            active={isScreenSharing}
+            icon={isHandRaised
+              ? <HandMetal className="w-[18px] h-[18px]" />
+              : <Hand className="w-[18px] h-[18px]" />}
+            label={isHandRaised ? 'Hạ tay' : 'Giơ tay'}
+            tooltip={isHandRaised ? 'Hạ tay' : 'Giơ tay'}
+            onClick={onToggleRaiseHand}
+            active={isHandRaised}
+            disabled={mediaDisabled}
           />
 
-          {/* Layout */}
-          <MeetingControlButton
-            icon={<Grid className="w-[18px] h-[18px]" />}
-            label="Change Layout"
-            tooltip="Đổi bố cục"
-            onClick={onOpenLayoutMenu}
-          />
+          {/* Screen share — hidden on small mobile */}
+          <div className="hidden sm:block">
+            <MeetingControlButton
+              icon={isScreenSharing ? <MonitorOff className="w-[18px] h-[18px]" /> : <Monitor className="w-[18px] h-[18px]" />}
+              label="Share Screen"
+              tooltip={isScreenSharing ? 'Dừng chia sẻ màn hình' : 'Chia sẻ màn hình'}
+              onClick={onToggleScreenShare}
+              active={isScreenSharing}
+            />
+          </div>
+
+          {/* Layout — hidden on small mobile */}
+          <div className="hidden md:block">
+            <MeetingControlButton
+              icon={<Grid className="w-[18px] h-[18px]" />}
+              label="Change Layout"
+              tooltip="Đổi bố cục"
+              onClick={onOpenLayoutMenu}
+            />
+          </div>
 
           {/* Reactions */}
           {onSendReaction && (
@@ -261,7 +317,7 @@ export const MeetingBottomBar: React.FC<MeetingBottomBarProps> = ({
 
               {isReactionMenuOpen && (
                 <div className="absolute bottom-14 left-1/2 -translate-x-1/2 bg-[#1a1a1b] border border-[#3a3a3d] rounded-xl p-2 shadow-xl flex items-center gap-1 z-50">
-                  {['👍', '👏', '❤️', '💡', '🙋‍♂️', '🎉'].map((emoji) => (
+                  {['👍', '👏', '❤️', '🎉', '💡'].map((emoji) => (
                     <button
                       key={emoji}
                       type="button"
@@ -269,6 +325,7 @@ export const MeetingBottomBar: React.FC<MeetingBottomBarProps> = ({
                         onSendReaction(emoji);
                         setIsReactionMenuOpen(false);
                       }}
+                      aria-label={`Gửi biểu cảm ${emoji}`}
                       className="p-1.5 hover:bg-[#2a2a2c] rounded-lg text-xl transition-colors cursor-pointer"
                     >
                       {emoji}
@@ -278,9 +335,20 @@ export const MeetingBottomBar: React.FC<MeetingBottomBarProps> = ({
               )}
             </div>
           )}
+
+          {/* Leave Meeting on Mobile (danger red) */}
+          <div className="sm:hidden ml-1">
+            <MeetingControlButton
+              icon={<PhoneOff className="w-[18px] h-[18px]" />}
+              label="Leave Meeting"
+              tooltip="Rời cuộc họp"
+              onClick={onLeaveRoom}
+              danger
+            />
+          </div>
         </div>
 
-        {/* Right: Secondary controls */}
+        {/* Right: Secondary controls (desktop & tablet) */}
         <div className="hidden sm:flex items-center gap-1.5">
           {/* Participants count */}
           <button

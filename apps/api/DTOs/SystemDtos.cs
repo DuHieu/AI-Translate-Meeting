@@ -1,5 +1,29 @@
 namespace AITranslateMeeting.Api.DTOs;
 
+public sealed record BrandingConfigDto(
+    string BrandName,
+    string Slogan,
+    string? LogoUrl,
+    string PrimaryColor,
+    string CopyrightText
+);
+
+public sealed record SsoProviderDto(
+    string Id,
+    string Name,
+    string Icon,
+    bool Enabled,
+    string? AuthUrl
+);
+
+public sealed record ValidateDomainRequest(string Email);
+
+public sealed record ValidateDomainResponse(
+    bool Allowed,
+    string? Domain,
+    string? OrganizationName
+);
+
 public sealed record SystemRetentionInfoDto(
     bool CleanupEnabled,
     int IntervalHours,
@@ -38,7 +62,8 @@ public sealed record SystemCleanupResponseDto(
     int DeletedAdmissions,
     int DeletedSessions,
     DateTime CutoffUtc,
-    DateTime PurgedAtUtc
+    DateTime PurgedAtUtc,
+    int EndedGhostMeetings = 0
 );
 
 public sealed record SystemStatusResponseDto(

@@ -16,6 +16,30 @@ namespace AITranslateMeeting.Api.Tests;
 public sealed class SystemControllerTests
 {
     [Fact]
+    public async Task GetBranding_ReturnsDefaultBrandingConfigurationAsJson()
+    {
+        await using var factory = CreateFactory("pilot");
+        using var client = factory.CreateClient();
+
+        using var response = await client.GetAsync("/api/system/branding");
+        var body = await response.Content.ReadAsStringAsync();
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal("application/json", response.Content.Headers.ContentType?.MediaType);
+
+        using var doc = JsonDocument.Parse(body);
+        var branding = doc.RootElement;
+
+        Assert.Equal("ViMeet", branding.GetProperty("brandName").GetString());
+        Assert.Equal(
+            "Nền tảng họp trực tuyến thông minh song ngữ",
+            branding.GetProperty("slogan").GetString());
+        Assert.Equal(JsonValueKind.Null, branding.GetProperty("logoUrl").ValueKind);
+        Assert.Equal("#0284c7", branding.GetProperty("primaryColor").GetString());
+        Assert.Equal("© ViMeet", branding.GetProperty("copyrightText").GetString());
+    }
+
+    [Fact]
     public async Task GetStatus_ReturnsSanitizedSystemOverviewWithZeroSecrets()
     {
         await using var factory = CreateFactory("pilot");

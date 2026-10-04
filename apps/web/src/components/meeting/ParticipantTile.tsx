@@ -7,6 +7,7 @@ import { PipelineStatusMessage } from '../../types/subtitle';
 interface ParticipantTileProps {
   participant: Participant;
   isLocal?: boolean;
+  isHandRaised?: boolean;
   pipelineStatus?: PipelineStatusMessage;
 }
 
@@ -14,9 +15,10 @@ interface ParticipantTileProps {
 export const ParticipantTile: React.FC<ParticipantTileProps> = ({
   participant,
   isLocal = false,
+  isHandRaised = false,
   pipelineStatus,
 }) => {
-  const isSpeaking = useIsSpeaking(participant);
+  const isSpeaking = useIsSpeaking(participant) || participant.isSpeaking;
   const videoRef = useRef<HTMLVideoElement>(null);
 
 
@@ -91,9 +93,29 @@ export const ParticipantTile: React.FC<ParticipantTileProps> = ({
   return (
     <div
       className={`relative w-full h-full rounded-3xl overflow-hidden bg-black/60 border transition-all duration-300 flex items-center justify-center select-none shadow-2xl ${
-        isSpeaking ? 'border-cyan-400 ring-2 ring-cyan-400/50 shadow-[0_0_25px_rgba(6,182,212,0.25)]' : 'border-white/10'
+        isSpeaking
+          ? 'border-emerald-400 ring-2 ring-emerald-400 shadow-[0_0_20px_rgba(52,211,153,0.35)]'
+          : 'border-white/10'
       }`}
     >
+      {isSpeaking && (
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0 z-20 rounded-3xl ring-2 ring-inset ring-emerald-400/70 animate-pulse"
+        />
+      )}
+
+      {isHandRaised && (
+        <div
+          role="img"
+          aria-label={`${displayName} đã giơ tay`}
+          title={`${displayName} đã giơ tay`}
+          className="absolute right-3 top-3 z-20 flex h-11 w-11 items-center justify-center rounded-full border border-amber-300/70 bg-amber-400 text-2xl shadow-lg shadow-black/30"
+        >
+          ✋
+        </div>
+      )}
+
       {/* Video Stream or Avatar Fallback */}
       {!isVideoMuted ? (
         <video
@@ -109,7 +131,7 @@ export const ParticipantTile: React.FC<ParticipantTileProps> = ({
             className={`w-20 h-20 md:w-24 md:h-24 rounded-full ${getAvatarBg(
               participant.identity
             )} flex items-center justify-center text-white text-3xl md:text-4xl font-bold shadow-xl border-2 border-white/20 ${
-              isSpeaking ? 'ring-4 ring-cyan-400/60 scale-105' : ''
+              isSpeaking ? 'ring-4 ring-emerald-400/60 scale-105' : ''
             } transition-transform`}
           >
             {initial || <User className="w-10 h-10" />}
@@ -133,10 +155,15 @@ export const ParticipantTile: React.FC<ParticipantTileProps> = ({
               <MicOff className="w-3.5 h-3.5" />
             </div>
           ) : isSpeaking ? (
-            <div className="flex items-center gap-0.5 px-0.5" title="Đang nói...">
-              <span className="w-1 h-3 bg-cyan-400 rounded-full animate-bounce [animation-delay:-0.3s]" />
-              <span className="w-1 h-4 bg-cyan-400 rounded-full animate-bounce [animation-delay:-0.15s]" />
-              <span className="w-1 h-2 bg-cyan-400 rounded-full animate-bounce" />
+            <div
+              role="status"
+              aria-label="Đang nói"
+              className="flex items-center gap-0.5 px-0.5"
+              title="Đang nói..."
+            >
+              <span className="w-1 h-3 bg-emerald-400 rounded-full animate-bounce [animation-delay:-0.3s]" />
+              <span className="w-1 h-4 bg-emerald-400 rounded-full animate-bounce [animation-delay:-0.15s]" />
+              <span className="w-1 h-2 bg-emerald-400 rounded-full animate-bounce" />
             </div>
           ) : (
             <Mic className="w-3.5 h-3.5 text-slate-400" />

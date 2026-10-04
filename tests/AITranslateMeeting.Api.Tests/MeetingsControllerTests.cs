@@ -219,6 +219,24 @@ public class MeetingsControllerTests
     }
 
     [Fact]
+    public async Task EndMeeting_ReturnsNoContent()
+    {
+        // Arrange
+        var meetingCode = "ABCXYZ";
+
+        _mockMeetingService
+            .Setup(s => s.EndMeetingAsync(meetingCode, It.IsAny<string?>(), It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
+
+        // Act
+        var result = await _controller.EndMeeting(meetingCode, CancellationToken.None);
+
+        // Assert
+        Assert.IsType<NoContentResult>(result);
+        _mockMeetingService.Verify(s => s.EndMeetingAsync(meetingCode, It.IsAny<string?>(), It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
     public async Task GetParticipants_ReturnsOk_WithParticipantList()
     {
         // Arrange
@@ -240,5 +258,82 @@ public class MeetingsControllerTests
         var okResult = Assert.IsType<OkObjectResult>(result.Result);
         var returnedList = Assert.IsAssignableFrom<IEnumerable<ParticipantDto>>(okResult.Value);
         Assert.Equal(2, returnedList.Count());
+    }
+
+    [Fact]
+    public async Task UpdateSubtitlePreferences_UsesBearerSessionAndReturnsRefreshedToken()
+    {
+        var context = new DefaultHttpContext();
+        context.Request.Headers.Authorization = "Bearer SESSION_TOKEN";
+        _controller.ControllerContext = new ControllerContext { HttpContext = context };
+        var request = new UpdateSubtitlePreferencesRequestDto("en");
+        var expected = new UpdateSubtitlePreferencesResponseDto("en", "NEW_SUBTITLE_TOKEN");
+        _mockMeetingService
+            .Setup(service => service.UpdateSubtitlePreferencesAsync(
+                "ABCXYZ",
+                request,
+                "SESSION_TOKEN",
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(expected);
+
+        var result = await _controller.UpdateSubtitlePreferences("ABCXYZ", request, CancellationToken.None);
+
+        var ok = Assert.IsType<OkObjectResult>(result.Result);
+        Assert.Same(expected, ok.Value);
+    }
+
+    [Fact]
+    public async Task SaveMeetingMinutes_ReturnsOk_WithPersistedMinutes()
+    {
+        var request = new SaveMeetingMinutesRequest(
+            "Sprint Review",
+            "The team agreed on the release scope.",
+            "# Sprint Review\n\nRelease scope approved.",
+            ["Ship the approved scope"],
+            [new ActionItemDto("Prepare release notes", "Hieu", "2026-10-05", "High")]);
+        var expected = new MeetingMinutesResponse(
+            Guid.NewGuid(),
+            "ABCXYZ",
+            request.Title,
+            request.Summary,
+            request.MarkdownContent,
+            request.Decisions!,
+            request.ActionItems!,
+            DateTime.UtcNow);
+        _mockMeetingService
+            .Setup(service => service.SaveMeetingMinutesAsync(
+                "ABCXYZ",
+                request,
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(expected);
+
+        var result = await _controller.SaveMeetingMinutes("ABCXYZ", request, CancellationToken.None);
+
+        var ok = Assert.IsType<OkObjectResult>(result.Result);
+        Assert.Same(expected, ok.Value);
+    }
+
+    [Fact]
+    public async Task GetMeetingMinutes_ReturnsOk_WithSavedMinutes()
+    {
+        var expected = new MeetingMinutesResponse(
+            Guid.NewGuid(),
+            "ABCXYZ",
+            "Sprint Review",
+            "The team agreed on the release scope.",
+            "# Sprint Review",
+            ["Ship the approved scope"],
+            [new ActionItemDto("Prepare release notes", "Hieu", null, "High")],
+            DateTime.UtcNow);
+        _mockMeetingService
+            .Setup(service => service.GetMeetingMinutesAsync(
+                "ABCXYZ",
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(expected);
+
+        var result = await _controller.GetMeetingMinutes("ABCXYZ", CancellationToken.None);
+
+        var ok = Assert.IsType<OkObjectResult>(result.Result);
+        Assert.Same(expected, ok.Value);
     }
 }

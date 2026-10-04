@@ -6,6 +6,7 @@ import httpx
 
 from app.config.settings import settings
 from app.translation.base import TranslationProvider
+from app.translation.glossary import normalize_language_code
 
 logger = logging.getLogger("ai_service.translation")
 
@@ -72,6 +73,9 @@ class LocalTranslationProvider(TranslationProvider):
         clean_text = text.strip()
         if not clean_text:
             return ""
+
+        source_language = normalize_language_code(source_language)
+        target_language = normalize_language_code(target_language)
 
         # Same language: pass through instantly
         if source_language.lower() == target_language.lower():

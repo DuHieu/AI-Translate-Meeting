@@ -13,11 +13,15 @@ REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd -P)"
 
 APP_DOMAIN=""
 LIVEKIT_DOMAIN=""
+PRIMARY_DOMAIN=""
 PROFILE="pilot"
 IMAGE_TAG="latest"
+IMAGE_NAMESPACE="${VIMEET_IMAGE_NAMESPACE:-duhieu}"
 INSTALL_DIR="/opt/ai-translate-meeting"
 HOST_KEY=""
 LICENSE_KEY=""
+SSL_MODE="letsencrypt"
+ACME_EMAIL=""
 NON_INTERACTIVE=0
 SKIP_DOCKER_INSTALL=0
 
@@ -50,10 +54,14 @@ Usage: ./scripts/setup-self-hosted.sh [OPTIONS]
 Turnkey self-hosted installer for AI-Translate-Meeting on Ubuntu 24.04 / Debian.
 
 Options:
+  --domain <domain>             Public Web domain; derives LiveKit as rtc.<domain>
   --app-domain <domain>         Public domain for Web UI & API (e.g. meet.example.com)
   --livekit-domain <domain>     Public domain for LiveKit signaling (e.g. rtc.example.com)
+  --ssl-mode <mode>             TLS mode: letsencrypt or self-signed (default: letsencrypt)
+  --email <email>               Optional ACME contact email for Let's Encrypt
   --profile <pilot|business>    Deployment profile (pilot: 4 vCPU/8 GB RAM, business: 8 vCPU/16 GB RAM)
   --image-tag <tag>             Immutable container image tag or commit SHA (default: latest)
+  --image-namespace <owner>     GHCR owner/namespace (default: duhieu)
   --install-dir <path>          Destination directory (default: /opt/ai-translate-meeting)
   --host-key <key>              Optional enterprise host authorization key
   --license-key <key>           Optional commercial enterprise license key
@@ -63,33 +71,69 @@ Options:
 EOF
 }
 
+require_value() {
+  local option="$1"
+  local value="${2:-}"
+  if [[ -z "$value" || "$value" == --* ]]; then
+    log_fail "$option requires a value."
+    exit 1
+  fi
+}
+
 while [[ $# -gt 0 ]]; do
   case "$1" in
+    --domain)
+      require_value "$1" "${2:-}"
+      PRIMARY_DOMAIN="$2"
+      shift 2
+      ;;
     --app-domain)
+      require_value "$1" "${2:-}"
       APP_DOMAIN="$2"
       shift 2
       ;;
     --livekit-domain)
+      require_value "$1" "${2:-}"
       LIVEKIT_DOMAIN="$2"
       shift 2
       ;;
+    --ssl-mode)
+      require_value "$1" "${2:-}"
+      SSL_MODE="$2"
+      shift 2
+      ;;
+    --email)
+      require_value "$1" "${2:-}"
+      ACME_EMAIL="$2"
+      shift 2
+      ;;
     --profile)
+      require_value "$1" "${2:-}"
       PROFILE="$2"
       shift 2
       ;;
     --image-tag)
+      require_value "$1" "${2:-}"
       IMAGE_TAG="$2"
       shift 2
       ;;
+    --image-namespace)
+      require_value "$1" "${2:-}"
+      IMAGE_NAMESPACE="${2,,}"
+      shift 2
+      ;;
     --install-dir)
+      require_value "$1" "${2:-}"
       INSTALL_DIR="$2"
       shift 2
       ;;
     --host-key)
+      require_value "$1" "${2:-}"
       HOST_KEY="$2"
       shift 2
       ;;
     --license-key)
+      require_value "$1" "${2:-}"
       LICENSE_KEY="$2"
       shift 2
       ;;
@@ -112,6 +156,15 @@ while [[ $# -gt 0 ]]; do
       ;;
   esac
 done
+
+if [[ -n "$PRIMARY_DOMAIN" ]]; then
+  if [[ -n "$APP_DOMAIN" && "$APP_DOMAIN" != "$PRIMARY_DOMAIN" ]]; then
+    log_fail "--domain and --app-domain cannot specify different hostnames."
+    exit 1
+  fi
+  APP_DOMAIN="$PRIMARY_DOMAIN"
+  LIVEKIT_DOMAIN="${LIVEKIT_DOMAIN:-rtc.$PRIMARY_DOMAIN}"
+fi
 
 echo -e "${CYAN}"
 cat <<'BANNER'
@@ -157,9 +210,62 @@ if [[ -z "$APP_DOMAIN" || -z "$LIVEKIT_DOMAIN" ]]; then
   exit 1
 fi
 
+validate_domain() {
+  local domain="$1"
+  local label
+  [[ ${#domain} -le 253 && "$domain" != *".."* ]] || return 1
+  IFS='.' read -r -a labels <<< "$domain"
+  (( ${#labels[@]} >= 2 )) || return 1
+  for label in "${labels[@]}"; do
+    [[ ${#label} -ge 1 && ${#label} -le 63 ]] || return 1
+    [[ "$label" =~ ^[A-Za-z0-9]([A-Za-z0-9-]*[A-Za-z0-9])?$ ]] || return 1
+  done
+}
+
+if ! validate_domain "$APP_DOMAIN"; then
+  log_fail "Invalid app domain: use a plain DNS hostname without scheme, port, or path."
+  exit 1
+fi
+
+if ! validate_domain "$LIVEKIT_DOMAIN"; then
+  log_fail "Invalid LiveKit domain: use a plain DNS hostname without scheme, port, or path."
+  exit 1
+fi
+
+if [[ "$APP_DOMAIN" == "$LIVEKIT_DOMAIN" ]]; then
+  log_fail "App and LiveKit domains must be different hostnames."
+  exit 1
+fi
+
 if [[ "$PROFILE" != "pilot" && "$PROFILE" != "business" ]]; then
   log_fail "Profile must be 'pilot' or 'business' (got: $PROFILE)"
   exit 1
+fi
+
+if [[ "$SSL_MODE" != "letsencrypt" && "$SSL_MODE" != "self-signed" ]]; then
+  log_fail "SSL mode must be 'letsencrypt' or 'self-signed' (got: $SSL_MODE)"
+  exit 1
+fi
+
+if [[ ! "$IMAGE_NAMESPACE" =~ ^[a-z0-9][a-z0-9._-]*$ ]]; then
+  log_fail "Invalid GHCR image namespace: $IMAGE_NAMESPACE"
+  exit 1
+fi
+
+if [[ -n "$ACME_EMAIL" && ! "$ACME_EMAIL" =~ ^[^[:space:]@]+@[^[:space:]@]+\.[^[:space:]@]+$ ]]; then
+  log_fail "Invalid ACME contact email."
+  exit 1
+fi
+
+for required_command in curl awk sed; do
+  if ! command -v "$required_command" >/dev/null 2>&1; then
+    log_fail "Required command is missing: $required_command"
+    exit 1
+  fi
+done
+
+if [[ "$SSL_MODE" == "self-signed" ]]; then
+  log_warn "Using Caddy's internal CA. Browsers will warn until its root certificate is trusted."
 fi
 
 # 3. Docker runtime verification & auto-installation
@@ -200,6 +306,13 @@ bash "$REPO_ROOT/scripts/generate-config.sh" \
   --image-tag "$IMAGE_TAG" \
   --output "$ENV_FILE"
 
+$SUDO sed -i \
+  -e "s|^API_IMAGE=.*|API_IMAGE=ghcr.io/$IMAGE_NAMESPACE/ai-translate-meeting-api|" \
+  -e "s|^AI_SERVICE_IMAGE=.*|AI_SERVICE_IMAGE=ghcr.io/$IMAGE_NAMESPACE/ai-translate-meeting-ai-service|" \
+  -e "s|^LAYA_IMAGE=.*|LAYA_IMAGE=ghcr.io/$IMAGE_NAMESPACE/ai-translate-meeting-laya|" \
+  -e "s|^WEB_IMAGE=.*|WEB_IMAGE=ghcr.io/$IMAGE_NAMESPACE/ai-translate-meeting-web|" \
+  "$ENV_FILE"
+
 if [[ -n "$HOST_KEY" ]]; then
   printf "HOST_SECURITY_KEY=%s\n" "$HOST_KEY" >> "$ENV_FILE"
 fi
@@ -222,6 +335,32 @@ $SUDO cp -r "$REPO_ROOT/infra" "$RELEASE_DIR/"
 $SUDO cp -r "$REPO_ROOT/scripts" "$RELEASE_DIR/"
 $SUDO cp -r "$REPO_ROOT/config" "$RELEASE_DIR/"
 printf "%s\n" "$IMAGE_TAG" | $SUDO tee "$RELEASE_DIR/.image-tag" >/dev/null
+
+CADDYFILE="$RELEASE_DIR/infra/caddy/Caddyfile"
+CADDYFILE_TMP="$RELEASE_DIR/infra/caddy/Caddyfile.tmp"
+if [[ "$SSL_MODE" == "self-signed" ]]; then
+  awk '
+    /^\{\$APP_DOMAIN\} \{/ || /^\{\$LIVEKIT_DOMAIN\} \{/ {
+      print
+      print "\ttls internal"
+      next
+    }
+    { print }
+  ' "$CADDYFILE" | $SUDO tee "$CADDYFILE_TMP" >/dev/null
+  $SUDO mv "$CADDYFILE_TMP" "$CADDYFILE"
+  log_ok "Configured staging TLS with Caddy internal self-signed certificates."
+else
+  {
+    printf "{\n\tacme_ca https://acme-v02.api.letsencrypt.org/directory\n"
+    if [[ -n "$ACME_EMAIL" ]]; then
+      printf "\temail %s\n" "$ACME_EMAIL"
+    fi
+    printf "}\n\n"
+    $SUDO cat "$CADDYFILE"
+  } | $SUDO tee "$CADDYFILE_TMP" >/dev/null
+  $SUDO mv "$CADDYFILE_TMP" "$CADDYFILE"
+  log_ok "Configured automatic Let's Encrypt certificates through Caddy."
+fi
 
 $SUDO ln -sfn "$RELEASE_DIR" "$INSTALL_DIR/current"
 log_ok "Release packaged at $RELEASE_DIR and linked to $INSTALL_DIR/current."
@@ -261,7 +400,7 @@ $COMPOSE_CMD up -d api ai-service web caddy
 
 # 9. Wait for Health / Readiness
 log_info "Step 7/8: Probing service readiness gates..."
-MAX_WAIT=60
+MAX_WAIT=200
 READY=0
 for i in $(seq 1 $MAX_WAIT); do
   if $COMPOSE_CMD exec -T caddy wget -qO- http://api:5000/health/ready >/dev/null 2>&1 && \
@@ -275,9 +414,17 @@ done
 if [[ "$READY" -eq 1 ]]; then
   log_ok "All backend APIs and AI services are healthy and ready."
   log_info "Running post-deployment smoke test..."
-  bash "$RELEASE_DIR/scripts/smoke-test.sh" --domain "$APP_DOMAIN" || log_warn "Smoke test encountered warnings; check logs."
+  SMOKE_ARGS=(--domain "$APP_DOMAIN" --livekit-domain "$LIVEKIT_DOMAIN")
+  if [[ "$SSL_MODE" == "self-signed" ]]; then
+    SMOKE_ARGS+=(--insecure)
+  fi
+  if ! bash "$RELEASE_DIR/scripts/smoke-test.sh" "${SMOKE_ARGS[@]}"; then
+    log_fail "Post-deployment smoke test failed; deployment is not ready for traffic."
+    exit 1
+  fi
 else
-  log_warn "Services are still initializing (STT models may still be downloading). Check with: $COMPOSE_CMD logs -f"
+  log_fail "Services did not pass readiness within $((MAX_WAIT * 3)) seconds. Check with: $COMPOSE_CMD logs -f"
+  exit 1
 fi
 
 # 10. Systemd Service Unit Installation
@@ -300,6 +447,7 @@ log_ok "AI-Translate-Meeting deployment completed successfully!"
 echo "============================================================"
 echo "Public Web Application : https://$APP_DOMAIN"
 echo "Public LiveKit Media   : wss://$LIVEKIT_DOMAIN"
+echo "TLS Mode               : $SSL_MODE"
 echo "Profile Applied        : $PROFILE"
 echo "Installation Directory : $INSTALL_DIR"
 echo ""

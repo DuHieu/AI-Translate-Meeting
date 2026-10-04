@@ -157,6 +157,22 @@ public class MeetingsController : ControllerBase
         return NoContent();
     }
 
+    [HttpPost("{meetingCode}/end")]
+    [EnableRateLimiting("HostAdmission")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
+    public async Task<IActionResult> EndMeeting(
+        [FromRoute] string meetingCode,
+        CancellationToken ct)
+    {
+        await _meetingService.EndMeetingAsync(meetingCode, ReadBearerToken(), ct);
+        _auditLogService.LogEvent("MeetingEnded", null, null, $"Code={meetingCode}");
+        return NoContent();
+    }
+
     [HttpGet("{meetingCode}/participants")]
     [ProducesResponseType(typeof(IEnumerable<ParticipantDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
@@ -168,6 +184,57 @@ public class MeetingsController : ControllerBase
     {
         var participants = await _meetingService.GetActiveParticipantsAsync(meetingCode, ReadBearerToken(), ct);
         return Ok(participants);
+    }
+
+    [HttpPatch("{meetingCode}/subtitle-preferences")]
+    [EnableRateLimiting("JoinAdmission")]
+    [ProducesResponseType(typeof(UpdateSubtitlePreferencesResponseDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status429TooManyRequests)]
+    public async Task<ActionResult<UpdateSubtitlePreferencesResponseDto>> UpdateSubtitlePreferences(
+        [FromRoute] string meetingCode,
+        [FromBody] UpdateSubtitlePreferencesRequestDto request,
+        CancellationToken ct)
+    {
+        var response = await _meetingService.UpdateSubtitlePreferencesAsync(
+            meetingCode,
+            request,
+            ReadBearerToken(),
+            ct);
+        _auditLogService.LogEvent(
+            "SubtitleLanguageChanged",
+            null,
+            null,
+            $"Code={meetingCode} TargetLanguage={response.TargetLanguage}");
+        return Ok(response);
+    }
+
+    [HttpPost("{meetingCode}/minutes")]
+    [ProducesResponseType(typeof(MeetingMinutesResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<MeetingMinutesResponse>> SaveMeetingMinutes(
+        [FromRoute] string meetingCode,
+        [FromBody] SaveMeetingMinutesRequest request,
+        CancellationToken ct)
+    {
+        var response = await _meetingService.SaveMeetingMinutesAsync(meetingCode, request, ct);
+        _auditLogService.LogEvent("MeetingMinutesSaved", null, null, $"Code={meetingCode}");
+        return Ok(response);
+    }
+
+    [HttpGet("{meetingCode}/minutes")]
+    [ProducesResponseType(typeof(MeetingMinutesResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<MeetingMinutesResponse>> GetMeetingMinutes(
+        [FromRoute] string meetingCode,
+        CancellationToken ct)
+    {
+        var response = await _meetingService.GetMeetingMinutesAsync(meetingCode, ct);
+        return Ok(response);
     }
 
     private string ReadBearerToken()

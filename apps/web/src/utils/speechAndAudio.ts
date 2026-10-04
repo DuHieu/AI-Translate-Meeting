@@ -51,7 +51,9 @@ export function speakText(
   text: string,
   preferredLang?: string,
   onStart?: () => void,
-  onEnd?: () => void
+  onEnd?: () => void,
+  speechRate = 0.95,
+  volume = 1.0
 ): boolean {
   if (typeof window === 'undefined' || !('speechSynthesis' in window)) {
     return false;
@@ -67,8 +69,9 @@ export function speakText(
       ? (BCP47_MAP[preferredLang.toLowerCase()] || preferredLang)
       : detectSpokenLanguage(text);
     utterance.lang = resolvedLang;
-    utterance.rate = 0.95; // comfortable natural meeting listening speed
+    utterance.rate = Math.max(0.75, Math.min(1.4, speechRate));
     utterance.pitch = 1.0;
+    utterance.volume = Math.max(0, Math.min(1.0, volume));
 
     if (onStart) utterance.onstart = onStart;
     if (onEnd) {

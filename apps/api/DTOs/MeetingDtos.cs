@@ -20,7 +20,7 @@ public sealed record JoinMeetingRequestDto(
     [Required, StringLength(100, MinimumLength = 1)]
     string DisplayName,
 
-    [Required, RegularExpression("^(vi|en|ja|ko|zh|fr|de|es)$", ErrorMessage = "Language must be one of: 'vi', 'en', 'ja', 'ko', 'zh', 'fr', 'de', 'es'")]
+    [Required, RegularExpression("^(auto|vi|en|ja|ko|zh|fr|de|es)$", ErrorMessage = "Language must be one of: 'auto', 'vi', 'en', 'ja', 'ko', 'zh', 'fr', 'de', 'es'")]
     string SpokenLanguage,
 
     [Required, RegularExpression("^(vi|en|ja|ko|zh|fr|de|es)$", ErrorMessage = "Language must be one of: 'vi', 'en', 'ja', 'ko', 'zh', 'fr', 'de', 'es'")]
@@ -88,6 +88,16 @@ public sealed record LeaveMeetingRequestDto(
     Guid ParticipantId
 );
 
+public sealed record UpdateSubtitlePreferencesRequestDto(
+    [Required, RegularExpression("^(vi|en|ja|ko|zh|fr|de|es)$", ErrorMessage = "Language must be one of: 'vi', 'en', 'ja', 'ko', 'zh', 'fr', 'de', 'es'")]
+    string TargetLanguage
+);
+
+public sealed record UpdateSubtitlePreferencesResponseDto(
+    string TargetLanguage,
+    string SubtitleToken
+);
+
 public sealed record ParticipantDto(
     Guid ParticipantId,
     string Identity,
@@ -104,4 +114,36 @@ public sealed record MeetingDetailsDto(
     string Name,
     DateTime CreatedAt,
     DateTime? EndedAt
+);
+
+public sealed record ActionItemDto(
+    string Task,
+    string? Owner,
+    string? Deadline,
+    string? Priority
+);
+
+public sealed record SaveMeetingMinutesRequest(
+    [Required, StringLength(200, MinimumLength = 1)]
+    string Title,
+
+    [Required, StringLength(10000, MinimumLength = 1)]
+    string Summary,
+
+    [Required]
+    string MarkdownContent,
+
+    List<string>? Decisions,
+    List<ActionItemDto>? ActionItems
+);
+
+public sealed record MeetingMinutesResponse(
+    Guid Id,
+    string MeetingCode,
+    string Title,
+    string Summary,
+    string MarkdownContent,
+    List<string> Decisions,
+    List<ActionItemDto> ActionItems,
+    DateTime CreatedAt
 );

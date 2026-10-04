@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { PipelineStatusMessage, SubtitleMessage } from '../types/subtitle';
 import { subtitleWsService } from '../services/subtitleService';
 import { playActionNotificationChime } from '../utils/speechAndAudio';
@@ -21,6 +21,7 @@ export function useSubtitle(meetingId?: string, participantId?: string, options?
   const [activeSubtitles, setActiveSubtitles] = useState<SubtitleMessage[]>([]);
   const [history, setHistory] = useState<SubtitleMessage[]>([]);
   const [pipelineStatuses, setPipelineStatuses] = useState<Record<string, PipelineStatusMessage>>({});
+  const exportHistoryRef = useRef<SubtitleMessage[]>([]);
 
   const participantName = options?.participantName;
   const subtitleToken = options?.subtitleToken;
@@ -48,6 +49,13 @@ export function useSubtitle(meetingId?: string, participantId?: string, options?
     });
 
     const unsubscribe = subtitleWsService.subscribe((msg: SubtitleMessage) => {
+      const exportIndex = exportHistoryRef.current.findIndex((item) => item.id === msg.id);
+      if (exportIndex >= 0) {
+        exportHistoryRef.current[exportIndex] = msg;
+      } else {
+        exportHistoryRef.current.push(msg);
+      }
+
       setActiveSubtitle(msg);
       setActiveSubtitles((prev) => {
         const existingIdx = prev.findIndex((item) => item.id === msg.id || item.participantId === msg.participantId);
@@ -136,10 +144,28 @@ export function useSubtitle(meetingId?: string, participantId?: string, options?
     let mediaStream: MediaStream | null = null;
     let recorder: MediaRecorder | null = null;
     let ownsTracks = false;
+    let audioCtx: AudioContext | null = null;
+    let analyser: AnalyserNode | null = null;
+    let sourceNode: MediaStreamAudioSourceNode | null = null;
+    let silenceChunksCount = 0;
 
     const startRecording = (stream: MediaStream, isOwned: boolean) => {
       mediaStream = stream;
       ownsTracks = isOwned;
+
+      try {
+        const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+        if (AudioCtx) {
+          audioCtx = new AudioCtx();
+          sourceNode = audioCtx.createMediaStreamSource(stream);
+          analyser = audioCtx.createAnalyser();
+          analyser.fftSize = 256;
+          sourceNode.connect(analyser);
+        }
+      } catch (e) {
+        console.debug('[useSubtitle] AudioContext analyser init skipped/failed:', e);
+      }
+
       try {
         const mimeType =
           typeof MediaRecorder !== 'undefined' && MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
@@ -148,7 +174,33 @@ export function useSubtitle(meetingId?: string, participantId?: string, options?
 
         recorder = new MediaRecorder(stream, { mimeType });
         recorder.ondataavailable = async (event) => {
-          if (event.data && event.data.size > 0 && subtitleWsService.isConnected()) {
+          if (!event.data || event.data.size === 0 || !subtitleWsService.isConnected()) {
+            return;
+          }
+
+          let shouldSendChunk = true;
+          if (analyser) {
+            const dataArray = new Uint8Array(analyser.frequencyBinCount);
+            analyser.getByteTimeDomainData(dataArray);
+            let sumSquares = 0;
+            for (let i = 0; i < dataArray.length; i++) {
+              const dev = (dataArray[i] - 128) / 128;
+              sumSquares += dev * dev;
+            }
+            const rms = Math.sqrt(sumSquares / dataArray.length);
+
+            // Speech energy threshold: RMS > 0.012 indicates voice activity.
+            // When quiet, keep 2 trailing chunks (700ms hangover) so we don't clip sentence endings.
+            if (rms > 0.012) {
+              silenceChunksCount = 0;
+              shouldSendChunk = true;
+            } else {
+              silenceChunksCount++;
+              shouldSendChunk = silenceChunksCount <= 2;
+            }
+          }
+
+          if (shouldSendChunk) {
             const buffer = await event.data.arrayBuffer();
             subtitleWsService.sendAudioChunk(buffer);
           }
@@ -175,6 +227,12 @@ export function useSubtitle(meetingId?: string, participantId?: string, options?
           console.warn('[useSubtitle] MediaRecorder stop failed:', err);
         }
       }
+      if (sourceNode) {
+        try { sourceNode.disconnect(); } catch { /* ignore */ }
+      }
+      if (audioCtx && audioCtx.state !== 'closed') {
+        try { void audioCtx.close(); } catch { /* ignore */ }
+      }
       if (ownsTracks && mediaStream) {
         mediaStream.getTracks().forEach((track) => track.stop());
       }
@@ -188,6 +246,8 @@ export function useSubtitle(meetingId?: string, participantId?: string, options?
     [sourceLanguage],
   );
 
-  return { activeSubtitle, activeSubtitles, history, sendSpeechText, pipelineStatuses };
+  const getExportHistory = useCallback(() => [...exportHistoryRef.current], []);
+
+  return { activeSubtitle, activeSubtitles, history, getExportHistory, sendSpeechText, pipelineStatuses };
 }
 

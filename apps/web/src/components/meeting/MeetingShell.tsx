@@ -6,11 +6,20 @@ import {
   RoomEvent,
   Track,
   ParticipantEvent,
+  AudioPresets,
+  VideoPresets,
 } from 'livekit-client';
-import type { AudioCaptureOptions, LocalTrackPublication, VideoCaptureOptions } from 'livekit-client';
+import type {
+  AudioCaptureOptions,
+  LocalTrackPublication,
+  ScreenShareCaptureOptions,
+  VideoCaptureOptions,
+  TrackPublishOptions,
+} from 'livekit-client';
 import {
   useRoomContext,
   useConnectionState,
+  useIsSpeaking,
   useLocalParticipant,
   StartAudio,
 } from '@livekit/components-react';
@@ -25,6 +34,7 @@ import { MeetingSettingsDialog } from './MeetingSettingsDialog';
 import { MeetingDetailsDialog } from './MeetingDetailsDialog';
 import { PermissionBlockedModal } from './PermissionBlockedModal';
 import { ConnectionErrorModal } from './ConnectionErrorModal';
+import { PostMeetingModal } from './PostMeetingModal';
 import { WebRtcDiagnostics } from './WebRtcDiagnostics';
 import { SubtitleOverlay } from '../subtitle/SubtitleOverlay';
 import { SubtitlePanel } from '../subtitle/SubtitlePanel';
@@ -32,13 +42,27 @@ import { FloatingReactionsOverlay } from './FloatingReactionsOverlay';
 import { useSubtitle } from '../../hooks/useSubtitle';
 import { useAiReadiness } from '../../hooks/useAiReadiness';
 import { useAudioBooth } from '../../hooks/useAudioBooth';
-import { ChatMessage, FloatingReaction, MeetingSessionData } from '../../types/meeting';
+import {
+  ChatMessage,
+  FloatingReaction,
+  MeetingSessionData,
+  RaiseHandDataMessage,
+  ReactionDataMessage,
+  SidecarPreferences,
+  SupportedLanguage,
+  isCollaborationDataMessage,
+} from '../../types/meeting';
 import { classifyMediaError } from '../../utils/mediaErrors';
 import { meetingStorage } from '../../utils/meetingStorage';
+import { meetingService } from '../../services/meetingService';
+import { generateMeetingRecap } from '../../utils/aiRecapEngine';
+import { DEFAULT_BRANDING_CONFIG, meetingApi } from '../../api/meetingApi';
+import type { BrandingConfigDto } from '../../api/meetingApi';
 
 interface MeetingShellProps {
   session: MeetingSessionData;
   onLeaveRoom: () => void;
+  meetingEnded?: boolean;
 }
 
 interface LocalMediaState {
@@ -50,11 +74,46 @@ interface LocalMediaState {
 
 const enableWebRtcDebug = import.meta.env.VITE_ENABLE_WEBRTC_DEBUG === 'true';
 
+const AUDIO_PUBLISH_OPTIONS: TrackPublishOptions = {
+  audioPreset: AudioPresets.speech,
+  dtx: true,
+};
+
+const VIDEO_PUBLISH_OPTIONS: TrackPublishOptions = {
+  simulcast: true,
+  videoEncoding: VideoPresets.h720.encoding,
+};
+const SCREEN_SHARE_CAPTURE_OPTIONS: ScreenShareCaptureOptions = {
+  audio: true,
+  systemAudio: 'include',
+};
+const SIDECAR_PREFERENCES_KEY = 'ai-sidecar-preferences';
+const DEFAULT_SIDECAR_PREFERENCES: SidecarPreferences = {
+  showActions: false,
+  showRecap: false,
+  showChat: false,
+  audioBooth: false,
+  showOriginal: false,
+};
+
+function loadSidecarPreferences(): SidecarPreferences {
+  try {
+    const stored = localStorage.getItem(SIDECAR_PREFERENCES_KEY);
+    return stored ? { ...DEFAULT_SIDECAR_PREFERENCES, ...JSON.parse(stored) } : DEFAULT_SIDECAR_PREFERENCES;
+  } catch {
+    return DEFAULT_SIDECAR_PREFERENCES;
+  }
+}
+
 function isPublicationActive(publication?: LocalTrackPublication): boolean {
   return Boolean(publication?.track && !publication.isMuted);
 }
 
-export const MeetingShell: React.FC<MeetingShellProps> = ({ session, onLeaveRoom }) => {
+export const MeetingShell: React.FC<MeetingShellProps> = ({
+  session,
+  onLeaveRoom,
+  meetingEnded = false,
+}) => {
   const room = useRoomContext();
   const connectionState = useConnectionState();
   const {
@@ -62,6 +121,7 @@ export const MeetingShell: React.FC<MeetingShellProps> = ({ session, onLeaveRoom
     lastMicrophoneError,
     lastCameraError,
   } = useLocalParticipant();
+  const isLocalSpeaking = useIsSpeaking(localParticipant) || localParticipant.isSpeaking;
 
   const isRoomConnected = connectionState === ConnectionState.Connected;
   const isRoomConnecting =
@@ -105,10 +165,73 @@ export const MeetingShell: React.FC<MeetingShellProps> = ({ session, onLeaveRoom
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isLayoutMenuOpen, setIsLayoutMenuOpen] = useState(false);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
+  const [isPostMeetingOpen, setIsPostMeetingOpen] = useState(false);
+  const [sidecarPreferences, setSidecarPreferences] = useState<SidecarPreferences>(loadSidecarPreferences);
+  const [subtitleTargetLanguage, setSubtitleTargetLanguage] = useState<SupportedLanguage>(session.targetLanguage);
+  const [subtitleToken, setSubtitleToken] = useState(session.subtitleToken);
+  const [isUpdatingSubtitleLanguage, setIsUpdatingSubtitleLanguage] = useState(false);
+  const [subtitleLanguageError, setSubtitleLanguageError] = useState<string | null>(null);
+  const [branding, setBranding] = useState<BrandingConfigDto>(DEFAULT_BRANDING_CONFIG);
 
-  // ── LiveKit In-Meeting Chat & Floating Reactions ───────────────────
+  const [audioBoothToast, setAudioBoothToast] = useState<string | null>(null);
+
+  useEffect(() => {
+    let isActive = true;
+
+    const loadBranding = async () => {
+      try {
+        const config = await meetingApi.getBrandingConfig();
+        if (isActive) setBranding(config);
+      } catch {
+        if (isActive) setBranding(DEFAULT_BRANDING_CONFIG);
+      }
+    };
+
+    void loadBranding();
+    return () => {
+      isActive = false;
+    };
+  }, []);
+
+  const handleSidecarPreferencesChange = useCallback((preferences: SidecarPreferences) => {
+    setSidecarPreferences(preferences);
+    localStorage.setItem(SIDECAR_PREFERENCES_KEY, JSON.stringify(preferences));
+  }, []);
+
+  const handleToggleAudioBooth = useCallback(() => {
+    const nextState = !sidecarPreferences.audioBooth;
+    handleSidecarPreferencesChange({
+      ...sidecarPreferences,
+      audioBooth: nextState,
+    });
+    setAudioBoothToast(
+      nextState
+        ? 'Cabin phiên dịch đã bật: Tự động phát âm thanh dịch và giảm nhỏ giọng gốc (-18dB).'
+        : 'Cabin phiên dịch đã tắt.'
+    );
+    window.setTimeout(() => {
+      setAudioBoothToast(null);
+    }, 3500);
+  }, [handleSidecarPreferencesChange, sidecarPreferences]);
+
+  // ── LiveKit In-Meeting Collaboration ───────────────────────────────
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [reactions, setReactions] = useState<FloatingReaction[]>([]);
+  const [raisedHands, setRaisedHands] = useState<Map<string, number>>(() => new Map());
+
+  const showFloatingReaction = useCallback((emoji: string, senderName: string) => {
+    const reactionId = `react-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    const reaction: FloatingReaction = {
+      id: reactionId,
+      emoji,
+      senderName,
+      leftPercent: 15 + Math.random() * 70,
+    };
+    setReactions((prev) => [...prev, reaction]);
+    window.setTimeout(() => {
+      setReactions((prev) => prev.filter((item) => item.id !== reactionId));
+    }, 3200);
+  }, []);
 
   useEffect(() => {
     if (!room) return;
@@ -121,42 +244,79 @@ export const MeetingShell: React.FC<MeetingShellProps> = ({ session, onLeaveRoom
     ) => {
       try {
         const text = new TextDecoder().decode(payload);
-        const data = JSON.parse(text);
+        const data: unknown = JSON.parse(text);
+        if (!data || typeof data !== 'object') return;
+        const record = data as Record<string, unknown>;
 
-        if (topic === 'meeting-chat' || data.type === 'chat') {
+        if (
+          (topic === 'meeting-chat' || record.type === 'chat') &&
+          typeof record.text === 'string'
+        ) {
+          const chatText = record.text;
           setChatMessages((prev) => [
             ...prev,
             {
-              id: data.id || `msg-${Date.now()}-${Math.random().toString(36).slice(2)}`,
-              senderId: participant?.identity || data.senderId || 'unknown',
-              senderName: participant?.name || data.senderName || 'Người tham gia',
-              text: data.text,
-              timestamp: data.timestamp || new Date().toISOString(),
+              id: typeof record.id === 'string'
+                ? record.id
+                : `msg-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+              senderId: participant?.identity || (
+                typeof record.senderId === 'string' ? record.senderId : 'unknown'
+              ),
+              senderName: participant?.name || (
+                typeof record.senderName === 'string' ? record.senderName : 'Người tham gia'
+              ),
+              text: chatText,
+              timestamp: typeof record.timestamp === 'string'
+                ? record.timestamp
+                : new Date().toISOString(),
             },
           ]);
-        } else if (topic === 'meeting-reaction' || data.type === 'reaction') {
-          const reactionId = `react-${Date.now()}-${Math.random().toString(36).slice(2)}`;
-          const newReaction: FloatingReaction = {
-            id: reactionId,
-            emoji: data.emoji || '👍',
-            senderName: participant?.name || data.senderName || 'Người tham gia',
-            leftPercent: 15 + Math.random() * 70,
-          };
-          setReactions((prev) => [...prev, newReaction]);
-          setTimeout(() => {
-            setReactions((prev) => prev.filter((r) => r.id !== reactionId));
-          }, 3200);
+        } else if (isCollaborationDataMessage(data) && data.type === 'RAISE_HAND') {
+          const participantId = participant?.identity || data.participantId;
+          setRaisedHands((current) => {
+            const next = new Map(current);
+            if (data.raised) next.set(participantId, data.timestamp);
+            else next.delete(participantId);
+            return next;
+          });
+        } else if (isCollaborationDataMessage(data) && data.type === 'REACTION') {
+          showFloatingReaction(
+            data.emoji,
+            participant?.name || data.senderName || 'Người tham gia',
+          );
+        } else if (
+          (topic === 'meeting-reaction' || record.type === 'reaction') &&
+          typeof record.emoji === 'string'
+        ) {
+          // Backward compatibility for clients that still send the legacy lowercase type.
+          showFloatingReaction(
+            record.emoji,
+            participant?.name || (
+              typeof record.senderName === 'string' ? record.senderName : 'Người tham gia'
+            ),
+          );
         }
       } catch (e) {
         console.warn('Failed to parse incoming DataChannel packet', e);
       }
     };
 
+    const handleParticipantDisconnected = (participant: Participant) => {
+      setRaisedHands((current) => {
+        if (!current.has(participant.identity)) return current;
+        const next = new Map(current);
+        next.delete(participant.identity);
+        return next;
+      });
+    };
+
     room.on(RoomEvent.DataReceived, handleDataReceived);
+    room.on(RoomEvent.ParticipantDisconnected, handleParticipantDisconnected);
     return () => {
       room.off(RoomEvent.DataReceived, handleDataReceived);
+      room.off(RoomEvent.ParticipantDisconnected, handleParticipantDisconnected);
     };
-  }, [room]);
+  }, [room, showFloatingReaction]);
 
   const handleSendChatMessage = useCallback(
     async (text: string) => {
@@ -182,29 +342,59 @@ export const MeetingShell: React.FC<MeetingShellProps> = ({ session, onLeaveRoom
   const handleSendReaction = useCallback(
     async (emoji: string) => {
       if (!room) return;
-      const reactionId = `react-${Date.now()}-${Math.random().toString(36).slice(2)}`;
-      const reaction: FloatingReaction = {
-        id: reactionId,
+      const message: ReactionDataMessage = {
+        type: 'REACTION',
         emoji,
         senderName: session.displayName || 'You',
-        leftPercent: 15 + Math.random() * 70,
       };
-      setReactions((prev) => [...prev, reaction]);
-      setTimeout(() => {
-        setReactions((prev) => prev.filter((r) => r.id !== reactionId));
-      }, 3200);
+      showFloatingReaction(message.emoji, message.senderName);
 
       try {
-        const payload = new TextEncoder().encode(
-          JSON.stringify({ type: 'reaction', emoji, senderName: session.displayName || 'You' })
-        );
+        const payload = new TextEncoder().encode(JSON.stringify(message));
         await room.localParticipant.publishData(payload, { reliable: false, topic: 'meeting-reaction' });
       } catch (e) {
         console.error('Failed to publish reaction via LiveKit DataChannel', e);
       }
     },
-    [room, session.displayName]
+    [room, session.displayName, showFloatingReaction]
   );
+
+  const handleToggleRaiseHand = useCallback(async () => {
+    if (!room || !localParticipant || !isRoomConnected) return;
+
+    const participantId = localParticipant.identity || session.identity;
+    const previousRaisedAt = raisedHands.get(participantId);
+    const raised = previousRaisedAt === undefined;
+    const message: RaiseHandDataMessage = {
+      type: 'RAISE_HAND',
+      participantId,
+      raised,
+      timestamp: Date.now(),
+    };
+
+    setRaisedHands((current) => {
+      const next = new Map(current);
+      if (raised) next.set(participantId, message.timestamp);
+      else next.delete(participantId);
+      return next;
+    });
+
+    try {
+      const payload = new TextEncoder().encode(JSON.stringify(message));
+      await room.localParticipant.publishData(payload, {
+        reliable: true,
+        topic: 'meeting-collaboration',
+      });
+    } catch (error) {
+      setRaisedHands((current) => {
+        const next = new Map(current);
+        if (raised) next.delete(participantId);
+        else if (previousRaisedAt !== undefined) next.set(participantId, previousRaisedAt);
+        return next;
+      });
+      console.error('Failed to publish raise-hand state via LiveKit DataChannel', error);
+    }
+  }, [isRoomConnected, localParticipant, raisedHands, room, session.identity]);
 
   const buildAudioOptions = useCallback((): AudioCaptureOptions => ({
     ...(session.audioDeviceId ? { deviceId: session.audioDeviceId } : {}),
@@ -358,7 +548,7 @@ export const MeetingShell: React.FC<MeetingShellProps> = ({ session, onLeaveRoom
       try {
         if (session.initialMicOn ?? true) {
           try {
-            await localParticipant.setMicrophoneEnabled(true, buildAudioOptions());
+            await localParticipant.setMicrophoneEnabled(true, buildAudioOptions(), AUDIO_PUBLISH_OPTIONS);
             if (!cancelled) syncLocalMediaState();
           } catch (error: unknown) {
             console.error('[Media Init] Failed to publish microphone', error);
@@ -370,7 +560,7 @@ export const MeetingShell: React.FC<MeetingShellProps> = ({ session, onLeaveRoom
 
         if (session.initialCameraOn ?? true) {
           try {
-            await localParticipant.setCameraEnabled(true, buildVideoOptions());
+            await localParticipant.setCameraEnabled(true, buildVideoOptions(), VIDEO_PUBLISH_OPTIONS);
             if (!cancelled) syncLocalMediaState();
           } catch (error: unknown) {
             console.error('[Media Init] Failed to publish camera', error);
@@ -510,19 +700,19 @@ export const MeetingShell: React.FC<MeetingShellProps> = ({ session, onLeaveRoom
 
   const subtitleOptions = React.useMemo(
     () => ({
-      subtitleToken: session.subtitleToken,
+      subtitleToken,
       participantName: session.displayName,
       sourceLanguage: session.spokenLanguage,
-      targetLanguage: session.targetLanguage,
+      targetLanguage: subtitleTargetLanguage,
       isMicOn: localMediaState.micEnabled,
       isAiReady: aiReadiness.state === 'ready',
       audioTrack: localAudioTrack?.mediaStreamTrack || null,
     }),
     [
-      session.subtitleToken,
+      subtitleToken,
       session.displayName,
       session.spokenLanguage,
-      session.targetLanguage,
+      subtitleTargetLanguage,
       localMediaState.micEnabled,
       aiReadiness.state,
       localAudioTrack,
@@ -531,9 +721,8 @@ export const MeetingShell: React.FC<MeetingShellProps> = ({ session, onLeaveRoom
 
   const {
     activeSubtitle,
-    activeSubtitles,
     history: subtitleHistory,
-    sendSpeechText,
+    getExportHistory,
     pipelineStatuses,
   } = useSubtitle(
     session.meetingId,
@@ -541,25 +730,53 @@ export const MeetingShell: React.FC<MeetingShellProps> = ({ session, onLeaveRoom
     subtitleOptions,
   );
 
-  // ── Audio Booth (Client-side zero-server-cost simultaneous translation TTS) ──
-  const [isAudioBoothEnabled, setIsAudioBoothEnabled] = useState<boolean>(() => {
-    return localStorage.getItem('ai-audio-booth-enabled') === 'true';
-  });
+  const postMeetingRecap = React.useMemo(
+    () => generateMeetingRecap(
+      subtitleHistory,
+      subtitleHistory.filter((item) => item.tags && item.tags.length > 0),
+    ),
+    [subtitleHistory],
+  );
 
-  const handleToggleAudioBooth = useCallback(() => {
-    setIsAudioBoothEnabled((prev) => {
-      const next = !prev;
-      localStorage.setItem('ai-audio-booth-enabled', String(next));
-      return next;
-    });
-  }, []);
+  useEffect(() => {
+    if (meetingEnded) setIsPostMeetingOpen(true);
+  }, [meetingEnded]);
 
   useAudioBooth({
-    enabled: isAudioBoothEnabled,
+    enabled: sidecarPreferences.audioBooth,
     history: subtitleHistory,
     currentUserId: session.participantId,
     targetLanguage: subtitleOptions.targetLanguage,
   });
+
+  const handleTargetLanguageChange = useCallback(async (language: SupportedLanguage) => {
+    if (language === subtitleTargetLanguage || isUpdatingSubtitleLanguage) return;
+    if (!session.sessionToken) {
+      setSubtitleLanguageError('Phiên họp thiếu session token. Vui lòng vào lại phòng.');
+      return;
+    }
+
+    setIsUpdatingSubtitleLanguage(true);
+    setSubtitleLanguageError(null);
+    try {
+      const response = await meetingService.updateSubtitlePreferences(
+        session.meetingCode,
+        language,
+        session.sessionToken,
+      );
+      setSubtitleTargetLanguage(response.targetLanguage);
+      setSubtitleToken(response.subtitleToken);
+      meetingStorage.saveSession({
+        ...session,
+        targetLanguage: response.targetLanguage,
+        subtitleToken: response.subtitleToken,
+      });
+    } catch (error) {
+      setSubtitleLanguageError(error instanceof Error ? error.message : 'Không thể đổi ngôn ngữ phụ đề.');
+    } finally {
+      setIsUpdatingSubtitleLanguage(false);
+    }
+  }, [isUpdatingSubtitleLanguage, session, subtitleTargetLanguage]);
 
   // ── Toggle Handlers — with in-flight lock to prevent NegotiationError ──
   const handleToggleMic = useCallback(async () => {
@@ -584,6 +801,7 @@ export const MeetingShell: React.FC<MeetingShellProps> = ({ session, onLeaveRoom
       await localParticipant.setMicrophoneEnabled(
         targetState,
         targetState ? buildAudioOptions() : undefined,
+        targetState ? AUDIO_PUBLISH_OPTIONS : undefined,
       );
       syncLocalMediaState();
       console.log('[Media Action] Microphone toggled successfully to:', targetState);
@@ -625,6 +843,7 @@ export const MeetingShell: React.FC<MeetingShellProps> = ({ session, onLeaveRoom
       await localParticipant.setCameraEnabled(
         targetState,
         targetState ? buildVideoOptions() : undefined,
+        targetState ? VIDEO_PUBLISH_OPTIONS : undefined,
       );
       syncLocalMediaState();
       console.log('[Media Action] Camera toggled successfully to:', targetState);
@@ -648,7 +867,11 @@ export const MeetingShell: React.FC<MeetingShellProps> = ({ session, onLeaveRoom
     if (!localParticipant || !isRoomConnected || isMediaNegotiatingRef.current) return;
     isMediaNegotiatingRef.current = true;
     try {
-      await localParticipant.setScreenShareEnabled(!localMediaState.screenShareEnabled);
+      if (localMediaState.screenShareEnabled) {
+        await localParticipant.setScreenShareEnabled(false);
+      } else {
+        await localParticipant.setScreenShareEnabled(true, SCREEN_SHARE_CAPTURE_OPTIONS);
+      }
       syncLocalMediaState();
     } catch (error: unknown) {
       if (error instanceof Error && ['NotAllowedError', 'AbortError'].includes(error.name)) return;
@@ -665,10 +888,10 @@ export const MeetingShell: React.FC<MeetingShellProps> = ({ session, onLeaveRoom
     isMediaNegotiatingRef.current = true;
     try {
       if (blockedPermissionType === 'both' || blockedPermissionType === 'microphone') {
-        await localParticipant.setMicrophoneEnabled(true, buildAudioOptions());
+        await localParticipant.setMicrophoneEnabled(true, buildAudioOptions(), AUDIO_PUBLISH_OPTIONS);
       }
       if (blockedPermissionType === 'both' || blockedPermissionType === 'camera') {
-        await localParticipant.setCameraEnabled(true, buildVideoOptions());
+        await localParticipant.setCameraEnabled(true, buildVideoOptions(), VIDEO_PUBLISH_OPTIONS);
       }
       syncLocalMediaState();
       setBlockedPermissionType(null);
@@ -726,6 +949,7 @@ export const MeetingShell: React.FC<MeetingShellProps> = ({ session, onLeaveRoom
         connectionState={connectionState}
         isHost={session.role === 'host'}
         onOpenAdmission={() => setIsDetailsOpen(true)}
+        branding={branding}
       />
 
       {/* Connecting / Reconnecting Status Banner */}
@@ -749,12 +973,14 @@ export const MeetingShell: React.FC<MeetingShellProps> = ({ session, onLeaveRoom
             layoutMode={layoutMode}
             meetingCode={session.meetingCode}
             pipelineStatuses={pipelineStatuses}
+            raisedHands={raisedHands}
           />
 
           <SubtitleOverlay
             subtitle={activeSubtitle}
-            subtitles={activeSubtitles}
+            recentSubtitles={subtitleHistory}
             pipelineStatuses={pipelineStatuses}
+            showOriginal={sidecarPreferences.showOriginal}
           />
 
           {/* Floating Reactions Overlay */}
@@ -765,21 +991,27 @@ export const MeetingShell: React.FC<MeetingShellProps> = ({ session, onLeaveRoom
         {isPeoplePanelOpen && (
           <ParticipantsPanel
             participants={participants}
+            raisedHands={raisedHands}
             onClose={() => setIsPeoplePanelOpen(false)}
           />
         )}
 
         <SubtitlePanel
           history={subtitleHistory}
+          getExportHistory={getExportHistory}
           isOpen={isSubtitlePanelOpen}
           onClose={() => setIsSubtitlePanelOpen(false)}
-          onSendSpeechText={sendSpeechText}
           chatMessages={chatMessages}
           onSendChatMessage={handleSendChatMessage}
           currentUserId={session.participantId}
           meetingCode={session.meetingCode}
-          isAudioBoothEnabled={isAudioBoothEnabled}
-          onToggleAudioBooth={handleToggleAudioBooth}
+          preferences={sidecarPreferences}
+          onPreferencesChange={handleSidecarPreferencesChange}
+          targetLanguage={subtitleTargetLanguage}
+          onTargetLanguageChange={handleTargetLanguageChange}
+          isUpdatingLanguage={isUpdatingSubtitleLanguage}
+          languageError={subtitleLanguageError}
+          branding={branding}
         />
       </div>
 
@@ -787,6 +1019,7 @@ export const MeetingShell: React.FC<MeetingShellProps> = ({ session, onLeaveRoom
       <MeetingBottomBar
         meetingCode={session.meetingCode}
         isMicOn={localMediaState.micEnabled}
+        isSpeaking={isLocalSpeaking}
         isCameraOn={localMediaState.cameraEnabled}
         isScreenSharing={localMediaState.screenShareEnabled}
         microphoneTrack={localAudioTrack}
@@ -795,7 +1028,7 @@ export const MeetingShell: React.FC<MeetingShellProps> = ({ session, onLeaveRoom
         onToggleMic={handleToggleMic}
         onToggleCamera={handleToggleCamera}
         onToggleScreenShare={handleToggleScreenShare}
-        onLeaveRoom={onLeaveRoom}
+        onLeaveRoom={() => setIsPostMeetingOpen(true)}
         onOpenPeoplePanel={handleTogglePeoplePanel}
         onToggleSubtitlePanel={handleToggleSubtitlePanel}
         onOpenSettings={() => setIsSettingsOpen(true)}
@@ -803,8 +1036,10 @@ export const MeetingShell: React.FC<MeetingShellProps> = ({ session, onLeaveRoom
         isSubtitlePanelOpen={isSubtitlePanelOpen}
         subtitleCount={subtitleHistory.length}
         numParticipants={participants.length}
+        isHandRaised={raisedHands.has(localParticipant?.identity || session.identity)}
+        onToggleRaiseHand={handleToggleRaiseHand}
         onSendReaction={handleSendReaction}
-        isAudioBoothEnabled={isAudioBoothEnabled}
+        isAudioBoothActive={sidecarPreferences.audioBooth}
         onToggleAudioBooth={handleToggleAudioBooth}
       />
 
@@ -818,6 +1053,14 @@ export const MeetingShell: React.FC<MeetingShellProps> = ({ session, onLeaveRoom
           className="px-4 py-2 rounded-2xl bg-amber-600 hover:bg-amber-500 text-white font-medium text-xs shadow-xl animate-bounce border border-amber-400"
         />
       </div>
+
+      {/* Audio Booth Quick Toast */}
+      {audioBoothToast && (
+        <div className="fixed bottom-20 left-1/2 -translate-x-1/2 z-50 bg-slate-850/95 border border-sky-500/50 text-slate-100 text-xs px-4 py-2.5 rounded-2xl shadow-2xl flex items-center gap-2 max-w-md pointer-events-none transition-all">
+          <span className="text-sky-400 font-bold">🎧 Audio Booth:</span>
+          <span>{audioBoothToast}</span>
+        </div>
+      )}
 
       {/* Device Toast (not_found / not_readable) */}
       {deviceError && (
@@ -862,7 +1105,11 @@ export const MeetingShell: React.FC<MeetingShellProps> = ({ session, onLeaveRoom
       )}
 
       {isSettingsOpen && (
-        <MeetingSettingsDialog onClose={() => setIsSettingsOpen(false)} />
+        <MeetingSettingsDialog
+          onClose={() => setIsSettingsOpen(false)}
+          sidecarPreferences={sidecarPreferences}
+          onSidecarPreferencesChange={handleSidecarPreferencesChange}
+        />
       )}
 
       {isDetailsOpen && (
@@ -873,6 +1120,15 @@ export const MeetingShell: React.FC<MeetingShellProps> = ({ session, onLeaveRoom
           onClose={() => setIsDetailsOpen(false)}
         />
       )}
+
+      <PostMeetingModal
+        isOpen={isPostMeetingOpen}
+        meetingCode={session.meetingCode}
+        recap={postMeetingRecap}
+        branding={branding}
+        onClose={() => setIsPostMeetingOpen(false)}
+        onLeaveRoom={onLeaveRoom}
+      />
     </div>
   );
 };

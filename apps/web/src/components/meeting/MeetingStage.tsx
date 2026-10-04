@@ -12,6 +12,7 @@ interface MeetingStageProps {
   layoutMode: LayoutMode;
   meetingCode?: string;
   pipelineStatuses?: Record<string, PipelineStatusMessage>;
+  raisedHands: Map<string, number>;
 }
 
 
@@ -42,6 +43,7 @@ export const MeetingStage: React.FC<MeetingStageProps> = ({
   layoutMode,
   meetingCode,
   pipelineStatuses,
+  raisedHands,
 }) => {
   const room = useRoomContext();
 
@@ -105,6 +107,7 @@ export const MeetingStage: React.FC<MeetingStageProps> = ({
           }
         }}
         pipelineStatuses={pipelineStatuses}
+        raisedHands={raisedHands}
       />
     );
   }
@@ -122,6 +125,7 @@ export const MeetingStage: React.FC<MeetingStageProps> = ({
         <div className="w-full h-full max-w-6xl max-h-[85vh]">
           <ParticipantTile
             participant={remote}
+            isHandRaised={raisedHands.has(remote.identity)}
             pipelineStatus={pipelineStatuses?.[remote.identity] || pipelineStatuses?.[remote.sid]}
           />
         </div>
@@ -129,6 +133,7 @@ export const MeetingStage: React.FC<MeetingStageProps> = ({
         {/* Floating Local Self-View Tile */}
         <FloatingSelfView
           participant={localParticipant}
+          isHandRaised={raisedHands.has(localParticipant.identity)}
           pipelineStatus={pipelineStatuses?.[localParticipant.identity] || pipelineStatuses?.[localParticipant.sid]}
         />
       </div>
@@ -144,12 +149,14 @@ export const MeetingStage: React.FC<MeetingStageProps> = ({
           <ParticipantTile
             participant={mainParticipant}
             isLocal={mainParticipant.isLocal}
+            isHandRaised={raisedHands.has(mainParticipant.identity)}
             pipelineStatus={pipelineStatuses?.[mainParticipant.identity] || pipelineStatuses?.[mainParticipant.sid]}
           />
         </div>
         {localParticipant && mainParticipant.identity !== localParticipant.identity && (
           <FloatingSelfView
             participant={localParticipant}
+            isHandRaised={raisedHands.has(localParticipant.identity)}
             pipelineStatus={pipelineStatuses?.[localParticipant.identity] || pipelineStatuses?.[localParticipant.sid]}
           />
         )}
@@ -168,6 +175,7 @@ export const MeetingStage: React.FC<MeetingStageProps> = ({
           <ParticipantTile
             participant={mainParticipant}
             isLocal={mainParticipant.isLocal}
+            isHandRaised={raisedHands.has(mainParticipant.identity)}
             pipelineStatus={pipelineStatuses?.[mainParticipant.identity] || pipelineStatuses?.[mainParticipant.sid]}
           />
         </div>
@@ -178,6 +186,7 @@ export const MeetingStage: React.FC<MeetingStageProps> = ({
                 <ParticipantTile
                   participant={p}
                   isLocal={p.isLocal}
+                  isHandRaised={raisedHands.has(p.identity)}
                   pipelineStatus={pipelineStatuses?.[p.identity] || pipelineStatuses?.[p.sid]}
                 />
               </div>
@@ -199,11 +208,11 @@ export const MeetingStage: React.FC<MeetingStageProps> = ({
   return (
     <div className="w-full h-full p-4 flex items-center justify-center overflow-hidden relative">
       {numParticipants <= 1 && meetingCode && (
-        <div className="absolute top-4 left-1/2 -translate-x-1/2 z-10 bg-slate-900/90 border border-sky-500/30 backdrop-blur-md px-4 py-2.5 rounded-2xl shadow-xl flex items-center gap-3 text-xs">
-          <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-            <span className="text-slate-300">Đang chờ người tham gia:</span>
-            <span className="font-bold text-sky-400 font-mono text-sm">{meetingCode}</span>
+        <div className="absolute top-3 left-3 right-3 z-10 flex flex-col gap-2.5 rounded-2xl border border-sky-500/30 bg-slate-900/90 px-3 py-3 text-xs shadow-xl backdrop-blur-md sm:top-4 sm:left-1/2 sm:right-auto sm:w-auto sm:max-w-[calc(100%-2rem)] sm:-translate-x-1/2 sm:flex-row sm:items-center sm:gap-3 sm:px-4 sm:py-2.5">
+          <div className="flex min-w-0 items-center justify-center gap-2 sm:justify-start">
+            <span className="h-2 w-2 shrink-0 rounded-full bg-emerald-400 animate-pulse" />
+            <span className="whitespace-nowrap text-slate-300">Đang chờ người tham gia:</span>
+            <span className="shrink-0 whitespace-nowrap font-mono text-sm font-bold text-sky-400">{meetingCode}</span>
           </div>
           <button
             type="button"
@@ -213,7 +222,7 @@ export const MeetingStage: React.FC<MeetingStageProps> = ({
               setCopiedInvite(true);
               setTimeout(() => setCopiedInvite(false), 2000);
             }}
-            className="px-3 py-1.5 rounded-xl bg-sky-600 hover:bg-sky-500 text-white font-medium flex items-center gap-1.5 transition shadow cursor-pointer"
+            className="flex w-full shrink-0 cursor-pointer items-center justify-center gap-1.5 whitespace-nowrap rounded-xl bg-sky-600 px-3 py-1.5 font-medium text-white shadow transition hover:bg-sky-500 sm:w-auto"
           >
             {copiedInvite ? <Check className="w-3.5 h-3.5 text-emerald-300" /> : <Link2 className="w-3.5 h-3.5" />}
             <span>{copiedInvite ? 'Đã sao chép link!' : 'Sao chép link mời'}</span>
@@ -227,6 +236,7 @@ export const MeetingStage: React.FC<MeetingStageProps> = ({
             <ParticipantTile
               participant={p}
               isLocal={p.isLocal}
+              isHandRaised={raisedHands.has(p.identity)}
               pipelineStatus={pipelineStatuses?.[p.identity] || pipelineStatuses?.[p.sid]}
             />
           </div>

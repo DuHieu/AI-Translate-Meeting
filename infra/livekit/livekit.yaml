@@ -9,3 +9,6 @@ rtc:
 logging:
   json: false
   level: info
+room:
+  empty_timeout: 60s
+  departure_timeout: 20s

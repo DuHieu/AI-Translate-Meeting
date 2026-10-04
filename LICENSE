@@ -1,21 +1,45 @@
-MIT License
+Business Source License 1.1
 
-Copyright (c) 2026 Dư Hiếu
+Parameters:
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+Licensor: Dư Hiếu / ViMeet Team (vimeet.vn)
+Licensed Work: ViMeet (Real-Time Multilingual AI Meeting & Live Translation Platform)
+Additional Use Grant:
+You are granted the non-exclusive, world-wide, royalty-free right to use, copy, modify, 
+and distribute the Licensed Work for internal evaluation, educational, personal non-commercial, 
+and internal self-hosted business purposes, PROVIDED THAT:
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
+1. You may NOT make the functionality of the Licensed Work available to third parties 
+   as a paid, hosted, managed, or Software-as-a-Service (SaaS) offering that competes 
+   directly or indirectly with ViMeet.
+2. You may NOT rebrand, resell, or distribute binary packages or cloud images of the 
+   Licensed Work for commercial hosting without an explicit commercial license agreement 
+   from the Licensor.
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+Change Date: October 4, 2030 (4 years from release date)
+Change License: GNU Affero General Public License Version 3.0 (AGPLv3)
+
+Terms:
+
+The Licensor hereby grants you the right to copy, modify, create derivative works, redistribute, 
+and make non-production use of the Licensed Work. The Licensed Work may be used in production 
+solely in accordance with the Additional Use Grant above.
+
+Effective on the Change Date, or the fourth anniversary of the first public release of a 
+version of the Licensed Work, whichever is earlier, the Licensor hereby grants you rights under 
+the terms of the Change License, and the provisions of this License are replaced in their entirety 
+by the terms of the Change License.
+
+TRADEMARK & BRAND NOTICE:
+"ViMeet", the ViMeet Logo, and the domain "vimeet.vn" are proprietary brand assets. This license 
+does NOT grant any rights to use the trademarks, trade names, or service marks of the Licensor in 
+any commercial product, derivative distribution, or marketing without prior written permission.
+
+DISCLAIMER:
+THE LICENSED WORK IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, 
+INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR 
+PURPOSE, AND NONINFRINGEMENT. IN NO EVENT SHALL THE LICENSOR BE LIABLE FOR ANY CLAIM, DAMAGES, 
+OR OTHER LIABILITY ARISING FROM THE USE OF THE SOFTWARE.
+
+For enterprise, commercial SaaS hosting, or custom Air-gapped on-premise licensing inquiries, 
+contact: enterprise@vimeet.vn

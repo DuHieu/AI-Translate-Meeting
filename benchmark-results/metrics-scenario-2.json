@@ -1,0 +1,361 @@
+{
+  "start_time": 1791096479.7885396,
+  "total_elapsed_sec": 15.77,
+  "total_samples": 5,
+  "summary": {
+    "ai_translate_web": {
+      "avg_cpu_perc": 0.0,
+      "peak_cpu_perc": 0.0,
+      "avg_mem_mb": 8.05,
+      "peak_mem_mb": 8.05
+    },
+    "ai_translate_api": {
+      "avg_cpu_perc": 6.54,
+      "peak_cpu_perc": 29.12,
+      "avg_mem_mb": 151.38,
+      "peak_mem_mb": 151.5
+    },
+    "ai_translate_ai_service": {
+      "avg_cpu_perc": 381.39,
+      "peak_cpu_perc": 425.87,
+      "avg_mem_mb": 766.4,
+      "peak_mem_mb": 774.5
+    },
+    "ai_translate_livekit": {
+      "avg_cpu_perc": 0.98,
+      "peak_cpu_perc": 4.03,
+      "avg_mem_mb": 39.79,
+      "peak_mem_mb": 39.8
+    },
+    "ai_translate_laya": {
+      "avg_cpu_perc": 0.24,
+      "peak_cpu_perc": 0.5,
+      "avg_mem_mb": 1892.35,
+      "peak_mem_mb": 1892.35
+    },
+    "ai_translate_postgres": {
+      "avg_cpu_perc": 2.48,
+      "peak_cpu_perc": 6.19,
+      "avg_mem_mb": 62.39,
+      "peak_mem_mb": 62.6
+    },
+    "ai_translate_redis": {
+      "avg_cpu_perc": 3.09,
+      "peak_cpu_perc": 7.49,
+      "avg_mem_mb": 8.23,
+      "peak_mem_mb": 8.25
+    }
+  },
+  "timeline": [
+    {
+      "timestamp": 1791096479.7888105,
+      "elapsed_sec": 0.0,
+      "containers": [
+        {
+          "name": "ai_translate_web",
+          "cpu_perc": 0.0,
+          "mem_mb": 8.051,
+          "mem_perc": 0.1,
+          "pids": "9",
+          "net_io": "8MB / 27.9MB"
+        },
+        {
+          "name": "ai_translate_api",
+          "cpu_perc": 29.12,
+          "mem_mb": 151.5,
+          "mem_perc": 1.92,
+          "pids": "40",
+          "net_io": "1.17MB / 1.21MB"
+        },
+        {
+          "name": "ai_translate_ai_service",
+          "cpu_perc": 376.16,
+          "mem_mb": 757.3,
+          "mem_perc": 9.62,
+          "pids": "27",
+          "net_io": "5.18MB / 895kB"
+        },
+        {
+          "name": "ai_translate_livekit",
+          "cpu_perc": 0.07,
+          "mem_mb": 39.79,
+          "mem_perc": 0.51,
+          "pids": "14",
+          "net_io": "4.31GB / 189MB"
+        },
+        {
+          "name": "ai_translate_laya",
+          "cpu_perc": 0.17,
+          "mem_mb": 1892.352,
+          "mem_perc": 24.05,
+          "pids": "25",
+          "net_io": "115kB / 22kB"
+        },
+        {
+          "name": "ai_translate_postgres",
+          "cpu_perc": 6.19,
+          "mem_mb": 62.6,
+          "mem_perc": 0.8,
+          "pids": "18",
+          "net_io": "466kB / 423kB"
+        },
+        {
+          "name": "ai_translate_redis",
+          "cpu_perc": 1.16,
+          "mem_mb": 8.223,
+          "mem_perc": 0.1,
+          "pids": "6",
+          "net_io": "953kB / 1.02MB"
+        }
+      ]
+    },
+    {
+      "timestamp": 1791096482.71515,
+      "elapsed_sec": 2.93,
+      "containers": [
+        {
+          "name": "ai_translate_web",
+          "cpu_perc": 0.0,
+          "mem_mb": 8.051,
+          "mem_perc": 0.1,
+          "pids": "9",
+          "net_io": "8MB / 27.9MB"
+        },
+        {
+          "name": "ai_translate_api",
+          "cpu_perc": 0.84,
+          "mem_mb": 151.4,
+          "mem_perc": 1.92,
+          "pids": "40",
+          "net_io": "1.19MB / 1.24MB"
+        },
+        {
+          "name": "ai_translate_ai_service",
+          "cpu_perc": 366.93,
+          "mem_mb": 764.3,
+          "mem_perc": 9.71,
+          "pids": "30",
+          "net_io": "5.3MB / 905kB"
+        },
+        {
+          "name": "ai_translate_livekit",
+          "cpu_perc": 0.22,
+          "mem_mb": 39.78,
+          "mem_perc": 0.51,
+          "pids": "14",
+          "net_io": "4.31GB / 189MB"
+        },
+        {
+          "name": "ai_translate_laya",
+          "cpu_perc": 0.17,
+          "mem_mb": 1892.352,
+          "mem_perc": 24.05,
+          "pids": "25",
+          "net_io": "115kB / 22kB"
+        },
+        {
+          "name": "ai_translate_postgres",
+          "cpu_perc": 0.17,
+          "mem_mb": 62.34,
+          "mem_perc": 0.79,
+          "pids": "18",
+          "net_io": "467kB / 424kB"
+        },
+        {
+          "name": "ai_translate_redis",
+          "cpu_perc": 7.49,
+          "mem_mb": 8.242,
+          "mem_perc": 0.1,
+          "pids": "6",
+          "net_io": "955kB / 1.02MB"
+        }
+      ]
+    },
+    {
+      "timestamp": 1791096485.7866096,
+      "elapsed_sec": 6.0,
+      "containers": [
+        {
+          "name": "ai_translate_web",
+          "cpu_perc": 0.0,
+          "mem_mb": 8.051,
+          "mem_perc": 0.1,
+          "pids": "9",
+          "net_io": "8MB / 27.9MB"
+        },
+        {
+          "name": "ai_translate_api",
+          "cpu_perc": 0.88,
+          "mem_mb": 151.4,
+          "mem_perc": 1.92,
+          "pids": "40",
+          "net_io": "1.19MB / 1.24MB"
+        },
+        {
+          "name": "ai_translate_ai_service",
+          "cpu_perc": 362.32,
+          "mem_mb": 764.4,
+          "mem_perc": 9.71,
+          "pids": "30",
+          "net_io": "5.3MB / 906kB"
+        },
+        {
+          "name": "ai_translate_livekit",
+          "cpu_perc": 4.03,
+          "mem_mb": 39.8,
+          "mem_perc": 0.51,
+          "pids": "14",
+          "net_io": "4.31GB / 189MB"
+        },
+        {
+          "name": "ai_translate_laya",
+          "cpu_perc": 0.19,
+          "mem_mb": 1892.352,
+          "mem_perc": 24.05,
+          "pids": "25",
+          "net_io": "115kB / 22kB"
+        },
+        {
+          "name": "ai_translate_postgres",
+          "cpu_perc": 5.98,
+          "mem_mb": 62.34,
+          "mem_perc": 0.79,
+          "pids": "18",
+          "net_io": "467kB / 424kB"
+        },
+        {
+          "name": "ai_translate_redis",
+          "cpu_perc": 0.62,
+          "mem_mb": 8.219,
+          "mem_perc": 0.1,
+          "pids": "6",
+          "net_io": "956kB / 1.02MB"
+        }
+      ]
+    },
+    {
+      "timestamp": 1791096489.093198,
+      "elapsed_sec": 9.3,
+      "containers": [
+        {
+          "name": "ai_translate_web",
+          "cpu_perc": 0.0,
+          "mem_mb": 8.051,
+          "mem_perc": 0.1,
+          "pids": "9",
+          "net_io": "8MB / 27.9MB"
+        },
+        {
+          "name": "ai_translate_api",
+          "cpu_perc": 0.98,
+          "mem_mb": 151.3,
+          "mem_perc": 1.92,
+          "pids": "39",
+          "net_io": "1.19MB / 1.24MB"
+        },
+        {
+          "name": "ai_translate_ai_service",
+          "cpu_perc": 375.67,
+          "mem_mb": 771.5,
+          "mem_perc": 9.8,
+          "pids": "30",
+          "net_io": "5.3MB / 906kB"
+        },
+        {
+          "name": "ai_translate_livekit",
+          "cpu_perc": 0.27,
+          "mem_mb": 39.79,
+          "mem_perc": 0.51,
+          "pids": "14",
+          "net_io": "4.31GB / 189MB"
+        },
+        {
+          "name": "ai_translate_laya",
+          "cpu_perc": 0.16,
+          "mem_mb": 1892.352,
+          "mem_perc": 24.05,
+          "pids": "25",
+          "net_io": "115kB / 22kB"
+        },
+        {
+          "name": "ai_translate_postgres",
+          "cpu_perc": 0.02,
+          "mem_mb": 62.34,
+          "mem_perc": 0.79,
+          "pids": "18",
+          "net_io": "467kB / 424kB"
+        },
+        {
+          "name": "ai_translate_redis",
+          "cpu_perc": 0.61,
+          "mem_mb": 8.215,
+          "mem_perc": 0.1,
+          "pids": "6",
+          "net_io": "956kB / 1.02MB"
+        }
+      ]
+    },
+    {
+      "timestamp": 1791096492.4248974,
+      "elapsed_sec": 12.64,
+      "containers": [
+        {
+          "name": "ai_translate_web",
+          "cpu_perc": 0.0,
+          "mem_mb": 8.051,
+          "mem_perc": 0.1,
+          "pids": "9",
+          "net_io": "8MB / 27.9MB"
+        },
+        {
+          "name": "ai_translate_api",
+          "cpu_perc": 0.88,
+          "mem_mb": 151.3,
+          "mem_perc": 1.92,
+          "pids": "39",
+          "net_io": "1.19MB / 1.24MB"
+        },
+        {
+          "name": "ai_translate_ai_service",
+          "cpu_perc": 425.87,
+          "mem_mb": 774.5,
+          "mem_perc": 9.84,
+          "pids": "30",
+          "net_io": "5.3MB / 907kB"
+        },
+        {
+          "name": "ai_translate_livekit",
+          "cpu_perc": 0.29,
+          "mem_mb": 39.78,
+          "mem_perc": 0.51,
+          "pids": "14",
+          "net_io": "4.31GB / 189MB"
+        },
+        {
+          "name": "ai_translate_laya",
+          "cpu_perc": 0.5,
+          "mem_mb": 1892.352,
+          "mem_perc": 24.05,
+          "pids": "25",
+          "net_io": "115kB / 22kB"
+        },
+        {
+          "name": "ai_translate_postgres",
+          "cpu_perc": 0.03,
+          "mem_mb": 62.33,
+          "mem_perc": 0.79,
+          "pids": "18",
+          "net_io": "467kB / 424kB"
+        },
+        {
+          "name": "ai_translate_redis",
+          "cpu_perc": 5.59,
+          "mem_mb": 8.246,
+          "mem_perc": 0.1,
+          "pids": "6",
+          "net_io": "957kB / 1.02MB"
+        }
+      ]
+    }
+  ]
+}

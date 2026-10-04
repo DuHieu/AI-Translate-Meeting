@@ -56,6 +56,19 @@ public sealed class SystemController : ControllerBase
         _licenseService = licenseService;
     }
 
+    [HttpGet("branding")]
+    [ProducesResponseType(typeof(BrandingConfigDto), StatusCodes.Status200OK)]
+    public ActionResult<BrandingConfigDto> GetBranding()
+    {
+        return Ok(new BrandingConfigDto(
+            BrandName: _configuration["Branding:BrandName"] ?? "ViMeet",
+            Slogan: _configuration["Branding:Slogan"] ?? "Nền tảng họp trực tuyến thông minh song ngữ",
+            LogoUrl: _configuration["Branding:LogoUrl"],
+            PrimaryColor: _configuration["Branding:PrimaryColor"] ?? "#0284c7",
+            CopyrightText: _configuration["Branding:CopyrightText"] ?? "© ViMeet"
+        ));
+    }
+
     [HttpGet("status")]
     public async Task<ActionResult<SystemStatusResponseDto>> GetStatusAsync(CancellationToken cancellationToken)
     {
@@ -133,7 +146,8 @@ public sealed class SystemController : ControllerBase
             DeletedAdmissions: result.DeletedAdmissions,
             DeletedSessions: result.DeletedSessions,
             CutoffUtc: cutoff,
-            PurgedAtUtc: DateTime.UtcNow
+            PurgedAtUtc: DateTime.UtcNow,
+            EndedGhostMeetings: result.EndedGhostMeetings
         ));
     }
 }

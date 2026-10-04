@@ -2,6 +2,7 @@ using AITranslateMeeting.Api.Data;
 using AITranslateMeeting.Api.DTOs;
 using AITranslateMeeting.Api.Services;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Xunit;
@@ -218,6 +219,77 @@ public class MeetingServiceTests
     }
 
     [Fact]
+    public async Task UpdateSubtitlePreferences_UpdatesAuthenticatedParticipantAndIssuesBoundToken()
+    {
+        var meeting = await _service.CreateMeetingAsync(new CreateMeetingRequestDto("Language switch"));
+        var joined = Assert.IsType<JoinMeetingResponseDto>(await _service.JoinMeetingAsync(
+            meeting.MeetingCode,
+            new JoinMeetingRequestDto("Hieu", "vi", "ja", meeting.HostToken)));
+
+        _mockSubtitleTokenService
+            .Setup(service => service.GenerateAccessToken(
+                joined.MeetingId,
+                joined.ParticipantId,
+                joined.DisplayName,
+                joined.SpokenLanguage,
+                "en",
+                joined.Identity))
+            .Returns("REFRESHED_SUBTITLE_TOKEN");
+
+        var response = await _service.UpdateSubtitlePreferencesAsync(
+            meeting.MeetingCode,
+            new UpdateSubtitlePreferencesRequestDto("EN"),
+            joined.SessionToken);
+
+        Assert.Equal("en", response.TargetLanguage);
+        Assert.Equal("REFRESHED_SUBTITLE_TOKEN", response.SubtitleToken);
+        var participant = await _dbContext.MeetingParticipants.FindAsync(joined.ParticipantId);
+        Assert.NotNull(participant);
+        Assert.Equal("en", participant.TargetLanguage);
+        _mockSubtitleTokenService.Verify(service => service.GenerateAccessToken(
+            joined.MeetingId,
+            joined.ParticipantId,
+            joined.DisplayName,
+            joined.SpokenLanguage,
+            "en",
+            joined.Identity), Times.Once);
+    }
+
+    [Fact]
+    public async Task UpdateSubtitlePreferences_RejectsSessionFromAnotherRoom()
+    {
+        var firstMeeting = await _service.CreateMeetingAsync(new CreateMeetingRequestDto("First room"));
+        var firstParticipant = Assert.IsType<JoinMeetingResponseDto>(await _service.JoinMeetingAsync(
+            firstMeeting.MeetingCode,
+            new JoinMeetingRequestDto("Hieu", "vi", "ja", firstMeeting.HostToken)));
+        var secondMeeting = await _service.CreateMeetingAsync(new CreateMeetingRequestDto("Second room"));
+
+        var error = await Assert.ThrowsAsync<AITranslateMeeting.Api.Exceptions.AdmissionException>(() =>
+            _service.UpdateSubtitlePreferencesAsync(
+                secondMeeting.MeetingCode,
+                new UpdateSubtitlePreferencesRequestDto("en"),
+                firstParticipant.SessionToken));
+
+        Assert.Equal("session_cross_room", error.Code);
+        Assert.Equal(StatusCodes.Status403Forbidden, error.StatusCode);
+    }
+
+    [Fact]
+    public async Task UpdateSubtitlePreferences_RejectsUnsupportedLanguage()
+    {
+        var meeting = await _service.CreateMeetingAsync(new CreateMeetingRequestDto("Invalid language"));
+        var joined = Assert.IsType<JoinMeetingResponseDto>(await _service.JoinMeetingAsync(
+            meeting.MeetingCode,
+            new JoinMeetingRequestDto("Hieu", "vi", "ja", meeting.HostToken)));
+
+        await Assert.ThrowsAsync<ArgumentException>(() =>
+            _service.UpdateSubtitlePreferencesAsync(
+                meeting.MeetingCode,
+                new UpdateSubtitlePreferencesRequestDto("xx"),
+                joined.SessionToken));
+    }
+
+    [Fact]
     public async Task JoinMeeting_MissingMeeting_Returns404()
     {
         // Arrange
@@ -261,5 +333,89 @@ public class MeetingServiceTests
         Assert.Single(active);
         Assert.Equal("Tanaka", active[0].DisplayName);
         Assert.Equal(p2.ParticipantId, active[0].ParticipantId);
+    }
+
+    [Fact]
+    public async Task LeaveMeeting_WhenAllParticipantsLeave_AutomaticallySetsEndedAt()
+    {
+        var meeting = await _service.CreateMeetingAsync(new CreateMeetingRequestDto("Auto End Test"));
+        var joined = Assert.IsType<JoinMeetingResponseDto>(
+            await _service.JoinMeetingAsync(meeting.MeetingCode, new JoinMeetingRequestDto("Hieu", "vi", "en", meeting.HostToken)));
+
+        // Before leaving, EndedAt is null
+        var meetingBefore = await _dbContext.Meetings.FindAsync(meeting.MeetingId);
+        Assert.Null(meetingBefore!.EndedAt);
+
+        // Leave meeting (last active participant)
+        await _service.LeaveMeetingAsync(meeting.MeetingCode, new LeaveMeetingRequestDto(joined.ParticipantId), joined.SessionToken);
+
+        // After leaving, meeting EndedAt is automatically set
+        var meetingAfter = await _dbContext.Meetings.FindAsync(meeting.MeetingId);
+        Assert.NotNull(meetingAfter!.EndedAt);
+    }
+
+    [Fact]
+    public async Task EndMeeting_ByHost_SetsEndedAt_AndMarksParticipantsLeft()
+    {
+        var meeting = await _service.CreateMeetingAsync(new CreateMeetingRequestDto("Host End Test"));
+        var p1 = Assert.IsType<JoinMeetingResponseDto>(
+            await _service.JoinMeetingAsync(meeting.MeetingCode, new JoinMeetingRequestDto("User 1", "vi", "en", meeting.HostToken)));
+        var p2 = Assert.IsType<JoinMeetingResponseDto>(
+            await _service.JoinMeetingAsync(meeting.MeetingCode, new JoinMeetingRequestDto("User 2", "en", "vi", meeting.HostToken)));
+
+        // Host ends the meeting
+        await _service.EndMeetingAsync(meeting.MeetingCode, meeting.HostToken);
+
+        var meetingInDb = await _dbContext.Meetings.FindAsync(meeting.MeetingId);
+        Assert.NotNull(meetingInDb!.EndedAt);
+
+        var participant1 = await _dbContext.MeetingParticipants.FindAsync(p1.ParticipantId);
+        var participant2 = await _dbContext.MeetingParticipants.FindAsync(p2.ParticipantId);
+        Assert.NotNull(participant1!.LeftAt);
+        Assert.NotNull(participant2!.LeftAt);
+    }
+
+    [Fact]
+    public async Task EndMeeting_WhenAlreadyEnded_ThrowsConflict()
+    {
+        var meeting = await _service.CreateMeetingAsync(new CreateMeetingRequestDto("Already Ended Test"));
+        await _service.EndMeetingAsync(meeting.MeetingCode, meeting.HostToken);
+
+        var ex = await Assert.ThrowsAsync<AITranslateMeeting.Api.Exceptions.AdmissionException>(() =>
+            _service.EndMeetingAsync(meeting.MeetingCode, meeting.HostToken));
+
+        Assert.Equal(409, ex.StatusCode);
+        Assert.Equal("meeting_ended", ex.Code);
+    }
+
+    [Fact]
+    public async Task SaveAndGetMeetingMinutes_PersistsStructuredRecap()
+    {
+        var meeting = await _service.CreateMeetingAsync(new CreateMeetingRequestDto("Sprint Review"));
+        var request = new SaveMeetingMinutesRequest(
+            "Sprint Review",
+            "The release scope was approved.",
+            "# Sprint Review\n\nThe release scope was approved.",
+            ["Ship the approved scope"],
+            [new ActionItemDto("Prepare release notes", "Hieu", "2026-10-05", "High")]);
+
+        var saved = await _service.SaveMeetingMinutesAsync(meeting.MeetingCode, request);
+        var fetched = await _service.GetMeetingMinutesAsync(meeting.MeetingCode);
+
+        Assert.Equal(saved.Id, fetched.Id);
+        Assert.Equal(saved.CreatedAt, fetched.CreatedAt);
+        Assert.Equal(saved.Title, fetched.Title);
+        Assert.Equal(saved.Summary, fetched.Summary);
+        Assert.Equal(saved.MarkdownContent, fetched.MarkdownContent);
+        Assert.Equal(meeting.MeetingCode, fetched.MeetingCode);
+        Assert.Equal(request.Decisions, fetched.Decisions);
+        Assert.Equal(request.ActionItems, fetched.ActionItems);
+    }
+
+    [Fact]
+    public async Task GetMeetingMinutes_WhenMeetingDoesNotExist_ThrowsNotFound()
+    {
+        await Assert.ThrowsAsync<KeyNotFoundException>(() =>
+            _service.GetMeetingMinutesAsync("MISSING"));
     }
 }

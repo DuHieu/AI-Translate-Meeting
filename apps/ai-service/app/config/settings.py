@@ -28,6 +28,7 @@ class Settings(BaseSettings):
     )
     WS_MAX_AUDIO_FRAME_BYTES: int = int(os.getenv("WS_MAX_AUDIO_FRAME_BYTES", "131072"))
     WS_MAX_TEXT_FRAME_BYTES: int = int(os.getenv("WS_MAX_TEXT_FRAME_BYTES", "16384"))
+    WS_RATE_LIMIT_PER_MINUTE: int = int(os.getenv("WS_RATE_LIMIT_PER_MINUTE", "30"))
 
     # Context-aware Live Translation settings
     CONTEXTUAL_TRANSLATION_ENABLED: bool = os.getenv("CONTEXTUAL_TRANSLATION_ENABLED", "true").lower() in ("true", "1", "yes")
@@ -55,5 +56,21 @@ class Settings(BaseSettings):
     TRANSLATION_DATASET_COLLECTION_ENABLED: bool = os.getenv("TRANSLATION_DATASET_COLLECTION_ENABLED", "false").lower() in ("true", "1", "yes")
     TRANSLATION_DATASET_STORAGE_DIR: str = os.getenv("TRANSLATION_DATASET_STORAGE_DIR", "output/datasets")
     ENVIRONMENT: str = os.getenv("ENVIRONMENT", "development")
+
+    # Speech Quality & Content Moderation Guardrails
+    QUALITY_FILTER_ENABLED: bool = os.getenv("QUALITY_FILTER_ENABLED", "true").lower() in ("true", "1", "yes")
+    HALLUCINATION_FILTER_ENABLED: bool = os.getenv("HALLUCINATION_FILTER_ENABLED", "true").lower() in ("true", "1", "yes")
+    FILLER_FILTER_ENABLED: bool = os.getenv("FILLER_FILTER_ENABLED", "true").lower() in ("true", "1", "yes")
+    MODERATION_ENABLED: bool = os.getenv("MODERATION_ENABLED", "true").lower() in ("true", "1", "yes")
+    MODERATION_POLICY_MODE: str = os.getenv("MODERATION_POLICY_MODE", "mask")  # "mask" or "drop"
+    WHISPER_NO_SPEECH_THRESHOLD: float = float(os.getenv("WHISPER_NO_SPEECH_THRESHOLD", "0.6"))
+    WHISPER_COMPRESSION_RATIO_THRESHOLD: float = float(os.getenv("WHISPER_COMPRESSION_RATIO_THRESHOLD", "2.4"))
+
+    # Performance & Concurrency Optimizations
+    WHISPER_MAX_CONCURRENT_TRANSCRIBES: int = int(os.getenv("WHISPER_MAX_CONCURRENT_TRANSCRIBES", "2"))
+    WHISPER_CPU_THREADS: int = int(os.getenv("WHISPER_CPU_THREADS", "2"))
+    STT_INTERIM_MIN_DURATION_SECONDS: float = float(os.getenv("STT_INTERIM_MIN_DURATION_SECONDS", "1.0"))
+    STT_INTERIM_THROTTLE_SECONDS: float = float(os.getenv("STT_INTERIM_THROTTLE_SECONDS", "1.0"))
+    INTERIM_TRANSLATION_MIN_WORDS: int = int(os.getenv("INTERIM_TRANSLATION_MIN_WORDS", "3"))
 
 settings = Settings()

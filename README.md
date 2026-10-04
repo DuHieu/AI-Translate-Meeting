@@ -103,6 +103,26 @@ Local URLs:
 Local media compatibility and verification limits: [Media verification](docs/media-verification.md).
 Codex/Antigravity collaboration: [Agent bridge](docs/agent-bridge.md).
 
+## Share a Staging Build with Cloudflare Quick Tunnel (0 VND)
+
+Start ViMeet locally and confirm `http://localhost:3000` is available. Then open a second terminal:
+
+```powershell
+# Windows PowerShell
+powershell -ExecutionPolicy Bypass -File .\scripts\start-tunnel.ps1 --Port 3000
+```
+
+```bash
+# Linux/macOS
+PORT=3000 bash scripts/start-tunnel.sh
+```
+
+The launcher checks the local service, reuses `cloudflared` from `PATH` or downloads the official binary when missing, then prints a temporary public URL such as `https://random-name.trycloudflare.com`. Share that URL and keep the terminal open; press `Ctrl+C` to stop access.
+
+Quick Tunnels need no Cloudflare account or domain and have no tunnel fee, so they are suitable for short staging/demo sessions. The hostname changes on every run, anyone with the URL can reach the app, and Cloudflare provides no uptime guarantee. Do not use this as a production endpoint. See the [Cloudflare Quick Tunnels documentation](https://developers.cloudflare.com/tunnel/get-started/quick-tunnels/).
+
+> **WebRTC limit:** the tunnel exposes HTTPS/WSS traffic through port 3000, but LiveKit audio/video media still needs reachable ICE/TURN connectivity (`7881/tcp`, `7882/udp`, or a TURN service). For a full Internet meeting, use the public VPS setup in [docs/self-hosted-product.md](docs/self-hosted-product.md).
+
 Optional Linux/WSL2 host networking profile:
 
 ```bash
@@ -205,6 +225,11 @@ Verified local test and build suite:
 - `powershell -ExecutionPolicy Bypass -File ./scripts/smoke-test.ps1` (E2E API, WebSocket, auth & lifecycle)
 - `powershell -ExecutionPolicy Bypass -File ./scripts/backup-database.ps1` & `./scripts/restore-database.ps1` (Disaster recovery verified)
 
-## License
+## License & Intellectual Property Protection
 
-MIT. See `LICENSE`.
+This project is licensed under the **Business Source License 1.1 (BSL 1.1)**. See [LICENSE](LICENSE) for full legal text.
+
+- **Non-Commercial & Self-Hosted Use**: Free for personal, educational, evaluation, and internal private company use.
+- **Commercial SaaS Restriction**: You may **NOT** use this software to provide a hosted, managed, or Software-as-a-Service (SaaS) platform that competes directly or indirectly with ViMeet without a commercial agreement.
+- **Trademark Notice**: "ViMeet", the ViMeet brand logo, and `vimeet.vn` are proprietary trademarks. Rebranding or distributing commercial copies under the ViMeet name is prohibited.
+- **Enterprise Licensing**: For private Air-gapped on-premise deployments, SLA guarantees, and enterprise custom integrations, contact: [enterprise@vimeet.vn](mailto:enterprise@vimeet.vn).

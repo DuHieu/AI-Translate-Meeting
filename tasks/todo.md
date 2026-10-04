@@ -141,5 +141,37 @@
 - [x] `powershell -NoProfile -ExecutionPolicy Bypass -File scripts/bootstrap-admin.ps1 -EnvFile config/profiles/pilot.env` (Pass, 2026-10-03)
 - [x] `python scripts/load-test.py --concurrency 3 --sample-file vi_sample_16k.pcm` (3/3 sessions passed, TTFS p50 1.4ms, 2026-10-03)
 
+## P3.4 - Multi-Room & Multi-Participant Concurrency Testing (Chi tiết tại tasks/plan-concurrency-test.md)
+- [x] Task 1: Cấu hình Test License Key & Rate Limit Guard cho môi trường kiểm thử tải (`RateLimitingOptions.cs`, `WS_RATE_LIMIT_PER_MINUTE`, `config/profiles/test-load.env`, `scripts/generate-license.py`).
+- [x] Task 2: Nâng cấp `scripts/load-test.py` hỗ trợ `--rooms`, `--participants-per-room`, `--speakers-per-room`, và kiểm tra rò rỉ phòng (Zero Cross-Room Leakage).
+- [x] Task 3: Tích hợp Telemetry Collector ghi nhận CPU %, RAM MB, Redis Memory theo thời gian thực (`scripts/collect-metrics.py`, output JSON timeline & summary table).
+- [x] Task 4: Xây dựng script runner tự động hóa `scripts/run-concurrency-test.ps1` & `.sh` chạy các kịch bản và xuất báo cáo tổng hợp Markdown.
+- [x] Task 5: Thực nghiệm benchmark trên Docker, tổng hợp báo cáo và cập nhật bảng khuyến nghị phần cứng (Sizing Guide trong docs/self-hosted-product.md).
+- [x] Checkpoint L1: Contract test và load-test.py compile pass, hỗ trợ đầy đủ cờ đa phòng (8/8 tests passed).
+- [x] Checkpoint L2: Kịch bản 5 phòng x 3 người (15 users) pass 100%, 0% rò rỉ phụ đề, TTFS p50 = 88.0ms < 1500ms.
+- [x] Checkpoint L3: Báo cáo benchmark hoàn chỉnh được lưu trữ tại `benchmark-results/benchmark-report.md`.
+## P3.5 - Enterprise Live Audio Booth & Turnkey Appliance (Chi tiết tại docs/ideas/enterprise-live-audio-booth-appliance.md)
+- [x] Task 1: Tinh gọn Live-first Sidecar (`LiveSubtitleView.tsx`, `SubtitlePanel.tsx` giới hạn 8-12 câu, quick export SRT/TXT).
+- [x] Task 2: Hoàn thiện Simultaneous Audio Booth (`useAudioBooth.ts` tích hợp `audioDuckingRegistry.ts`, Web Speech synthesis & -18dB ducking).
+- [x] Task 3: Turnkey VPS deployment package rà soát chuẩn chỉ (`setup-self-hosted.sh`, `docs/self-hosted-product.md`, `smoke-test.sh`).
+- [x] Checkpoint AB1: Quality gates toàn diện vượt qua 100%: .NET 93/93 tests passed, Python pytest 210/210 passed, Frontend lint 0 error, Frontend build 18 chunks <= 500kB passed (2026-10-04).
 
+## P4 - Enterprise Advanced Collaboration & Multi-Language Suite (Điều phối Codex GPT-5.6-Sol tự động)
+- [x] **Option 1: AI Meeting Minutes & Post-Meeting Recap Persistence**:
+  - Entity `MeetingMinute`, DB migration, API `POST/GET /api/meetings/{code}/minutes`, `PostMeetingModal.tsx` hiển thị recap, tải Markdown/copy và lưu máy chủ (.NET: 97 passed).
+- [x] **Option 2: Production Staging Rehearsal & Live VPS Deployment Package**:
+  - `setup-self-hosted.sh` hỗ trợ `--domain`, Let's Encrypt / self-signed TLS; `smoke-test.sh` kiểm tra public WSS, LiveKit TCP/UDP; hợp đồng `test_vps_deployment_contract.py` pass (Pytest: 212 passed).
+- [x] **Option 3: Advanced In-Meeting Collaboration (Raise Hand, Reactions, Screen Share Audio)**:
+  - Đồng bộ `RAISE_HAND` và `REACTION` qua LiveKit Data Channel; hiển thị badge ✋ và xếp hàng người giơ tay; thả cảm xúc emoji nổi; `SCREEN_SHARE_CAPTURE_OPTIONS` hỗ trợ system audio (Pytest: 215 passed).
+- [x] **Option 4: Business Glossary & Translation Quality Enhancement (KO/ZH/FR)**:
+  - Quản lý từ điển chuyên ngành theo phòng `POST/GET /api/glossary/{meeting_code}`; mở rộng hỗ trợ Tiếng Hàn (ko), Tiếng Trung (zh), Tiếng Pháp (fr); 11 dynamic tests pass (Pytest: 226 passed, .NET: 97 passed, Web lint & build: 18 chunks <= 500kB passed).
 
+## P5 - Commercialization & Enterprise Polishing Suite (Điều phối Codex GPT-5.6-Sol tự động)
+- [x] **Option A: One-Click Cloudflare Tunnel & Staging Public URL**:
+  - `start-tunnel.ps1` & `start-tunnel.sh` hỗ trợ `--Port 3000`, tự động tải `cloudflared`, fail-fast khi local service chưa bật; contract test `test_tunnel_contract.py` pass (Pytest: 232 passed).
+- [x] **Option B: Real-time Audio Visualizer & Smart Speaking Ripple**:
+  - `ParticipantTile.tsx` & `FloatingSelfView.tsx` nhận diện `participant.isSpeaking` hiển thị glowing ring `ring-emerald-400` và equalizer icon; `MeetingBottomBar.tsx` tích hợp 3-bar VU meter cho micro; contract test `test_audio_visualizer_contract.py` pass (Pytest: 236 passed).
+- [x] **Option C: Enterprise Google & Microsoft 365 SSO Readiness**:
+  - Backend `AuthController.cs` (`GET /api/auth/sso/providers`, `POST /api/auth/sso/validate-domain`), allowlist / disposable domain protection; `EnterpriseSsoModal.tsx` trên giao diện chính; unit tests (.NET: 105 passed).
+- [x] **Option D: White-Labeling & Custom Branding Engine**:
+  - Backend `SystemController.cs` (`GET /api/system/branding`); Frontend động bộ Brand name / logo trên `MeetingTopBar.tsx`, đóng dấu thương hiệu vào biên bản họp Markdown (`PostMeetingModal` & `SubtitlePanel`); contract test `test_branding_contract.py` pass (.NET: 106 passed, Pytest: 239 passed, Web build pass).

@@ -25,6 +25,22 @@ MEETING_QUESTIONS: dict[str, Any] = {
             "true": "explicit confirmation of a choice, approval, agreement, or closing of a debate",
         },
     },
+    "critical_risk": {
+        "type": "noul",
+        "instructions": "Does this statement announce a severe technical outage, security vulnerability, critical blocker, or major project failure?",
+        "criteria": {
+            "false": "normal operational discussions, minor issues, routine questions",
+            "true": "production outage, critical blocker, security vulnerability, severe risk",
+        },
+    },
+    "unanswered_question": {
+        "type": "noul",
+        "instructions": "Does this statement ask an open or direct question requiring clarification or response from another participant?",
+        "criteria": {
+            "false": "statements, answers, rhetorical remarks, polite greetings",
+            "true": "direct question, clarification inquiry, request for status or explanation",
+        },
+    },
 }
 
 DOMAIN_QUESTIONS: dict[str, Any] = {
@@ -58,7 +74,7 @@ DOMAIN_QUESTIONS: dict[str, Any] = {
 class LayaDecisionClient:
     """
     Sub-35ms System 1 Decision Client connecting to laya-serve.
-    Enriches real-time meeting subtitles with Action Items and Decision tags.
+    Enriches real-time meeting subtitles with Action Items, Decisions, Critical Risks, and Questions.
     """
 
     def __init__(
@@ -95,10 +111,10 @@ class LayaDecisionClient:
         custom_threshold: float | None = None,
     ) -> tuple[list[str], float]:
         """
-        Evaluate a completed subtitle sentence against Action Item and Decision rubrics.
+        Evaluate a completed subtitle sentence against Action Item, Decision, Risk, and Question rubrics.
         Returns:
             (tags, highest_probability)
-            e.g. (["action_item"], 0.91) or ([], 0.23)
+            e.g. (["action_item"], 0.91) or (["critical_risk", "decision"], 0.88)
         """
         if not self.enabled or not text or len(text.strip()) < 5:
             return [], 0.0
@@ -142,6 +158,20 @@ class LayaDecisionClient:
                 tags.append("decision")
                 max_prob = max(max_prob, decision_prob)
 
+            # 3. Critical Risk check
+            risk_ans = answers.get("critical_risk", {})
+            risk_prob = float(risk_ans.get("noul", risk_ans.get("confidence", risk_ans.get("answer_confidence", 0.0))))
+            if risk_prob >= threshold:
+                tags.append("critical_risk")
+                max_prob = max(max_prob, risk_prob)
+
+            # 4. Question check
+            q_ans = answers.get("unanswered_question", {})
+            q_prob = float(q_ans.get("noul", q_ans.get("confidence", q_ans.get("answer_confidence", 0.0))))
+            if q_prob >= threshold:
+                tags.append("question")
+                max_prob = max(max_prob, q_prob)
+
             if tags:
                 logger.info(
                     "Laya tagged sentence tags=%s prob=%.2f",
@@ -155,6 +185,40 @@ class LayaDecisionClient:
             # Fallback gracefully so meeting subtitles never stutter or freeze
             logger.debug("Laya service unavailable or timed out")
             return [], 0.0
+
+    def classify_sentence_locally(
+        self,
+        text: str,
+        threshold: float = 0.80,
+    ) -> tuple[list[str], float]:
+        """
+        Fast zero-latency heuristic evaluation when Laya container is offline or in fast-path.
+        """
+        if not text or len(text.strip()) < 5:
+            return [], 0.0
+
+        clean = text.strip()
+        lower = clean.lower()
+        tags: list[str] = []
+
+        # Action Item heuristic
+        if any(kw in lower for kw in ["sẽ làm", "cần làm", "giao cho", "nhớ gửi", "deadline", "trước 5h", "hôm nay", "ngày mai", "by eod", "明日まで"]):
+            tags.append("action_item")
+
+        # Decision heuristic
+        if any(kw in lower for kw in ["thống nhất", "chốt phương án", "đồng ý", "quyết định", "phê duyệt", "agreed", "approved", "合意", "決定"]):
+            tags.append("decision")
+
+        # Critical Risk heuristic
+        if any(kw in lower for kw in ["sập server", "outage", "lỗ hổng", "rủi ro nghiêm trọng", "down time", "blocker", "security breach", "障害"]):
+            tags.append("critical_risk")
+
+        # Question heuristic
+        if clean.endswith("?") or any(kw in lower for kw in ["tại sao", "như thế nào", "khi nào", "ai phụ trách", "có thể... không", "how", "why", "what", "どうして"]):
+            tags.append("question")
+
+        prob = 0.85 if tags else 0.0
+        return tags, prob
 
     async def classify_domain_and_terminology(
         self,

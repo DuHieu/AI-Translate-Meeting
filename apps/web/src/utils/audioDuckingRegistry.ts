@@ -10,6 +10,7 @@ type DuckingListener = (isDucked: boolean) => void;
 class AudioDuckingRegistry {
   private elements = new Set<HTMLMediaElement>();
   private isDucked = false;
+  private duckedVolume = 0.18;
   private listeners = new Set<DuckingListener>();
 
   /**
@@ -17,7 +18,7 @@ class AudioDuckingRegistry {
    */
   register(element: HTMLMediaElement): void {
     this.elements.add(element);
-    element.volume = this.isDucked ? 0.18 : 1.0;
+    element.volume = this.isDucked ? this.duckedVolume : 1.0;
   }
 
   /**
@@ -34,13 +35,13 @@ class AudioDuckingRegistry {
 
   /**
    * Set ducking state with a smooth 180ms ramp.
-   * Target volume: 0.18 (-15dB to -18dB) when ducked, 1.0 when normal.
+   * Target volume: duckedVolume (default 0.18, ~-15dB to -18dB) when ducked, 1.0 when normal.
    */
   setDucked(ducked: boolean): void {
     if (this.isDucked === ducked) return;
     this.isDucked = ducked;
 
-    const targetVolume = ducked ? 0.18 : 1.0;
+    const targetVolume = ducked ? this.duckedVolume : 1.0;
     this.elements.forEach((element) => {
       this.rampVolume(element, targetVolume);
     });
@@ -56,6 +57,19 @@ class AudioDuckingRegistry {
 
   getDucked(): boolean {
     return this.isDucked;
+  }
+
+  getDuckedVolume(): number {
+    return this.duckedVolume;
+  }
+
+  setDuckedVolume(volume: number): void {
+    this.duckedVolume = Math.max(0.05, Math.min(0.5, volume));
+    if (this.isDucked) {
+      this.elements.forEach((element) => {
+        this.rampVolume(element, this.duckedVolume);
+      });
+    }
   }
 
   subscribe(listener: DuckingListener): () => void {

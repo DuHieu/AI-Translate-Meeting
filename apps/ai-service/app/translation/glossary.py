@@ -3,6 +3,7 @@ import logging
 import os
 import re
 from pathlib import Path
+from threading import RLock
 from typing import Any, Optional
 
 from app.config.settings import settings
@@ -10,11 +11,95 @@ from app.config.settings import settings
 logger = logging.getLogger("ai_service.translation.glossary")
 
 DEFAULT_GLOSSARY_PATH = Path(__file__).parent / "glossaries" / "default_glossary.json"
+SUPPORTED_LANGUAGE_CODES = frozenset({"vi", "en", "ja", "ko", "zh", "fr", "de", "es"})
+MAX_ROOM_GLOSSARY_TERMS = 500
+MAX_GLOSSARY_TERM_LENGTH = 200
+MAX_GLOSSARY_TRANSLATION_LENGTH = 500
+
+_room_glossaries: dict[str, dict[str, str]] = {}
+_room_glossaries_lock = RLock()
 
 # Regex patterns for identifying acronyms and technical identifiers
 ACRONYM_REGEX = re.compile(r"\b[A-Z0-9]{2,}\b")
 CAMEL_CASE_REGEX = re.compile(r"\b[a-z]+(?:[A-Z][a-z0-9]+)+\b|\b[A-Z][a-z0-9]+(?:[A-Z][a-z0-9]+)+\b")
 SNAKE_CASE_REGEX = re.compile(r"\b[a-zA-Z0-9]+_[a-zA-Z0-9_]+\b")
+
+
+def _normalize_room_id(room_id: str) -> str:
+    if not isinstance(room_id, str) or not room_id.strip():
+        raise ValueError("room_id must be a non-empty string")
+    return room_id.strip().casefold()
+
+
+def normalize_language_code(language_code: str) -> str:
+    """Normalizes supported language and regional codes to their base code."""
+    if not isinstance(language_code, str) or not language_code.strip():
+        raise ValueError("language_code must be a non-empty string")
+
+    normalized = language_code.strip().lower().replace("_", "-")
+    base_code = normalized.split("-", 1)[0]
+    return base_code if base_code in SUPPORTED_LANGUAGE_CODES else normalized
+
+
+def set_room_glossary(room_id: str, glossary: dict[str, str]) -> None:
+    """Creates or replaces the in-memory glossary for one meeting room."""
+    normalized_room_id = _normalize_room_id(room_id)
+    if not isinstance(glossary, dict):
+        raise TypeError("glossary must be a dictionary")
+    if len(glossary) > MAX_ROOM_GLOSSARY_TERMS:
+        raise ValueError(f"glossary cannot contain more than {MAX_ROOM_GLOSSARY_TERMS} terms")
+
+    normalized_glossary: dict[str, str] = {}
+    for source_term, target_term in glossary.items():
+        if not isinstance(source_term, str) or not isinstance(target_term, str):
+            raise ValueError("glossary terms and translations must be strings")
+
+        clean_source = source_term.strip()
+        clean_target = target_term.strip()
+        if not clean_source or not clean_target:
+            raise ValueError("glossary terms and translations cannot be empty")
+        if len(clean_source) > MAX_GLOSSARY_TERM_LENGTH:
+            raise ValueError(
+                f"glossary terms cannot exceed {MAX_GLOSSARY_TERM_LENGTH} characters"
+            )
+        if len(clean_target) > MAX_GLOSSARY_TRANSLATION_LENGTH:
+            raise ValueError(
+                "glossary translations cannot exceed "
+                f"{MAX_GLOSSARY_TRANSLATION_LENGTH} characters"
+            )
+        normalized_glossary[clean_source] = clean_target
+
+    with _room_glossaries_lock:
+        _room_glossaries[normalized_room_id] = normalized_glossary
+
+
+def get_room_glossary(room_id: str) -> dict[str, str]:
+    """Returns a defensive copy of a room glossary."""
+    normalized_room_id = _normalize_room_id(room_id)
+    with _room_glossaries_lock:
+        return dict(_room_glossaries.get(normalized_room_id, {}))
+
+
+def clear_room_glossary(room_id: str) -> None:
+    """Removes the in-memory glossary for one meeting room."""
+    normalized_room_id = _normalize_room_id(room_id)
+    with _room_glossaries_lock:
+        _room_glossaries.pop(normalized_room_id, None)
+
+
+def _merge_glossaries(
+    default_glossary: dict[str, str],
+    room_glossary: dict[str, str],
+) -> dict[str, str]:
+    """Merges terms case-insensitively, with room mappings taking priority."""
+    room_keys = {term.casefold() for term in room_glossary}
+    merged = {
+        term: translation
+        for term, translation in default_glossary.items()
+        if term.casefold() not in room_keys
+    }
+    merged.update(room_glossary)
+    return merged
 
 
 class GlossaryManager:
@@ -72,7 +157,9 @@ class GlossaryManager:
         }
 
     def get_pair_key(self, source_lang: str, target_lang: str) -> str:
-        return f"{source_lang.strip().lower()}_{target_lang.strip().lower()}"
+        source_code = normalize_language_code(source_lang)
+        target_code = normalize_language_code(target_lang)
+        return f"{source_code}_{target_code}"
 
     def get_relevant_glossary(
         self,
@@ -81,6 +168,7 @@ class GlossaryManager:
         target_lang: str,
         domain: str = "general",
         terminology_sensitivity: str = "normal",
+        room_id: Optional[str] = None,
     ) -> dict[str, str]:
         """
         Extracts only relevant glossary terms present in the input text.
@@ -88,8 +176,6 @@ class GlossaryManager:
         """
         pair_key = self.get_pair_key(source_lang, target_lang)
         pair_dict = self._glossaries.get(pair_key, {})
-        if not pair_dict:
-            return {}
 
         text_lower = text.lower()
         matched: dict[str, str] = {}
@@ -109,7 +195,13 @@ class GlossaryManager:
                 if src_term.lower() in text_lower:
                     matched[src_term] = tgt_term
 
-        return matched
+        room_glossary = get_room_glossary(room_id) if room_id else {}
+        relevant_room_glossary = {
+            source_term: target_term
+            for source_term, target_term in room_glossary.items()
+            if source_term.lower() in text_lower
+        }
+        return _merge_glossaries(matched, relevant_room_glossary)
 
     def get_preserved_entities(self, text: str) -> list[str]:
         """
@@ -181,11 +273,25 @@ class GlossaryManager:
             restored = re.sub(re.escape(token), original, restored, flags=re.IGNORECASE)
         return restored
 
-    def apply_glossary(self, text: str, glossary: dict[str, str]) -> str:
+    def apply_glossary(
+        self,
+        text: str,
+        source_lang: str,
+        target_lang: str,
+        domain: str = "general",
+        room_id: Optional[str] = None,
+    ) -> str:
         """
-        Directly applies glossary replacements on text.
+        Applies default and room-specific glossary replacements on text.
         Longer source keys are replaced first.
         """
+        glossary = self.get_relevant_glossary(
+            text,
+            source_lang,
+            target_lang,
+            domain=domain,
+            room_id=room_id,
+        )
         if not glossary:
             return text
 
@@ -195,3 +301,55 @@ class GlossaryManager:
             pattern = re.compile(re.escape(src_term), re.IGNORECASE)
             result = pattern.sub(tgt_term, result)
         return result
+
+    def enforce_target_terms(
+        self,
+        translated_text: str,
+        glossary: dict[str, str],
+        target_lang: str = "ja",
+    ) -> str:
+        """
+        Normalizes translated text to ensure standard IT/business terminology.
+        For example in Japanese: transforms literal machine-translation variants
+        (e.g., 展開 -> デプロイ, 試験/検査 -> テスト) into the preferred glossary term.
+        """
+        if not translated_text or not glossary:
+            return translated_text
+
+        JA_LITERAL_NORMALIZATION = {
+            "デプロイ": ["展開する", "展開"],
+            "テスト": ["試験", "検査"],
+            "レイテンシ": ["遅延時間", "待ち時間"],
+            "マイクロサービス": ["微小サービス"],
+            "キャッシュ": ["隠し場所", "一時記憶"],
+        }
+
+        result = translated_text
+        if target_lang.lower() == "ja":
+            for preferred_term in glossary.values():
+                literal_variants = JA_LITERAL_NORMALIZATION.get(preferred_term, [])
+                for variant in literal_variants:
+                    if variant in result:
+                        result = result.replace(variant, preferred_term)
+
+        return result
+
+
+_default_glossary_manager = GlossaryManager()
+
+
+def apply_glossary(
+    text: str,
+    source_lang: str,
+    target_lang: str,
+    domain: str = "general",
+    room_id: Optional[str] = None,
+) -> str:
+    """Applies the shared default glossary plus an optional room override."""
+    return _default_glossary_manager.apply_glossary(
+        text,
+        source_lang,
+        target_lang,
+        domain=domain,
+        room_id=room_id,
+    )

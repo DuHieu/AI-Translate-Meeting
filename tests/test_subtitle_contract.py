@@ -101,7 +101,8 @@ def test_frontend_authenticates_websocket_without_putting_token_or_metadata_in_u
     assert "subtitleToken: joinRes.subtitleToken" in prejoin_source
     assert "subtitleToken: joinRes.subtitleToken" in join_source
     assert "subtitleToken," in hook_source
-    assert "subtitleToken: session.subtitleToken" in shell_source
+    assert "useState(session.subtitleToken)" in shell_source
+    assert "setSubtitleToken(response.subtitleToken)" in shell_source
     assert "this.isAuthenticated" in service_source
 
     # WebSocket URL must exclude token and participant metadata
@@ -144,7 +145,8 @@ def test_frontend_reconnect_and_auth_gating_contract():
 def test_backend_handshake_contract_specifies_secure_metadata_exchange():
     main_source = (AI_SERVICE_ROOT / "app" / "main.py").read_text(encoding="utf-8")
 
-    assert 'SUPPORTED_LANGUAGES = frozenset({"vi", "en", "ja", "ko", "zh", "fr", "de", "es"})' in main_source
+    assert 'SUPPORTED_TARGET_LANGUAGES = frozenset({"vi", "en", "ja", "ko", "zh", "fr", "de", "es"})' in main_source
+    assert 'SUPPORTED_SOURCE_LANGUAGES = frozenset({"auto", "vi", "en", "ja", "ko", "zh", "fr", "de", "es"})' in main_source
     assert 'DEFAULT_PARTICIPANT_NAME = "Participant"' in main_source
     assert "MAX_PARTICIPANT_NAME_LENGTH = 100" in main_source
     assert "code=4400" in main_source

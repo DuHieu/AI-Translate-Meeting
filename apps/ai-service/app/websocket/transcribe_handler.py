@@ -34,6 +34,9 @@ from app.websocket.meeting_connection_manager import (
     ParticipantConnection,
 )
 
+from app.audio.quality_filter import SpeechQualityFilter
+from app.security.moderation import ContentModerationFilter
+
 logger = logging.getLogger("ai_service")
 
 
@@ -47,11 +50,15 @@ class TranscribeWebSocketHandler:
         cache: TranslationCache | None = None,
         translator: TranslationProvider | None = None,
         stt: SpeechToTextService | None = None,
+        quality_filter: SpeechQualityFilter | None = None,
+        moderation_filter: ContentModerationFilter | None = None,
     ):
         self.stt = stt or SpeechToTextService()
         self.glossary_manager = glossary_manager or GlossaryManager()
         self.cache = cache or TranslationCache()
         self.context_manager = context_manager or MeetingContextManager()
+        self.quality_filter = quality_filter or SpeechQualityFilter()
+        self.moderation_filter = moderation_filter or ContentModerationFilter()
         if translator is not None:
             self.translator = translator
         elif settings.CONTEXTUAL_TRANSLATION_ENABLED:
@@ -157,6 +164,9 @@ class TranscribeWebSocketHandler:
             speaker_sequence: int = 0
             partial_seq: int = 0
             active_initial_prompt: str | None = getattr(settings, "WHISPER_INITIAL_PROMPT", None)
+            session_spoken_lang: str = (
+                "vi" if source_language.lower() == "auto" else source_language
+            )
 
             while True:
 
@@ -236,8 +246,11 @@ class TranscribeWebSocketHandler:
                         # Cap maximum utterance buffer at 4.0s for finalization
                         if curr_duration >= 4.0:
                             is_final = True
-                        # Throttle interim STT to every 0.7s of accumulated speech
-                        elif curr_duration >= 0.7 and (time.perf_counter() - last_interim_time) >= 0.7:
+                        # Throttle interim STT to every configured interval of accumulated speech
+                        elif (
+                            curr_duration >= getattr(settings, "STT_INTERIM_MIN_DURATION_SECONDS", 1.0)
+                            and (time.perf_counter() - last_interim_time) >= getattr(settings, "STT_INTERIM_THROTTLE_SECONDS", 1.0)
+                        ):
                             is_final = False
                             last_interim_time = time.perf_counter()
                         else:
@@ -265,27 +278,38 @@ class TranscribeWebSocketHandler:
                             current_utterance_id,
                         )
 
-                    # 3. Faster-Whisper Real-time Transcription with initial_prompt
+                    # 3. Faster-Whisper Real-time Transcription with initial_prompt & dynamic LID
                     t_stt_start = time.perf_counter()
                     full_audio = np.concatenate(audio_buffer) if audio_buffer else chunk_pcm
+                    effective_stt_lang = (
+                        "auto" if source_language.lower() == "auto" else source_language
+                    )
                     try:
                         transcript = await self.stt.transcribe(
                             full_audio,
-                            language=source_language,
+                            language=effective_stt_lang,
                             is_final=is_final,
                             initial_prompt=active_initial_prompt,
                         )
                     except TypeError:
                         transcript = await self.stt.transcribe(
                             full_audio,
-                            language=source_language,
+                            language=effective_stt_lang,
                             is_final=is_final,
                         )
                     t_stt_end = time.perf_counter()
                     stt_latency_ms = (t_stt_end - t_stt_start) * 1000
 
                     text = transcript.text.strip()
-                    lang = transcript.language or source_language
+                    lang = transcript.language or session_spoken_lang
+
+                    # Dynamic spoken language smoothing & session anchor update
+                    if source_language.lower() == "auto":
+                        lang_prob = getattr(transcript, "language_probability", 0.0)
+                        if is_final or lang_prob >= 0.65 or len(audio_buffer) >= 3:
+                            session_spoken_lang = lang
+                        else:
+                            lang = session_spoken_lang
 
                     if not text:
                         if is_final:
@@ -300,6 +324,12 @@ class TranscribeWebSocketHandler:
                     input_kind = "text"
                     try:
                         parsed = json.loads(raw_text)
+                        if isinstance(parsed, dict) and parsed.get("type") == "ping":
+                            async with current_conn.send_lock:
+                                await websocket.send_text(
+                                    json.dumps({"type": "pong", "timestamp": time.time()})
+                                )
+                            continue
                         if isinstance(parsed, dict) and parsed.get("type") == "config":
                             if "domain" in parsed and isinstance(parsed["domain"], str):
                                 new_domain = parsed["domain"].strip().lower()
@@ -314,6 +344,17 @@ class TranscribeWebSocketHandler:
                             continue
                         text = parsed.get("text", "")
                         lang = parsed.get("language", source_language)
+                        if lang.lower() == "auto":
+                            from app.speech.whisper_service import (
+                                JAPANESE_KANA_REGEX,
+                                VIETNAMESE_DIACRITICS_REGEX,
+                            )
+                            if JAPANESE_KANA_REGEX.search(text):
+                                lang = "ja"
+                            elif VIETNAMESE_DIACRITICS_REGEX.search(text):
+                                lang = "vi"
+                            else:
+                                lang = session_spoken_lang
                         is_final = parsed.get("isFinal", True)
                         if "_t0" in parsed:
                             t0_bench = float(parsed["_t0"])
@@ -326,6 +367,37 @@ class TranscribeWebSocketHandler:
 
                 else:
                     continue
+
+                # Guardrail Layer: Speech Quality (Hallucination & Filler) & Content Moderation
+                is_valid_speech, reject_reason = self.quality_filter.filter_speech(text, lang)
+                if not is_valid_speech:
+                    logger.info(
+                        "Speech quality filter rejected utterance meeting=%s reason=%s text=%s",
+                        meeting_id,
+                        reject_reason,
+                        text[:30],
+                    )
+                    if is_final:
+                        await _finish_overlap_tracking()
+                        audio_buffer.clear()
+                        silence_chunks = 0
+                        utterance_t0 = None
+                    continue
+
+                # Content Moderation & Policy Guard (Profanity, slurs, DLP/PII)
+                is_violation, moderated_text, moderation_action = self.moderation_filter.moderate(
+                    text, language=lang
+                )
+                if moderation_action == "dropped":
+                    logger.warning("Content moderation dropped violating utterance meeting=%s", meeting_id)
+                    if is_final:
+                        await _finish_overlap_tracking()
+                        audio_buffer.clear()
+                        silence_chunks = 0
+                        utterance_t0 = None
+                    continue
+                elif moderation_action == "masked":
+                    text = moderated_text
 
                 # C. TRANSLATION & SUBTITLE DISPATCH
                 listeners = await self.connection_manager.get_listeners(meeting_id)
@@ -370,6 +442,19 @@ class TranscribeWebSocketHandler:
                     async def _translate_final_target(tl: str) -> tuple[str, str]:
                         if tl.lower() == lang.lower():
                             return tl, text
+
+                        # Tier-1/Tier-2 General Cache Check (sub-0.1ms L1, sub-2ms L2 Redis)
+                        gen_key = self.cache.build_general_key(
+                            source_lang=lang,
+                            target_lang=tl,
+                            text=text,
+                            provider_version=getattr(self.translator, "model_version", "v1"),
+                        )
+                        cached_gen = await self.cache.get(gen_key)
+                        if cached_gen:
+                            logger.debug("General cache hit for final translation (<0.1ms)")
+                            return tl, cached_gen
+
                         ckey = self.cache.build_key(
                             meeting_id=meeting_id,
                             source_lang=lang,
@@ -382,6 +467,7 @@ class TranscribeWebSocketHandler:
                         cached = await self.cache.get(ckey)
                         if cached:
                             logger.debug("Cache hit for final translation (<50ms)")
+                            await self.cache.set(gen_key, cached)
                             return tl, cached
 
                         res = await self._dispatch_translate(
@@ -396,6 +482,7 @@ class TranscribeWebSocketHandler:
                             terminology_sensitivity=sensitivity,
                         )
                         await self.cache.set(ckey, res)
+                        await self.cache.set(gen_key, res)
 
                         return tl, res
 
@@ -544,6 +631,17 @@ class TranscribeWebSocketHandler:
                             async def _translate_partial_target(tl: str) -> tuple[str, str]:
                                 if tl.lower() == p_lang.lower():
                                     return tl, p_text
+
+                                gen_key = self.cache.build_general_key(
+                                    source_lang=p_lang,
+                                    target_lang=tl,
+                                    text=p_text,
+                                    provider_version=getattr(self.translator, "model_version", "v1"),
+                                )
+                                cached_gen = await self.cache.get(gen_key)
+                                if cached_gen:
+                                    return tl, cached_gen
+
                                 ckey = self.cache.build_key(
                                     meeting_id=meeting_id,
                                     source_lang=p_lang,
@@ -557,6 +655,12 @@ class TranscribeWebSocketHandler:
                                 if cached:
                                     return tl, cached
 
+                                # Partial throttling for short incomplete phrases (< INTERIM_TRANSLATION_MIN_WORDS)
+                                words = p_text.split()
+                                min_words = getattr(settings, "INTERIM_TRANSLATION_MIN_WORDS", 3)
+                                if len(words) < min_words:
+                                    return tl, p_text
+
                                 res = await self._dispatch_translate(
                                     text=p_text,
                                     source_lang=p_lang,
@@ -569,6 +673,7 @@ class TranscribeWebSocketHandler:
                                     terminology_sensitivity=sensitivity,
                                 )
                                 await self.cache.set(ckey, res)
+                                await self.cache.set(gen_key, res)
 
                                 return tl, res
 

@@ -132,6 +132,55 @@ namespace AITranslateMeeting.Api.Migrations
                     b.ToTable("meeting_admissions", (string)null);
                 });
 
+            modelBuilder.Entity("AITranslateMeeting.Api.Entities.MeetingMinute", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("ActionItemsJson")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("action_items_json");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("DecisionsJson")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("decisions_json");
+
+                    b.Property<string>("MarkdownContent")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("markdown_content");
+
+                    b.Property<Guid>("MeetingId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("meeting_id");
+
+                    b.Property<string>("Summary")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("summary");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("title");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("MeetingId")
+                        .IsUnique();
+
+                    b.ToTable("meeting_minutes", (string)null);
+                });
+
             modelBuilder.Entity("AITranslateMeeting.Api.Entities.MeetingParticipant", b =>
                 {
                     b.Property<Guid>("Id")
@@ -264,6 +313,17 @@ namespace AITranslateMeeting.Api.Migrations
                 {
                     b.HasOne("AITranslateMeeting.Api.Entities.Meeting", "Meeting")
                         .WithMany("Admissions")
+                        .HasForeignKey("MeetingId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Meeting");
+                });
+
+            modelBuilder.Entity("AITranslateMeeting.Api.Entities.MeetingMinute", b =>
+                {
+                    b.HasOne("AITranslateMeeting.Api.Entities.Meeting", "Meeting")
+                        .WithMany()
                         .HasForeignKey("MeetingId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();

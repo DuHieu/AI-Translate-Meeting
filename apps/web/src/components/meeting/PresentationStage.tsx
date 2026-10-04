@@ -11,6 +11,7 @@ interface PresentationStageProps {
   isLocalPresenting: boolean;
   onStopPresenting: () => void;
   pipelineStatuses?: Record<string, PipelineStatusMessage>;
+  raisedHands: Map<string, number>;
 }
 
 export const PresentationStage: React.FC<PresentationStageProps> = ({
@@ -20,6 +21,7 @@ export const PresentationStage: React.FC<PresentationStageProps> = ({
   isLocalPresenting,
   onStopPresenting,
   pipelineStatuses,
+  raisedHands,
 }) => {
   const screenVideoRef = useRef<HTMLVideoElement>(null);
 
@@ -72,6 +74,7 @@ export const PresentationStage: React.FC<PresentationStageProps> = ({
             <ParticipantTile
               participant={p}
               isLocal={p.isLocal}
+              isHandRaised={raisedHands.has(p.identity)}
               pipelineStatus={pipelineStatuses?.[p.identity] || pipelineStatuses?.[p.sid]}
             />
           </div>
