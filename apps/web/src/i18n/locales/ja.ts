@@ -1,0 +1,97 @@
+import { TranslationDictionary } from '../types';
+
+export const ja: TranslationDictionary = {
+  nav: {
+    features: '機能一覧',
+    pricing: '料金プラン',
+    faq: 'よくある質問',
+    developers: '開発者向け',
+    onPrem: 'オンプレミス導入',
+    systemPrivacy: 'システムとプライバシー',
+    systemShort: 'ステータス',
+    polyglotMatrix: '50+言語リアルタイム (Any-to-Any)',
+  },
+  hero: {
+    infraBadge: '多言語WebRTC会議インフラ',
+    infraSub: 'オンプレミス & メモリ内処理',
+    titleLine1: '言葉の壁を越えるオンライン会議。',
+    titleLine2: '同時多言語翻訳、',
+    titleHighlight: '同時多言語翻訳、',
+    titleEnd: ' 確かなセキュリティ。',
+    description: 'LayaMeetは言語ペアに縛られません。会議参加者がベトナム語、日本語、英語、中国語、タイ語などを話しても、各自が選択した言語でリアルタイム字幕を受信できます。音声データをディスクに保存しないRAM処理で機密を守ります。',
+    btnCreate: '新しい会議を作成',
+    btnCreating: '作成中...',
+    btnEnterpriseSso: '企業向けSSO',
+    inputRoomCode: 'ルームコードを入力',
+    btnJoin: '会議に参加',
+    metricZeroStorage: '0ms',
+    metricZeroSub: 'ディスク保存なし (RAM-only)',
+    metricLatency: '<350ms',
+    metricLatencySub: '多言語翻訳レイテンシ',
+    metricOnPrem: '100%',
+    metricOnPremSub: 'オンプレミス対応',
+  },
+  features: {
+    sectionTitle: 'なぜ多くの企業がLayaMeetを選ぶのか？',
+    sectionSubtitle: 'グローバル会議の壁をゼロに — 母国語で自由に発言し、参加者全員がそれぞれの言語で正確な字幕をリアルタイムに確認できます。',
+    items: [
+      {
+        title: 'リアルタイム音声認識字幕',
+        desc: 'Whisper int8モデルによる超低遅延音声認識。50以上の主要言語に対応。',
+      },
+      {
+        title: 'Any-to-Any多方向リアルタイム翻訳',
+        desc: '双方向1対1に限定されず、多国籍メンバーが各々の母国語で同時通訳字幕を受信可能。',
+      },
+      {
+        title: 'Laya AI 議事録・決定事項自動抽出',
+        desc: '字幕表示を一切遅延させない非同期サイドカー分析により、重要決定事項とタスクを自動抽出。',
+      },
+      {
+        title: '完全RAM-onlyセキュリティ',
+        desc: '音声データをディスクに書き込まず即時破棄。完全閉域網オンプレミス環境にも対応。',
+      },
+    ],
+  },
+  pricing: {
+    badge: '料金・導入プラン',
+    title: 'グローバルコミュニケーションのための最適な選択',
+    subtitle: 'オープンソースのDocker検証から、最高水準のセキュリティを誇るオンプレミス専用導入まで柔軟に対応します。',
+    monthly: '月払い',
+    annual: '年払い',
+    savePercent: '20% お得',
+    freeForever: '永久無料 (オープンソース コア)',
+    perMonth: '/月',
+    customEnterprise: '導入規模に応じた個別設計',
+    tiers: {
+      community: {
+        name: 'コミュニティ',
+        desc: 'エンジニアや社内検証チーム向け。Docker Composeによるセルフホストが可能。',
+        cta: 'Dockerを取得する',
+      },
+      pro: {
+        name: 'チーム Pro',
+        badge: '成長企業におすすめ',
+        desc: '定期的な海外拠点との多言語ミーティング向け。高可用性とSLAサポートを提供。',
+        cta: 'Proプランへアップグレード',
+      },
+      enterprise: {
+        name: 'エンタープライズ On-Prem',
+        badge: '最高レベルの機密保護',
+        desc: '金融機関、政府機関、大企業向け。完全閉域網インフラでのデータ主権を確保。',
+        cta: '見積・PoCのご相談',
+      },
+    },
+  },
+  footer: {
+    slogan: '次世代リアルタイム多言語オンライン会議プラットフォーム。母国語で話し、各自の選択した言語で即座に字幕を受信する、国境のないコミュニケーションを実現します。',
+    ramOnlyBadge: '完全メモリ内処理 (RAM-only)',
+    allSystems: '稼働ステータス: ',
+    operational: 'すべてのシステムは正常に稼働中',
+    productCol: 'プロダクト',
+    securityCol: 'セキュリティ・利用規約',
+    resourcesCol: 'ドキュメント・開発者',
+    companyCol: 'インフラ・企業情報',
+    copyright: '© 2026 LayaMeet (layameet.com). 無断転載を禁じます。',
+  },
+};

@@ -76,6 +76,8 @@ services:
       - SessionToken__SigningKey=${SESSION_TOKEN_SIGNING_KEY}
       - SessionToken__TokenTtlMinutes=${SESSION_TOKEN_TTL_MINUTES:-60}
       - Cors__AllowedOrigins__0=${WEB_ORIGIN:-http://localhost:3000}
+      - Cors__AllowedOrigins__1=https://layameet.com
+      - Cors__AllowedOrigins__2=https://www.layameet.com
     ports:
       - "5000:5000"
     depends_on:
@@ -99,7 +101,7 @@ services:
       - WHISPER_DEVICE=${WHISPER_DEVICE:-cpu}
       - WHISPER_COMPUTE_TYPE=${WHISPER_COMPUTE_TYPE:-int8}
       - WHISPER_PRELOAD=${WHISPER_PRELOAD:-true}
-      - CORS_ALLOWED_ORIGINS=${WEB_ORIGIN:-http://localhost:3000}
+      - CORS_ALLOWED_ORIGINS=${WEB_ORIGIN:-http://localhost:3000},https://layameet.com,https://www.layameet.com
       - LAYA_SERVICE_URL=http://laya:8000
       - LAYA_CONFIDENCE_THRESHOLD=0.80
       - LAYA_ENABLED=true

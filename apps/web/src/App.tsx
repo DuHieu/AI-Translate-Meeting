@@ -1,6 +1,7 @@
 import React, { Suspense, lazy } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { ThemeProvider } from './context/ThemeContext';
+import { LanguageProvider } from './context/LanguageContext';
 
 const HomePage = lazy(() => import('./pages/HomePage').then((module) => ({ default: module.HomePage })));
 const PreJoinPage = lazy(() => import('./pages/PreJoinPage').then((module) => ({ default: module.PreJoinPage })));
@@ -20,18 +21,20 @@ const PageFallback: React.FC = () => (
 export const App: React.FC = () => {
   return (
     <ThemeProvider>
-      <BrowserRouter>
-        <Suspense fallback={<PageFallback />}>
-          <Routes>
-            <Route path="/" element={<HomePage />} />
-            <Route path="/admin" element={<AdminDashboardPage />} />
-            <Route path="/developers" element={<DevelopersPage />} />
-            <Route path="/prejoin/:meetingCode" element={<PreJoinPage />} />
-            <Route path="/join/:meetingCode" element={<PreJoinPage />} />
-            <Route path="/meeting/:meetingCode" element={<MeetingPage />} />
-          </Routes>
-        </Suspense>
-      </BrowserRouter>
+      <LanguageProvider>
+        <BrowserRouter>
+          <Suspense fallback={<PageFallback />}>
+            <Routes>
+              <Route path="/" element={<HomePage />} />
+              <Route path="/admin" element={<AdminDashboardPage />} />
+              <Route path="/developers" element={<DevelopersPage />} />
+              <Route path="/prejoin/:meetingCode" element={<PreJoinPage />} />
+              <Route path="/join/:meetingCode" element={<PreJoinPage />} />
+              <Route path="/meeting/:meetingCode" element={<MeetingPage />} />
+            </Routes>
+          </Suspense>
+        </BrowserRouter>
+      </LanguageProvider>
     </ThemeProvider>
   );
 };

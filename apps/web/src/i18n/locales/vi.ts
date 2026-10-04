@@ -1,0 +1,97 @@
+import { TranslationDictionary } from '../types';
+
+export const vi: TranslationDictionary = {
+  nav: {
+    features: 'Tính Năng',
+    pricing: 'Bảng Giá',
+    faq: 'Hỏi Đáp',
+    developers: 'Nhà Phát Triển',
+    onPrem: 'Tư Vấn On-Prem',
+    systemPrivacy: 'Hệ thống & Quyền riêng tư',
+    systemShort: 'Hệ thống',
+    polyglotMatrix: '50+ Ngôn Ngữ (Any-to-Any)',
+  },
+  hero: {
+    infraBadge: 'Hạ Tầng Họp Đa Ngôn Ngữ',
+    infraSub: 'On-Premise & RAM-only',
+    titleLine1: 'Họp trực tuyến không rào cản ngôn ngữ.',
+    titleLine2: 'Dịch song ngữ tức thì,',
+    titleHighlight: 'Dịch song ngữ tức thì,',
+    titleEnd: ' bảo mật tuyệt đối.',
+    description: 'LayaMeet không cố định theo cặp ngôn ngữ: dù trong phòng họp có người Việt, Nhật, Mỹ, Trung, Thái, Lào... mỗi người đều tự do nói tiếng mẹ đẻ và đọc phụ đề theo đúng ngôn ngữ mình chọn — xử lý On-Premise bảo mật tuyệt đối.',
+    btnCreate: 'Tạo cuộc họp mới',
+    btnCreating: 'Đang tạo...',
+    btnEnterpriseSso: 'Enterprise SSO',
+    inputRoomCode: 'Nhập mã phòng',
+    btnJoin: 'Vào phòng họp',
+    metricZeroStorage: '0ms',
+    metricZeroSub: 'Lưu file (RAM-only)',
+    metricLatency: '<350ms',
+    metricLatencySub: 'Độ trễ dịch đa ngữ',
+    metricOnPrem: '100%',
+    metricOnPremSub: 'On-Premise VPS',
+  },
+  features: {
+    sectionTitle: 'Vì sao doanh nghiệp tin chọn LayaMeet?',
+    sectionSubtitle: 'Họp đa quốc gia không rào cản — tự do phát biểu tiếng mẹ đẻ và nhận phụ đề đa chiều theo ngôn ngữ của từng người tham gia.',
+    items: [
+      {
+        title: 'Phụ đề thời gian thực',
+        desc: 'Nhận dạng giọng nói tức thì với Whisper, hỗ trợ Tiếng Việt, Nhật, Anh và 50+ ngôn ngữ.',
+      },
+      {
+        title: 'Dịch đa chiều Any-to-Any',
+        desc: 'Không bị gò bó một cặp ngôn ngữ. Mỗi người tham gia tự do nghe/đọc bản dịch độc lập.',
+      },
+      {
+        title: 'Laya AI Trích Xuất Biên Bản',
+        desc: 'Tự động phát hiện Action Items và Decisions chạy bất đồng bộ, không làm chậm luồng họp.',
+      },
+      {
+        title: 'Bảo mật RAM-only (Zero-Disk)',
+        desc: 'Tuyệt đối không lưu file âm thanh xuống ổ đĩa, hỗ trợ triển khai On-Premise biệt lập.',
+      },
+    ],
+  },
+  pricing: {
+    badge: 'Bảng Giá & Gói Triển Khai',
+    title: 'Đầu tư thông minh cho giao tiếp không rào cản',
+    subtitle: 'Linh hoạt từ tự triển khai Docker mã nguồn mở đến hệ thống On-Premise bảo mật chuyên sâu cho doanh nghiệp.',
+    monthly: 'Thanh toán tháng',
+    annual: 'Thanh toán năm',
+    savePercent: 'Tiết kiệm 20%',
+    freeForever: 'Miễn phí vĩnh viễn (Open-Source Core)',
+    perMonth: '/tháng',
+    customEnterprise: 'Theo quy mô triển khai',
+    tiers: {
+      community: {
+        name: 'Community',
+        desc: 'Dành cho lập trình viên và nhóm nhỏ tự triển khai thử nghiệm trên máy chủ nội bộ.',
+        cta: 'Tải Docker Compose',
+      },
+      pro: {
+        name: 'Team Pro',
+        badge: 'Khuyên Dùng Cho SME',
+        desc: 'Dành cho doanh nghiệp vừa và nhỏ có nhu cầu họp song ngữ thường xuyên với chất lượng ổn định cao.',
+        cta: 'Nâng Cấp Pro Ngay',
+      },
+      enterprise: {
+        name: 'Enterprise On-Prem',
+        badge: 'Bảo Mật Tối Đa',
+        desc: 'Dành cho tập đoàn, ngân hàng và cơ quan chính phủ cần kiểm soát toàn diện dữ liệu trên hạ tầng riêng.',
+        cta: 'Yêu Cầu Báo Giá & PoC',
+      },
+    },
+  },
+  footer: {
+    slogan: 'Nền tảng họp trực tuyến thông minh đa ngôn ngữ toàn cầu. Phá vỡ mọi rào cản giao tiếp: người tham gia tự do phát biểu tiếng mẹ đẻ và nhận phụ đề bản dịch tức thì theo đúng ngôn ngữ của riêng mình.',
+    ramOnlyBadge: 'Zero Raw Audio (RAM-only)',
+    allSystems: 'Tất cả hệ thống: ',
+    operational: 'Hoạt động bình thường',
+    productCol: 'Sản Phẩm',
+    securityCol: 'Bảo Mật & Pháp Lý',
+    resourcesCol: 'Tài Nguyên & Docs',
+    companyCol: 'Hạ Tầng & Công Ty',
+    copyright: '© 2026 LayaMeet (layameet.com). Bảo lưu mọi quyền.',
+  },
+};

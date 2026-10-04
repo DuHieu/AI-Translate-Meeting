@@ -13,6 +13,8 @@ import { ContactSection } from '../components/home/ContactSection';
 import { Footer } from '../components/common/Footer';
 import { LegalModal } from '../components/common/LegalModal';
 import { EnterpriseSsoModal } from '../components/home/EnterpriseSsoModal';
+import { useLanguage } from '../context/language-context-def';
+import { LanguageSwitcher } from '../components/common/LanguageSwitcher';
 
 // Feature highlights — language-agnostic, applies to any language pair
 const FEATURES = [
@@ -40,6 +42,7 @@ const FEATURES = [
 
 export const HomePage: React.FC = () => {
   const navigate = useNavigate();
+  const { t } = useLanguage();
   const [meetingCodeInput, setMeetingCodeInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -94,22 +97,25 @@ export const HomePage: React.FC = () => {
       <header className="fixed top-0 left-0 right-0 h-14 border-b border-zinc-200/80 dark:border-[#2e2e30]/80 bg-white/90 dark:bg-[#0f0f10]/90 backdrop-blur-md px-4 sm:px-6 lg:px-8 flex items-center justify-between shrink-0 z-50 transition-colors shadow-xs">
         {/* Brand Logo & Wordmark */}
         <div className="flex items-center gap-6">
-          <LayaMeetLogo size="md" showBadge={true} />
+          <LayaMeetLogo size="md" />
 
           {/* Nav links */}
           <nav className="hidden lg:flex items-center gap-6 text-xs font-medium text-zinc-600 dark:text-zinc-400">
-            <a href="#features" className="hover:text-zinc-950 dark:hover:text-white transition-colors">Tính Năng</a>
-            <a href="#pricing" className="hover:text-zinc-950 dark:hover:text-white transition-colors">Bảng Giá</a>
-            <a href="#faq" className="hover:text-zinc-950 dark:hover:text-white transition-colors">Hỏi Đáp</a>
+            <a href="#features" className="hover:text-zinc-950 dark:hover:text-white transition-colors">{t.nav.features}</a>
+            <a href="#pricing" className="hover:text-zinc-950 dark:hover:text-white transition-colors">{t.nav.pricing}</a>
+            <a href="#faq" className="hover:text-zinc-950 dark:hover:text-white transition-colors">{t.nav.faq}</a>
             <Link to="/developers" className="hover:text-zinc-950 dark:hover:text-white transition-colors">
-              Nhà Phát Triển
+              {t.nav.developers}
             </Link>
-            <a href="#contact" className="hover:text-zinc-950 dark:hover:text-white transition-colors">Tư Vấn On-Prem</a>
+            <a href="#contact" className="hover:text-zinc-950 dark:hover:text-white transition-colors">{t.nav.onPrem}</a>
           </nav>
         </div>
 
         {/* Nav actions */}
         <div className="flex items-center gap-1.5 sm:gap-2">
+          {/* Automatic + Manual Location Language Switcher */}
+          <LanguageSwitcher />
+
           {/* Light / Dark Mode Toggle */}
           <ThemeToggle />
 
@@ -121,14 +127,14 @@ export const HomePage: React.FC = () => {
             title="Kiểm tra cấu hình và trạng thái hệ thống"
           >
             <ShieldCheck className="w-3.5 h-3.5 text-green-500 shrink-0" />
-            <span className="hidden sm:inline">Hệ thống &amp; Quyền riêng tư</span>
-            <span className="sm:hidden">Hệ thống</span>
+            <span className="hidden sm:inline">{t.nav.systemPrivacy}</span>
+            <span className="sm:hidden">{t.nav.systemShort}</span>
           </button>
 
           {/* Language Matrix Indicator */}
-          <div className="hidden md:flex items-center gap-1.5 text-xs text-zinc-600 dark:text-zinc-500 bg-white dark:bg-[#1a1a1b] border border-zinc-200 dark:border-[#2e2e30] px-3 py-1.5 rounded-lg">
+          <div className="hidden xl:flex items-center gap-1.5 text-xs text-zinc-600 dark:text-zinc-500 bg-white dark:bg-[#1a1a1b] border border-zinc-200 dark:border-[#2e2e30] px-3 py-1.5 rounded-lg">
             <Globe className="w-3.5 h-3.5 text-blue-500" />
-            <span>50+ Ngôn Ngữ (Any-to-Any)</span>
+            <span>{t.nav.polyglotMatrix}</span>
           </div>
         </div>
       </header>
@@ -146,19 +152,20 @@ export const HomePage: React.FC = () => {
             {/* Enterprise Security Badge */}
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 text-xs font-medium">
               <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
-              <span className="font-semibold text-zinc-900 dark:text-zinc-100">Hạ Tầng Họp Đa Ngôn Ngữ</span>
+              <span className="font-semibold text-zinc-900 dark:text-zinc-100">{t.hero.infraBadge}</span>
               <span className="text-zinc-300 dark:text-zinc-700">|</span>
-              <span className="text-zinc-500 dark:text-zinc-400 font-mono text-[11px]">On-Premise &amp; RAM-only</span>
+              <span className="text-zinc-500 dark:text-zinc-400 font-mono text-[11px]">{t.hero.infraSub}</span>
             </div>
 
             <h1 className="text-3xl sm:text-4xl md:text-5xl xl:text-6xl font-extrabold text-zinc-950 dark:text-white tracking-tight leading-[1.12]">
-              Họp trực tuyến không rào cản ngôn ngữ.
+              {t.hero.titleLine1}
               <br />
-              <span className="text-blue-600 dark:text-blue-400 font-black">Dịch song ngữ tức thì,</span> bảo mật tuyệt đối.
+              <span className="text-blue-600 dark:text-blue-400 font-black">{t.hero.titleHighlight}</span>
+              {t.hero.titleEnd}
             </h1>
 
             <p className="text-zinc-600 dark:text-zinc-400 text-sm md:text-base lg:text-lg leading-relaxed max-w-xl mx-auto lg:mx-0">
-              <strong className="text-zinc-900 dark:text-zinc-100 font-semibold">LayaMeet</strong> không cố định theo cặp ngôn ngữ: dù trong phòng họp có người Việt, Nhật, Mỹ, Trung, Thái, Lào... mỗi người đều tự do nói tiếng mẹ đẻ và đọc phụ đề theo đúng ngôn ngữ mình chọn — xử lý On-Premise bảo mật tuyệt đối.
+              {t.hero.description}
             </p>
 
             {/* Error */}
@@ -177,7 +184,7 @@ export const HomePage: React.FC = () => {
                 className="w-full sm:w-auto whitespace-nowrap px-6 py-3 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white font-semibold rounded-xl transition-all flex items-center justify-center gap-2 text-sm sm:text-base cursor-pointer disabled:cursor-not-allowed shadow-md hover:shadow-lg"
               >
                 <Plus className="w-5 h-5 shrink-0" />
-                <span>{loading ? 'Đang tạo...' : 'Tạo cuộc họp mới'}</span>
+                <span>{loading ? t.hero.btnCreating : t.hero.btnCreate}</span>
               </button>
 
               <button
@@ -186,23 +193,23 @@ export const HomePage: React.FC = () => {
                 className="w-full sm:w-auto whitespace-nowrap px-5 py-3 bg-white hover:bg-zinc-50 dark:bg-[#1a1a1b] dark:hover:bg-[#222224] text-zinc-800 dark:text-zinc-100 font-semibold rounded-xl transition-colors flex items-center justify-center gap-2 text-sm sm:text-base cursor-pointer border border-zinc-300 dark:border-[#3a3a3d] shadow-xs"
               >
                 <Building2 className="w-5 h-5 shrink-0 text-blue-600 dark:text-blue-400" />
-                <span>Enterprise SSO</span>
+                <span>{t.hero.btnEnterpriseSso}</span>
               </button>
 
               <form onSubmit={handleJoinWithCode} className="w-full sm:w-auto flex items-center gap-2">
                 <input
                   type="text"
-                  placeholder="Nhập mã phòng"
+                  placeholder={t.hero.inputRoomCode}
                   value={meetingCodeInput}
                   onChange={(e) => setMeetingCodeInput(e.target.value.toUpperCase())}
                   maxLength={8}
-                  aria-label="Mã phòng họp"
+                  aria-label={t.hero.inputRoomCode}
                   className="bg-[#1a1a1b] dark:bg-[#1a1a1b] bg-white border border-[#3a3a3d] dark:border-[#3a3a3d] border-zinc-300 text-zinc-100 dark:text-zinc-100 text-zinc-900 text-sm sm:text-base rounded-xl px-4 py-3 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 uppercase font-mono tracking-widest w-full sm:w-48 transition placeholder-zinc-500 dark:placeholder-zinc-600 shadow-xs"
                 />
                 <button
                   type="submit"
                   className="shrink-0 p-3 rounded-xl bg-[#222224] hover:bg-[#2a2a2c] dark:bg-[#222224] dark:hover:bg-[#2a2a2c] bg-zinc-100 hover:bg-zinc-200 text-zinc-300 hover:text-zinc-100 dark:text-zinc-300 dark:hover:text-zinc-100 text-zinc-700 hover:text-zinc-900 border border-[#3a3a3d] dark:border-[#3a3a3d] border-zinc-300 transition-colors cursor-pointer"
-                  aria-label="Vào phòng họp"
+                  aria-label={t.hero.btnJoin}
                 >
                   <ArrowRight className="w-5 h-5" />
                 </button>
@@ -212,16 +219,16 @@ export const HomePage: React.FC = () => {
             {/* Brand Proof Metrics */}
             <div className="pt-5 border-t border-zinc-200/80 dark:border-zinc-800/80 grid grid-cols-3 gap-4 text-center lg:text-left">
               <div>
-                <div className="text-lg sm:text-xl font-bold text-zinc-950 dark:text-zinc-100 font-mono">0ms</div>
-                <div className="text-xs text-zinc-500 dark:text-zinc-400">Lưu file (RAM-only)</div>
+                <div className="text-lg sm:text-xl font-bold text-zinc-950 dark:text-zinc-100 font-mono">{t.hero.metricZeroStorage}</div>
+                <div className="text-xs text-zinc-500 dark:text-zinc-400">{t.hero.metricZeroSub}</div>
               </div>
               <div>
-                <div className="text-lg sm:text-xl font-bold text-blue-600 dark:text-blue-400 font-mono">&lt;350ms</div>
-                <div className="text-xs text-zinc-500 dark:text-zinc-400">Độ trễ dịch đa ngữ</div>
+                <div className="text-lg sm:text-xl font-bold text-blue-600 dark:text-blue-400 font-mono">{t.hero.metricLatency}</div>
+                <div className="text-xs text-zinc-500 dark:text-zinc-400">{t.hero.metricLatencySub}</div>
               </div>
               <div>
-                <div className="text-lg sm:text-xl font-bold text-emerald-600 dark:text-emerald-400 font-mono">100%</div>
-                <div className="text-xs text-zinc-500 dark:text-zinc-400">On-Premise VPS</div>
+                <div className="text-lg sm:text-xl font-bold text-emerald-600 dark:text-emerald-400 font-mono">{t.hero.metricOnPrem}</div>
+                <div className="text-xs text-zinc-500 dark:text-zinc-400">{t.hero.metricOnPremSub}</div>
               </div>
             </div>
           </div>
@@ -239,26 +246,26 @@ export const HomePage: React.FC = () => {
           <div className="max-w-[1536px] 2xl:max-w-[1720px] mx-auto px-4 sm:px-8 lg:px-12 2xl:px-16">
             <div className="text-center max-w-3xl mx-auto mb-12 space-y-3">
               <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-zinc-900 dark:text-zinc-100 tracking-tight">
-                Vì sao doanh nghiệp tin chọn <span className="text-blue-600 dark:text-blue-400">LayaMeet</span>?
+                {t.features.sectionTitle}
               </h2>
               <p className="text-sm sm:text-base text-zinc-500 dark:text-zinc-400">
-                Họp đa quốc gia không rào cản — tự do phát biểu tiếng mẹ đẻ và nhận phụ đề đa chiều theo ngôn ngữ của từng người tham gia.
+                {t.features.sectionSubtitle}
               </p>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              {FEATURES.map((f) => {
-                const Icon = f.icon;
+              {t.features.items.map((item, idx) => {
+                const Icon = FEATURES[idx]?.icon || FEATURES[0].icon;
                 return (
                   <div
-                    key={f.title}
-                    className="bg-[#1a1a1b] dark:bg-[#1a1a1b] bg-white border border-[#2e2e30] dark:border-[#2e2e30] border-zinc-200 rounded-xl p-4 space-y-2.5 hover:border-[#3a3a3d] dark:hover:border-[#3a3a3d] hover:border-zinc-300 transition-colors shadow-xs"
+                    key={item.title}
+                    className="bg-[#1a1a1b] dark:bg-[#1a1a1b] bg-white border border-[#2e2e30] dark:border-[#2e2e30] border-zinc-200 rounded-xl p-5 space-y-3 hover:border-[#3a3a3d] dark:hover:border-[#3a3a3d] hover:border-zinc-300 transition-colors shadow-xs"
                   >
-                    <div className="w-8 h-8 rounded-lg bg-[#222224] dark:bg-[#222224] bg-zinc-100 border border-[#3a3a3d] dark:border-[#3a3a3d] border-zinc-200 flex items-center justify-center text-zinc-400 dark:text-zinc-400 text-zinc-700">
+                    <div className="w-9 h-9 rounded-lg bg-[#222224] dark:bg-[#222224] bg-zinc-100 border border-[#3a3a3d] dark:border-[#3a3a3d] border-zinc-200 flex items-center justify-center text-zinc-400 dark:text-zinc-400 text-zinc-700">
                       <Icon className="w-4 h-4 text-blue-500" />
                     </div>
-                    <h3 className="text-sm font-semibold text-zinc-100 dark:text-zinc-100 text-zinc-900">{f.title}</h3>
-                    <p className="text-xs text-zinc-400 dark:text-zinc-500 text-zinc-600 leading-relaxed">{f.desc}</p>
+                    <h3 className="text-sm font-semibold text-zinc-100 dark:text-zinc-100 text-zinc-900">{item.title}</h3>
+                    <p className="text-xs text-zinc-400 dark:text-zinc-500 text-zinc-600 leading-relaxed">{item.desc}</p>
                   </div>
                 );
               })}

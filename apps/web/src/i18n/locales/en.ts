@@ -1,0 +1,97 @@
+import { TranslationDictionary } from '../types';
+
+export const en: TranslationDictionary = {
+  nav: {
+    features: 'Features',
+    pricing: 'Pricing',
+    faq: 'FAQ',
+    developers: 'Developers',
+    onPrem: 'On-Premises',
+    systemPrivacy: 'System & Privacy',
+    systemShort: 'Status',
+    polyglotMatrix: '50+ Languages (Any-to-Any)',
+  },
+  hero: {
+    infraBadge: 'Multilingual Meeting Infrastructure',
+    infraSub: 'On-Premises & RAM-only',
+    titleLine1: 'Borderless global meetings.',
+    titleLine2: 'Real-time live translation,',
+    titleHighlight: 'Real-time live translation,',
+    titleEnd: ' zero-trust security.',
+    description: 'LayaMeet eliminates language barriers: participants speak freely in their native tongues (Vietnamese, Japanese, English, Chinese, Thai, Lao, etc.) and receive personalized real-time captions — processed entirely on-premises with RAM-only privacy.',
+    btnCreate: 'Create New Meeting',
+    btnCreating: 'Creating...',
+    btnEnterpriseSso: 'Enterprise SSO',
+    inputRoomCode: 'Enter room code',
+    btnJoin: 'Join Room',
+    metricZeroStorage: '0ms',
+    metricZeroSub: 'Disk Storage (RAM-only)',
+    metricLatency: '<350ms',
+    metricLatencySub: 'Live Translation Latency',
+    metricOnPrem: '100%',
+    metricOnPremSub: 'On-Premises VPS',
+  },
+  features: {
+    sectionTitle: 'Why Global Teams Trust LayaMeet?',
+    sectionSubtitle: 'Seamless multilingual communication — express ideas freely in your native language while every attendee receives real-time subtitles in their preferred language.',
+    items: [
+      {
+        title: 'Real-Time Subtitles',
+        desc: 'Instant speech recognition powered by Whisper int8, supporting 50+ languages.',
+      },
+      {
+        title: 'Any-to-Any Matrix',
+        desc: 'No fixed language pairs. Every participant independently selects their own listening and reading language.',
+      },
+      {
+        title: 'Laya AI Smart Minutes',
+        desc: 'Asynchronous extraction of key Decisions and Action Items without adding any latency to live captions.',
+      },
+      {
+        title: 'RAM-Only Zero-Disk Security',
+        desc: 'Audio streams are never written to disk, supporting air-gapped on-premises enterprise environments.',
+      },
+    ],
+  },
+  pricing: {
+    badge: 'Pricing & Deployment Plans',
+    title: 'Smart investment for barrier-free collaboration',
+    subtitle: 'From open-source Docker deployment for developers to dedicated on-premises infrastructure for enterprise compliance.',
+    monthly: 'Monthly',
+    annual: 'Annual',
+    savePercent: 'Save 20%',
+    freeForever: 'Free Forever (Open-Source Core)',
+    perMonth: '/mo',
+    customEnterprise: 'Custom Deployment',
+    tiers: {
+      community: {
+        name: 'Community',
+        desc: 'For developers and agile teams self-hosting on local servers for evaluation.',
+        cta: 'Get Docker Compose',
+      },
+      pro: {
+        name: 'Team Pro',
+        badge: 'Recommended for SMEs',
+        desc: 'For growing businesses requiring frequent multilingual meetings with high availability and SLA support.',
+        cta: 'Upgrade to Pro',
+      },
+      enterprise: {
+        name: 'Enterprise On-Prem',
+        badge: 'Maximum Security',
+        desc: 'For large corporations, financial institutions, and government agencies demanding full air-gapped sovereignty.',
+        cta: 'Request Quote & PoC',
+      },
+    },
+  },
+  footer: {
+    slogan: 'Intelligent real-time multilingual meeting platform. Breaking communication barriers: attendees speak their mother tongue and read instant translation subtitles in their own language.',
+    ramOnlyBadge: 'Zero Raw Audio (RAM-only)',
+    allSystems: 'All systems: ',
+    operational: 'All Systems Operational',
+    productCol: 'Product',
+    securityCol: 'Security & Legal',
+    resourcesCol: 'Resources & Docs',
+    companyCol: 'Infrastructure & Company',
+    copyright: '© 2026 LayaMeet (layameet.com). All rights reserved.',
+  },
+};
