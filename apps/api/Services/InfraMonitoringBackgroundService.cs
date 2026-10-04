@@ -40,8 +40,18 @@ public sealed class InfraMonitoringBackgroundService : BackgroundService
             try
             {
                 using var scope = _scopeFactory.CreateScope();
+                var cleanupService = scope.ServiceProvider.GetRequiredService<IDatabaseCleanupService>();
                 var metricsService = scope.ServiceProvider.GetRequiredService<IInfraMetricsService>();
                 var dispatcher = scope.ServiceProvider.GetRequiredService<INotificationDispatcher>();
+
+                try
+                {
+                    await cleanupService.CloseIdleMeetingsAsync(TimeSpan.FromMinutes(10), TimeSpan.FromMinutes(2), stoppingToken);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "Failed to run idle meeting reaper in monitoring cycle");
+                }
 
                 var metrics = await metricsService.GetInfraMetricsAsync(stoppingToken);
                 var currentSeverity = metrics.SystemStatus.ToLowerInvariant();

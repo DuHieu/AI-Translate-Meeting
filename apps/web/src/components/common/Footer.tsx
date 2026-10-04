@@ -155,6 +155,15 @@ export const Footer: React.FC<FooterProps> = ({
               <li>
                 <button
                   type="button"
+                  onClick={() => window.dispatchEvent(new CustomEvent('layameet:open-cookie-settings'))}
+                  className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors text-left cursor-pointer"
+                >
+                  Cài đặt Cookie
+                </button>
+              </li>
+              <li>
+                <button
+                  type="button"
                   onClick={onOpenStatusModal}
                   className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors text-left cursor-pointer flex items-center gap-1"
                 >

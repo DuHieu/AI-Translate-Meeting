@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { meetingApi } from '../api/meetingApi';
 import { Plus, ArrowRight, ShieldCheck, Globe, Mic, FileText, Building2 } from 'lucide-react';
@@ -51,6 +51,12 @@ export const HomePage: React.FC = () => {
   const [isStatusModalOpen, setIsStatusModalOpen] = useState(false);
   const [isEnterpriseSsoOpen, setIsEnterpriseSsoOpen] = useState(false);
   const [legalModalType, setLegalModalType] = useState<'privacy' | 'terms' | null>(null);
+
+  useEffect(() => {
+    const handleOpenPrivacy = () => setLegalModalType('privacy');
+    window.addEventListener('layameet:open-privacy-modal', handleOpenPrivacy);
+    return () => window.removeEventListener('layameet:open-privacy-modal', handleOpenPrivacy);
+  }, []);
 
   const handleCreateNewMeeting = async () => {
     setLoading(true);

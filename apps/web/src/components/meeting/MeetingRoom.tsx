@@ -66,6 +66,30 @@ export const MeetingRoom: React.FC<MeetingRoomProps> = ({ session, onLeaveComple
     if (!isLeaving) setMeetingEnded(true);
   };
 
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      try {
+        const body = JSON.stringify({ participantId: session.participantId });
+        fetch(`/api/meetings/${session.meetingCode}/leave`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${session.sessionToken}`,
+          },
+          body,
+          keepalive: true,
+        }).catch(() => {});
+      } catch {
+        // Ignore unload errors
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, [session.meetingCode, session.participantId, session.sessionToken]);
+
   const serverUrl = React.useMemo(() => {
     // When served over HTTPS (e.g. Cloudflare Quick Tunnel or custom domain),
     // browsers forbid insecure ws:// endpoints (Mixed Content).

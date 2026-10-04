@@ -150,3 +150,30 @@ public sealed record TriggerAlertRequest(
     string? CustomMessage = null
 );
 
+public sealed record AdminMeetingDto(
+    Guid Id,
+    string MeetingCode,
+    string RoomName,
+    string Name,
+    DateTime CreatedAtUtc,
+    DateTime? EndedAtUtc,
+    int ActiveParticipantsCount,
+    int TotalParticipantsCount,
+    bool IsActive,
+    double DurationMinutes
+);
+
+public sealed record AdminMeetingListResponse(
+    IReadOnlyList<AdminMeetingDto> Meetings,
+    int TotalCount,
+    int ActiveCount,
+    int EndedCount
+);
+
+public sealed record CloseMeetingResponse(
+    bool Success,
+    string MeetingCode,
+    string Message,
+    DateTime EndedAtUtc
+);
+

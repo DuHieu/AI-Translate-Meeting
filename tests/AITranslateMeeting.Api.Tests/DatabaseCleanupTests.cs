@@ -255,4 +255,94 @@ public class DatabaseCleanupTests
         Assert.Null(activeInDb!.EndedAt);
         Assert.Null(freshInDb!.EndedAt);
     }
+
+    [Fact]
+    public async Task CloseIdleMeetingsAsync_ClosesUnattendedAndAbandonedRooms()
+    {
+        var now = DateTime.UtcNow;
+
+        // 1. Unattended meeting created 15 minutes ago with 0 participants -> should be closed
+        var unattended = new Meeting
+        {
+            Id = Guid.NewGuid(),
+            MeetingCode = "UNATTEND",
+            RoomName = "room-unattend",
+            Name = "Unattended Meeting",
+            CreatedAt = now.AddMinutes(-15)
+        };
+        _context.Meetings.Add(unattended);
+
+        // 2. Just created 2 minutes ago with 0 participants -> should NOT be closed
+        var justCreated = new Meeting
+        {
+            Id = Guid.NewGuid(),
+            MeetingCode = "JUSTCREATED",
+            RoomName = "room-justcreated",
+            Name = "Just Created",
+            CreatedAt = now.AddMinutes(-2)
+        };
+        _context.Meetings.Add(justCreated);
+
+        // 3. Meeting where all participants left 5 minutes ago -> should be closed
+        var allLeft = new Meeting
+        {
+            Id = Guid.NewGuid(),
+            MeetingCode = "ALLLEFT",
+            RoomName = "room-allleft",
+            Name = "All Left Meeting",
+            CreatedAt = now.AddMinutes(-20)
+        };
+        _context.Meetings.Add(allLeft);
+        _context.MeetingParticipants.Add(new MeetingParticipant
+        {
+            Id = Guid.NewGuid(),
+            MeetingId = allLeft.Id,
+            Identity = "user-left",
+            DisplayName = "User Left",
+            SpokenLanguage = "vi",
+            TargetLanguage = "en",
+            JoinedAt = now.AddMinutes(-20),
+            LeftAt = now.AddMinutes(-5)
+        });
+
+        // 4. Meeting where a participant is still active -> should NOT be closed
+        var stillActive = new Meeting
+        {
+            Id = Guid.NewGuid(),
+            MeetingCode = "ACTIVE",
+            RoomName = "room-active",
+            Name = "Active Meeting",
+            CreatedAt = now.AddMinutes(-15)
+        };
+        _context.Meetings.Add(stillActive);
+        _context.MeetingParticipants.Add(new MeetingParticipant
+        {
+            Id = Guid.NewGuid(),
+            MeetingId = stillActive.Id,
+            Identity = "user-online",
+            DisplayName = "User Online",
+            SpokenLanguage = "vi",
+            TargetLanguage = "en",
+            JoinedAt = now.AddMinutes(-15),
+            LeftAt = null
+        });
+
+        await _context.SaveChangesAsync();
+
+        // Act: unattended timeout 10m, empty after leave timeout 2m
+        var closedCount = await _cleanupService.CloseIdleMeetingsAsync(TimeSpan.FromMinutes(10), TimeSpan.FromMinutes(2));
+
+        // Assert
+        Assert.Equal(2, closedCount);
+
+        var unattendedDb = await _context.Meetings.FindAsync(unattended.Id);
+        var justCreatedDb = await _context.Meetings.FindAsync(justCreated.Id);
+        var allLeftDb = await _context.Meetings.FindAsync(allLeft.Id);
+        var stillActiveDb = await _context.Meetings.FindAsync(stillActive.Id);
+
+        Assert.NotNull(unattendedDb!.EndedAt);
+        Assert.Null(justCreatedDb!.EndedAt);
+        Assert.NotNull(allLeftDb!.EndedAt);
+        Assert.Null(stillActiveDb!.EndedAt);
+    }
 }

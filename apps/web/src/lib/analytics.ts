@@ -31,6 +31,35 @@ export function getMeasurementId(): string {
   return (import.meta.env.VITE_GA_MEASUREMENT_ID as string | undefined) || DEFAULT_GA_MEASUREMENT_ID;
 }
 
+export const COOKIE_CONSENT_KEY = 'layameet_cookie_consent';
+
+export type CookieConsentStatus = 'granted' | 'denied';
+
+/**
+ * Get stored Cookie consent status
+ */
+export function getStoredCookieConsent(): CookieConsentStatus | null {
+  if (typeof window === 'undefined') return null;
+  return (localStorage.getItem(COOKIE_CONSENT_KEY) as CookieConsentStatus) || null;
+}
+
+/**
+ * Update Google Analytics 4 Consent Mode v2
+ */
+export function updateAnalyticsConsent(status: CookieConsentStatus): void {
+  if (typeof window === 'undefined') return;
+  localStorage.setItem(COOKIE_CONSENT_KEY, status);
+
+  if (window.gtag) {
+    window.gtag('consent', 'update', {
+      analytics_storage: status,
+      ad_storage: status,
+      ad_user_data: status,
+      ad_personalization: status,
+    });
+  }
+}
+
 /**
  * Initialize Google Analytics 4 asynchronously without blocking page render
  */
@@ -40,6 +69,7 @@ export function initAnalytics(): void {
   }
 
   const measurementId = getMeasurementId();
+  const consent = getStoredCookieConsent();
 
   // If window.gtag is not already loaded by index.html, inject it
   if (!window.gtag && measurementId) {
@@ -47,6 +77,14 @@ export function initAnalytics(): void {
     window.gtag = function gtag(...args: unknown[]) {
       window.dataLayer?.push(args);
     };
+
+    // Google Consent Mode v2 default
+    window.gtag('consent', 'default', {
+      analytics_storage: consent === 'granted' ? 'granted' : 'denied',
+      ad_storage: consent === 'granted' ? 'granted' : 'denied',
+      ad_user_data: consent === 'granted' ? 'granted' : 'denied',
+      ad_personalization: consent === 'granted' ? 'granted' : 'denied',
+    });
 
     window.gtag('js', new Date());
     window.gtag('config', measurementId, {
@@ -58,6 +96,14 @@ export function initAnalytics(): void {
     script.async = true;
     script.src = `https://www.googletagmanager.com/gtag/js?id=${encodeURIComponent(measurementId)}`;
     document.head.appendChild(script);
+  } else if (window.gtag && consent) {
+    // Sync current stored consent
+    window.gtag('consent', 'update', {
+      analytics_storage: consent,
+      ad_storage: consent,
+      ad_user_data: consent,
+      ad_personalization: consent,
+    });
   }
 
   initPerformanceObservers();

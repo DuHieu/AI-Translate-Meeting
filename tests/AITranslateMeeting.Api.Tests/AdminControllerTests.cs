@@ -143,6 +143,107 @@ public sealed class AdminControllerTests
         Assert.True(root.TryGetProperty("message", out _));
     }
 
+    [Fact]
+    public async Task GetMeetings_WhenUnauthorized_Returns401ProblemDetails()
+    {
+        await using var factory = CreateFactory();
+        using var client = factory.CreateClient();
+
+        using var response = await client.GetAsync("/api/admin/meetings");
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task GetMeetings_WhenAuthorized_ReturnsMeetingListResponse()
+    {
+        await using var factory = CreateFactory();
+
+        using (var scope = factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            db.Meetings.Add(new Entities.Meeting
+            {
+                Id = Guid.NewGuid(),
+                MeetingCode = "TEST99",
+                RoomName = "meeting_TEST99",
+                Name = "Unit Test Room",
+                CreatedAt = DateTime.UtcNow
+            });
+            await db.SaveChangesAsync();
+        }
+
+        using var client = factory.CreateClient();
+        client.DefaultRequestHeaders.Add("X-Admin-Key", TestAdminKey);
+
+        using var response = await client.GetAsync("/api/admin/meetings");
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        var body = await response.Content.ReadAsStringAsync();
+        using var doc = JsonDocument.Parse(body);
+        var root = doc.RootElement;
+
+        Assert.True(root.TryGetProperty("meetings", out var meetingsProp));
+        Assert.Equal(JsonValueKind.Array, meetingsProp.ValueKind);
+        Assert.True(root.TryGetProperty("totalCount", out var totalCountProp));
+        Assert.True(totalCountProp.GetInt32() >= 1);
+        Assert.True(root.TryGetProperty("activeCount", out _));
+        Assert.True(root.TryGetProperty("endedCount", out _));
+    }
+
+    [Fact]
+    public async Task CloseMeeting_WhenAuthorized_ClosesActiveMeeting()
+    {
+        await using var factory = CreateFactory();
+        var meetingId = Guid.NewGuid();
+
+        using (var scope = factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            db.Meetings.Add(new Entities.Meeting
+            {
+                Id = meetingId,
+                MeetingCode = "CLOSE1",
+                RoomName = "meeting_CLOSE1",
+                Name = "Room To Close",
+                CreatedAt = DateTime.UtcNow
+            });
+            await db.SaveChangesAsync();
+        }
+
+        using var client = factory.CreateClient();
+        client.DefaultRequestHeaders.Add("X-Admin-Key", TestAdminKey);
+
+        using var response = await client.PostAsync("/api/admin/meetings/CLOSE1/close", null);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        var body = await response.Content.ReadAsStringAsync();
+        using var doc = JsonDocument.Parse(body);
+        var root = doc.RootElement;
+
+        Assert.True(root.GetProperty("success").GetBoolean());
+        Assert.Equal("CLOSE1", root.GetProperty("meetingCode").GetString());
+
+        // Verify in database that endedAt is set
+        using (var scope = factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            var meeting = await db.Meetings.FindAsync(meetingId);
+            Assert.NotNull(meeting);
+            Assert.NotNull(meeting.EndedAt);
+        }
+    }
+
+    [Fact]
+    public async Task CloseMeeting_WhenNotFound_Returns404ProblemDetails()
+    {
+        await using var factory = CreateFactory();
+        using var client = factory.CreateClient();
+        client.DefaultRequestHeaders.Add("X-Admin-Key", TestAdminKey);
+
+        using var response = await client.PostAsync("/api/admin/meetings/NONEXIST/close", null);
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+
     private static WebApplicationFactory<Program> CreateFactory()
     {
         return new WebApplicationFactory<Program>().WithWebHostBuilder(builder =>

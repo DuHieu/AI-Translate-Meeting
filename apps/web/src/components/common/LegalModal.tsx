@@ -85,6 +85,13 @@ export const LegalModal: React.FC<LegalModalProps> = ({ isOpen, type, onClose })
                   Mọi luồng âm thanh và hình ảnh đều được mã hóa bằng chuẩn SRTP/DTLS end-to-end theo tiêu chuẩn WebRTC quốc tế, ngăn chặn hoàn toàn nguy cơ nghe lén (Man-in-the-Middle).
                 </p>
               </div>
+
+              <div>
+                <h4 className="font-bold text-zinc-950 dark:text-white text-sm mb-1.5">4. Chính Sách Cookie &amp; Google Analytics 4</h4>
+                <p>
+                  LayaMeet sử dụng cookie thiết yếu duy trì phiên phòng họp và Google Analytics 4 tuân thủ tiêu chuẩn Google Consent Mode v2. Toàn bộ địa chỉ IP được ẩn danh (IP Anonymization) và không thu thập bất kỳ thông tin nhận dạng cá nhân (PII) nào. Bạn có thể thay đổi tùy chọn cookie bất kỳ lúc nào tại chân trang.
+                </p>
+              </div>
             </>
           ) : (
             <>

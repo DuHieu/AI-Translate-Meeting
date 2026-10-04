@@ -367,6 +367,40 @@ export const meetingApi = {
     });
     return handleResponse<{ success: boolean; severity: string; message: string }>(res);
   },
+
+  async getAdminMeetings(
+    adminKey: string,
+    status?: 'all' | 'active' | 'ended',
+    search?: string,
+    page: number = 1,
+    pageSize: number = 50
+  ): Promise<AdminMeetingListResponse> {
+    const params = new URLSearchParams();
+    if (status && status !== 'all') params.append('status', status);
+    if (search?.trim()) params.append('search', search.trim());
+    params.append('page', page.toString());
+    params.append('pageSize', pageSize.toString());
+
+    const res = await fetch(`${API_BASE_URL}/api/admin/meetings?${params.toString()}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Admin-Key': adminKey.trim(),
+      },
+    });
+    return handleResponse<AdminMeetingListResponse>(res);
+  },
+
+  async closeAdminMeeting(adminKey: string, meetingCode: string): Promise<CloseMeetingResponse> {
+    const res = await fetch(`${API_BASE_URL}/api/admin/meetings/${encodeURIComponent(meetingCode)}/close`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Admin-Key': adminKey.trim(),
+      },
+    });
+    return handleResponse<CloseMeetingResponse>(res);
+  },
 };
 
 export interface PaymentOrderResponse {
@@ -451,5 +485,32 @@ export interface InfraMetricsResponse {
   activeAlerts: string[];
   telegramConfigured: boolean;
   timestampUtc: string;
+}
+
+export interface AdminMeetingDto {
+  id: string;
+  meetingCode: string;
+  roomName: string;
+  name: string;
+  createdAtUtc: string;
+  endedAtUtc: string | null;
+  activeParticipantsCount: number;
+  totalParticipantsCount: number;
+  isActive: boolean;
+  durationMinutes: number;
+}
+
+export interface AdminMeetingListResponse {
+  meetings: AdminMeetingDto[];
+  totalCount: number;
+  activeCount: number;
+  endedCount: number;
+}
+
+export interface CloseMeetingResponse {
+  success: boolean;
+  meetingCode: string;
+  message: string;
+  endedAtUtc: string;
 }
 

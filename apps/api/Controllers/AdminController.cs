@@ -14,6 +14,8 @@ public sealed class AdminController : ControllerBase
     private readonly ILeadService _leadService;
     private readonly INotificationDispatcher _notificationDispatcher;
     private readonly IInfraMetricsService _infraMetricsService;
+    private readonly IDatabaseCleanupService _cleanupService;
+    private readonly IParticipantSessionService _sessionTokenService;
     private readonly AppDbContext _dbContext;
     private readonly string _adminSecretKey;
 
@@ -22,6 +24,8 @@ public sealed class AdminController : ControllerBase
         ILeadService leadService,
         INotificationDispatcher notificationDispatcher,
         IInfraMetricsService infraMetricsService,
+        IDatabaseCleanupService cleanupService,
+        IParticipantSessionService sessionTokenService,
         AppDbContext dbContext,
         IConfiguration configuration)
     {
@@ -29,6 +33,8 @@ public sealed class AdminController : ControllerBase
         _leadService = leadService;
         _notificationDispatcher = notificationDispatcher;
         _infraMetricsService = infraMetricsService;
+        _cleanupService = cleanupService;
+        _sessionTokenService = sessionTokenService;
         _dbContext = dbContext;
         _adminSecretKey = configuration["Admin:SecretKey"] ?? "vimeet-admin-secret-2026";
     }
@@ -73,6 +79,7 @@ public sealed class AdminController : ControllerBase
         var activeMeetings = 0;
         try
         {
+            await _cleanupService.CloseIdleMeetingsAsync(TimeSpan.FromMinutes(10), TimeSpan.FromMinutes(2), cancellationToken);
             activeMeetings = await _dbContext.Meetings.CountAsync(m => m.EndedAt == null, cancellationToken);
         }
         catch
@@ -199,5 +206,160 @@ public sealed class AdminController : ControllerBase
                 ? $"Đã phát tín hiệu cảnh báo {severity.ToUpperInvariant()} thành công tới Telegram / Webhook."
                 : "Không thể gửi cảnh báo. Vui lòng kiểm tra biến môi trường TELEGRAM_BOT_TOKEN và TELEGRAM_CHAT_ID."
         });
+    }
+
+    [HttpGet("meetings")]
+    [ProducesResponseType(typeof(AdminMeetingListResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
+    public async Task<ActionResult<AdminMeetingListResponse>> GetMeetingsAsync(
+        [FromQuery] string? status = null,
+        [FromQuery] string? search = null,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 50,
+        CancellationToken cancellationToken = default)
+    {
+        if (!IsAuthorized())
+        {
+            return UnauthorizedResult();
+        }
+
+        try
+        {
+            await _cleanupService.CloseIdleMeetingsAsync(TimeSpan.FromMinutes(10), TimeSpan.FromMinutes(2), cancellationToken);
+        }
+        catch
+        {
+            // Non-blocking for listing
+        }
+
+        var query = _dbContext.Meetings
+            .Include(m => m.Participants)
+            .AsNoTracking();
+
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            var s = search.Trim().ToLowerInvariant();
+            query = query.Where(m => m.MeetingCode.ToLower().Contains(s) || m.Name.ToLower().Contains(s));
+        }
+
+        var allMeetings = await query
+            .OrderByDescending(m => m.CreatedAt)
+            .ToListAsync(cancellationToken);
+
+        var now = DateTime.UtcNow;
+        var dtos = allMeetings.Select(m =>
+        {
+            var activeParts = m.Participants?.Count(p => p.LeftAt == null) ?? 0;
+            var totalParts = m.Participants?.Count ?? 0;
+            var isActive = m.EndedAt == null;
+            var duration = m.EndedAt.HasValue
+                ? Math.Round((m.EndedAt.Value - m.CreatedAt).TotalMinutes, 1)
+                : Math.Round((now - m.CreatedAt).TotalMinutes, 1);
+
+            return new AdminMeetingDto(
+                m.Id,
+                m.MeetingCode,
+                m.RoomName,
+                m.Name,
+                m.CreatedAt,
+                m.EndedAt,
+                activeParts,
+                totalParts,
+                isActive,
+                Math.Max(0, duration)
+            );
+        }).ToList();
+
+        var totalCount = dtos.Count;
+        var activeCount = dtos.Count(d => d.IsActive);
+        var endedCount = dtos.Count(d => !d.IsActive);
+
+        if (string.Equals(status, "active", StringComparison.OrdinalIgnoreCase))
+        {
+            dtos = dtos.Where(d => d.IsActive).ToList();
+        }
+        else if (string.Equals(status, "ended", StringComparison.OrdinalIgnoreCase))
+        {
+            dtos = dtos.Where(d => !d.IsActive).ToList();
+        }
+
+        var p = Math.Max(1, page);
+        var ps = Math.Clamp(pageSize, 1, 200);
+        var paged = dtos.Skip((p - 1) * ps).Take(ps).ToList();
+
+        return Ok(new AdminMeetingListResponse(
+            paged,
+            totalCount,
+            activeCount,
+            endedCount
+        ));
+    }
+
+    [HttpPost("meetings/{meetingCode}/close")]
+    [ProducesResponseType(typeof(CloseMeetingResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<CloseMeetingResponse>> CloseMeetingAsync(
+        [FromRoute] string meetingCode,
+        CancellationToken cancellationToken)
+    {
+        if (!IsAuthorized())
+        {
+            return UnauthorizedResult();
+        }
+
+        var meeting = await _dbContext.Meetings
+            .Include(m => m.Participants)
+            .FirstOrDefaultAsync(m => m.MeetingCode == meetingCode, cancellationToken);
+
+        if (meeting == null)
+        {
+            return NotFound(new ProblemDetails
+            {
+                Title = "Not Found",
+                Detail = $"Phòng họp với mã '{meetingCode}' không tồn tại.",
+                Status = StatusCodes.Status404NotFound
+            });
+        }
+
+        var now = DateTime.UtcNow;
+
+        if (meeting.EndedAt != null)
+        {
+            return Ok(new CloseMeetingResponse(
+                true,
+                meeting.MeetingCode,
+                "Phòng họp đã được kết thúc trước đó.",
+                meeting.EndedAt.Value
+            ));
+        }
+
+        meeting.EndedAt = now;
+
+        if (meeting.Participants != null)
+        {
+            foreach (var p in meeting.Participants.Where(p => p.LeftAt == null))
+            {
+                p.LeftAt = now;
+            }
+        }
+
+        await _dbContext.SaveChangesAsync(cancellationToken);
+
+        try
+        {
+            await _sessionTokenService.RevokeMeetingSessionsAsync(meeting.Id, cancellationToken);
+        }
+        catch
+        {
+            // Session revocation error should not block meeting close
+        }
+
+        return Ok(new CloseMeetingResponse(
+            true,
+            meeting.MeetingCode,
+            $"Đã kết thúc phòng họp '{meeting.Name}' ({meeting.MeetingCode}) thành công.",
+            now
+        ));
     }
 }

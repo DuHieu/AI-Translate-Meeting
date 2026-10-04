@@ -2,6 +2,7 @@ import React, { Suspense, lazy } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { ThemeProvider } from './context/ThemeContext';
 import { LanguageProvider } from './context/LanguageContext';
+import { CookieConsentBanner } from './components/common/CookieConsentBanner';
 
 const HomePage = lazy(() => import('./pages/HomePage').then((module) => ({ default: module.HomePage })));
 const PreJoinPage = lazy(() => import('./pages/PreJoinPage').then((module) => ({ default: module.PreJoinPage })));
@@ -33,6 +34,7 @@ export const App: React.FC = () => {
               <Route path="/meeting/:meetingCode" element={<MeetingPage />} />
             </Routes>
           </Suspense>
+          <CookieConsentBanner />
         </BrowserRouter>
       </LanguageProvider>
     </ThemeProvider>

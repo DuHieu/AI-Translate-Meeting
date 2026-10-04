@@ -20,6 +20,11 @@ import {
   Sliders,
   HardDrive,
   Zap,
+  Copy,
+  Check,
+  ExternalLink,
+  XCircle,
+  Search,
 } from 'lucide-react';
 import {
   meetingApi,
@@ -27,6 +32,8 @@ import {
   PaymentOrderResponse,
   EnterpriseLeadRecord,
   InfraMetricsResponse,
+  AdminMeetingDto,
+  AdminMeetingListResponse,
 } from '../api/meetingApi';
 
 export const AdminDashboardPage: React.FC = () => {
@@ -41,7 +48,16 @@ export const AdminDashboardPage: React.FC = () => {
   const [orders, setOrders] = useState<PaymentOrderResponse[]>([]);
   const [leads, setLeads] = useState<EnterpriseLeadRecord[]>([]);
   const [infraMetrics, setInfraMetrics] = useState<InfraMetricsResponse | null>(null);
-  const [activeTab, setActiveTab] = useState<'orders' | 'leads' | 'notifications' | 'infra'>('orders');
+  const [activeTab, setActiveTab] = useState<'meetings' | 'orders' | 'leads' | 'notifications' | 'infra'>('meetings');
+
+  const [meetingsData, setMeetingsData] = useState<AdminMeetingListResponse | null>(null);
+  const [meetingsStatusFilter, setMeetingsStatusFilter] = useState<'all' | 'active' | 'ended'>('all');
+  const [meetingsSearch, setMeetingsSearch] = useState<string>('');
+  const [isMeetingsLoading, setIsMeetingsLoading] = useState<boolean>(false);
+  const [closingCode, setClosingCode] = useState<string | null>(null);
+  const [copiedCode, setCopiedCode] = useState<string | null>(null);
+  const [closeConfirmMeeting, setCloseConfirmMeeting] = useState<AdminMeetingDto | null>(null);
+  const [actionMessage, setActionMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isInfraLoading, setIsInfraLoading] = useState<boolean>(false);
@@ -57,6 +73,19 @@ export const AdminDashboardPage: React.FC = () => {
     status: 'idle' | 'sending' | 'success' | 'error';
     message?: string;
   }>({ status: 'idle' });
+
+  const loadMeetingsData = useCallback(async (key: string, status?: 'all' | 'active' | 'ended', search?: string) => {
+    if (!key) return;
+    setIsMeetingsLoading(true);
+    try {
+      const data = await meetingApi.getAdminMeetings(key, status, search);
+      setMeetingsData(data);
+    } catch (err) {
+      console.warn('Failed to load admin meetings:', err);
+    } finally {
+      setIsMeetingsLoading(false);
+    }
+  }, []);
 
   const loadInfraData = useCallback(async (key: string) => {
     if (!key) return;
@@ -75,16 +104,18 @@ export const AdminDashboardPage: React.FC = () => {
     setIsLoading(true);
     setAuthError(null);
     try {
-      const [m, o, l, infra] = await Promise.all([
+      const [m, o, l, infra, rooms] = await Promise.all([
         meetingApi.getAdminMetrics(key),
         meetingApi.getAdminOrders(key),
         meetingApi.getAdminLeads(key),
         meetingApi.getAdminInfraMetrics(key).catch(() => null),
+        meetingApi.getAdminMeetings(key, meetingsStatusFilter, meetingsSearch).catch(() => null),
       ]);
       setMetrics(m);
       setOrders(o);
       setLeads(l);
       if (infra) setInfraMetrics(infra);
+      if (rooms) setMeetingsData(rooms);
       setIsAuthenticated(true);
       sessionStorage.setItem('layameet_admin_key', key);
     } catch (err) {
@@ -95,7 +126,35 @@ export const AdminDashboardPage: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [meetingsStatusFilter, meetingsSearch]);
+
+  const handleCloseMeeting = async (meetingCode: string) => {
+    if (!adminKey) return;
+    setClosingCode(meetingCode);
+    setActionMessage(null);
+    try {
+      const res = await meetingApi.closeAdminMeeting(adminKey, meetingCode);
+      setActionMessage({ type: 'success', text: res.message });
+      setCloseConfirmMeeting(null);
+      await Promise.all([
+        loadMeetingsData(adminKey, meetingsStatusFilter, meetingsSearch),
+        meetingApi.getAdminMetrics(adminKey).then((m) => setMetrics(m)).catch(() => {}),
+        meetingApi.getAdminInfraMetrics(adminKey).then((inf) => setInfraMetrics(inf)).catch(() => {}),
+      ]);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Không thể đóng phòng họp. Vui lòng thử lại.';
+      setActionMessage({ type: 'error', text: msg });
+    } finally {
+      setClosingCode(null);
+    }
+  };
+
+  const handleCopyCode = (code: string) => {
+    const url = `${window.location.origin}/rooms/${code}`;
+    navigator.clipboard.writeText(url);
+    setCopiedCode(code);
+    setTimeout(() => setCopiedCode(null), 2000);
+  };
 
   useEffect(() => {
     if (adminKey) {
