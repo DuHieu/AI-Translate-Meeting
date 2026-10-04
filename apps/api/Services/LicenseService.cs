@@ -54,13 +54,15 @@ public sealed class LicenseService : ILicenseService
     {
         if (string.IsNullOrWhiteSpace(_options.LicenseKey))
         {
-            _logger.LogInformation("No commercial license key configured. Defaulting to Community Trial mode.");
+            var maxRooms = _options.DefaultMaxRooms.GetValueOrDefault(1);
+            var maxParticipants = _options.DefaultMaxParticipants.GetValueOrDefault(5);
+            _logger.LogInformation("No commercial license key configured. Defaulting to Community Trial mode (MaxRooms: {MaxRooms}, MaxParticipants: {MaxParticipants}).", maxRooms, maxParticipants);
             return new SystemLicenseInfoDto(
                 Status: "trial",
                 OrganizationName: "Community Trial (Unlicensed)",
                 Tier: "pilot",
-                MaxConcurrentRooms: 1,
-                MaxParticipantsPerRoom: 5,
+                MaxConcurrentRooms: maxRooms,
+                MaxParticipantsPerRoom: maxParticipants,
                 AllowedFeatures: DefaultTrialFeatures,
                 ExpiresAtUtc: null,
                 DaysRemaining: null

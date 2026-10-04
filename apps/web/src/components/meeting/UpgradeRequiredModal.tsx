@@ -94,10 +94,10 @@ export const UpgradeRequiredModal: React.FC<UpgradeRequiredModalProps> = ({
               : <Zap className="h-6 w-6" aria-hidden="true" />}
           </div>
           <p className="text-xs font-semibold uppercase tracking-wider text-sky-400">
-            ViMeet Pro
+            LayaMeet Pro
           </p>
           <h2 id="upgrade-required-title" className="mt-1 text-xl font-bold text-white sm:text-2xl">
-            {isTimeExpired ? 'Hết thời lượng miễn phí (40 phút)' : 'Nâng cấp ViMeet Pro'}
+            {isTimeExpired ? 'Hết thời lượng miễn phí (40 phút)' : 'Nâng cấp LayaMeet Pro'}
           </h2>
           <p id="upgrade-required-description" className="mt-3 text-sm leading-6 text-zinc-400">
             {isTimeExpired

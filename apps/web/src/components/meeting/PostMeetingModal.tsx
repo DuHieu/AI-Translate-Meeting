@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { CheckCircle2, Copy, Download, ListTodo, LogOut, Save, Video, X } from 'lucide-react';
+import { CheckCircle2, Copy, Download, ListTodo, LogOut, Save, Share2, Video, X } from 'lucide-react';
 import { meetingApi } from '../../api/meetingApi';
 import type { BrandingConfigDto } from '../../api/meetingApi';
 import type { SaveMeetingMinutesRequest } from '../../types/meeting';
@@ -46,6 +46,9 @@ function buildMarkdown(
     '',
     '## Action items',
     ...actions,
+    '',
+    '---',
+    '_Biên bản cuộc họp được tổng hợp & dịch tự động bởi [LayaMeet AI](https://layameet.com) — Nền tảng họp trực tuyến xóa bỏ rào cản ngôn ngữ._',
   ].join('\n');
 }
 
@@ -143,6 +146,49 @@ export const PostMeetingModal: React.FC<PostMeetingModalProps> = ({
     }
   };
 
+  const handleShareViral = async () => {
+    const highlights = recap.executiveHighlights.slice(0, 3).map((h) => `• ${h}`).join('\n');
+    const shareText = [
+      `📝 [TÓM TẮT BIÊN BẢN CUỘC HỌP ${meetingCode.toUpperCase()}]`,
+      '',
+      `✨ Điểm chính đã thống nhất:`,
+      highlights || '• Cuộc họp đã hoàn thành thành công.',
+      '',
+      recap.actionItems.length > 0
+        ? `📌 Việc cần làm: ${recap.actionItems.length} đầu việc đã được phân công.`
+        : '',
+      '',
+      `🚀 Biên bản được tổng hợp & dịch tự động bởi LayaMeet AI.`,
+      `👉 Trải nghiệm phòng họp trực tuyến dịch song ngữ thời gian thực miễn phí tại: https://layameet.com`,
+    ]
+      .filter(Boolean)
+      .join('\n');
+
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: `Biên bản cuộc họp ${meetingCode} - LayaMeet`,
+          text: shareText,
+          url: 'https://layameet.com',
+        });
+        setStatus({ kind: 'success', message: 'Đã mở giao diện chia sẻ.' });
+        return;
+      } catch {
+        // Fallback to clipboard if share was dismissed
+      }
+    }
+
+    try {
+      await navigator.clipboard.writeText(shareText);
+      setStatus({
+        kind: 'success',
+        message: 'Đã sao chép tóm tắt & link LayaMeet! Bạn có thể dán ngay vào Zalo/Slack.',
+      });
+    } catch {
+      setStatus({ kind: 'error', message: 'Không thể sao chép nội dung chia sẻ.' });
+    }
+  };
+
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 p-3 backdrop-blur-sm sm:p-6">
       <div
@@ -216,6 +262,13 @@ export const PostMeetingModal: React.FC<PostMeetingModalProps> = ({
         <footer className="border-t border-zinc-800 px-5 py-4 sm:px-6">
           {status && <p role={status.kind === 'error' ? 'alert' : 'status'} className={`mb-3 text-sm ${status.kind === 'error' ? 'text-rose-400' : 'text-emerald-400'}`}>{status.message}</p>}
           <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={handleShareViral}
+              className="inline-flex min-h-11 items-center gap-2 rounded-lg bg-emerald-600 px-3.5 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-400"
+            >
+              <Share2 className="h-4 w-4" /> Chia sẻ Zalo / Slack
+            </button>
             <button type="button" onClick={handleCopy} className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-zinc-700 px-3 py-2 text-sm text-zinc-200 hover:bg-zinc-800 focus:outline-none focus:ring-2 focus:ring-sky-500"><Copy className="h-4 w-4" /> Sao chép</button>
             <button type="button" onClick={handleDownload} className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-zinc-700 px-3 py-2 text-sm text-zinc-200 hover:bg-zinc-800 focus:outline-none focus:ring-2 focus:ring-sky-500"><Download className="h-4 w-4" /> Tải Markdown</button>
             <button type="button" onClick={handleSave} disabled={isSaving} className="inline-flex min-h-11 items-center gap-2 rounded-lg bg-sky-600 px-3 py-2 text-sm font-medium text-white hover:bg-sky-500 disabled:cursor-not-allowed disabled:opacity-60 focus:outline-none focus:ring-2 focus:ring-sky-400"><Save className="h-4 w-4" /> {isSaving ? 'Đang lưu…' : 'Lưu lên máy chủ'}</button>

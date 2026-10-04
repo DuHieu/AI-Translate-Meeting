@@ -13,6 +13,7 @@ import {
 import { Video, Mic, MicOff, VideoOff, LogIn, ArrowLeft, BookOpen, ChevronDown, ChevronUp, SlidersHorizontal } from 'lucide-react';
 import { LayaMeetLogo } from '../components/common/LayaMeetLogo';
 import { ThemeToggle } from '../components/common/ThemeToggle';
+import { NeuralLinguisticBackground } from '../components/common/NeuralLinguisticBackground';
 
 interface GlossaryDomainOption {
   id: string;
@@ -376,18 +377,28 @@ export const PreJoinPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-zinc-50 dark:bg-[#0f0f10] text-zinc-900 dark:text-zinc-100 bg-grid-subtle flex flex-col items-start justify-start pt-4 pb-8 md:items-center md:justify-center p-4 transition-colors">
-      <div className="max-w-4xl w-full bg-[#1a1a1b] dark:bg-[#1a1a1b] bg-white border border-[#3a3a3d] dark:border-[#3a3a3d] border-zinc-200 rounded-xl shadow-sm transition-colors">
+    <div className="relative min-h-screen bg-slate-100/90 dark:bg-[#070709] text-zinc-900 dark:text-zinc-100 flex flex-col items-center justify-center p-4 sm:p-6 transition-colors overflow-hidden">
+      {/* ── Interactive Neural Linguistic Synapse Network (Mouse reactive) ── */}
+      <NeuralLinguisticBackground />
+
+      {/* ── Atmospheric Ambient Depth Light ──────────────────────── */}
+      <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[900px] h-[650px] bg-blue-500/10 dark:bg-blue-600/20 rounded-full blur-[140px]" />
+        <div className="absolute -top-40 right-1/4 w-[500px] h-[500px] bg-indigo-500/10 dark:bg-indigo-600/15 rounded-full blur-[120px]" />
+      </div>
+
+      {/* ── Elevated High-Contrast Modal Card ────────────────────── */}
+      <div className="relative z-10 max-w-4xl w-full bg-white dark:bg-[#16161a] border border-zinc-200/90 dark:border-[#2e2e38] rounded-2xl shadow-[0_25px_60px_-15px_rgba(0,0,0,0.16),0_0_20px_rgba(0,0,0,0.04)] dark:shadow-[0_30px_70px_-15px_rgba(0,0,0,0.95),0_0_45px_rgba(37,99,235,0.12)] ring-1 ring-zinc-950/5 dark:ring-white/10 transition-colors overflow-hidden">
 
         {/* ── Header ──────────────────────────────────────────────── */}
-        <div className="flex items-center justify-between px-4 py-3 md:px-6 md:py-4 border-b border-[#2e2e30] dark:border-[#2e2e30] border-zinc-200">
+        <div className="flex items-center justify-between px-4 py-3.5 md:px-6 md:py-4 bg-zinc-50/90 dark:bg-[#1a1a1e]/90 border-b border-zinc-200 dark:border-[#2a2a30]">
           <div className="flex items-center gap-3">
             <LayaMeetLogo size="sm" showWordmark={false} />
             <div>
-              <h1 className="text-sm font-semibold text-zinc-100 dark:text-zinc-100 text-zinc-900 leading-none">Chuẩn bị tham gia</h1>
-              <p className="text-xs text-zinc-500 dark:text-zinc-500 text-zinc-500 mt-0.5">
-                Phòng họp:{' '}
-                <span className="font-mono text-zinc-300 dark:text-zinc-300 text-zinc-800 font-semibold uppercase">
+              <h1 className="text-sm font-bold text-zinc-900 dark:text-white leading-none">Chuẩn bị tham gia</h1>
+              <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1 flex items-center gap-1.5">
+                <span>Phòng họp:</span>
+                <span className="font-mono text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/50 border border-blue-200/80 dark:border-blue-800/60 px-1.5 py-0.2 rounded text-[11px] font-bold uppercase tracking-wider">
                   {meetingCode?.toUpperCase()}
                 </span>
               </p>
@@ -399,7 +410,7 @@ export const PreJoinPage: React.FC = () => {
             <button
               type="button"
               onClick={() => navigate('/')}
-              className="px-3 py-1.5 rounded-lg border border-[#3a3a3d] dark:border-[#3a3a3d] border-zinc-300 bg-transparent hover:bg-[#2a2a2c] dark:hover:bg-[#2a2a2c] hover:bg-zinc-100 text-zinc-400 hover:text-zinc-200 dark:text-zinc-400 dark:hover:text-zinc-200 text-zinc-600 hover:text-zinc-900 text-xs font-medium flex items-center gap-1.5 transition-colors cursor-pointer"
+              className="px-3 py-1.5 rounded-lg border border-zinc-300 dark:border-[#3a3a40] bg-white hover:bg-zinc-100 dark:bg-[#202024] dark:hover:bg-[#28282e] text-zinc-700 hover:text-zinc-900 dark:text-zinc-300 dark:hover:text-white text-xs font-medium flex items-center gap-1.5 transition-colors cursor-pointer shadow-2xs"
             >
               <ArrowLeft className="w-3.5 h-3.5" />
               <span>Quay lại</span>
@@ -478,9 +489,9 @@ export const PreJoinPage: React.FC = () => {
             </div>
 
             {/* Device & mic check panel */}
-            <div className="bg-zinc-50 dark:bg-[#111112] rounded-xl border border-zinc-200 dark:border-[#2e2e30] p-4 space-y-3 transition-colors">
+            <div className="bg-zinc-50/80 dark:bg-[#0e0e11] rounded-xl border border-zinc-200 dark:border-[#28282e] p-4 space-y-3 transition-colors shadow-2xs">
               {permissionError && (
-                <div className="p-2.5 rounded-lg bg-amber-950/40 dark:bg-amber-950/40 bg-amber-50 border border-amber-900/50 dark:border-amber-900/50 border-amber-200 text-amber-400 dark:text-amber-300 text-amber-800 text-xs flex items-center justify-between gap-2">
+                <div className="p-2.5 rounded-lg bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/50 text-amber-800 dark:text-amber-300 text-xs flex items-center justify-between gap-2">
                   <span className="truncate">Chưa cấp quyền: {permissionError}</span>
                   <button
                     type="button"
@@ -494,15 +505,15 @@ export const PreJoinPage: React.FC = () => {
 
               {/* Mic level meter */}
               <div className="flex items-center gap-3">
-                <Mic className="w-3.5 h-3.5 text-zinc-500 dark:text-zinc-600 shrink-0" />
-                <span className="text-xs text-zinc-600 dark:text-zinc-500 shrink-0 w-20">Kiểm tra mic</span>
-                <div className="flex-1 h-1.5 bg-zinc-200 dark:bg-[#2a2a2c] rounded-full overflow-hidden">
+                <Mic className="w-3.5 h-3.5 text-zinc-500 dark:text-zinc-500 shrink-0" />
+                <span className="text-xs text-zinc-600 dark:text-zinc-400 shrink-0 w-20">Kiểm tra mic</span>
+                <div className="flex-1 h-1.5 bg-zinc-200 dark:bg-[#252528] rounded-full overflow-hidden">
                   <div
-                    className="h-full bg-green-500 transition-all duration-75 rounded-full"
+                    className="h-full bg-emerald-500 transition-all duration-75 rounded-full"
                     style={{ width: `${isMicOn ? audioVolume : 0}%` }}
                   />
                 </div>
-                <span className="text-[10px] text-zinc-500 dark:text-zinc-600 font-mono w-7 text-right shrink-0">
+                <span className="text-[10px] text-zinc-500 dark:text-zinc-400 font-mono w-7 text-right shrink-0">
                   {isMicOn ? `${audioVolume}%` : '—'}
                 </span>
               </div>
@@ -510,11 +521,11 @@ export const PreJoinPage: React.FC = () => {
               {/* Device selects */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 <div>
-                  <label className="block text-[11px] text-zinc-600 dark:text-zinc-500 mb-1">Microphone</label>
+                  <label className="block text-[11px] font-medium text-zinc-600 dark:text-zinc-400 mb-1">Microphone</label>
                   <select
                     value={selectedAudioId}
                     onChange={(e) => setSelectedAudioId(e.target.value)}
-                    className="w-full bg-white dark:bg-[#1a1a1b] border border-zinc-300 dark:border-[#3a3a3d] text-zinc-800 dark:text-zinc-300 text-xs rounded-lg px-2.5 py-2 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/30 transition"
+                    className="w-full bg-white dark:bg-[#18181c] border border-zinc-300 dark:border-[#323238] text-zinc-900 dark:text-zinc-100 text-xs rounded-lg px-2.5 py-2 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/30 transition shadow-2xs"
                   >
                     {audioDevices.length > 0 ? (
                       audioDevices.map((d) => (
@@ -528,11 +539,11 @@ export const PreJoinPage: React.FC = () => {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-[11px] text-zinc-600 dark:text-zinc-500 mb-1">Camera</label>
+                  <label className="block text-[11px] font-medium text-zinc-600 dark:text-zinc-400 mb-1">Camera</label>
                   <select
                     value={selectedVideoId}
                     onChange={(e) => setSelectedVideoId(e.target.value)}
-                    className="w-full bg-white dark:bg-[#1a1a1b] border border-zinc-300 dark:border-[#3a3a3d] text-zinc-800 dark:text-zinc-300 text-xs rounded-lg px-2.5 py-2 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/30 transition"
+                    className="w-full bg-white dark:bg-[#18181c] border border-zinc-300 dark:border-[#323238] text-zinc-900 dark:text-zinc-100 text-xs rounded-lg px-2.5 py-2 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/30 transition shadow-2xs"
                   >
                     {videoDevices.length > 0 ? (
                       videoDevices.map((d) => (
@@ -552,11 +563,11 @@ export const PreJoinPage: React.FC = () => {
           {/* Right col: Form */}
           <form
             onSubmit={handleJoinNow}
-            className="md:col-span-5 flex flex-col gap-4 md:border-l md:border-zinc-200 md:dark:border-[#2e2e30] md:pl-6"
+            className="md:col-span-5 flex flex-col gap-4 md:border-l md:border-zinc-200 md:dark:border-[#2a2a30] md:pl-6"
           >
             {/* Display name */}
             <div>
-              <label htmlFor="display-name" className="block text-xs font-medium text-zinc-600 dark:text-zinc-400 mb-1.5">
+              <label htmlFor="display-name" className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1.5">
                 Tên hiển thị
               </label>
               <input
@@ -565,7 +576,7 @@ export const PreJoinPage: React.FC = () => {
                 placeholder="Nhập họ và tên của bạn"
                 value={displayName}
                 onChange={(e) => setDisplayName(e.target.value)}
-                className="w-full bg-zinc-50 dark:bg-[#111112] border border-zinc-300 dark:border-[#3a3a3d] text-zinc-900 dark:text-zinc-100 text-sm rounded-lg px-3 py-2.5 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/30 transition placeholder-zinc-400 dark:placeholder-zinc-600 shadow-xs"
+                className="w-full bg-white dark:bg-[#18181c] border border-zinc-300 dark:border-[#323238] text-zinc-900 dark:text-white text-sm rounded-lg px-3 py-2.5 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition placeholder-zinc-400 dark:placeholder-zinc-500 shadow-2xs font-medium"
                 required
               />
             </div>
@@ -573,14 +584,14 @@ export const PreJoinPage: React.FC = () => {
             {/* Language pair */}
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label htmlFor="spoken-lang" className="block text-xs font-medium text-zinc-600 dark:text-zinc-400 mb-1.5">
+                <label htmlFor="spoken-lang" className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1.5">
                   Ngôn ngữ bạn nói
                 </label>
                 <select
                   id="spoken-lang"
                   value={spokenLanguage}
                   onChange={(e) => setSpokenLanguage(e.target.value as SupportedLanguage)}
-                  className="w-full bg-zinc-50 dark:bg-[#111112] border border-zinc-300 dark:border-[#3a3a3d] text-zinc-800 dark:text-zinc-200 text-xs rounded-lg px-2.5 py-2.5 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/30 transition shadow-xs"
+                  className="w-full bg-white dark:bg-[#18181c] border border-zinc-300 dark:border-[#323238] text-zinc-900 dark:text-zinc-100 text-xs rounded-lg px-2.5 py-2.5 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition shadow-2xs font-medium"
                 >
                   {SUPPORTED_LANGUAGES_LIST.map((lang) => (
                     <option key={lang.code} value={lang.code}>
@@ -590,14 +601,14 @@ export const PreJoinPage: React.FC = () => {
                 </select>
               </div>
               <div>
-                <label htmlFor="target-lang" className="block text-xs font-medium text-zinc-600 dark:text-zinc-400 mb-1.5">
+                <label htmlFor="target-lang" className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1.5">
                   Xem phụ đề bằng
                 </label>
                 <select
                   id="target-lang"
                   value={targetLanguage}
                   onChange={(e) => setTargetLanguage(e.target.value as SupportedLanguage)}
-                  className="w-full bg-zinc-50 dark:bg-[#111112] border border-zinc-300 dark:border-[#3a3a3d] text-zinc-800 dark:text-zinc-200 text-xs rounded-lg px-2.5 py-2.5 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/30 transition shadow-xs"
+                  className="w-full bg-white dark:bg-[#18181c] border border-zinc-300 dark:border-[#323238] text-zinc-900 dark:text-zinc-100 text-xs rounded-lg px-2.5 py-2.5 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition shadow-2xs font-medium"
                 >
                   {SUPPORTED_LANGUAGES_LIST.map((lang) => (
                     <option key={lang.code} value={lang.code}>
@@ -678,9 +689,9 @@ export const PreJoinPage: React.FC = () => {
             {/* Invite token */}
             {!meetingCode || !admissionStorage.getHostToken(meetingCode) ? (
               <div>
-                <label htmlFor="invite-token" className="block text-xs font-medium text-zinc-600 dark:text-zinc-400 mb-1.5">
+                <label htmlFor="invite-token" className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1.5">
                   Invite token{' '}
-                  <span className="text-zinc-400 dark:text-zinc-600 font-normal">(nếu có)</span>
+                  <span className="text-zinc-400 dark:text-zinc-500 font-normal">(nếu có)</span>
                 </label>
                 <textarea
                   id="invite-token"
@@ -690,17 +701,17 @@ export const PreJoinPage: React.FC = () => {
                   rows={2}
                   autoComplete="off"
                   spellCheck={false}
-                  className="w-full resize-none bg-zinc-50 dark:bg-[#111112] border border-zinc-200 dark:border-[#2e2e30] text-zinc-900 dark:text-zinc-200 text-xs rounded-lg px-2.5 py-2 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/30 font-mono placeholder-zinc-400 dark:placeholder-zinc-600 transition shadow-xs"
+                  className="w-full resize-none bg-white dark:bg-[#16161a] border border-zinc-300/90 dark:border-[#32323a] text-zinc-900 dark:text-zinc-100 text-xs rounded-xl px-3 py-2.5 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/25 font-mono placeholder-zinc-400 dark:placeholder-zinc-600 transition shadow-2xs"
                 />
               </div>
             ) : null}
 
             {/* CTA — grows to bottom */}
-            <div className="mt-auto">
+            <div className="mt-auto pt-2">
               <button
                 type="submit"
                 disabled={loading || Boolean(pendingAdmission)}
-                className="w-full py-3 md:py-2.5 px-4 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white font-semibold rounded-lg transition-colors flex items-center justify-center gap-2 text-sm cursor-pointer disabled:cursor-not-allowed"
+                className="w-full py-3 px-4 bg-blue-600 hover:bg-blue-500 active:bg-blue-700 disabled:opacity-50 text-white font-semibold rounded-xl shadow-lg shadow-blue-600/30 hover:shadow-blue-600/40 active:scale-[0.99] transition-all flex items-center justify-center gap-2 text-sm cursor-pointer disabled:cursor-not-allowed"
               >
                 <LogIn className="w-4 h-4" />
                 <span>

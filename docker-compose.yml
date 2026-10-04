@@ -78,6 +78,8 @@ services:
       - Cors__AllowedOrigins__0=${WEB_ORIGIN:-http://localhost:3000}
       - Cors__AllowedOrigins__1=https://layameet.com
       - Cors__AllowedOrigins__2=https://www.layameet.com
+      - License__DefaultMaxRooms=${LICENSE_MAX_ROOMS:-25}
+      - License__DefaultMaxParticipants=${LICENSE_MAX_PARTICIPANTS:-20}
     ports:
       - "5000:5000"
     depends_on:

@@ -23,7 +23,7 @@ import {
 
 export const AdminDashboardPage: React.FC = () => {
   const [adminKey, setAdminKey] = useState<string>(() => {
-    return sessionStorage.getItem('vimeet_admin_key') || '';
+    return sessionStorage.getItem('layameet_admin_key') || '';
   });
   const [keyInput, setKeyInput] = useState<string>('');
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
@@ -53,12 +53,12 @@ export const AdminDashboardPage: React.FC = () => {
       setOrders(o);
       setLeads(l);
       setIsAuthenticated(true);
-      sessionStorage.setItem('vimeet_admin_key', key);
+      sessionStorage.setItem('layameet_admin_key', key);
     } catch (err) {
       console.error('Failed to authenticate or load admin data:', err);
       setIsAuthenticated(false);
       setAuthError('Mã khóa quản trị (X-Admin-Key) không chính xác.');
-      sessionStorage.removeItem('vimeet_admin_key');
+      sessionStorage.removeItem('layameet_admin_key');
     } finally {
       setIsLoading(false);
     }
@@ -77,7 +77,7 @@ export const AdminDashboardPage: React.FC = () => {
   };
 
   const handleLogout = () => {
-    sessionStorage.removeItem('vimeet_admin_key');
+    sessionStorage.removeItem('layameet_admin_key');
     setAdminKey('');
     setIsAuthenticated(false);
     setMetrics(null);
@@ -114,7 +114,7 @@ export const AdminDashboardPage: React.FC = () => {
           <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-blue-500/10 text-blue-400">
             <KeyRound className="h-6 w-6" />
           </div>
-          <h1 className="text-center text-xl font-bold text-white">Quản Trị ViMeet</h1>
+          <h1 className="text-center text-xl font-bold text-white">Quản Trị LayaMeet</h1>
           <p className="mt-1 text-center text-xs text-zinc-400">
             Vui lòng nhập Admin Secret Key để truy cập dữ liệu doanh thu &amp; khách hàng.
           </p>
@@ -127,7 +127,7 @@ export const AdminDashboardPage: React.FC = () => {
               <input
                 type="password"
                 required
-                placeholder="vimeet-admin-secret-2026"
+                placeholder="layameet-admin-secret-2026"
                 value={keyInput}
                 onChange={(e) => setKeyInput(e.target.value)}
                 className="w-full px-4 py-2.5 text-sm rounded-xl border border-zinc-700 bg-zinc-950 text-white placeholder-zinc-500 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
@@ -178,9 +178,9 @@ export const AdminDashboardPage: React.FC = () => {
           </a>
           <div className="flex items-center gap-2">
             <div className="h-7 w-7 rounded-lg bg-blue-600 flex items-center justify-center font-bold text-white text-xs">
-              VM
+              LM
             </div>
-            <span className="font-bold text-sm text-white">ViMeet Admin Console</span>
+            <span className="font-bold text-sm text-white">LayaMeet Admin Console</span>
             <span className="rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-[10px] font-semibold px-2 py-0.5">
               Live Production
             </span>

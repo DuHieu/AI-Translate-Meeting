@@ -11,6 +11,7 @@
     "build": "tsc && vite build && node scripts/verify-bundle.mjs",
     "verify:bundle": "node scripts/verify-bundle.mjs",
     "lint": "eslint . --ext ts,tsx",
+    "audit:seo": "node scripts/audit-seo.mjs",
     "preview": "vite preview"
   },
   "dependencies": {

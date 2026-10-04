@@ -75,7 +75,9 @@ public sealed class MeetingService : IMeetingService
 
         if (_licenseService != null)
         {
-            var activeRooms = await _context.Meetings.CountAsync(m => m.EndedAt == null, ct);
+            var activeCutoff = UtcNow().AddHours(-4);
+            var activeRooms = await _context.Meetings
+                .CountAsync(m => m.EndedAt == null && (m.CreatedAt >= activeCutoff || _context.MeetingParticipants.Any(p => p.MeetingId == m.Id && p.LeftAt == null && p.JoinedAt >= activeCutoff)), ct);
             if (!_licenseService.CanCreateRoom(activeRooms))
             {
                 var lic = _licenseService.GetCurrentLicense();

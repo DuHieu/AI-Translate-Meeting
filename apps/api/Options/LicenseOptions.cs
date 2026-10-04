@@ -6,4 +6,6 @@ public sealed class LicenseOptions
 
     public string LicenseKey { get; set; } = string.Empty;
     public string SigningKey { get; set; } = string.Empty;
+    public int? DefaultMaxRooms { get; set; }
+    public int? DefaultMaxParticipants { get; set; }
 }

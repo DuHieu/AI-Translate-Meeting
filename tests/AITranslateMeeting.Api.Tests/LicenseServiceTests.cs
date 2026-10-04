@@ -140,6 +140,24 @@ public class LicenseServiceTests
         Assert.False(service.CanJoinRoom(currentParticipantCount: 5)); // At capacity
     }
 
+    [Fact]
+    public void GetCurrentLicense_WhenCustomDefaultLimitsConfigured_ReturnsCustomTrialLimits()
+    {
+        var options = Microsoft.Extensions.Options.Options.Create(new LicenseOptions
+        {
+            LicenseKey = string.Empty,
+            DefaultMaxRooms = 25,
+            DefaultMaxParticipants = 20
+        });
+
+        var service = new LicenseService(options, NullLogger<LicenseService>.Instance);
+        var license = service.GetCurrentLicense();
+
+        Assert.Equal("trial", license.Status);
+        Assert.Equal(25, license.MaxConcurrentRooms);
+        Assert.Equal(20, license.MaxParticipantsPerRoom);
+    }
+
     public static string CreateLicenseToken(
         string org,
         string tier,
