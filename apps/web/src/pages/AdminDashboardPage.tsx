@@ -364,18 +364,28 @@ export const AdminDashboardPage: React.FC = () => {
           </div>
 
           {/* Card 3: Active Rooms */}
-          <div className="rounded-2xl border border-zinc-800 bg-zinc-900/40 p-5 shadow-sm space-y-2">
+          <div
+            onClick={() => {
+              setActiveTab('meetings');
+              if (adminKey) loadMeetingsData(adminKey, meetingsStatusFilter, meetingsSearch);
+            }}
+            className="rounded-2xl border border-zinc-800 bg-zinc-900/40 p-5 shadow-sm space-y-2 cursor-pointer hover:border-violet-500/50 hover:bg-violet-950/20 transition group"
+          >
             <div className="flex items-center justify-between text-zinc-400">
-              <span className="text-xs font-semibold">Phòng Họp Đang Chạy</span>
-              <div className="p-2 rounded-xl bg-violet-500/10 text-violet-400">
+              <span className="text-xs font-semibold group-hover:text-violet-300 transition">Phòng Họp Đang Chạy</span>
+              <div className="p-2 rounded-xl bg-violet-500/10 text-violet-400 group-hover:bg-violet-500/20 transition">
                 <Video className="h-4 w-4" />
               </div>
             </div>
-            <div className="text-2xl font-black text-white font-mono">
-              {metrics?.activeMeetings ?? 0}
+            <div className="text-2xl font-black text-white font-mono flex items-center gap-2">
+              <span>{metrics?.activeMeetings ?? 0}</span>
+              {(metrics?.activeMeetings ?? 0) > 0 && (
+                <span className="h-2.5 w-2.5 rounded-full bg-emerald-400 animate-ping inline-block" />
+              )}
             </div>
-            <div className="text-[11px] text-zinc-500">
-              WebRTC SFU LiveKit Cluster
+            <div className="text-[11px] text-zinc-500 flex items-center justify-between">
+              <span>WebRTC SFU LiveKit Cluster</span>
+              <span className="text-violet-400 font-medium group-hover:underline">Quản lý &rarr;</span>
             </div>
           </div>
 
@@ -398,6 +408,26 @@ export const AdminDashboardPage: React.FC = () => {
 
         {/* Tab Controls */}
         <div className="flex border-b border-zinc-800 gap-4 overflow-x-auto">
+          <button
+            type="button"
+            onClick={() => {
+              setActiveTab('meetings');
+              if (adminKey) loadMeetingsData(adminKey, meetingsStatusFilter, meetingsSearch);
+            }}
+            className={`pb-3 font-semibold text-xs sm:text-sm border-b-2 transition flex items-center gap-2 whitespace-nowrap cursor-pointer ${
+              activeTab === 'meetings'
+                ? 'border-blue-500 text-blue-400'
+                : 'border-transparent text-zinc-400 hover:text-zinc-200'
+            }`}
+          >
+            <Video className="h-4 w-4" />
+            <span>Phòng Họp ({meetingsData?.totalCount ?? metrics?.activeMeetings ?? 0})</span>
+            {meetingsData && meetingsData.activeCount > 0 ? (
+              <span className="rounded-full bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 text-[10px] font-bold px-1.5 py-0.2">
+                {meetingsData.activeCount} live
+              </span>
+            ) : null}
+          </button>
           <button
             type="button"
             onClick={() => setActiveTab('orders')}
@@ -461,6 +491,259 @@ export const AdminDashboardPage: React.FC = () => {
             )}
           </button>
         </div>
+
+        {/* Action Message Toast */}
+        {actionMessage && (
+          <div
+            className={`rounded-xl p-3 text-xs flex items-center justify-between border ${
+              actionMessage.type === 'success'
+                ? 'bg-emerald-950/40 border-emerald-500/30 text-emerald-300'
+                : 'bg-red-950/40 border-red-500/30 text-red-300'
+            }`}
+          >
+            <div className="flex items-center gap-2">
+              {actionMessage.type === 'success' ? (
+                <CheckCircle2 className="h-4 w-4 text-emerald-400 shrink-0" />
+              ) : (
+                <AlertTriangle className="h-4 w-4 text-red-400 shrink-0" />
+              )}
+              <span>{actionMessage.text}</span>
+            </div>
+            <button
+              type="button"
+              onClick={() => setActionMessage(null)}
+              className="text-xs opacity-70 hover:opacity-100 cursor-pointer"
+            >
+              &times;
+            </button>
+          </div>
+        )}
+
+        {/* Tab 0: Meetings Management */}
+        {activeTab === 'meetings' && (
+          <div className="space-y-4">
+            <div className="rounded-2xl border border-zinc-800 bg-zinc-900/30 overflow-hidden shadow-sm">
+              <div className="p-4 border-b border-zinc-800/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div>
+                  <h2 className="text-sm font-bold text-white flex items-center gap-2">
+                    <Video className="h-4 w-4 text-blue-400" />
+                    <span>Quản Lý Phòng Họp Đang Chạy &amp; Lịch Sử</span>
+                  </h2>
+                  <p className="text-xs text-zinc-400 mt-0.5">
+                    Hệ thống tự động đóng phòng nhàn rỗi (idle) khi không có người sử dụng. Admin có thể đóng cưỡng chế bất kỳ phòng nào.
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (adminKey) loadMeetingsData(adminKey, meetingsStatusFilter, meetingsSearch);
+                    }}
+                    disabled={isMeetingsLoading}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-zinc-800 bg-zinc-900 hover:bg-zinc-800 text-xs text-zinc-300 hover:text-white transition cursor-pointer"
+                  >
+                    <RefreshCw className={`h-3.5 w-3.5 ${isMeetingsLoading ? 'animate-spin text-blue-400' : ''}`} />
+                    <span>Làm mới</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Filter & Search Bar */}
+              <div className="p-4 bg-zinc-950/40 border-b border-zinc-800/60 flex flex-col sm:flex-row items-center justify-between gap-3">
+                <div className="relative w-full sm:w-72">
+                  <Search className="h-4 w-4 absolute left-3 top-2.5 text-zinc-500" />
+                  <input
+                    type="text"
+                    value={meetingsSearch}
+                    onChange={(e) => {
+                      setMeetingsSearch(e.target.value);
+                      if (adminKey) loadMeetingsData(adminKey, meetingsStatusFilter, e.target.value);
+                    }}
+                    placeholder="Tìm theo mã phòng hoặc tên..."
+                    className="w-full pl-9 pr-3 py-1.5 rounded-lg border border-zinc-800 bg-zinc-900 text-xs text-zinc-200 placeholder-zinc-500 focus:outline-none focus:border-blue-500"
+                  />
+                </div>
+
+                <div className="flex items-center gap-1.5 w-full sm:w-auto">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMeetingsStatusFilter('all');
+                      if (adminKey) loadMeetingsData(adminKey, 'all', meetingsSearch);
+                    }}
+                    className={`px-3 py-1 rounded-lg text-xs font-medium transition cursor-pointer ${
+                      meetingsStatusFilter === 'all'
+                        ? 'bg-blue-600 text-white'
+                        : 'bg-zinc-900 text-zinc-400 hover:text-white border border-zinc-800'
+                    }`}
+                  >
+                    Tất cả ({meetingsData?.totalCount ?? 0})
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMeetingsStatusFilter('active');
+                      if (adminKey) loadMeetingsData(adminKey, 'active', meetingsSearch);
+                    }}
+                    className={`px-3 py-1 rounded-lg text-xs font-medium transition cursor-pointer ${
+                      meetingsStatusFilter === 'active'
+                        ? 'bg-emerald-600 text-white'
+                        : 'bg-zinc-900 text-zinc-400 hover:text-white border border-zinc-800'
+                    }`}
+                  >
+                    Đang chạy ({meetingsData?.activeCount ?? 0})
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMeetingsStatusFilter('ended');
+                      if (adminKey) loadMeetingsData(adminKey, 'ended', meetingsSearch);
+                    }}
+                    className={`px-3 py-1 rounded-lg text-xs font-medium transition cursor-pointer ${
+                      meetingsStatusFilter === 'ended'
+                        ? 'bg-zinc-700 text-white'
+                        : 'bg-zinc-900 text-zinc-400 hover:text-white border border-zinc-800'
+                    }`}
+                  >
+                    Đã kết thúc ({meetingsData?.endedCount ?? 0})
+                  </button>
+                </div>
+              </div>
+
+              {/* Table */}
+              <div className="overflow-x-auto">
+                {!meetingsData || meetingsData.meetings.length === 0 ? (
+                  <div className="py-12 text-center text-zinc-500 text-xs space-y-1">
+                    <p>Không có phòng họp nào phù hợp với điều kiện tìm kiếm.</p>
+                    <p className="text-[11px] text-zinc-600">Hệ thống tự động dọn dẹp các phòng họp rỗng không có người sử dụng.</p>
+                  </div>
+                ) : (
+                  <table className="w-full text-left text-xs">
+                    <thead className="bg-zinc-900/70 border-b border-zinc-800 text-zinc-400">
+                      <tr>
+                        <th className="px-4 py-3 font-semibold">Mã Phòng</th>
+                        <th className="px-4 py-3 font-semibold">Tên Cuộc Họp</th>
+                        <th className="px-4 py-3 font-semibold">Trạng Thái</th>
+                        <th className="px-4 py-3 font-semibold">Người Tham Gia</th>
+                        <th className="px-4 py-3 font-semibold">Thời Điểm Tạo</th>
+                        <th className="px-4 py-3 font-semibold">Thời Lượng</th>
+                        <th className="px-4 py-3 font-semibold text-right">Thao Tác</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-zinc-800/60">
+                      {meetingsData.meetings.map((m) => (
+                        <tr key={m.id} className="hover:bg-zinc-800/30 transition">
+                          <td className="px-4 py-3">
+                            <div className="flex items-center gap-1.5 font-mono font-bold text-sky-400">
+                              <span>{m.meetingCode}</span>
+                              <button
+                                type="button"
+                                onClick={() => handleCopyCode(m.meetingCode)}
+                                title="Sao chép link phòng họp"
+                                className="p-1 rounded hover:bg-zinc-800 text-zinc-500 hover:text-zinc-200 transition cursor-pointer"
+                              >
+                                {copiedCode === m.meetingCode ? (
+                                  <Check className="h-3 w-3 text-emerald-400" />
+                                ) : (
+                                  <Copy className="h-3 w-3" />
+                                )}
+                              </button>
+                            </div>
+                          </td>
+                          <td className="px-4 py-3 font-medium text-zinc-200">
+                            {m.name}
+                          </td>
+                          <td className="px-4 py-3">
+                            {m.isActive ? (
+                              <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/20 px-2.5 py-0.5 text-[11px] font-semibold">
+                                <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-ping inline-block" />
+                                <span>Đang hoạt động</span>
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 rounded-full bg-zinc-800 text-zinc-400 border border-zinc-700/50 px-2.5 py-0.5 text-[11px] font-semibold">
+                                <CheckCircle2 className="h-3 w-3" />
+                                <span>Đã kết thúc</span>
+                              </span>
+                            )}
+                          </td>
+                          <td className="px-4 py-3">
+                            {m.isActive ? (
+                              m.activeParticipantsCount > 0 ? (
+                                <span className="inline-flex items-center gap-1 rounded-full bg-blue-500/15 text-blue-300 border border-blue-500/20 px-2 py-0.5 text-[11px] font-medium">
+                                  <Users className="h-3 w-3" />
+                                  <span>{m.activeParticipantsCount} đang họp</span>
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/10 text-amber-400/80 border border-amber-500/20 px-2 py-0.5 text-[11px]">
+                                  <span>0 người (Trống)</span>
+                                </span>
+                              )
+                            ) : (
+                              <span className="text-zinc-500 text-[11px]">
+                                Tổng {m.totalParticipantsCount} người
+                              </span>
+                            )}
+                          </td>
+                          <td className="px-4 py-3 text-zinc-400 font-mono text-[11px]">
+                            {new Date(m.createdAtUtc).toLocaleString('vi-VN', {
+                              hour: '2-digit',
+                              minute: '2-digit',
+                              day: '2-digit',
+                              month: '2-digit',
+                              year: 'numeric',
+                            })}
+                          </td>
+                          <td className="px-4 py-3 text-zinc-400">
+                            {m.durationMinutes < 60
+                              ? `${Math.round(m.durationMinutes)} phút`
+                              : `${Math.floor(m.durationMinutes / 60)}h ${Math.round(m.durationMinutes % 60)}m`}
+                          </td>
+                          <td className="px-4 py-3 text-right">
+                            <div className="flex items-center justify-end gap-2">
+                              {m.isActive ? (
+                                <>
+                                  <a
+                                    href={`/rooms/${m.meetingCode}`}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border border-blue-500/20 bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 text-xs font-semibold transition"
+                                  >
+                                    <ExternalLink className="h-3 w-3" />
+                                    <span>Vào xem</span>
+                                  </a>
+                                  <button
+                                    type="button"
+                                    onClick={() => setCloseConfirmMeeting(m)}
+                                    disabled={closingCode === m.meetingCode}
+                                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border border-red-500/30 bg-red-500/10 text-red-400 hover:bg-red-500/20 text-xs font-semibold transition cursor-pointer disabled:opacity-50"
+                                  >
+                                    {closingCode === m.meetingCode ? (
+                                      <RefreshCw className="h-3 w-3 animate-spin" />
+                                    ) : (
+                                      <XCircle className="h-3 w-3" />
+                                    )}
+                                    <span>Đóng phòng</span>
+                                  </button>
+                                </>
+                              ) : (
+                                <span className="text-[11px] text-zinc-500 italic">
+                                  {m.endedAtUtc
+                                    ? `Đóng lúc ${new Date(m.endedAtUtc).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}`
+                                    : 'Đã đóng'}
+                                </span>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Tab 1: Orders Table */}
         {activeTab === 'orders' && (
@@ -1101,6 +1384,57 @@ export const AdminDashboardPage: React.FC = () => {
                   <span>{testAlertResult.message}</span>
                 </div>
               )}
+            </div>
+          </div>
+        )}
+
+        {/* Close Room Confirmation Modal */}
+        {closeConfirmMeeting && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-xs p-4">
+            <div className="w-full max-w-md rounded-2xl border border-zinc-800 bg-zinc-900 p-6 space-y-4 shadow-xl">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 rounded-xl bg-red-500/15 text-red-400 border border-red-500/20">
+                  <AlertTriangle className="h-5 w-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-white">Xác Nhận Đóng Phòng Họp</h3>
+                  <p className="text-xs text-zinc-400">Hành động này sẽ ngắt kết nối mọi thành viên</p>
+                </div>
+              </div>
+
+              <p className="text-xs text-zinc-300 leading-relaxed">
+                Bạn có chắc chắn muốn đóng phòng họp <span className="font-semibold text-white">"{closeConfirmMeeting.name}"</span> (Mã: <span className="font-mono font-bold text-sky-400">{closeConfirmMeeting.meetingCode}</span>)?
+              </p>
+
+              <div className="rounded-xl border border-zinc-800 bg-zinc-950/60 p-3 text-[11px] text-zinc-400 space-y-1">
+                <div>• Tất cả kết nối WebRTC &amp; WebSocket của phòng sẽ lập tức bị hủy.</div>
+                <div>• Phiên làm việc của người tham gia sẽ bị thu hồi.</div>
+                <div>• Tài nguyên CPU &amp; RAM phục vụ nhận dạng giọng nói sẽ được giải phóng.</div>
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setCloseConfirmMeeting(null)}
+                  disabled={closingCode === closeConfirmMeeting.meetingCode}
+                  className="px-4 py-2 rounded-xl border border-zinc-800 hover:bg-zinc-800 text-xs font-semibold text-zinc-300 transition cursor-pointer"
+                >
+                  Hủy bỏ
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleCloseMeeting(closeConfirmMeeting.meetingCode)}
+                  disabled={closingCode === closeConfirmMeeting.meetingCode}
+                  className="px-4 py-2 rounded-xl bg-red-600 hover:bg-red-500 disabled:opacity-50 text-xs font-semibold text-white transition cursor-pointer shadow-md shadow-red-600/20 flex items-center gap-2"
+                >
+                  {closingCode === closeConfirmMeeting.meetingCode ? (
+                    <RefreshCw className="h-3.5 w-3.5 animate-spin" />
+                  ) : (
+                    <XCircle className="h-3.5 w-3.5" />
+                  )}
+                  <span>Đồng Ý Đóng Phòng</span>
+                </button>
+              </div>
             </div>
           </div>
         )}
