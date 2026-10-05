@@ -95,12 +95,12 @@ export const HomePage: React.FC<HomePageProps> = ({ forcedLanguage }) => {
         canonicalLink.setAttribute('href', 'https://layameet.com/en');
       }
     } else {
-      document.title = 'LayaMeet - Nền tảng Họp Trực Tuyến Song Ngữ AI & Dịch Trực Tiếp Real-Time | layameet.com';
+      document.title = 'LayaMeet - Họp Trực Tuyến Song Ngữ AI & Dịch Trực Tiếp';
       document.documentElement.lang = 'vi';
       if (descMeta) {
         descMeta.setAttribute(
           'content',
-          'Nền tảng họp trực tuyến thông minh song ngữ thời gian thực. Tự do phát biểu tiếng mẹ đẻ, nhận phụ đề bản dịch tức thì <350ms, bảo mật On-Premise RAM-only và tự động trích xuất biên bản họp.'
+          'LayaMeet (layameet.com) - Nền tảng họp trực tuyến song ngữ AI thời gian thực. Nói tiếng mẹ đẻ, dịch tức thì <350ms, bảo mật RAM-only không lưu file âm thanh.'
         );
       }
       if (canonicalLink) {
@@ -188,12 +188,12 @@ export const HomePage: React.FC<HomePageProps> = ({ forcedLanguage }) => {
           <button
             type="button"
             onClick={() => setIsStatusModalOpen(true)}
-            className="flex items-center gap-1.5 text-xs font-medium text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100 bg-white hover:bg-zinc-100 dark:bg-[#1a1a1b] dark:hover:bg-[#222224] border border-zinc-200 dark:border-[#3a3a3d] px-2.5 sm:px-3 py-1.5 rounded-lg transition-colors cursor-pointer"
+            className="flex items-center gap-1.5 text-xs font-medium text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100 bg-white hover:bg-zinc-100 dark:bg-[#1a1a1b] dark:hover:bg-[#222224] border border-zinc-200 dark:border-[#3a3a3d] p-2 sm:px-3 sm:py-1.5 rounded-lg transition-colors cursor-pointer"
             title="Kiểm tra cấu hình và trạng thái hệ thống"
+            aria-label="Kiểm tra cấu hình và trạng thái hệ thống"
           >
             <ShieldCheck className="w-3.5 h-3.5 text-green-500 shrink-0" />
             <span className="hidden sm:inline">{t.nav.systemPrivacy}</span>
-            <span className="sm:hidden">{t.nav.systemShort}</span>
           </button>
 
           {/* Language Matrix Indicator */}
@@ -208,45 +208,57 @@ export const HomePage: React.FC<HomePageProps> = ({ forcedLanguage }) => {
       <div className="h-14 shrink-0" aria-hidden="true" />
 
       {/* ── Hero ────────────────────────────────────────────────── */}
-      <main className="relative z-10 flex-1 flex flex-col">
-        {/* Top hero section: fluid full-width on large & ultra-wide screens */}
-        <section id="hero" className="w-full max-w-[1536px] 2xl:max-w-[1720px] mx-auto px-4 sm:px-8 lg:px-12 2xl:px-16 pt-8 pb-12 md:pt-14 md:pb-18 lg:pt-16 lg:pb-20 flex flex-col lg:flex-row items-center justify-between gap-10 lg:gap-16 xl:gap-24">
+      <main className="relative z-10 flex-1 flex flex-col justify-between md:justify-start">
+        {/* Top hero section: Google Meet single-screen style on mobile, full enterprise studio on desktop */}
+        <section id="hero" className="w-full max-w-[1536px] 2xl:max-w-[1720px] mx-auto px-5 sm:px-8 lg:px-12 2xl:px-16 flex-1 md:flex-initial flex flex-col lg:flex-row items-center justify-center lg:justify-between py-6 md:pt-14 md:pb-18 lg:pt-16 lg:pb-20 gap-8 lg:gap-16 xl:gap-24">
 
           {/* Left: Headline + CTA */}
-          <div className="flex-1 w-full lg:max-w-xl xl:max-w-2xl space-y-6 text-center lg:text-left">
-            {/* Enterprise Security Badge */}
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 text-xs font-medium">
+          <div className="w-full max-w-md sm:max-w-xl lg:max-w-xl xl:max-w-2xl space-y-5 md:space-y-6 text-center lg:text-left">
+            {/* Enterprise Security Badge (Desktop/Tablet) */}
+            <div className="hidden md:inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 text-xs font-medium">
               <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
               <span className="font-semibold text-zinc-900 dark:text-zinc-100">{t.hero.infraBadge}</span>
               <span className="text-zinc-300 dark:text-zinc-700">|</span>
               <span className="text-zinc-500 dark:text-zinc-400 font-mono text-[11px]">{t.hero.infraSub}</span>
             </div>
 
-            <h1 className="text-3xl sm:text-4xl md:text-5xl xl:text-6xl font-extrabold text-zinc-950 dark:text-white tracking-tight leading-[1.12]">
+            {/* Mobile compact Google Meet-style visual icon badge */}
+            <div className="md:hidden inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-600 dark:text-blue-400 text-xs font-medium">
+              <Globe className="w-3.5 h-3.5 shrink-0" />
+              <span>{t.nav.polyglotMatrix}</span>
+            </div>
+
+            <h1 className="text-2xl sm:text-4xl md:text-5xl xl:text-6xl font-extrabold text-zinc-950 dark:text-white tracking-tight leading-tight md:leading-[1.12]">
               {t.hero.titleLine1}
               <br />
-              <span className="text-blue-600 dark:text-blue-400 font-black">{t.hero.titleHighlight}</span>
-              {t.hero.titleEnd}
+              <span className="md:hidden text-blue-600 dark:text-blue-400 font-black">
+                {t.hero.titleHighlight.replace(/[,、]\s*$/, '')}
+              </span>
+              <span className="hidden md:inline text-blue-600 dark:text-blue-400 font-black">
+                {t.hero.titleHighlight}
+              </span>
+              <span className="hidden md:inline">{t.hero.titleEnd}</span>
             </h1>
 
-            <p className="text-zinc-600 dark:text-zinc-400 text-sm md:text-base lg:text-lg leading-relaxed max-w-xl mx-auto lg:mx-0">
+            {/* Desktop full description, Mobile concise 2-line clamp */}
+            <p className="text-zinc-600 dark:text-zinc-400 text-xs sm:text-sm md:text-base lg:text-lg leading-relaxed max-w-sm sm:max-w-xl mx-auto lg:mx-0 line-clamp-2 md:line-clamp-none">
               {t.hero.description}
             </p>
 
             {/* Error */}
             {error && (
-              <div role="alert" className="p-3 rounded-lg bg-red-950/50 dark:bg-red-950/50 bg-red-50 border border-red-900/50 dark:border-red-900/50 border-red-200 text-red-400 dark:text-red-400 text-red-700 text-xs">
+              <div role="alert" className="p-3 rounded-lg bg-red-50 dark:bg-red-950/50 border border-red-200 dark:border-red-900/50 text-red-700 dark:text-red-400 text-xs">
                 {error}
               </div>
             )}
 
-            {/* CTA row */}
-            <div className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center justify-center lg:justify-start gap-3 pt-2">
+            {/* CTA row — Google Meet style primary actions */}
+            <div className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center justify-center lg:justify-start gap-3 pt-1 md:pt-2">
               <button
                 type="button"
                 onClick={handleCreateNewMeeting}
                 disabled={loading}
-                className="w-full sm:w-auto whitespace-nowrap px-6 py-3 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white font-semibold rounded-xl transition-all flex items-center justify-center gap-2 text-sm sm:text-base cursor-pointer disabled:cursor-not-allowed shadow-md hover:shadow-lg"
+                className="w-full sm:w-auto whitespace-nowrap px-6 py-3.5 md:py-3 bg-blue-600 hover:bg-blue-500 active:bg-blue-700 disabled:opacity-50 text-white font-semibold rounded-xl transition-all flex items-center justify-center gap-2 text-sm sm:text-base cursor-pointer disabled:cursor-not-allowed shadow-lg shadow-blue-600/25 hover:shadow-blue-600/35"
               >
                 <Plus className="w-5 h-5 shrink-0" />
                 <span>{loading ? t.hero.btnCreating : t.hero.btnCreate}</span>
@@ -271,11 +283,11 @@ export const HomePage: React.FC<HomePageProps> = ({ forcedLanguage }) => {
                   onChange={(e) => setMeetingCodeInput(e.target.value.toUpperCase())}
                   maxLength={8}
                   aria-label={t.hero.inputRoomCode}
-                  className="bg-[#1a1a1b] dark:bg-[#1a1a1b] bg-white border border-[#3a3a3d] dark:border-[#3a3a3d] border-zinc-300 text-zinc-100 dark:text-zinc-100 text-zinc-900 text-sm sm:text-base rounded-xl px-4 py-3 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 uppercase font-mono tracking-widest w-full sm:w-48 transition placeholder-zinc-500 dark:placeholder-zinc-600 shadow-xs"
+                  className="bg-white dark:bg-[#18181c] border border-zinc-300 dark:border-[#323238] text-zinc-900 dark:text-zinc-100 text-sm sm:text-base rounded-xl px-4 py-3.5 md:py-3 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 uppercase font-mono tracking-widest flex-1 sm:w-48 transition placeholder-zinc-400 dark:placeholder-zinc-500 shadow-xs"
                 />
                 <button
                   type="submit"
-                  className="shrink-0 p-3 rounded-xl bg-[#222224] hover:bg-[#2a2a2c] dark:bg-[#222224] dark:hover:bg-[#2a2a2c] bg-zinc-100 hover:bg-zinc-200 text-zinc-300 hover:text-zinc-100 dark:text-zinc-300 dark:hover:text-zinc-100 text-zinc-700 hover:text-zinc-900 border border-[#3a3a3d] dark:border-[#3a3a3d] border-zinc-300 transition-colors cursor-pointer"
+                  className="shrink-0 p-3.5 md:p-3 rounded-xl bg-zinc-100 hover:bg-zinc-200 dark:bg-[#222226] dark:hover:bg-[#2a2a30] text-zinc-700 hover:text-zinc-900 dark:text-zinc-200 dark:hover:text-white border border-zinc-300 dark:border-[#3a3a3d] transition-colors cursor-pointer"
                   aria-label={t.hero.btnJoin}
                 >
                   <ArrowRight className="w-5 h-5" />
@@ -283,8 +295,21 @@ export const HomePage: React.FC<HomePageProps> = ({ forcedLanguage }) => {
               </form>
             </div>
 
-            {/* Brand Proof Metrics */}
-            <div className="pt-5 border-t border-zinc-200/80 dark:border-zinc-800/80 grid grid-cols-3 gap-4 text-center lg:text-left">
+            {/* Mobile minimal feature pills (Google Meet clean style) */}
+            <div className="md:hidden pt-3 flex items-center justify-center gap-3 text-[11px] text-zinc-500 dark:text-zinc-400">
+              <span className="inline-flex items-center gap-1">
+                <Mic className="w-3.5 h-3.5 text-blue-500 shrink-0" />
+                <span>{t.hero.metricLatency} {t.hero.metricLatencySub}</span>
+              </span>
+              <span className="text-zinc-300 dark:text-zinc-700">•</span>
+              <span className="inline-flex items-center gap-1">
+                <ShieldCheck className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+                <span>{t.footer.ramOnlyBadge}</span>
+              </span>
+            </div>
+
+            {/* Brand Proof Metrics (Desktop/Tablet) */}
+            <div className="hidden md:grid pt-5 border-t border-zinc-200/80 dark:border-zinc-800/80 grid-cols-3 gap-4 text-center lg:text-left">
               <div>
                 <div className="text-lg sm:text-xl font-bold text-zinc-950 dark:text-zinc-100 font-mono">{t.hero.metricZeroStorage}</div>
                 <div className="text-xs text-zinc-500 dark:text-zinc-400">{t.hero.metricZeroSub}</div>
@@ -300,66 +325,76 @@ export const HomePage: React.FC<HomePageProps> = ({ forcedLanguage }) => {
             </div>
           </div>
 
-          {/* Right: Live Interactive Demo Studio Preview */}
-          <div className="relative group shrink-0 w-full lg:w-auto flex justify-center">
+          {/* Right: Live Interactive Demo Studio Preview (Desktop/Tablet only to keep Mobile clean like Google Meet) */}
+          <div className="hidden md:flex relative group shrink-0 w-full lg:w-auto justify-center">
             {/* Subtle glow backplate */}
             <div className="absolute -inset-2 bg-gradient-to-tr from-blue-600/10 via-indigo-600/5 to-transparent rounded-3xl blur-xl pointer-events-none" />
             <InteractiveMeetingPreview />
           </div>
         </section>
 
-        {/* ── Features grid with LayaMeet branding ──────────────────── */}
-        <section id="features" className="border-t border-[#2e2e30] dark:border-[#2e2e30] border-zinc-200 bg-[#0f0f10] dark:bg-[#0f0f10] bg-white/50 transition-colors py-14 md:py-20 lg:py-24">
-          <div className="max-w-[1536px] 2xl:max-w-[1720px] mx-auto px-4 sm:px-8 lg:px-12 2xl:px-16">
-            <div className="text-center max-w-3xl mx-auto mb-12 space-y-3">
-              <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-zinc-900 dark:text-zinc-100 tracking-tight">
-                {t.features.sectionTitle}
-              </h2>
-              <p className="text-sm sm:text-base text-zinc-500 dark:text-zinc-400">
-                {t.features.sectionSubtitle}
-              </p>
-            </div>
+        {/* ── Desktop-only Marketing Sections (Hidden on mobile for Google Meet simplicity) ── */}
+        <div className="hidden md:block">
+          {/* ── Features grid with LayaMeet branding ──────────────────── */}
+          <section id="features" className="border-t border-zinc-200 dark:border-[#2e2e30] bg-white/50 dark:bg-[#0f0f10] transition-colors py-14 md:py-20 lg:py-24">
+            <div className="max-w-[1536px] 2xl:max-w-[1720px] mx-auto px-4 sm:px-8 lg:px-12 2xl:px-16">
+              <div className="text-center max-w-3xl mx-auto mb-12 space-y-3">
+                <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-zinc-900 dark:text-zinc-100 tracking-tight">
+                  {t.features.sectionTitle}
+                </h2>
+                <p className="text-sm sm:text-base text-zinc-500 dark:text-zinc-400">
+                  {t.features.sectionSubtitle}
+                </p>
+              </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              {t.features.items.map((item, idx) => {
-                const Icon = FEATURES[idx]?.icon || FEATURES[0].icon;
-                return (
-                  <div
-                    key={item.title}
-                    className="bg-[#1a1a1b] dark:bg-[#1a1a1b] bg-white border border-[#2e2e30] dark:border-[#2e2e30] border-zinc-200 rounded-xl p-5 space-y-3 hover:border-[#3a3a3d] dark:hover:border-[#3a3a3d] hover:border-zinc-300 transition-colors shadow-xs"
-                  >
-                    <div className="w-9 h-9 rounded-lg bg-[#222224] dark:bg-[#222224] bg-zinc-100 border border-[#3a3a3d] dark:border-[#3a3a3d] border-zinc-200 flex items-center justify-center text-zinc-400 dark:text-zinc-400 text-zinc-700">
-                      <Icon className="w-4 h-4 text-blue-500" />
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                {t.features.items.map((item, idx) => {
+                  const Icon = FEATURES[idx]?.icon || FEATURES[0].icon;
+                  return (
+                    <div
+                      key={item.title}
+                      className="bg-white dark:bg-[#1a1a1b] border border-zinc-200 dark:border-[#2e2e30] rounded-xl p-5 space-y-3 hover:border-zinc-300 dark:hover:border-[#3a3a3d] transition-colors shadow-xs"
+                    >
+                      <div className="w-9 h-9 rounded-lg bg-zinc-100 dark:bg-[#222224] border border-zinc-200 dark:border-[#3a3a3d] flex items-center justify-center text-zinc-700 dark:text-zinc-400">
+                        <Icon className="w-4 h-4 text-blue-500" />
+                      </div>
+                      <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">{item.title}</h3>
+                      <p className="text-xs text-zinc-600 dark:text-zinc-400 leading-relaxed">{item.desc}</p>
                     </div>
-                    <h3 className="text-sm font-semibold text-zinc-100 dark:text-zinc-100 text-zinc-900">{item.title}</h3>
-                    <p className="text-xs text-zinc-400 dark:text-zinc-500 text-zinc-600 leading-relaxed">{item.desc}</p>
-                  </div>
-                );
-              })}
+                  );
+                })}
+              </div>
             </div>
-          </div>
-        </section>
+          </section>
 
-        {/* ── Pricing Section ─────────────────────────────────────── */}
-        <PricingSection
-          onContactClick={() => {
-            document.getElementById('contact')?.scrollIntoView({ behavior: 'smooth' });
-          }}
-        />
+          {/* ── Pricing Section ─────────────────────────────────────── */}
+          <PricingSection
+            onContactClick={() => {
+              document.getElementById('contact')?.scrollIntoView({ behavior: 'smooth' });
+            }}
+          />
 
-        {/* ── FAQ Section for Search Intent & Rich Snippets ───────── */}
-        <FAQSection />
+          {/* ── FAQ Section for Search Intent & Rich Snippets ───────── */}
+          <FAQSection />
 
-        {/* ── Contact & Enterprise Inquiry Section ────────────────── */}
-        <ContactSection />
+          {/* ── Contact & Enterprise Inquiry Section ────────────────── */}
+          <ContactSection />
+        </div>
       </main>
 
-      {/* ── Production Comprehensive Footer ─────────────────────── */}
-      <Footer
-        onOpenStatusModal={() => setIsStatusModalOpen(true)}
-        onOpenPrivacyModal={() => setLegalModalType('privacy')}
-        onOpenTermsModal={() => setLegalModalType('terms')}
-      />
+      {/* ── Mobile Minimal Footer (Google Meet style) ───────────── */}
+      <footer className="md:hidden relative z-10 py-2.5 px-4 border-t border-zinc-200/60 dark:border-zinc-800/60 flex items-center justify-center text-[11px] text-zinc-500 dark:text-zinc-500">
+        <span>{t.footer.copyright}</span>
+      </footer>
+
+      {/* ── Production Comprehensive Footer (Desktop/Tablet) ────── */}
+      <div className="hidden md:block">
+        <Footer
+          onOpenStatusModal={() => setIsStatusModalOpen(true)}
+          onOpenPrivacyModal={() => setLegalModalType('privacy')}
+          onOpenTermsModal={() => setLegalModalType('terms')}
+        />
+      </div>
 
       {/* System Status Modal */}
       <SystemStatusModal
