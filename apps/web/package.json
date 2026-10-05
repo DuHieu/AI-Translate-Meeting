@@ -12,6 +12,9 @@
     "verify:bundle": "node scripts/verify-bundle.mjs",
     "lint": "eslint . --ext ts,tsx",
     "audit:seo": "node scripts/audit-seo.mjs",
+    "seo:tool": "node scripts/seo-tool.mjs",
+    "seo:all": "node scripts/seo-tool.mjs --all",
+    "seo:ping": "node scripts/seo-tool.mjs --ping",
     "seo:indexnow": "node scripts/ping-indexnow.mjs",
     "preview": "vite preview"
   },
