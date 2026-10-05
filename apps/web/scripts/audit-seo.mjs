@@ -61,6 +61,13 @@ async function runSeoAudit() {
     console.log(`  ✓ Robots tag: ${robotsMatch[1]}`);
   }
 
+  // Favicon check (Googlebot-Favicon & Multi-device compliance)
+  const faviconMatch = html.match(/<link\s+rel=["']icon["'][^>]*href=["']([^"']+)["']/i);
+  assert(faviconMatch, 'Missing <link rel="icon"> in index.html');
+  assert(html.includes('href="/favicon.ico"'), 'Missing standard /favicon.ico reference in index.html for Googlebot-Favicon');
+  assert(html.includes('sizes="48x48"'), 'Missing Google recommended 48x48 icon size in index.html');
+  console.log('  ✓ Favicon & Googlebot-Favicon tags verified');
+
   // Open Graph tags
   assert(html.includes('property="og:title"'), 'Missing og:title');
   assert(html.includes('property="og:description"'), 'Missing og:description');
