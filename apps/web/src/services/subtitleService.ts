@@ -1,4 +1,5 @@
 import { PipelinePhase, PipelineStatusMessage, SubtitleMessage } from '../types/subtitle';
+import type { ByokProvider } from '../utils/userSettings';
 
 type SubtitleCallback = (msg: SubtitleMessage) => void;
 type PipelineStatusCallback = (status: PipelineStatusMessage) => void;
@@ -20,6 +21,17 @@ interface SubtitleConnectOptions {
   domain?: string;
   initialPrompt?: string;
 }
+
+export interface SubtitleConfigPayload {
+  domain: string;
+  initialPrompt?: string;
+  translationTier?: 'standard' | 'pro';
+  byokEnabled?: boolean;
+  byokProvider?: ByokProvider;
+  byokApiKey?: string;
+}
+
+type SubtitleConfigExtra = Omit<SubtitleConfigPayload, 'domain' | 'initialPrompt'>;
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null;
@@ -123,6 +135,7 @@ export class SubtitleWebSocketService {
   private suppressNextCloseReconnect = false;
   private reconnectTimer: number | null = null;
   private isAuthenticated = false;
+  private currentConfig: SubtitleConfigPayload | null = null;
 
   connect(options: SubtitleConnectOptions) {
     this.isIntentionalClose = false;
@@ -169,9 +182,10 @@ export class SubtitleWebSocketService {
             this.reconnectAttempts = 0;
             const activeDomain = options.domain || localStorage.getItem('ai-meeting-domain') || 'general';
             const activeInitialPrompt = options.initialPrompt || localStorage.getItem('ai-meeting-initial-prompt') || '';
-            if (activeDomain || activeInitialPrompt) {
-              this.sendConfig(activeDomain, activeInitialPrompt);
-            }
+            this.sendConfig(this.currentConfig || {
+              domain: activeDomain,
+              initialPrompt: activeInitialPrompt,
+            });
             return;
           }
           const pipelineStatus = normalizePipelineStatusMessage(data);
@@ -261,19 +275,34 @@ export class SubtitleWebSocketService {
     }
   }
 
-  sendSpeechText(text: string, language?: string) {
+  sendSpeechText(text: string, language?: string, isFinal = true) {
     if (this.ws && this.ws.readyState === WebSocket.OPEN && this.isAuthenticated && text.trim()) {
-      this.ws.send(JSON.stringify({ text: text.trim(), language, isFinal: true }));
+      this.ws.send(JSON.stringify({ text: text.trim(), language, isFinal }));
     }
   }
 
-  sendConfig(domain: string, initialPrompt?: string) {
-    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+  sendConfig(payload: SubtitleConfigPayload): void;
+  sendConfig(domain: string, initialPrompt?: string, extra?: SubtitleConfigExtra): void;
+  sendConfig(
+    domainOrPayload: string | SubtitleConfigPayload,
+    initialPrompt = '',
+    extra: SubtitleConfigExtra = {},
+  ) {
+    const payload = typeof domainOrPayload === 'string'
+      ? { domain: domainOrPayload, initialPrompt, ...extra }
+      : domainOrPayload;
+    this.currentConfig = payload;
+
+    if (this.ws && this.ws.readyState === WebSocket.OPEN && this.isAuthenticated) {
       this.ws.send(
         JSON.stringify({
           type: 'config',
-          domain,
-          initialPrompt: initialPrompt || '',
+          domain: payload.domain,
+          initialPrompt: payload.initialPrompt || '',
+          translationTier: payload.translationTier || 'standard',
+          byokEnabled: payload.byokEnabled ?? false,
+          byokProvider: payload.byokProvider || 'openai',
+          byokApiKey: payload.byokApiKey || '',
         })
       );
     }
