@@ -46,6 +46,7 @@ Thumbs.db
 screenshot_*.png
 debug_*.png
 *.png
+!apps/web/public/*.png
 
 # Local database backups
 backups/
