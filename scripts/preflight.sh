@@ -292,16 +292,25 @@ fi
 check_port_free() {
   local port="$1"
   local proto="${2:-tcp}"
+  local in_use=0
   if command -v ss >/dev/null 2>&1; then
     if ss -lntu | grep -q ":${port} "; then
-      record_fail "Port $port/$proto is already in use by another process."
-      return 1
+      in_use=1
     fi
   elif command -v netstat >/dev/null 2>&1; then
     if netstat -lntu 2>/dev/null | grep -q ":${port} "; then
-      record_fail "Port $port/$proto is already in use by another process."
-      return 1
+      in_use=1
     fi
+  fi
+
+  if (( in_use == 1 )); then
+    if command -v docker >/dev/null 2>&1 && docker ps --format '{{.Ports}}' 2>/dev/null | grep -q ":${port}->"; then
+      log_warn "Port $port/$proto is currently bound by an existing Docker container (previous deployment)."
+      ((WARN_COUNT++)) || true
+      return 0
+    fi
+    record_fail "Port $port/$proto is already in use by another host process."
+    return 1
   fi
   log_ok "Port $port/$proto appears available."
   return 0
