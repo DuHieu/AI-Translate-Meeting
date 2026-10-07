@@ -218,7 +218,7 @@ services:
       - caddy_config:/config
     networks:
       backend:
-        ipv4_address: 172.30.0.5
+        ipv4_address: 172.30.0.50
     depends_on:
       - web
       - livekit

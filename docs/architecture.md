@@ -238,7 +238,7 @@ Trong môi trường Production (`docker-compose.production.yml`), toàn bộ c�
 
 | Service | Container Name | Internal IP / Port | Public Ingress Port | Ghi chú bảo mật |
 | :--- | :--- | :--- | :--- | :--- |
-| **caddy** | `caddy` | 172.30.0.5:80,443 | `80, 443/tcp, 443/udp` | Điểm tiếp nhận duy nhất cho HTTPS/WSS |
+| **caddy** | `caddy` | 172.30.0.50:80,443 | `80, 443/tcp, 443/udp` | Điểm tiếp nhận duy nhất cho HTTPS/WSS |
 | **livekit** | `livekit` | 172.30.0.x:7880 | `7881/tcp, 7882/udp` | Cổng media WebRTC bắt buộc mở cho client |
 | **web** | `web` | 172.30.0.10:3000 | *Không expose* | Nhận reverse proxy từ Caddy |
 | **api** | `api` | 172.30.0.20:5000 | *Không expose* | Nhận reverse proxy từ Web Nginx |
