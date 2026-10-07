@@ -358,8 +358,8 @@ test_create_invite() {
     target="$API_URL/api/meetings/$MEETING_CODE/invites"
   fi
   local resp
-  resp="$(curl_request -X POST "$target" -H "Authorization: Bearer $HOST_TOKEN" -H "Content-Type: application/json" -d '{"maxUses": 1}')"
-  INVITE_CODE="$(echo "$resp" | sed -n 's/.*"inviteCode":"\([^"]*\)".*/\1/p')"
+  resp="$(curl_request -X POST "$target" -H "Authorization: Bearer $HOST_TOKEN" -H "Content-Type: application/json" -d '{"ttlMinutes": 10}')"
+  INVITE_CODE="$(echo "$resp" | sed -n 's/.*"token":"\([^"]*\)".*/\1/p')"
   [[ -n "$INVITE_CODE" ]]
 }
 run_test "Host Creates One-Time Admission Invite" test_create_invite
@@ -377,7 +377,7 @@ test_join_meeting() {
   fi
   local resp
   resp="$(curl_request -X POST "$target" -H "Content-Type: application/json" \
-    -d "{\"displayName\": \"BashTester\", \"spokenLanguage\": \"vi\", \"targetLanguage\": \"ja\", \"inviteCode\": \"$INVITE_CODE\"}")"
+    -d "{\"displayName\": \"BashTester\", \"spokenLanguage\": \"vi\", \"targetLanguage\": \"ja\", \"admissionToken\": \"$INVITE_CODE\"}")"
   PARTICIPANT_TOKEN="$(echo "$resp" | sed -n 's/.*"token":"\([^"]*\)".*/\1/p')"
   PARTICIPANT_ID="$(echo "$resp" | sed -n 's/.*"participantId":"\([^"]*\)".*/\1/p')"
   SUBTITLE_TOKEN="$(echo "$resp" | sed -n 's/.*"subtitleToken":"\([^"]*\)".*/\1/p')"
