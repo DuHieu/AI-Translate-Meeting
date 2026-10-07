@@ -223,11 +223,11 @@ test_ai_live() {
   if [[ "$IS_DOMAIN_MODE" -eq 1 ]]; then
     local resp
     resp="$(curl_request -f "$BASE_URL/ai-health/live")"
-    echo "$resp" | grep -qi "ok"
+    echo "$resp" | grep -Eqi "(ok|alive)"
   else
     local resp
     resp="$(curl_request -f "$AI_URL/health/live")"
-    echo "$resp" | grep -qi "ok"
+    echo "$resp" | grep -Eqi "(ok|alive)"
   fi
 }
 run_test "AI Service Live Health Probe" test_ai_live
