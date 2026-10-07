@@ -11,6 +11,10 @@
     "build": "tsc && vite build && node scripts/prerender.mjs && node scripts/verify-bundle.mjs",
     "verify:bundle": "node scripts/verify-bundle.mjs",
     "lint": "eslint . --ext ts,tsx",
+    "test:mobile": "node scripts/mobile-e2e.mjs",
+    "audit:mobile": "node scripts/mobile-quality.mjs",
+    "audit:mobile:extra": "node scripts/mobile-quality-extra.mjs",
+    "audit:lighthouse:mobile": "node scripts/mobile-lighthouse.mjs",
     "audit:seo": "node scripts/audit-seo.mjs",
     "seo:tool": "node scripts/seo-tool.mjs",
     "seo:all": "node scripts/seo-tool.mjs --all",
@@ -21,6 +25,7 @@
   "dependencies": {
     "@livekit/components-react": "^2.6.4",
     "@livekit/components-styles": "^1.2.0",
+    "@supabase/supabase-js": "2.117.2",
     "livekit-client": "^2.5.0",
     "lucide-react": "^0.428.0",
     "react": "^18.3.1",
@@ -28,6 +33,7 @@
     "react-router-dom": "^7.18.2"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.13.0",
     "@types/react": "^18.3.3",
     "@types/react-dom": "^18.3.0",
     "@typescript-eslint/eslint-plugin": "^7.18.0",
@@ -37,6 +43,8 @@
     "eslint": "^8.57.1",
     "eslint-plugin-react-hooks": "^4.6.2",
     "eslint-plugin-react-refresh": "^0.4.26",
+    "lighthouse": "^13.5.0",
+    "playwright": "^1.63.0",
     "postcss": "^8.4.41",
     "tailwindcss": "^3.4.10",
     "typescript": "^5.5.3",
