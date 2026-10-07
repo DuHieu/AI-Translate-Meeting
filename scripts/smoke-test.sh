@@ -298,7 +298,7 @@ test_system_audit() {
   fi
   local resp
   resp="$(curl_request -f "$target")"
-  echo "$resp" | grep -qi "events"
+  [[ "$resp" =~ ^\[.*\]$ ]]
 }
 run_test "Audit Log & Security Trail API" test_system_audit
 
