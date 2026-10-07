@@ -319,6 +319,19 @@ run_test "Database Retention Cleanup API" test_system_cleanup
 # 11. Create Meeting
 MEETING_CODE=""
 HOST_TOKEN=""
+
+cleanup_smoke_meeting() {
+  if [[ -n "${MEETING_CODE:-}" && -n "${HOST_TOKEN:-}" ]]; then
+    local end_target
+    if [[ "$IS_DOMAIN_MODE" -eq 1 ]]; then
+      end_target="$BASE_URL/api/meetings/$MEETING_CODE/end"
+    else
+      end_target="$API_URL/api/meetings/$MEETING_CODE/end"
+    fi
+    curl_request -X POST "$end_target" -H "Authorization: Bearer $HOST_TOKEN" >/dev/null 2>&1 || true
+  fi
+}
+trap cleanup_smoke_meeting EXIT
 test_create_meeting() {
   local target
   if [[ "$IS_DOMAIN_MODE" -eq 1 ]]; then
