@@ -25,12 +25,15 @@ def test_notification_dispatcher_contract() -> None:
     assert "WebhookUrl" in source
 
 
-def test_billing_service_exposes_monthly_pro_plan() -> None:
+def test_billing_service_exposes_account_bound_monthly_and_annual_plans() -> None:
     source = read_api("Services/BillingService.cs")
 
     assert '"pro"' in source
     assert "Gói LayaMeet Pro 1 Tháng" in source
     assert "99_000" in source
+    assert '"pro_annual"' in source
+    assert "948_000" in source
+    assert "GetAccountSubscription" in source
     assert "GetAvailablePlans" in source
 
 
@@ -56,13 +59,17 @@ def test_web_admin_dashboard_and_expanded_checkout_contract() -> None:
     assert "getAdminLeads" in api_source
     assert "testAdminNotification" in api_source
 
-    assert "Gói LayaMeet Pro 1 Tháng" in checkout_source
-    assert "99.000đ / tháng" in checkout_source
+    assert "createPortal" in checkout_source
+    assert "useAuth" in checkout_source
+    assert "layameet:pending-checkout-plan" in checkout_source
+    assert "Pro Unlimited" in checkout_source
+    assert "99.000đ · $4.99" in checkout_source
+    assert "948.000đ · $47.88" in checkout_source
 
     assert 'path="/admin"' in app_source
     assert "AdminDashboardPage" in app_source
 
-    assert "ViMeet Admin Console" in admin_page
+    assert "LayaMeet Admin Console" in admin_page or "ViMeet Admin Console" in admin_page
     assert "Giao Dịch VietQR" in admin_page
     assert "Khách Hàng Doanh Nghiệp" in admin_page
     assert "Thông Báo Telegram" in admin_page

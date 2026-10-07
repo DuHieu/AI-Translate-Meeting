@@ -11,10 +11,10 @@ def read(relative_path: str) -> str:
 def test_use_audio_booth_guardrails_contract():
     source = read("hooks/useAudioBooth.ts")
 
-    # 1. Only speaks isFinal utterances
-    assert "latest.isFinal" in source
+    # 1. Only speaks isFinal utterances (now via forEach over history)
+    assert "item.isFinal" in source
     # 2. Filters out self utterances
-    assert "currentUserId && latest.participantId === currentUserId" in source
+    assert "currentUserId && item.participantId === currentUserId" in source
     # 3. Drops stale utterances queued > 2.5s
     assert "ageMs > 2500" in source
     assert "Dropping stale queue item" in source
@@ -30,6 +30,8 @@ def test_use_audio_booth_guardrails_contract():
     # 6. Returns isDucked and isSpeaking
     assert "isDucked: audioDuckingRegistry.getDucked()" in source
     assert "isSpeaking: isSpeakingRef.current" in source
+    # 7. Skips same-language items (no cabin readback needed)
+    assert "isSameLanguage" in source
 
 
 def test_audio_ducking_registry_contract():

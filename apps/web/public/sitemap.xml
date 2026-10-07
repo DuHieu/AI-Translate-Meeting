@@ -47,11 +47,27 @@
   </url>
   <url>
     <loc>https://layameet.com/hop-song-ngu-tieng-anh</loc>
-    <lastmod>2026-10-05</lastmod>
+    <lastmod>2026-10-07</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
     <xhtml:link rel="alternate" hreflang="vi" href="https://layameet.com/hop-song-ngu-tieng-anh" />
     <xhtml:link rel="alternate" hreflang="en" href="https://layameet.com/hop-song-ngu-tieng-anh" />
+  </url>
+  <url>
+    <loc>https://layameet.com/hop-song-ngu-tieng-trung</loc>
+    <lastmod>2026-10-07</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+    <xhtml:link rel="alternate" hreflang="vi" href="https://layameet.com/hop-song-ngu-tieng-trung" />
+    <xhtml:link rel="alternate" hreflang="zh" href="https://layameet.com/hop-song-ngu-tieng-trung" />
+  </url>
+  <url>
+    <loc>https://layameet.com/hop-song-ngu-tieng-han</loc>
+    <lastmod>2026-10-07</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+    <xhtml:link rel="alternate" hreflang="vi" href="https://layameet.com/hop-song-ngu-tieng-han" />
+    <xhtml:link rel="alternate" hreflang="ko" href="https://layameet.com/hop-song-ngu-tieng-han" />
   </url>
   <url>
     <loc>https://layameet.com/so-sanh/layameet-vs-zoom</loc>
@@ -66,5 +82,71 @@
     <changefreq>weekly</changefreq>
     <priority>0.85</priority>
     <xhtml:link rel="alternate" hreflang="vi" href="https://layameet.com/so-sanh/layameet-vs-google-meet" />
+  </url>
+  <url>
+    <loc>https://layameet.com/cam-nang</loc>
+    <lastmod>2026-10-05</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.85</priority>
+  </url>
+  <url>
+    <loc>https://layameet.com/cam-nang/hop-song-ngu-viet-nhat-khong-can-phien-dich-vien</loc>
+    <lastmod>2026-10-05</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://layameet.com/cam-nang/so-sanh-chi-tiet-layameet-vs-zoom-ai</loc>
+    <lastmod>2026-10-05</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://layameet.com/cam-nang/ket-qua-benchmark-ai-audio-lid-1000-voice-xau-ngap-ngung</loc>
+    <lastmod>2026-10-07</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.85</priority>
+  </url>
+  <url>
+    <loc>https://layameet.com/en/guide</loc>
+    <lastmod>2026-10-05</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.85</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://layameet.com/en/guide" />
+    <xhtml:link rel="alternate" hreflang="vi" href="https://layameet.com/cam-nang" />
+    <xhtml:link rel="alternate" hreflang="ja" href="https://layameet.com/ja/guide" />
+  </url>
+  <url>
+    <loc>https://layameet.com/en/guide/real-time-bilingual-meeting-translation-guide</loc>
+    <lastmod>2026-10-05</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.85</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://layameet.com/en/guide/real-time-bilingual-meeting-translation-guide" />
+    <xhtml:link rel="alternate" hreflang="vi" href="https://layameet.com/cam-nang/hop-song-ngu-viet-nhat-khong-can-phien-dich-vien" />
+  </url>
+  <url>
+    <loc>https://layameet.com/en/guide/layameet-vs-zoom-ai-comparison</loc>
+    <lastmod>2026-10-05</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.85</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://layameet.com/en/guide/layameet-vs-zoom-ai-comparison" />
+    <xhtml:link rel="alternate" hreflang="vi" href="https://layameet.com/cam-nang/so-sanh-chi-tiet-layameet-vs-zoom-ai" />
+  </url>
+  <url>
+    <loc>https://layameet.com/ja/guide</loc>
+    <lastmod>2026-10-05</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.85</priority>
+    <xhtml:link rel="alternate" hreflang="ja" href="https://layameet.com/ja/guide" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://layameet.com/en/guide" />
+    <xhtml:link rel="alternate" hreflang="vi" href="https://layameet.com/cam-nang" />
+  </url>
+  <url>
+    <loc>https://layameet.com/ja/guide/vietnam-japan-bilingual-meeting-guide</loc>
+    <lastmod>2026-10-05</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.85</priority>
+    <xhtml:link rel="alternate" hreflang="ja" href="https://layameet.com/ja/guide/vietnam-japan-bilingual-meeting-guide" />
+    <xhtml:link rel="alternate" hreflang="vi" href="https://layameet.com/cam-nang/hop-song-ngu-viet-nhat-khong-can-phien-dich-vien" />
   </url>
 </urlset>

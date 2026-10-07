@@ -65,6 +65,13 @@ function Receive-WebSocketMessage {
         [Parameter(Mandatory = $true)][System.Net.WebSockets.ClientWebSocket]$Socket
     )
 
+    if ($Socket.State -eq [System.Net.WebSockets.WebSocketState]::Aborted -or $Socket.State -eq [System.Net.WebSockets.WebSocketState]::Closed) {
+        return [PSCustomObject]@{
+            MessageType = [System.Net.WebSockets.WebSocketMessageType]::Close
+            Text = ""
+            CloseCode = if ($Socket.CloseStatus) { [int]$Socket.CloseStatus } else { 1009 }
+        }
+    }
     $buffer = [byte[]]::new(8192)
     $segment = [ArraySegment[byte]]::new($buffer)
     $timeout = [System.Threading.CancellationTokenSource]::new([TimeSpan]::FromSeconds(10))
@@ -77,7 +84,7 @@ function Receive-WebSocketMessage {
         }
     }
     catch {
-        if ($Socket.CloseStatus -or $Socket.State -eq [System.Net.WebSockets.WebSocketState]::CloseReceived -or $Socket.State -eq [System.Net.WebSockets.WebSocketState]::Closed) {
+        if ($Socket.CloseStatus -or $Socket.State -eq [System.Net.WebSockets.WebSocketState]::CloseReceived -or $Socket.State -eq [System.Net.WebSockets.WebSocketState]::Closed -or $Socket.State -eq [System.Net.WebSockets.WebSocketState]::Aborted) {
             return [PSCustomObject]@{
                 MessageType = [System.Net.WebSockets.WebSocketMessageType]::Close
                 Text = ""
@@ -296,7 +303,12 @@ Assert-Test "AI WebSocket - Reject Oversized Audio Frame (1009)" {
             throw "Expected authentication acknowledgement"
         }
 
-        Send-WebSocketBinary -Socket $socket -Bytes ([byte[]]::new(131073))
+        try {
+            Send-WebSocketBinary -Socket $socket -Bytes ([byte[]]::new(131073))
+        }
+        catch {
+            # Socket may be immediately closed or aborted by server due to frame size limit
+        }
         $receivedClose = $false
         for ($attempt = 0; $attempt -lt 3; $attempt++) {
             $message = Receive-WebSocketMessage -Socket $socket

@@ -13,6 +13,9 @@ export const LANGUAGE_STORAGE_KEY = 'layameet_lang';
  * Intelligent automatic language detection based on user location (timezone) & browser locale
  */
 export function detectUserLanguage(): AppLanguage {
+  // Locale routes render the correct copy on the first paint.
+  const routeLocale = window.location.pathname.split('/')[1];
+  if (routeLocale === 'ja' || routeLocale === 'en') return routeLocale;
   // 1. Check LocalStorage if user previously chose a language
   const saved = localStorage.getItem(LANGUAGE_STORAGE_KEY) as AppLanguage | null;
   if (saved && (saved === 'vi' || saved === 'en' || saved === 'ja')) {

@@ -14,8 +14,16 @@ const urlList = [
   `https://${HOST}/hop-song-ngu-tieng-anh`,
   `https://${HOST}/so-sanh/layameet-vs-zoom`,
   `https://${HOST}/so-sanh/layameet-vs-google-meet`,
+  `https://${HOST}/cam-nang`,
+  `https://${HOST}/cam-nang/hop-song-ngu-viet-nhat-khong-can-phien-dich-vien`,
+  `https://${HOST}/cam-nang/so-sanh-chi-tiet-layameet-vs-zoom-ai`,
   `https://${HOST}/ja`,
   `https://${HOST}/en`,
+  `https://${HOST}/en/guide`,
+  `https://${HOST}/en/guide/real-time-bilingual-meeting-translation-guide`,
+  `https://${HOST}/en/guide/layameet-vs-zoom-ai-comparison`,
+  `https://${HOST}/ja/guide`,
+  `https://${HOST}/ja/guide/vietnam-japan-bilingual-meeting-guide`,
 ];
 
 async function pingIndexNow() {

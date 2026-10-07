@@ -69,6 +69,7 @@ export const MeetingRoom: React.FC<MeetingRoomProps> = ({ session, onLeaveComple
   useEffect(() => {
     const handleBeforeUnload = () => {
       try {
+        meetingStorage.clearSession(session.meetingCode);
         const body = JSON.stringify({ participantId: session.participantId });
         fetch(`/api/meetings/${session.meetingCode}/leave`, {
           method: 'POST',
@@ -100,6 +101,19 @@ export const MeetingRoom: React.FC<MeetingRoomProps> = ({ session, onLeaveComple
     return session.liveKitUrl;
   }, [session.liveKitUrl]);
 
+  if (typeof RTCPeerConnection === 'undefined') {
+    return (
+      <main className="content-page min-h-dvh flex items-center justify-center bg-slate-950 p-6 text-slate-100">
+        <section className="w-full max-w-lg rounded-2xl border border-slate-600 p-6 space-y-4">
+          <h1 className="text-xl font-semibold">Trình duyệt chưa hỗ trợ cuộc họp WebRTC</h1>
+          <p role="alert">Hãy cập nhật Safari hoặc Chrome, hoặc mở cùng mã phòng trên máy tính. Bạn không cần microphone hay camera để vào ở chế độ chỉ nghe.</p>
+          <p className="font-mono select-all">Mã phòng: {session.meetingCode}</p>
+          <button type="button" onClick={() => void handleLeaveRoom()} className="meeting-menu-action">Quay lại màn hình chuẩn bị</button>
+        </section>
+      </main>
+    );
+  }
+
   return (
     <LiveKitRoom
       serverUrl={serverUrl}
@@ -115,7 +129,7 @@ export const MeetingRoom: React.FC<MeetingRoomProps> = ({ session, onLeaveComple
       }}
       onDisconnected={handleDisconnected}
       data-lk-theme="default"
-      className="h-screen w-screen overflow-hidden bg-slate-950"
+      className="meeting-room w-full overflow-hidden bg-slate-950"
     >
       <MeetingShell
         session={session}

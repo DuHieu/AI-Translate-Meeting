@@ -139,7 +139,7 @@ public sealed class AdminController : ControllerBase
         }
 
         var success = await _notificationDispatcher.SendTestNotificationAsync(
-            "Đây là thông báo kiểm tra hệ thống từ trang quản trị ViMeet Admin Dashboard.",
+            "Đây là thông báo kiểm tra hệ thống từ trang quản trị LayaMeet Admin Dashboard.",
             cancellationToken);
 
         return Ok(new
@@ -361,5 +361,35 @@ public sealed class AdminController : ControllerBase
             $"Đã kết thúc phòng họp '{meeting.Name}' ({meeting.MeetingCode}) thành công.",
             now
         ));
+    }
+
+    [HttpGet("feedbacks")]
+    [ProducesResponseType(typeof(IReadOnlyList<MeetingFeedbackResponseDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
+    public async Task<ActionResult<IReadOnlyList<MeetingFeedbackResponseDto>>> GetFeedbacksAsync(
+        [FromQuery] int limit = 100,
+        CancellationToken cancellationToken = default)
+    {
+        if (!IsAuthorized())
+        {
+            return UnauthorizedResult();
+        }
+
+        var feedbacks = await _dbContext.MeetingFeedbacks
+            .AsNoTracking()
+            .OrderByDescending(f => f.CreatedAt)
+            .Take(Math.Clamp(limit, 1, 500))
+            .Select(f => new MeetingFeedbackResponseDto(
+                f.Id,
+                f.MeetingCode,
+                f.Rating,
+                f.Category,
+                f.Comment,
+                f.UserName,
+                f.UserEmail,
+                f.CreatedAt))
+            .ToListAsync(cancellationToken);
+
+        return Ok(feedbacks);
     }
 }

@@ -161,7 +161,7 @@ export const EnterpriseSsoModal: React.FC<EnterpriseSsoModalProps> = ({
       <div className="border-b border-zinc-200 bg-zinc-50 px-5 py-4 dark:border-zinc-800 dark:bg-[#121214]">
         <div className="flex items-start justify-between gap-4">
           <div className="flex items-start gap-3">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-blue-200 bg-blue-50 text-blue-600 dark:border-blue-900 dark:bg-blue-950/40 dark:text-blue-400">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-zinc-200 bg-zinc-100 text-zinc-700 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300">
               <Building2 className="h-5 w-5" aria-hidden="true" />
             </div>
             <div>
@@ -220,13 +220,13 @@ export const EnterpriseSsoModal: React.FC<EnterpriseSsoModalProps> = ({
 
         <div aria-live="polite" className="min-h-5">
           {error && (
-            <div role="alert" className="flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 p-2.5 text-xs text-red-700 dark:border-red-900/60 dark:bg-red-950/30 dark:text-red-300">
+            <div role="alert" className="flex items-start gap-2 rounded-lg border border-rose-200 bg-rose-50 p-2.5 text-xs text-rose-700 dark:border-rose-500/20 dark:bg-rose-500/10 dark:text-rose-300">
               <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
               <span>{error}</span>
             </div>
           )}
           {domainValidation?.allowed && (
-            <div className="flex items-start gap-2 rounded-lg border border-emerald-200 bg-emerald-50 p-2.5 text-xs text-emerald-700 dark:border-emerald-900/60 dark:bg-emerald-950/30 dark:text-emerald-300">
+            <div className="flex items-start gap-2 rounded-lg border border-emerald-200 bg-emerald-50 p-2.5 text-xs text-emerald-700 dark:border-emerald-500/20 dark:bg-emerald-500/10 dark:text-emerald-300">
               <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
               <span>
                 Domain <strong>{domainValidation.domain}</strong> đã được chấp nhận
@@ -235,7 +235,7 @@ export const EnterpriseSsoModal: React.FC<EnterpriseSsoModalProps> = ({
             </div>
           )}
           {domainValidation && !domainValidation.allowed && (
-            <div className="flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 p-2.5 text-xs text-amber-800 dark:border-amber-900/60 dark:bg-amber-950/30 dark:text-amber-300">
+            <div className="flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 p-2.5 text-xs text-amber-800 dark:border-amber-500/20 dark:bg-amber-500/10 dark:text-amber-300">
               <LockKeyhole className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
               <span>Domain này chưa được quản trị viên LayaMeet cho phép.</span>
             </div>
@@ -269,7 +269,7 @@ export const EnterpriseSsoModal: React.FC<EnterpriseSsoModalProps> = ({
                     type="button"
                     disabled={!canSignIn}
                     onClick={() => handleProviderLogin(provider)}
-                    className="flex items-center gap-3 rounded-xl border border-zinc-200 bg-white p-3 text-left transition-colors hover:border-blue-400 hover:bg-blue-50/60 disabled:cursor-not-allowed disabled:opacity-55 dark:border-zinc-700 dark:bg-zinc-900 dark:hover:border-blue-700 dark:hover:bg-blue-950/20"
+                    className="flex items-center gap-3 rounded-xl border border-zinc-200 bg-white p-3 text-left transition-colors hover:border-zinc-400 hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-55 dark:border-zinc-700 dark:bg-zinc-900 dark:hover:border-zinc-600 dark:hover:bg-zinc-800/60"
                   >
                     <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-zinc-200 bg-white dark:border-zinc-700">
                       <ProviderIcon provider={provider} />

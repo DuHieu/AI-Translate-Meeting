@@ -1,17 +1,29 @@
+import { useVisualViewport } from './hooks/useVisualViewport';
 import React, { Suspense, lazy } from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useParams, useLocation } from 'react-router-dom';
 import { ThemeProvider } from './context/ThemeContext';
 import { LanguageProvider } from './context/LanguageContext';
+import { AuthProvider } from './context/AuthContext';
 import { CookieConsentBanner } from './components/common/CookieConsentBanner';
 
 const HomePage = lazy(() => import('./pages/HomePage').then((module) => ({ default: module.HomePage })));
-const PreJoinPage = lazy(() => import('./pages/PreJoinPage').then((module) => ({ default: module.PreJoinPage })));
+export const PreJoinPage = lazy(() => import('./pages/PreJoinPage').then((module) => ({ default: module.PreJoinPage })));
 const MeetingPage = lazy(() => import('./pages/MeetingPage').then((module) => ({ default: module.MeetingPage })));
 const DevelopersPage = lazy(() => import('./pages/DevelopersPage').then((module) => ({ default: module.DevelopersPage })));
 const AdminDashboardPage = lazy(() => import('./pages/AdminDashboardPage').then((module) => ({ default: module.AdminDashboardPage })));
 const LanguagePairLandingPage = lazy(() => import('./pages/LanguagePairLandingPage').then((module) => ({ default: module.LanguagePairLandingPage })));
 const ComparisonLandingPage = lazy(() => import('./pages/ComparisonLandingPage').then((module) => ({ default: module.ComparisonLandingPage })));
 const PublicRecapPage = lazy(() => import('./pages/PublicRecapPage').then((module) => ({ default: module.PublicRecapPage })));
+const BlogListingPage = lazy(() => import('./pages/BlogListingPage').then((module) => ({ default: module.BlogListingPage })));
+const BlogPostPage = lazy(() => import('./pages/BlogPostPage').then((module) => ({ default: module.BlogPostPage })));
+const AuthCallbackPage = lazy(() => import('./pages/AuthCallbackPage').then((module) => ({ default: module.AuthCallbackPage })));
+const SettingsPage = lazy(() => import('./pages/SettingsPage').then((module) => ({ default: module.SettingsPage })));
+
+const LegacyMeetingRedirect: React.FC = () => {
+  const { meetingCode } = useParams<{ meetingCode: string }>();
+  const location = useLocation();
+  return <Navigate to={`/meeting/${meetingCode || ''}${location.search}`} replace />;
+};
 
 const PageFallback: React.FC = () => (
   <div className="min-h-screen bg-[#0f0f10] text-zinc-200 flex items-center justify-center">
@@ -23,29 +35,45 @@ const PageFallback: React.FC = () => (
 );
 
 export const App: React.FC = () => {
+  useVisualViewport();
   return (
     <ThemeProvider>
       <LanguageProvider>
-        <BrowserRouter>
-          <Suspense fallback={<PageFallback />}>
-            <Routes>
-              <Route path="/" element={<HomePage />} />
-              <Route path="/ja" element={<HomePage forcedLanguage="ja" />} />
-              <Route path="/en" element={<HomePage forcedLanguage="en" />} />
-              <Route path="/admin" element={<AdminDashboardPage />} />
-              <Route path="/developers" element={<DevelopersPage />} />
-              <Route path="/hop-song-ngu-tieng-nhat" element={<LanguagePairLandingPage variant="japanese" />} />
-              <Route path="/hop-song-ngu-tieng-anh" element={<LanguagePairLandingPage variant="english" />} />
-              <Route path="/so-sanh/layameet-vs-zoom" element={<ComparisonLandingPage competitor="zoom" />} />
-              <Route path="/so-sanh/layameet-vs-google-meet" element={<ComparisonLandingPage competitor="google-meet" />} />
-              <Route path="/prejoin/:meetingCode" element={<PreJoinPage />} />
-              <Route path="/join/:meetingCode" element={<PreJoinPage />} />
-              <Route path="/meeting/:meetingCode" element={<MeetingPage />} />
-              <Route path="/recap/:meetingCode" element={<PublicRecapPage />} />
-            </Routes>
-          </Suspense>
-          <CookieConsentBanner />
-        </BrowserRouter>
+        <AuthProvider>
+          <BrowserRouter>
+            <Suspense fallback={<PageFallback />}>
+              <Routes>
+                <Route path="/" element={<HomePage />} />
+                <Route path="/ja" element={<HomePage forcedLanguage="ja" />} />
+                <Route path="/en" element={<HomePage forcedLanguage="en" />} />
+                <Route path="/auth/callback" element={<AuthCallbackPage />} />
+                <Route path="/admin" element={<AdminDashboardPage />} />
+                <Route path="/developers" element={<DevelopersPage />} />
+                <Route path="/settings" element={<SettingsPage />} />
+                <Route path="/cai-dat" element={<Navigate to="/settings" replace />} />
+                <Route path="/cam-nang" element={<BlogListingPage forcedLanguage="vi" />} />
+                <Route path="/cam-nang/:slug" element={<BlogPostPage />} />
+                <Route path="/vi/guide" element={<BlogListingPage forcedLanguage="vi" />} />
+                <Route path="/vi/guide/:slug" element={<BlogPostPage />} />
+                <Route path="/en/guide" element={<BlogListingPage forcedLanguage="en" />} />
+                <Route path="/en/guide/:slug" element={<BlogPostPage />} />
+                <Route path="/ja/guide" element={<BlogListingPage forcedLanguage="ja" />} />
+                <Route path="/ja/guide/:slug" element={<BlogPostPage />} />
+                <Route path="/hop-song-ngu-tieng-nhat" element={<LanguagePairLandingPage variant="japanese" />} />
+                <Route path="/hop-song-ngu-tieng-anh" element={<LanguagePairLandingPage variant="english" />} />
+                <Route path="/hop-song-ngu-tieng-trung" element={<LanguagePairLandingPage variant="chinese" />} />
+                <Route path="/hop-song-ngu-tieng-han" element={<LanguagePairLandingPage variant="korean" />} />
+                <Route path="/so-sanh/layameet-vs-zoom" element={<ComparisonLandingPage competitor="zoom" />} />
+                <Route path="/so-sanh/layameet-vs-google-meet" element={<ComparisonLandingPage competitor="google-meet" />} />
+                <Route path="/prejoin/:meetingCode" element={<LegacyMeetingRedirect />} />
+                <Route path="/join/:meetingCode" element={<LegacyMeetingRedirect />} />
+                <Route path="/meeting/:meetingCode" element={<MeetingPage />} />
+                <Route path="/recap/:meetingCode" element={<PublicRecapPage />} />
+              </Routes>
+            </Suspense>
+            <CookieConsentBanner />
+          </BrowserRouter>
+        </AuthProvider>
       </LanguageProvider>
     </ThemeProvider>
   );

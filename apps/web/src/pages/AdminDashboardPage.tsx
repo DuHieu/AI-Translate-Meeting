@@ -1,3 +1,4 @@
+import { copyText } from '../utils/clipboard';
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   ShieldAlert,
@@ -25,6 +26,7 @@ import {
   ExternalLink,
   XCircle,
   Search,
+  Languages,
 } from 'lucide-react';
 import {
   meetingApi,
@@ -34,7 +36,9 @@ import {
   InfraMetricsResponse,
   AdminMeetingDto,
   AdminMeetingListResponse,
+  TranslationQaSummaryResponse,
 } from '../api/meetingApi';
+import { TranslationQaPanel } from '../components/admin/TranslationQaPanel';
 
 export const AdminDashboardPage: React.FC = () => {
   const [adminKey, setAdminKey] = useState<string>(() => {
@@ -48,7 +52,9 @@ export const AdminDashboardPage: React.FC = () => {
   const [orders, setOrders] = useState<PaymentOrderResponse[]>([]);
   const [leads, setLeads] = useState<EnterpriseLeadRecord[]>([]);
   const [infraMetrics, setInfraMetrics] = useState<InfraMetricsResponse | null>(null);
-  const [activeTab, setActiveTab] = useState<'meetings' | 'orders' | 'leads' | 'notifications' | 'infra'>('meetings');
+  const [activeTab, setActiveTab] = useState<'meetings' | 'translation-qa' | 'orders' | 'leads' | 'notifications' | 'infra'>('meetings');
+  const [translationQaSummary, setTranslationQaSummary] = useState<TranslationQaSummaryResponse | null>(null);
+  const [selectedQaMeetingId, setSelectedQaMeetingId] = useState<string | undefined>();
 
   const [meetingsData, setMeetingsData] = useState<AdminMeetingListResponse | null>(null);
   const [meetingsStatusFilter, setMeetingsStatusFilter] = useState<'all' | 'active' | 'ended'>('all');
@@ -104,18 +110,20 @@ export const AdminDashboardPage: React.FC = () => {
     setIsLoading(true);
     setAuthError(null);
     try {
-      const [m, o, l, infra, rooms] = await Promise.all([
+      const [m, o, l, infra, rooms, translationQa] = await Promise.all([
         meetingApi.getAdminMetrics(key),
         meetingApi.getAdminOrders(key),
         meetingApi.getAdminLeads(key),
         meetingApi.getAdminInfraMetrics(key).catch(() => null),
         meetingApi.getAdminMeetings(key, meetingsStatusFilter, meetingsSearch).catch(() => null),
+        meetingApi.getAdminTranslationQaSummary(key).catch(() => null),
       ]);
       setMetrics(m);
       setOrders(o);
       setLeads(l);
       if (infra) setInfraMetrics(infra);
       if (rooms) setMeetingsData(rooms);
+      if (translationQa) setTranslationQaSummary(translationQa);
       setIsAuthenticated(true);
       sessionStorage.setItem('layameet_admin_key', key);
     } catch (err) {
@@ -127,6 +135,10 @@ export const AdminDashboardPage: React.FC = () => {
       setIsLoading(false);
     }
   }, [meetingsStatusFilter, meetingsSearch]);
+
+  const handleTranslationQaSummaryChange = useCallback((nextSummary: TranslationQaSummaryResponse) => {
+    setTranslationQaSummary(nextSummary);
+  }, []);
 
   const handleCloseMeeting = async (meetingCode: string) => {
     if (!adminKey) return;
@@ -149,9 +161,9 @@ export const AdminDashboardPage: React.FC = () => {
     }
   };
 
-  const handleCopyCode = (code: string) => {
-    const url = `${window.location.origin}/rooms/${code}`;
-    navigator.clipboard.writeText(url);
+  const handleCopyCode = async (code: string) => {
+    const url = `${window.location.origin}/meeting/${code}`;
+    if (!(await copyText(url))) { setActionMessage({ type: 'error', text: `Không thể sao chép tự động. Đường dẫn: ${url}` }); return; }
     setCopiedCode(code);
     setTimeout(() => setCopiedCode(null), 2000);
   };
@@ -228,7 +240,7 @@ export const AdminDashboardPage: React.FC = () => {
   // If not authenticated, render login gate
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen bg-zinc-950 text-zinc-100 flex items-center justify-center p-4">
+      <div className="content-page min-h-dvh bg-zinc-950 text-zinc-100 flex items-center justify-center p-4">
         <div className="w-full max-w-md rounded-2xl border border-zinc-800 bg-zinc-900/80 p-8 shadow-2xl backdrop-blur-md">
           <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-blue-500/10 text-blue-400">
             <KeyRound className="h-6 w-6" />
@@ -285,7 +297,7 @@ export const AdminDashboardPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-zinc-100 flex flex-col">
+    <div className="content-page min-h-dvh bg-zinc-950 text-zinc-100 flex flex-col">
       {/* Top Navbar */}
       <header className="border-b border-zinc-800 bg-zinc-900/60 backdrop-blur-md sticky top-0 z-30 px-4 sm:px-8 py-3.5 flex items-center justify-between">
         <div className="flex items-center gap-3">
@@ -299,7 +311,7 @@ export const AdminDashboardPage: React.FC = () => {
             <div className="h-7 w-7 rounded-lg bg-blue-600 flex items-center justify-center font-bold text-white text-xs">
               LM
             </div>
-            <span className="font-bold text-sm text-white">ViMeet Admin Console</span>
+            <span className="font-bold text-sm text-white">LayaMeet Admin Console</span>
             <span className="rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-[10px] font-semibold px-2 py-0.5">
               Live Production
             </span>
@@ -430,6 +442,21 @@ export const AdminDashboardPage: React.FC = () => {
           </button>
           <button
             type="button"
+            onClick={() => {
+              setSelectedQaMeetingId(undefined);
+              setActiveTab('translation-qa');
+            }}
+            className={`pb-3 font-semibold text-xs sm:text-sm border-b-2 transition flex items-center gap-2 whitespace-nowrap cursor-pointer ${
+              activeTab === 'translation-qa'
+                ? 'border-blue-500 text-blue-400'
+                : 'border-transparent text-zinc-400 hover:text-zinc-200'
+            }`}
+          >
+            <Languages className="h-4 w-4" />
+            <span>{'Đánh Giá Dịch & Train AI'}</span>
+          </button>
+          <button
+            type="button"
             onClick={() => setActiveTab('orders')}
             className={`pb-3 font-semibold text-xs sm:text-sm border-b-2 transition flex items-center gap-2 whitespace-nowrap cursor-pointer ${
               activeTab === 'orders'
@@ -497,8 +524,8 @@ export const AdminDashboardPage: React.FC = () => {
           <div
             className={`rounded-xl p-3 text-xs flex items-center justify-between border ${
               actionMessage.type === 'success'
-                ? 'bg-emerald-950/40 border-emerald-500/30 text-emerald-300'
-                : 'bg-red-950/40 border-red-500/30 text-red-300'
+                ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300'
+                : 'bg-rose-500/10 border-rose-500/30 text-rose-300'
             }`}
           >
             <div className="flex items-center gap-2">
@@ -628,6 +655,7 @@ export const AdminDashboardPage: React.FC = () => {
                         <th className="px-4 py-3 font-semibold">Người Tham Gia</th>
                         <th className="px-4 py-3 font-semibold">Thời Điểm Tạo</th>
                         <th className="px-4 py-3 font-semibold">Thời Lượng</th>
+                        <th className="px-4 py-3 font-semibold">Độ Chính Xác Dịch</th>
                         <th className="px-4 py-3 font-semibold text-right">Thao Tác</th>
                       </tr>
                     </thead>
@@ -699,6 +727,33 @@ export const AdminDashboardPage: React.FC = () => {
                               ? `${Math.round(m.durationMinutes)} phút`
                               : `${Math.floor(m.durationMinutes / 60)}h ${Math.round(m.durationMinutes % 60)}m`}
                           </td>
+                          <td className="px-4 py-3">
+                            {(() => {
+                              const qaStats = translationQaSummary?.meetings.find(
+                                (meeting) => meeting.meetingCode === m.meetingCode,
+                              );
+                              if (!qaStats || qaStats.totalSegments === 0) {
+                                return <span className="text-[11px] text-zinc-500">Chưa có dữ liệu</span>;
+                              }
+                              return (
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setSelectedQaMeetingId(m.meetingCode);
+                                    setActiveTab('translation-qa');
+                                  }}
+                                  className={`rounded-lg border px-2.5 py-1 text-[11px] font-bold transition ${
+                                    qaStats.avgAccuracyPct >= 90
+                                      ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20'
+                                      : 'border-amber-500/30 bg-amber-500/10 text-amber-400 hover:bg-amber-500/20'
+                                  }`}
+                                  title="Mở đánh giá dịch của phòng này"
+                                >
+                                  {qaStats.avgAccuracyPct.toFixed(1)}% · {qaStats.totalSegments} câu
+                                </button>
+                              );
+                            })()}
+                          </td>
                           <td className="px-4 py-3 text-right">
                             <div className="flex items-center justify-end gap-2">
                               {m.isActive ? (
@@ -743,6 +798,14 @@ export const AdminDashboardPage: React.FC = () => {
               </div>
             </div>
           </div>
+        )}
+
+        {activeTab === 'translation-qa' && (
+          <TranslationQaPanel
+            adminKey={adminKey}
+            initialMeetingId={selectedQaMeetingId}
+            onSummaryChange={handleTranslationQaSummaryChange}
+          />
         )}
 
         {/* Tab 1: Orders Table */}
@@ -946,14 +1009,14 @@ export const AdminDashboardPage: React.FC = () => {
               </div>
 
               {testNotificationResult.status === 'success' && (
-                <div className="rounded-xl border border-emerald-500/30 bg-emerald-950/20 p-3 text-xs text-emerald-400 flex items-center gap-2">
+                <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-3 text-xs text-emerald-300 flex items-center gap-2">
                   <CheckCircle2 className="h-4 w-4 shrink-0" />
                   <span>{testNotificationResult.message}</span>
                 </div>
               )}
 
               {testNotificationResult.status === 'error' && (
-                <div className="rounded-xl border border-red-500/30 bg-red-950/20 p-3 text-xs text-red-400 flex items-center gap-2">
+                <div className="rounded-xl border border-rose-500/30 bg-rose-500/10 p-3 text-xs text-rose-300 flex items-center gap-2">
                   <ShieldAlert className="h-4 w-4 shrink-0" />
                   <span>{testNotificationResult.message}</span>
                 </div>
@@ -1286,8 +1349,8 @@ export const AdminDashboardPage: React.FC = () => {
                 </div>
 
                 {/* 4. Estimated Hosting Cost */}
-                <div className="rounded-xl border border-blue-500/20 bg-blue-950/20 p-4 space-y-1">
-                  <div className="text-[11px] text-blue-400 uppercase font-semibold tracking-wider">Ước Tính Chi Phí VPS</div>
+                <div className="rounded-xl border border-zinc-800/80 bg-zinc-900/40 p-4 space-y-1">
+                  <div className="text-[11px] text-zinc-400 uppercase font-semibold tracking-wider">Ước Tính Chi Phí VPS</div>
                   <div className="text-lg font-black text-emerald-400 font-mono">
                     ${targetCcu <= 25 ? 15 : targetCcu <= 75 ? 45 : targetCcu <= 150 ? 150 : targetCcu <= 300 ? 350 : 700} <span className="text-xs text-zinc-400 font-normal">/ tháng</span>
                   </div>
@@ -1372,14 +1435,14 @@ export const AdminDashboardPage: React.FC = () => {
               </div>
 
               {testAlertResult.status === 'success' && (
-                <div className="rounded-xl border border-emerald-500/30 bg-emerald-950/20 p-3 text-xs text-emerald-400 flex items-center gap-2">
+                <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-3 text-xs text-emerald-300 flex items-center gap-2">
                   <CheckCircle2 className="h-4 w-4 shrink-0" />
                   <span>{testAlertResult.message}</span>
                 </div>
               )}
 
               {testAlertResult.status === 'error' && (
-                <div className="rounded-xl border border-red-500/30 bg-red-950/20 p-3 text-xs text-red-400 flex items-center gap-2">
+                <div className="rounded-xl border border-rose-500/30 bg-rose-500/10 p-3 text-xs text-rose-300 flex items-center gap-2">
                   <ShieldAlert className="h-4 w-4 shrink-0" />
                   <span>{testAlertResult.message}</span>
                 </div>

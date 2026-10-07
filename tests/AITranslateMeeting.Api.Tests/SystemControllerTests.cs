@@ -30,13 +30,13 @@ public sealed class SystemControllerTests
         using var doc = JsonDocument.Parse(body);
         var branding = doc.RootElement;
 
-        Assert.Equal("ViMeet", branding.GetProperty("brandName").GetString());
+        Assert.Equal("LayaMeet", branding.GetProperty("brandName").GetString());
         Assert.Equal(
             "Nền tảng họp trực tuyến thông minh song ngữ",
             branding.GetProperty("slogan").GetString());
         Assert.Equal(JsonValueKind.Null, branding.GetProperty("logoUrl").ValueKind);
         Assert.Equal("#0284c7", branding.GetProperty("primaryColor").GetString());
-        Assert.Equal("© ViMeet", branding.GetProperty("copyrightText").GetString());
+        Assert.Equal("© LayaMeet", branding.GetProperty("copyrightText").GetString());
     }
 
     [Fact]

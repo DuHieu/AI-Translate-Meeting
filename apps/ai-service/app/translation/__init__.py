@@ -12,10 +12,13 @@ from app.translation.dataset_collector import (
 )
 from app.translation.glossary import GlossaryManager
 from app.translation.local_provider import LocalTranslationProvider
+from app.translation.premium_provider import PremiumTranslationConfig, PremiumTranslationProvider
 
 __all__ = [
     "TranslationProvider",
     "LocalTranslationProvider",
+    "PremiumTranslationConfig",
+    "PremiumTranslationProvider",
     "ContextualTranslationProvider",
     "TranslationContextRequest",
     "MeetingContextManager",

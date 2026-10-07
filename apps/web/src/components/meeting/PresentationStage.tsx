@@ -3,6 +3,7 @@ import { TrackPublication, Participant } from 'livekit-client';
 import { Monitor, StopCircle } from 'lucide-react';
 import { ParticipantTile } from './ParticipantTile';
 import { PipelineStatusMessage } from '../../types/subtitle';
+import { SupportedLanguage } from '../../types/meeting';
 
 interface PresentationStageProps {
   presenter: Participant;
@@ -12,6 +13,7 @@ interface PresentationStageProps {
   onStopPresenting: () => void;
   pipelineStatuses?: Record<string, PipelineStatusMessage>;
   raisedHands: Map<string, number>;
+  participantLanguages?: Record<string, SupportedLanguage | string>;
 }
 
 export const PresentationStage: React.FC<PresentationStageProps> = ({
@@ -22,6 +24,7 @@ export const PresentationStage: React.FC<PresentationStageProps> = ({
   onStopPresenting,
   pipelineStatuses,
   raisedHands,
+  participantLanguages,
 }) => {
   const screenVideoRef = useRef<HTMLVideoElement>(null);
 
@@ -39,7 +42,7 @@ export const PresentationStage: React.FC<PresentationStageProps> = ({
   return (
     <div className="w-full h-full flex flex-col md:flex-row gap-4 p-4 overflow-hidden relative">
       {/* Main Dominant Presentation Stage */}
-      <div className="flex-1 h-full relative bg-slate-950 border border-slate-800 rounded-3xl overflow-hidden flex flex-col items-center justify-center">
+      <div className="flex-1 h-full relative bg-slate-950 border border-slate-800 rounded-2xl overflow-hidden flex flex-col items-center justify-center">
         <video
           ref={screenVideoRef}
           autoPlay
@@ -49,9 +52,9 @@ export const PresentationStage: React.FC<PresentationStageProps> = ({
         />
 
         {/* Presenter Info Banner */}
-        <div className="absolute top-4 left-4 bg-slate-900/90 backdrop-blur-md px-3.5 py-2 rounded-2xl border border-slate-800 text-xs font-medium text-slate-200 flex items-center gap-2 shadow-lg">
+        <div className="absolute top-4 left-4 bg-slate-900/90 backdrop-blur-md px-3.5 py-2 rounded-xl border border-slate-800 text-xs font-medium text-slate-200 flex items-center gap-2 shadow-lg">
           <Monitor className="w-4 h-4 text-sky-400" />
-          <span>{presenter.name || presenter.identity} is presenting</span>
+          <span>{presenter.name || presenter.identity} đang trình chiếu</span>
         </div>
 
         {/* Stop Presenting Button (When Local User is Presenting) */}
@@ -62,7 +65,7 @@ export const PresentationStage: React.FC<PresentationStageProps> = ({
             className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-red-600 hover:bg-red-500 text-white text-xs font-semibold px-4 py-2 rounded-full shadow-xl flex items-center gap-2 transition"
           >
             <StopCircle className="w-4 h-4" />
-            <span>Stop Presenting</span>
+            <span>Dừng trình chiếu</span>
           </button>
         )}
       </div>
@@ -76,6 +79,11 @@ export const PresentationStage: React.FC<PresentationStageProps> = ({
               isLocal={p.isLocal}
               isHandRaised={raisedHands.has(p.identity)}
               pipelineStatus={pipelineStatuses?.[p.identity] || pipelineStatuses?.[p.sid]}
+              spokenLanguage={
+                participantLanguages?.[p.identity] ||
+                participantLanguages?.[p.sid] ||
+                (p.name ? participantLanguages?.[p.name] : undefined)
+              }
             />
           </div>
         ))}

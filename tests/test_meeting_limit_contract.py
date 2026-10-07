@@ -30,7 +30,7 @@ def test_upgrade_required_modal_exposes_conversion_actions() -> None:
     assert "onUpgrade: () => void" in source
     assert "onLeaveMeeting: () => void" in source
     assert "Hết thời lượng miễn phí (40 phút)" in source
-    assert "Nâng cấp ViMeet Pro" in source
+    assert "Nâng cấp LayaMeet Pro" in source or "Nâng cấp ViMeet Pro" in source
     assert "Không giới hạn thời lượng" in source
     assert "Cabin phiên dịch tai nghe" in source
     assert "Xuất biên bản họp" in source

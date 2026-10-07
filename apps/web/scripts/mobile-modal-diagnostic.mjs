@@ -1,0 +1,22 @@
+import fs from 'node:fs';
+import path from 'node:path';
+process.env.PLAYWRIGHT_BROWSERS_PATH=path.resolve('../../output/playwright/browsers');
+const {chromium}=await import('playwright');
+const browser=await chromium.launch();
+const context=await browser.newContext({viewport:{width:360,height:844},hasTouch:true,isMobile:true,locale:'vi-VN'});
+const page=await context.newPage();page.setDefaultTimeout(10000);
+const errors=[];page.on('pageerror',e=>errors.push(e.message));
+const base=process.env.MOBILE_BASE_URL||'http://localhost:4184';
+await page.goto(base);await page.locator('.cookie-consent').waitFor();await page.getByRole('button',{name:'Từ chối',exact:true}).tap();
+const nav=()=>page.getByTestId('mobile-hamburger-btn').tap();
+await nav();await page.getByTestId('drawer-calendar').tap();
+console.log('dialogs',await page.getByRole('dialog').count());
+console.log('month matches',await page.getByRole('button',{name:'Tháng sau',exact:true}).count());
+try {await page.getByRole('dialog',{name:'Lịch cuộc họp',exact:true}).getByRole('button',{name:'Tháng sau',exact:true}).tap();}catch(e){console.log(e.message);}
+await page.keyboard.press('Escape');await nav();await page.getByTestId('drawer-pricing').tap();
+await page.getByRole('button',{name:'Cần tư vấn hạ tầng VPS / Server riêng?',exact:true}).tap();
+console.log('dialog labels',await page.locator('dialog').evaluateAll(nodes=>nodes.map(e=>({label:e.getAttribute('aria-label'),open:e.open}))));
+console.log('errors',errors);
+await page.screenshot({path:path.resolve('../../output/playwright/mobile-20261008/modal-diagnostic.png')});
+fs.writeFileSync(path.resolve('../../output/playwright/mobile-20261008/modal-diagnostic.txt'),await page.locator('body').innerText());
+await context.close();await browser.close();

@@ -1,5 +1,6 @@
 import {
   CreateMeetingResponse,
+  CreateScheduledMeetingOptions,
   JoinMeetingRequest,
   JoinMeetingResult,
   MeetingDetails,
@@ -10,9 +11,48 @@ import {
   UpdateSubtitlePreferencesResponse,
   SaveMeetingMinutesRequest,
   MeetingMinutesResponse,
+  MeetingSchedule,
+  SubmitRsvpRequest,
+  SubmitRsvpResponse,
+  MeetingHistoryItemDto,
 } from '../types/meeting';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || '';
+const MINUTES_CACHE_PREFIX = 'layameet:meeting-minutes:';
+const TRANSLATION_QA_BASE_URL = '/api/translation-qa';
+
+function normalizeMeetingCode(meetingCode: string): string {
+  return meetingCode.trim().toUpperCase();
+}
+
+export function getCachedMeetingMinutes(meetingCode: string): MeetingMinutesResponse | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    const raw = localStorage.getItem(`${MINUTES_CACHE_PREFIX}${normalizeMeetingCode(meetingCode)}`);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as MeetingMinutesResponse;
+    return parsed && typeof parsed.title === 'string' && Array.isArray(parsed.actionItems)
+      ? parsed
+      : null;
+  } catch {
+    return null;
+  }
+}
+
+export function setCachedMeetingMinutes(
+  meetingCode: string,
+  minutes: MeetingMinutesResponse,
+): void {
+  if (typeof window === 'undefined') return;
+  try {
+    localStorage.setItem(
+      `${MINUTES_CACHE_PREFIX}${normalizeMeetingCode(meetingCode)}`,
+      JSON.stringify(minutes),
+    );
+  } catch {
+    // Cache is a convenience only; server persistence remains authoritative.
+  }
+}
 
 export interface SsoProvider {
   id: 'google' | 'microsoft365';
@@ -34,6 +74,22 @@ export interface BrandingConfigDto {
   logoUrl: string | null;
   primaryColor: string;
   copyrightText: string;
+}
+
+export interface RoomGlossaryResponse {
+  meetingCode: string;
+  terms: Record<string, string>;
+}
+
+export interface TranslationUsageResponse {
+  meeting_id: string;
+  tier: 'standard' | 'pro' | 'byok';
+  total_tokens_used: number;
+  quota: number;
+  remaining_quota: number;
+  is_quota_exceeded: boolean;
+  downgraded: boolean;
+  downgrade_reason: string | null;
 }
 
 export const DEFAULT_BRANDING_CONFIG: BrandingConfigDto = {
@@ -80,7 +136,117 @@ async function handleResponse<T>(response: Response): Promise<T> {
   return response.json() as Promise<T>;
 }
 
+async function handleTextResponse(response: Response): Promise<string> {
+  if (!response.ok) {
+    await handleResponse<never>(response);
+  }
+  return response.text();
+}
+
+export interface TranslationQaMeetingStats {
+  meetingCode: string;
+  avgAccuracyPct: number;
+  avgSttConfidencePct: number;
+  totalSegments: number;
+  avgLatencyMs: number;
+  cacheHitRatePct: number;
+  flaggedLowConfidenceCount: number;
+  languagePairs: string[];
+  engineBreakdown: Record<string, number>;
+}
+
+export interface TranslationQaSummaryResponse {
+  avgAccuracyPct: number;
+  avgSttConfidencePct: number;
+  totalSegments: number;
+  avgLatencyMs: number;
+  cacheHitRatePct: number;
+  flaggedLowConfidenceCount: number;
+  qaTrainingModeEnabled: boolean;
+  learnedPatternsCount: number;
+  meetings: TranslationQaMeetingStats[];
+}
+
+export interface TranslationQaSample {
+  id: string;
+  meetingId: string;
+  source: string;
+  machineTranslation: string;
+  correctedTranslation: string | null;
+  sourceLanguage: string;
+  targetLanguage: string;
+  domain: string;
+  provider: string;
+  latencyMs: number;
+  accuracyScore: number;
+  piiScrubbed: boolean;
+  status: 'pending' | 'trained';
+  createdAt: string;
+}
+
+export interface LearnedPatternRecord {
+  id: string;
+  sourceLanguage: string;
+  targetLanguage: string;
+  sourceText: string;
+  normalizedSourceText: string;
+  translation: string;
+  domain: string;
+  status: 'trained';
+  trainedAt: string;
+}
+
+export interface TranslationQaSamplesResponse {
+  samples: TranslationQaSample[];
+  learnedPatterns: LearnedPatternRecord[];
+}
+
+export interface TrainTranslationPatternPayload {
+  sampleId?: string;
+  sourceLanguage: string;
+  targetLanguage: string;
+  sourceText: string;
+  correctedTranslation: string;
+  domain?: string;
+}
+
+export interface TranslationProvidersResponse {
+  available: string[];
+  recommended: string;
+  metadata: Record<string, { label: string; badge: string; description: string }>;
+}
+
+export interface SubmitMeetingFeedbackRequest {
+  rating: number; // 1 to 5
+  category?: string;
+  comment: string;
+  userName?: string;
+  userEmail?: string;
+}
+
+export interface MeetingFeedbackResponse {
+  id: string;
+  meetingCode: string;
+  rating: number;
+  category?: string;
+  comment: string;
+  userName?: string;
+  userEmail?: string;
+  createdAt: string;
+}
+
 export const meetingApi = {
+  async getMeetingHistory(email?: string): Promise<MeetingHistoryItemDto[]> {
+    const params = new URLSearchParams();
+    if (email?.trim()) params.append('email', email.trim());
+    const query = params.toString() ? `?${params.toString()}` : '';
+    const res = await fetch(`${API_BASE_URL}/api/meetings/history${query}`, {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' },
+    });
+    return handleResponse<MeetingHistoryItemDto[]>(res);
+  },
+
   async getBrandingConfig(): Promise<BrandingConfigDto> {
     const res = await fetch(`${API_BASE_URL}/api/system/branding`, {
       method: 'GET',
@@ -106,13 +272,58 @@ export const meetingApi = {
     return handleResponse<EnterpriseDomainValidation>(res);
   },
 
-  async createMeeting(name = 'Meeting'): Promise<CreateMeetingResponse> {
+  async createMeeting(
+    name = 'Meeting',
+    options?: CreateScheduledMeetingOptions,
+  ): Promise<CreateMeetingResponse> {
     const res = await fetch(`${API_BASE_URL}/api/meetings`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name }),
+      body: JSON.stringify({ name, ...options }),
     });
     return handleResponse<CreateMeetingResponse>(res);
+  },
+
+  async getUpcomingScheduledMeetings(email?: string): Promise<MeetingSchedule[]> {
+    const normalizedEmail = email?.trim();
+    const query = normalizedEmail ? `?email=${encodeURIComponent(normalizedEmail)}` : '';
+    const res = await fetch(`${API_BASE_URL}/api/meetings/scheduled${query}`, {
+      method: 'GET',
+      headers: { Accept: 'application/json' },
+    });
+    return handleResponse<MeetingSchedule[]>(res);
+  },
+
+  async getMeetingSchedule(meetingCode: string): Promise<MeetingSchedule> {
+    const code = normalizeMeetingCode(meetingCode);
+    const res = await fetch(
+      `${API_BASE_URL}/api/meetings/${encodeURIComponent(code)}/schedule`,
+      {
+        method: 'GET',
+        headers: { Accept: 'application/json' },
+      },
+    );
+    return handleResponse<MeetingSchedule>(res);
+  },
+
+  async submitRsvp(
+    meetingCode: string,
+    data: SubmitRsvpRequest,
+  ): Promise<SubmitRsvpResponse> {
+    const code = normalizeMeetingCode(meetingCode);
+    const res = await fetch(
+      `${API_BASE_URL}/api/meetings/${encodeURIComponent(code)}/rsvp`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      },
+    );
+    return handleResponse<SubmitRsvpResponse>(res);
+  },
+
+  getCalendarIcsUrl(meetingCode: string): string {
+    return `/api/meetings/${encodeURIComponent(normalizeMeetingCode(meetingCode))}/calendar.ics`;
   },
 
   async getMeeting(meetingCode: string, sessionToken?: string): Promise<MeetingDetails> {
@@ -240,22 +451,162 @@ export const meetingApi = {
     meetingCode: string,
     data: SaveMeetingMinutesRequest,
   ): Promise<MeetingMinutesResponse> {
-    const code = meetingCode.trim().toUpperCase();
+    const code = normalizeMeetingCode(meetingCode);
+    const localMinutes: MeetingMinutesResponse = {
+      id: `local-${code}`,
+      meetingCode: code,
+      title: data.title,
+      summary: data.summary,
+      markdownContent: data.markdownContent,
+      decisions: data.decisions ?? [],
+      actionItems: data.actionItems ?? [],
+      createdAt: new Date().toISOString(),
+      transcript: data.transcript,
+    };
+    setCachedMeetingMinutes(code, localMinutes);
+
     const res = await fetch(`${API_BASE_URL}/api/meetings/${code}/minutes`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data),
     });
-    return handleResponse<MeetingMinutesResponse>(res);
+    const saved = await handleResponse<MeetingMinutesResponse>(res);
+    const result = { ...saved, transcript: data.transcript };
+    setCachedMeetingMinutes(code, result);
+    return result;
   },
 
   async getMeetingMinutes(meetingCode: string): Promise<MeetingMinutesResponse> {
-    const code = meetingCode.trim().toUpperCase();
-    const res = await fetch(`${API_BASE_URL}/api/meetings/${code}/minutes`, {
-      method: 'GET',
+    const code = normalizeMeetingCode(meetingCode);
+    const cached = getCachedMeetingMinutes(code);
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/meetings/${code}/minutes`, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' },
+      });
+      const remote = await handleResponse<MeetingMinutesResponse>(res);
+      const result = { ...remote, transcript: remote.transcript ?? cached?.transcript };
+      setCachedMeetingMinutes(code, result);
+      return result;
+    } catch (error) {
+      if (cached) return cached;
+      throw error;
+    }
+  },
+
+  async submitMeetingFeedback(
+    meetingCode: string,
+    data: SubmitMeetingFeedbackRequest,
+  ): Promise<MeetingFeedbackResponse> {
+    const code = normalizeMeetingCode(meetingCode);
+    const res = await fetch(`${API_BASE_URL}/api/meetings/${encodeURIComponent(code)}/feedback`, {
+      method: 'POST',
       headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
     });
-    return handleResponse<MeetingMinutesResponse>(res);
+    return handleResponse<MeetingFeedbackResponse>(res);
+  },
+
+  async getRoomGlossary(meetingCode: string): Promise<RoomGlossaryResponse> {
+    const code = meetingCode.trim().toUpperCase();
+    const res = await fetch(`/api/glossary/${encodeURIComponent(code)}`, {
+      method: 'GET',
+      headers: { Accept: 'application/json' },
+    });
+    return handleResponse<RoomGlossaryResponse>(res);
+  },
+
+  async updateRoomGlossary(
+    meetingCode: string,
+    terms: Record<string, string>,
+  ): Promise<RoomGlossaryResponse> {
+    const code = meetingCode.trim().toUpperCase();
+    const res = await fetch(`/api/glossary/${encodeURIComponent(code)}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ terms }),
+    });
+    return handleResponse<RoomGlossaryResponse>(res);
+  },
+
+  async getTranslationUsage(
+    meetingId: string,
+    tier: 'standard' | 'pro' | 'byok',
+  ): Promise<TranslationUsageResponse> {
+    const params = new URLSearchParams({ tier });
+    const res = await fetch(
+      `/api/translation/usage/${encodeURIComponent(meetingId)}?${params.toString()}`,
+      { headers: { Accept: 'application/json' } },
+    );
+    return handleResponse<TranslationUsageResponse>(res);
+  },
+
+  async getAdminTranslationQaSummary(adminKey: string): Promise<TranslationQaSummaryResponse> {
+    const res = await fetch(`${TRANSLATION_QA_BASE_URL}/summary`, {
+      headers: { Accept: 'application/json', 'X-Admin-Key': adminKey.trim() },
+    });
+    return handleResponse<TranslationQaSummaryResponse>(res);
+  },
+
+  async getAdminTranslationQaSamples(
+    adminKey: string,
+    meetingId?: string,
+  ): Promise<TranslationQaSamplesResponse> {
+    const query = meetingId ? `?meetingId=${encodeURIComponent(meetingId)}` : '';
+    const res = await fetch(`${TRANSLATION_QA_BASE_URL}/samples${query}`, {
+      headers: { Accept: 'application/json', 'X-Admin-Key': adminKey.trim() },
+    });
+    return handleResponse<TranslationQaSamplesResponse>(res);
+  },
+
+  async updateAdminTranslationQaSettings(
+    adminKey: string,
+    qaTrainingModeEnabled: boolean,
+  ): Promise<{ qaTrainingModeEnabled: boolean }> {
+    const res = await fetch(`${TRANSLATION_QA_BASE_URL}/settings`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Admin-Key': adminKey.trim() },
+      body: JSON.stringify({ qaTrainingModeEnabled }),
+    });
+    return handleResponse<{ qaTrainingModeEnabled: boolean }>(res);
+  },
+
+  async trainAdminTranslationPattern(
+    adminKey: string,
+    payload: TrainTranslationPatternPayload,
+  ): Promise<LearnedPatternRecord> {
+    const res = await fetch(`${TRANSLATION_QA_BASE_URL}/train`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Admin-Key': adminKey.trim() },
+      body: JSON.stringify(payload),
+    });
+    return handleResponse<LearnedPatternRecord>(res);
+  },
+
+  async deleteAdminTranslationPattern(
+    adminKey: string,
+    payload: { sourceLanguage: string; targetLanguage: string; sourceText: string },
+  ): Promise<{ removed: boolean }> {
+    const res = await fetch(`${TRANSLATION_QA_BASE_URL}/patterns`, {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json', 'X-Admin-Key': adminKey.trim() },
+      body: JSON.stringify(payload),
+    });
+    return handleResponse<{ removed: boolean }>(res);
+  },
+
+  async exportAdminTranslationDataset(adminKey: string): Promise<string> {
+    const res = await fetch(`${TRANSLATION_QA_BASE_URL}/export`, {
+      headers: { Accept: 'application/x-ndjson', 'X-Admin-Key': adminKey.trim() },
+    });
+    return handleTextResponse(res);
+  },
+
+  async getTranslationProviders(): Promise<TranslationProvidersResponse> {
+    const res = await fetch('/api/translation/providers', {
+      headers: { Accept: 'application/json' },
+    });
+    return handleResponse<TranslationProvidersResponse>(res);
   },
 
   async createPaymentOrder(
@@ -263,11 +614,14 @@ export const meetingApi = {
     meetingCode?: string,
     customerEmail?: string,
     customerName?: string,
+    userId?: string,
+    paymentMethod?: 'vietqr' | 'polar',
+    currency?: 'VND' | 'USD',
   ): Promise<PaymentOrderResponse> {
     const res = await fetch(`${API_BASE_URL}/api/billing/create-order`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ planId, meetingCode, customerEmail, customerName }),
+      body: JSON.stringify({ planId, meetingCode, customerEmail, customerName, userId, paymentMethod, currency }),
     });
     return handleResponse<PaymentOrderResponse>(res);
   },
@@ -278,6 +632,15 @@ export const meetingApi = {
       headers: { 'Content-Type': 'application/json' },
     });
     return handleResponse<PaymentOrderResponse>(res);
+  },
+
+  async getAccountSubscription(email: string): Promise<AccountSubscriptionResponse> {
+    const query = new URLSearchParams({ email: email.trim() });
+    const res = await fetch(`${API_BASE_URL}/api/billing/subscription?${query.toString()}`, {
+      method: 'GET',
+      headers: { Accept: 'application/json' },
+    });
+    return handleResponse<AccountSubscriptionResponse>(res);
   },
 
   async submitEnterpriseLead(data: CreateLeadRequest): Promise<CreateLeadResponse> {
@@ -413,6 +776,27 @@ export interface PaymentOrderResponse {
   accountNumber: string;
   accountName: string;
   createdAt: string;
+  customerEmail?: string | null;
+  customerName?: string | null;
+  userId?: string | null;
+  planId?: string;
+  paidAt?: string | null;
+  subscriptionExpiresAt?: string | null;
+  paymentMethod?: string;
+  currency?: string;
+  amountUsd?: number | null;
+  checkoutUrl?: string | null;
+}
+
+export interface AccountSubscriptionResponse {
+  email: string;
+  tier: string;
+  isPro: boolean;
+  activePlanId: string | null;
+  activePlanName: string | null;
+  lastOrderCode: string | null;
+  activatedAt: string | null;
+  expiresAt: string | null;
 }
 
 export interface CreateLeadRequest {
@@ -460,6 +844,7 @@ export interface PlanInfoDto {
   priceVnd: number;
   durationDescription: string;
   features: string[];
+  priceUsd?: number;
 }
 
 export interface InfraHealthIndicator {

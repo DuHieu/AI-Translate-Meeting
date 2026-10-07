@@ -37,6 +37,10 @@ public class DatabaseCleanupService : IDatabaseCleanupService
         int deletedSessions;
         int endedGhostMeetings = 0;
 
+        // Meeting minutes retention: 30 days independent of the main retentionWindow
+        var minutesCutoff = _timeProvider.GetUtcNow().UtcDateTime.AddDays(-30);
+        int deletedMinutes;
+
         if (_context.Database.ProviderName == "Microsoft.EntityFrameworkCore.InMemory")
         {
             var expiredAdmissions = await _context.MeetingAdmissions
@@ -50,6 +54,12 @@ public class DatabaseCleanupService : IDatabaseCleanupService
                 .ToListAsync(cancellationToken);
             _context.ParticipantSessions.RemoveRange(expiredSessions);
             deletedSessions = expiredSessions.Count;
+
+            var expiredMinutes = await _context.MeetingMinutes
+                .Where(m => m.CreatedAt < minutesCutoff)
+                .ToListAsync(cancellationToken);
+            _context.MeetingMinutes.RemoveRange(expiredMinutes);
+            deletedMinutes = expiredMinutes.Count;
 
             var candidateMeetings = await _context.Meetings
                 .Include(m => m.Participants)
@@ -79,6 +89,11 @@ public class DatabaseCleanupService : IDatabaseCleanupService
                 .Where(s => s.ExpiresAt < cutoff || (s.RevokedAt != null && s.RevokedAt < cutoff))
                 .ExecuteDeleteAsync(cancellationToken);
 
+            // Purge meeting minutes older than 30 days
+            deletedMinutes = await _context.MeetingMinutes
+                .Where(m => m.CreatedAt < minutesCutoff)
+                .ExecuteDeleteAsync(cancellationToken);
+
             var ghostMeetingIds = await _context.Meetings
                 .Where(m => m.EndedAt == null && m.CreatedAt < cutoff)
                 .Where(m => !_context.MeetingParticipants.Any(p => p.MeetingId == m.Id && p.LeftAt == null))
@@ -95,9 +110,10 @@ public class DatabaseCleanupService : IDatabaseCleanupService
         }
 
         _logger.LogInformation(
-            "Database cleanup completed: {DeletedAdmissions} admissions, {DeletedSessions} sessions purged, {EndedGhostMeetings} ghost meetings ended (cutoff: {Cutoff})",
+            "Database cleanup completed: {DeletedAdmissions} admissions, {DeletedSessions} sessions purged, {DeletedMinutes} meeting minutes purged (>30d), {EndedGhostMeetings} ghost meetings ended (cutoff: {Cutoff})",
             deletedAdmissions,
             deletedSessions,
+            deletedMinutes,
             endedGhostMeetings,
             cutoff);
 

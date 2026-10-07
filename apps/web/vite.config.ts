@@ -7,6 +7,18 @@ export default defineConfig({
     port: 3000,
     host: true,
     proxy: {
+      '/api/translation': {
+        target: 'http://localhost:8000',
+        changeOrigin: true,
+      },
+      '/api/translation-qa': {
+        target: 'http://localhost:8000',
+        changeOrigin: true,
+      },
+      '/api/glossary': {
+        target: 'http://localhost:8000',
+        changeOrigin: true,
+      },
       '/api': {
         target: 'http://localhost:5000',
         changeOrigin: true,
@@ -30,6 +42,9 @@ export default defineConfig({
   },
   build: {
     rolldownOptions: {
+      checks: {
+        pluginTimings: false,
+      },
       output: {
         codeSplitting: {
           groups: [
@@ -55,6 +70,13 @@ export default defineConfig({
                 return match;
               },
               priority: 40,
+            },
+            {
+              name: 'vendor-supabase',
+              test(id: string) {
+                return id.includes('node_modules/@supabase') || id.includes('node_modules\\@supabase');
+              },
+              priority: 35,
             },
           ],
         },

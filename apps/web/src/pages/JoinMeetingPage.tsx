@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { meetingApi } from '../api/meetingApi';
 import { meetingStorage } from '../utils/meetingStorage';
 import { isAdmissionPending, SupportedLanguage, SUPPORTED_LANGUAGES_LIST } from '../types/meeting';
+import { CountryFlag } from '../components/common/CountryFlag';
 import { Video, LogIn } from 'lucide-react';
 
 export const JoinMeetingPage: React.FC = () => {
@@ -97,30 +98,35 @@ export const JoinMeetingPage: React.FC = () => {
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-medium text-slate-400 mb-1">Spoken Language</label>
+              <label className="block text-xs font-medium text-slate-400 mb-1 flex items-center gap-1.5">
+                <CountryFlag code={spokenLanguage} size="xs" />
+                <span>Bạn phát biểu</span>
+              </label>
               <select
                 value={spokenLanguage}
                 onChange={(e) => setSpokenLanguage(e.target.value as SupportedLanguage)}
-                className="w-full bg-slate-800 border border-slate-700 text-slate-100 text-sm rounded-xl p-3 outline-none"
+                className="w-full bg-slate-800 border border-slate-700 text-slate-100 text-xs rounded-xl p-2.5 outline-none focus:ring-2 focus:ring-sky-500 cursor-pointer"
               >
                 {SUPPORTED_LANGUAGES_LIST.map((lang) => (
                   <option key={lang.code} value={lang.code}>
-                    {lang.name} ({lang.code})
+                    {lang.name} ({lang.nativeName})
                   </option>
                 ))}
               </select>
             </div>
-
             <div>
-              <label className="block text-xs font-medium text-slate-400 mb-1">Translate To</label>
+              <label className="block text-xs font-medium text-slate-400 mb-1 flex items-center gap-1.5">
+                <CountryFlag code={targetLanguage} size="xs" />
+                <span>Phụ đề dịch sang</span>
+              </label>
               <select
                 value={targetLanguage}
                 onChange={(e) => setTargetLanguage(e.target.value as SupportedLanguage)}
-                className="w-full bg-slate-800 border border-slate-700 text-slate-100 text-sm rounded-xl p-3 outline-none"
+                className="w-full bg-slate-800 border border-slate-700 text-slate-100 text-xs rounded-xl p-2.5 outline-none focus:ring-2 focus:ring-sky-500 cursor-pointer"
               >
                 {SUPPORTED_LANGUAGES_LIST.map((lang) => (
                   <option key={lang.code} value={lang.code}>
-                    {lang.name} ({lang.code})
+                    {lang.name} ({lang.nativeName})
                   </option>
                 ))}
               </select>

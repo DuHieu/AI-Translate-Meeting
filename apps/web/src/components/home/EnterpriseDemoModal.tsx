@@ -1,3 +1,4 @@
+import { AdaptiveDialog } from '../common/AdaptiveDialog';
 import React, { useState } from 'react';
 import { X, Send, Building2, ShieldCheck, CheckCircle2 } from 'lucide-react';
 import { meetingApi, CreateLeadRequest } from '../../api/meetingApi';
@@ -54,8 +55,8 @@ export const EnterpriseDemoModal: React.FC<EnterpriseDemoModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-      <div className="bg-slate-900 border border-slate-800 rounded-3xl max-w-lg w-full p-6 sm:p-7 shadow-2xl space-y-6 max-h-[92vh] flex flex-col animate-in fade-in zoom-in-95 duration-150">
+    <AdaptiveDialog label="Đăng ký Demo và PoC" onClose={onClose} className="enterprise-dialog">
+      <div className="bg-slate-900 border border-slate-800 rounded-3xl max-w-lg w-full p-6 sm:p-7 shadow-2xl space-y-6 max-h-[calc(var(--app-height)-64px)] flex flex-col animate-in fade-in zoom-in-95 duration-150">
         {/* Header */}
         <div className="flex items-center justify-between border-b border-slate-800 pb-4">
           <div className="flex items-center gap-3">
@@ -110,10 +111,11 @@ export const EnterpriseDemoModal: React.FC<EnterpriseDemoModalProps> = ({
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                 <div>
-                  <label className="block text-xs font-medium text-slate-300 mb-1.5">
+                  <label htmlFor="enterprise-name" className="block text-xs font-medium text-slate-300 mb-1.5">
                     Họ và tên người liên hệ <span className="text-rose-400">*</span>
                   </label>
                   <input
+                    id="enterprise-name"
                     type="text"
                     required
                     placeholder="Nguyễn Văn A"
@@ -124,10 +126,11 @@ export const EnterpriseDemoModal: React.FC<EnterpriseDemoModalProps> = ({
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-slate-300 mb-1.5">
+                  <label htmlFor="enterprise-email" className="block text-xs font-medium text-slate-300 mb-1.5">
                     Email công ty <span className="text-rose-400">*</span>
                   </label>
                   <input
+                    id="enterprise-email"
                     type="email"
                     required
                     placeholder="contact@company.com"
@@ -140,10 +143,11 @@ export const EnterpriseDemoModal: React.FC<EnterpriseDemoModalProps> = ({
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                 <div>
-                  <label className="block text-xs font-medium text-slate-300 mb-1.5">
+                  <label htmlFor="enterprise-company" className="block text-xs font-medium text-slate-300 mb-1.5">
                     Tên doanh nghiệp / Tổ chức
                   </label>
                   <input
+                    id="enterprise-company"
                     type="text"
                     placeholder="Tập đoàn ABC"
                     value={formData.company || ''}
@@ -153,10 +157,11 @@ export const EnterpriseDemoModal: React.FC<EnterpriseDemoModalProps> = ({
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-slate-300 mb-1.5">
+                  <label htmlFor="enterprise-team-size" className="block text-xs font-medium text-slate-300 mb-1.5">
                     Quy mô nhân sự họp
                   </label>
                   <select
+                    id="enterprise-team-size"
                     value={formData.teamSize || '20-100'}
                     onChange={(e) => setFormData({ ...formData, teamSize: e.target.value })}
                     className="w-full bg-slate-800/80 border border-slate-700 text-slate-100 text-xs rounded-xl p-3 outline-none focus:ring-2 focus:ring-blue-500"
@@ -170,10 +175,11 @@ export const EnterpriseDemoModal: React.FC<EnterpriseDemoModalProps> = ({
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                 <div>
-                  <label className="block text-xs font-medium text-slate-300 mb-1.5">
+                  <label htmlFor="enterprise-language-pair" className="block text-xs font-medium text-slate-300 mb-1.5">
                     Cặp ngôn ngữ trọng tâm
                   </label>
                   <select
+                    id="enterprise-language-pair"
                     value={formData.languagePair || 'VI-JA'}
                     onChange={(e) => setFormData({ ...formData, languagePair: e.target.value })}
                     className="w-full bg-slate-800/80 border border-slate-700 text-slate-100 text-xs rounded-xl p-3 outline-none focus:ring-2 focus:ring-blue-500"
@@ -186,10 +192,11 @@ export const EnterpriseDemoModal: React.FC<EnterpriseDemoModalProps> = ({
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-slate-300 mb-1.5">
+                  <label htmlFor="enterprise-deployment" className="block text-xs font-medium text-slate-300 mb-1.5">
                     Mô hình triển khai mong muốn
                   </label>
                   <select
+                    id="enterprise-deployment"
                     value={formData.deploymentModel || 'on-premise'}
                     onChange={(e) => setFormData({ ...formData, deploymentModel: e.target.value })}
                     className="w-full bg-slate-800/80 border border-slate-700 text-slate-100 text-xs rounded-xl p-3 outline-none focus:ring-2 focus:ring-blue-500"
@@ -202,10 +209,11 @@ export const EnterpriseDemoModal: React.FC<EnterpriseDemoModalProps> = ({
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-slate-300 mb-1.5">
+                <label htmlFor="enterprise-notes" className="block text-xs font-medium text-slate-300 mb-1.5">
                   Nhu cầu đặc thù / Từ điển chuyên ngành
                 </label>
                 <textarea
+                  id="enterprise-notes"
                   rows={2}
                   placeholder="Ví dụ: Tích hợp hệ thống SSO Azure AD, huấn luyện từ điển thuật ngữ Y tế/Fintech..."
                   value={formData.notes || ''}
@@ -239,6 +247,6 @@ export const EnterpriseDemoModal: React.FC<EnterpriseDemoModalProps> = ({
           )}
         </div>
       </div>
-    </div>
+    </AdaptiveDialog>
   );
 };

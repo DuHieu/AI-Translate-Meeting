@@ -1,5 +1,7 @@
 using System.Data;
+using System.Globalization;
 using System.Security.Cryptography;
+using System.Text;
 using System.Text.Json;
 using AITranslateMeeting.Api.Data;
 using AITranslateMeeting.Api.DTOs;
@@ -15,6 +17,10 @@ namespace AITranslateMeeting.Api.Services;
 public interface IMeetingService
 {
     Task<CreateMeetingResponseDto> CreateMeetingAsync(CreateMeetingRequestDto request, CancellationToken ct = default);
+    Task<MeetingScheduleDto> GetMeetingScheduleAsync(string meetingCode, CancellationToken ct = default);
+    Task<IReadOnlyList<MeetingScheduleDto>> GetUpcomingScheduledMeetingsAsync(string? email = null, CancellationToken ct = default);
+    Task<SubmitRsvpResponseDto> SubmitRsvpAsync(string meetingCode, SubmitRsvpRequestDto request, CancellationToken ct = default);
+    Task<string> GenerateCalendarIcsAsync(string meetingCode, CancellationToken ct = default);
     Task<MeetingDetailsDto> GetMeetingAsync(string meetingCode, string? sessionToken = null, CancellationToken ct = default);
     Task<JoinMeetingResultDto> JoinMeetingAsync(string meetingCode, JoinMeetingRequestDto request, CancellationToken ct = default);
     Task<InviteResponseDto> CreateInviteAsync(string meetingCode, string hostToken, CreateInviteRequestDto request, CancellationToken ct = default);
@@ -26,11 +32,14 @@ public interface IMeetingService
     Task<UpdateSubtitlePreferencesResponseDto> UpdateSubtitlePreferencesAsync(string meetingCode, UpdateSubtitlePreferencesRequestDto request, string? sessionToken = null, CancellationToken ct = default);
     Task<MeetingMinutesResponse> SaveMeetingMinutesAsync(string meetingCode, SaveMeetingMinutesRequest request, CancellationToken ct = default);
     Task<MeetingMinutesResponse> GetMeetingMinutesAsync(string meetingCode, CancellationToken ct = default);
+    Task<IReadOnlyList<MeetingHistoryItemDto>> GetMeetingHistoryAsync(string? email = null, CancellationToken ct = default);
+    Task<MeetingFeedbackResponseDto> SubmitFeedbackAsync(string meetingCode, SubmitMeetingFeedbackRequestDto request, CancellationToken ct = default);
 }
 
 public sealed class MeetingService : IMeetingService
 {
-    private static readonly HashSet<string> ValidLanguages = new(StringComparer.OrdinalIgnoreCase) { "vi", "en", "ja", "ko", "zh", "fr", "de", "es" };
+    private static readonly HashSet<string> ValidLanguages = new(StringComparer.OrdinalIgnoreCase) { "vi", "en", "ja", "ko", "zh", "th", "id", "tl", "ar", "fr", "de", "es" };
+    private static readonly HashSet<string> ValidSpokenLanguages = new(ValidLanguages, StringComparer.OrdinalIgnoreCase) { "auto" };
     private const string AllowedChars = "23456789ABCDEFGHJKLMNPQRSTUVWXYZ";
 
     private readonly AppDbContext _context;
@@ -73,6 +82,26 @@ public sealed class MeetingService : IMeetingService
         if (trimmedName.Length > 200)
             throw new ArgumentException("Meeting name cannot exceed 200 characters.", nameof(request.Name));
 
+        if (request.DurationMinutes is < 5 or > 480)
+            throw new ArgumentException("Meeting duration must be between 5 and 480 minutes.", nameof(request.DurationMinutes));
+
+        var scheduledStartAt = request.ScheduledStartAt.HasValue
+            ? NormalizeUtc(request.ScheduledStartAt.Value)
+            : (DateTime?)null;
+        var timezone = NormalizeOptionalValue(request.Timezone, "Asia/Ho_Chi_Minh");
+        var defaultSpokenLanguage = NormalizeLanguage(
+            request.DefaultSpokenLanguage,
+            "vi",
+            ValidSpokenLanguages,
+            nameof(request.DefaultSpokenLanguage));
+        var defaultTargetLanguage = NormalizeLanguage(
+            request.DefaultTargetLanguage,
+            "ja",
+            ValidLanguages,
+            nameof(request.DefaultTargetLanguage));
+        var domainGlossary = NormalizeOptionalValue(request.DomainGlossary, "general");
+        var hostEmail = NormalizeEmail(request.HostEmail);
+
         if (_licenseService != null)
         {
             var activeCutoff = UtcNow().AddHours(-4);
@@ -102,7 +131,15 @@ public sealed class MeetingService : IMeetingService
             MeetingCode = meetingCode,
             RoomName = $"meeting_{meetingCode}",
             Name = trimmedName,
-            CreatedAt = UtcNow()
+            CreatedAt = UtcNow(),
+            ScheduledStartAt = scheduledStartAt,
+            ScheduledEndAt = scheduledStartAt?.AddMinutes(request.DurationMinutes ?? 45),
+            Timezone = timezone,
+            Agenda = request.Agenda?.Trim(),
+            DefaultSpokenLanguage = defaultSpokenLanguage,
+            DefaultTargetLanguage = defaultTargetLanguage,
+            DomainGlossary = domainGlossary,
+            HostEmail = hostEmail
         };
 
         _context.Meetings.Add(meeting);
@@ -117,7 +154,187 @@ public sealed class MeetingService : IMeetingService
             meeting.RoomName,
             meeting.Name,
             meeting.CreatedAt,
-            hostToken);
+            hostToken,
+            meeting.ScheduledStartAt,
+            meeting.ScheduledEndAt,
+            meeting.Timezone,
+            meeting.Agenda,
+            meeting.DefaultSpokenLanguage,
+            meeting.DefaultTargetLanguage,
+            meeting.DomainGlossary);
+    }
+
+    public async Task<MeetingScheduleDto> GetMeetingScheduleAsync(
+        string meetingCode,
+        CancellationToken ct = default)
+    {
+        var code = meetingCode?.Trim().ToUpperInvariant();
+        var meeting = await _context.Meetings
+            .AsNoTracking()
+            .Include(item => item.Rsvps)
+            .FirstOrDefaultAsync(item => item.MeetingCode == code, ct)
+            ?? throw new KeyNotFoundException($"Meeting with code '{meetingCode}' was not found.");
+
+        return ToMeetingSchedule(meeting);
+    }
+
+    public async Task<IReadOnlyList<MeetingScheduleDto>> GetUpcomingScheduledMeetingsAsync(
+        string? email = null,
+        CancellationToken ct = default)
+    {
+        var cutoff = UtcNow().AddHours(-2);
+        var normalizedEmail = NormalizeEmail(email);
+        var query = _context.Meetings
+            .AsNoTracking()
+            .Where(item => item.EndedAt == null
+                && item.ScheduledStartAt != null
+                && item.ScheduledStartAt >= cutoff);
+
+        if (normalizedEmail != null)
+        {
+            query = query.Where(item =>
+                (item.HostEmail != null && item.HostEmail.ToLower() == normalizedEmail)
+                || item.Rsvps.Any(rsvp => rsvp.Email != null && rsvp.Email.ToLower() == normalizedEmail));
+        }
+
+        var meetings = await query
+            .Include(item => item.Rsvps)
+            .OrderBy(item => item.ScheduledStartAt)
+            .Take(20)
+            .ToListAsync(ct);
+
+        return meetings.Select(ToMeetingSchedule).ToList();
+    }
+
+    public async Task<SubmitRsvpResponseDto> SubmitRsvpAsync(
+        string meetingCode,
+        SubmitRsvpRequestDto request,
+        CancellationToken ct = default)
+    {
+        var meeting = await FindMeetingAsync(meetingCode, true, ct);
+        ReactivateMeetingIfEnded(meeting);
+        var (displayName, email, status, spokenLanguage, targetLanguage) = ValidateRsvpInput(request);
+        var now = UtcNow();
+
+        MeetingRsvp? rsvp = null;
+        if (email != null)
+        {
+            rsvp = await _context.MeetingRsvps.FirstOrDefaultAsync(
+                item => item.MeetingId == meeting.Id && item.Email == email,
+                ct);
+        }
+
+        if (rsvp == null)
+        {
+            rsvp = new MeetingRsvp
+            {
+                Id = Guid.NewGuid(),
+                MeetingId = meeting.Id,
+                CreatedAt = now
+            };
+            _context.MeetingRsvps.Add(rsvp);
+        }
+
+        rsvp.DisplayName = displayName;
+        rsvp.Email = email;
+        rsvp.Status = status;
+        rsvp.SpokenLanguage = spokenLanguage;
+        rsvp.TargetLanguage = targetLanguage;
+        rsvp.UpdatedAt = now;
+
+        MeetingAdmission? admission = null;
+        string? admissionToken = null;
+        if (status is "going" or "maybe")
+        {
+            var expiresAt = meeting.ScheduledEndAt is { } scheduledEndAt && scheduledEndAt > now
+                ? scheduledEndAt.AddHours(4)
+                : now.AddHours(24);
+            admission = new MeetingAdmission
+            {
+                Id = Guid.NewGuid(),
+                MeetingId = meeting.Id,
+                Type = "invite",
+                Status = "approved",
+                Role = "participant",
+                DisplayName = displayName,
+                SpokenLanguage = spokenLanguage,
+                TargetLanguage = targetLanguage,
+                CreatedAt = now,
+                ExpiresAt = expiresAt
+            };
+            _context.MeetingAdmissions.Add(admission);
+            rsvp.AdmissionId = admission.Id;
+            admissionToken = _admissionTokenService.GenerateInviteToken(
+                meeting.Id,
+                admission.Id,
+                admission.ExpiresAt);
+        }
+        else
+        {
+            rsvp.AdmissionId = null;
+        }
+
+        await _context.SaveChangesAsync(ct);
+
+        return new SubmitRsvpResponseDto(
+            rsvp.Id,
+            meeting.MeetingCode,
+            rsvp.DisplayName,
+            rsvp.Status,
+            rsvp.SpokenLanguage,
+            rsvp.TargetLanguage,
+            admissionToken,
+            admission?.ExpiresAt);
+    }
+
+    public async Task<string> GenerateCalendarIcsAsync(
+        string meetingCode,
+        CancellationToken ct = default)
+    {
+        var meeting = await FindMeetingAsync(meetingCode, false, ct);
+        if (!meeting.ScheduledStartAt.HasValue)
+            throw new InvalidOperationException($"Meeting '{meetingCode}' is not scheduled.");
+
+        var startsAt = NormalizeUtc(meeting.ScheduledStartAt.Value);
+        var endsAt = meeting.ScheduledEndAt.HasValue
+            ? NormalizeUtc(meeting.ScheduledEndAt.Value)
+            : startsAt.AddMinutes(45);
+        var spokenLanguage = meeting.DefaultSpokenLanguage ?? "vi";
+        var targetLanguage = meeting.DefaultTargetLanguage ?? "ja";
+        var joinLink = $"https://layameet.com/meeting/{meeting.MeetingCode}";
+        var description = $"Agenda: {meeting.Agenda ?? "No agenda provided"}\n"
+            + $"Language Pair: {spokenLanguage} -> {targetLanguage}\n"
+            + $"Join: {joinLink}";
+
+        var lines = new[]
+        {
+            "BEGIN:VCALENDAR",
+            "VERSION:2.0",
+            "PRODID:-//LayaMeet//Bilingual AI Meeting//EN",
+            "CALSCALE:GREGORIAN",
+            "METHOD:PUBLISH",
+            "BEGIN:VEVENT",
+            $"UID:{meeting.Id:N}@layameet.com",
+            $"DTSTAMP:{FormatIcsDateTime(UtcNow())}",
+            $"DTSTART:{FormatIcsDateTime(startsAt)}",
+            $"DTEND:{FormatIcsDateTime(endsAt)}",
+            $"SUMMARY:{EscapeIcsText(meeting.Name)}",
+            $"DESCRIPTION:{EscapeIcsText(description)}",
+            "BEGIN:VALARM",
+            "TRIGGER:-PT15M",
+            "ACTION:DISPLAY",
+            "DESCRIPTION:LayaMeet starts in 15 minutes",
+            "END:VALARM",
+            "BEGIN:VALARM",
+            "TRIGGER:-PT5M",
+            "ACTION:DISPLAY",
+            "DESCRIPTION:LayaMeet starts in 5 minutes",
+            "END:VALARM",
+            "END:VEVENT",
+            "END:VCALENDAR"
+        };
+
+        return string.Join("\r\n", lines.SelectMany(FoldIcsLine)) + "\r\n";
     }
 
     public async Task<MeetingDetailsDto> GetMeetingAsync(
@@ -147,7 +364,7 @@ public sealed class MeetingService : IMeetingService
         CancellationToken ct = default)
     {
         var meeting = await FindMeetingAsync(meetingCode, true, ct);
-        EnsureMeetingActive(meeting, meetingCode);
+        ReactivateMeetingIfEnded(meeting);
         var (displayName, spokenLanguage, targetLanguage) = ValidateParticipantInput(request);
 
         if (string.IsNullOrWhiteSpace(request.AdmissionToken))
@@ -189,7 +406,11 @@ public sealed class MeetingService : IMeetingService
         EnsureAdmissionUsable(admission);
 
         if (admission.Status == "pending")
+        {
+            if (_context.ChangeTracker.HasChanges())
+                await _context.SaveChangesAsync(ct);
             return BuildPendingResponse(meeting, admission, request.AdmissionToken);
+        }
         if (admission.Status == "rejected")
             throw Forbidden("admission_rejected", "The host rejected this admission request.");
         if (admission.Status != "approved")
@@ -219,7 +440,7 @@ public sealed class MeetingService : IMeetingService
         CancellationToken ct = default)
     {
         var meeting = await FindMeetingAsync(meetingCode, true, ct);
-        EnsureMeetingActive(meeting, meetingCode);
+        ReactivateMeetingIfEnded(meeting);
         await ValidateHostTokenAsync(hostToken, meeting.Id, ct);
 
         var ttlMinutes = request.TtlMinutes ?? _admissionOptions.InviteTokenTtlMinutes;
@@ -459,8 +680,8 @@ public sealed class MeetingService : IMeetingService
         string? sessionToken = null,
         CancellationToken ct = default)
     {
-        var meeting = await FindMeetingAsync(meetingCode, false, ct);
-        EnsureMeetingActive(meeting, meetingCode);
+        var meeting = await FindMeetingAsync(meetingCode, true, ct);
+        ReactivateMeetingIfEnded(meeting);
 
         if (string.IsNullOrWhiteSpace(sessionToken))
             throw Unauthorized("session_token_missing", "Session token is required.");
@@ -557,6 +778,60 @@ public sealed class MeetingService : IMeetingService
             ?? throw new KeyNotFoundException($"Meeting minutes for meeting '{meetingCode}' were not found.");
 
         return ToMeetingMinutesResponse(minutes, meeting.MeetingCode);
+    }
+
+    public async Task<IReadOnlyList<MeetingHistoryItemDto>> GetMeetingHistoryAsync(
+        string? email = null,
+        CancellationToken ct = default)
+    {
+        var query = _context.Meetings
+            .AsNoTracking()
+            .Include(m => m.Participants)
+            .AsQueryable();
+
+        if (!string.IsNullOrWhiteSpace(email))
+        {
+            var normalizedEmail = email.Trim().ToLowerInvariant();
+            query = query.Where(m =>
+                (m.HostEmail != null && m.HostEmail.ToLower() == normalizedEmail) ||
+                m.Participants.Any(p => p.DisplayName.ToLower().Contains(normalizedEmail)));
+        }
+
+        var meetings = await query
+            .OrderByDescending(m => m.CreatedAt)
+            .Take(50)
+            .ToListAsync(ct);
+
+        var meetingIds = meetings.Select(m => m.Id).ToList();
+        var minutesList = await _context.MeetingMinutes
+            .AsNoTracking()
+            .Where(mm => meetingIds.Contains(mm.MeetingId))
+            .ToListAsync(ct);
+
+        var minutesMap = minutesList.ToDictionary(mm => mm.MeetingId);
+
+        var results = new List<MeetingHistoryItemDto>(meetings.Count);
+        foreach (var m in meetings)
+        {
+            minutesMap.TryGetValue(m.Id, out var minute);
+            var excerpt = minute != null
+                ? (minute.Summary.Length > 160 ? minute.Summary[..160] + "..." : minute.Summary)
+                : null;
+
+            results.Add(new MeetingHistoryItemDto(
+                MeetingId: m.Id,
+                MeetingCode: m.MeetingCode,
+                Name: m.Name,
+                CreatedAt: m.CreatedAt,
+                EndedAt: m.EndedAt,
+                HasMinutes: minute != null,
+                Title: minute?.Title,
+                SummaryExcerpt: excerpt,
+                ParticipantCount: m.Participants.Count
+            ));
+        }
+
+        return results;
     }
 
     private async Task<AdmissionPendingResponseDto> CreatePendingAdmissionAsync(
@@ -735,10 +1010,10 @@ public sealed class MeetingService : IMeetingService
 
         var spokenLanguage = request.SpokenLanguage?.Trim().ToLowerInvariant();
         var targetLanguage = request.TargetLanguage?.Trim().ToLowerInvariant();
-        if (string.IsNullOrEmpty(spokenLanguage) || !ValidLanguages.Contains(spokenLanguage))
-            throw new ArgumentException("Spoken language must be one of: 'vi', 'en', 'ja', 'ko', 'zh', 'fr', 'de', 'es'.", nameof(request.SpokenLanguage));
+        if (string.IsNullOrEmpty(spokenLanguage) || !ValidSpokenLanguages.Contains(spokenLanguage))
+            throw new ArgumentException("Spoken language must be one of: 'auto', 'vi', 'en', 'ja', 'ko', 'zh', 'th', 'id', 'tl', 'ar', 'fr', 'de', 'es'.", nameof(request.SpokenLanguage));
         if (string.IsNullOrEmpty(targetLanguage) || !ValidLanguages.Contains(targetLanguage))
-            throw new ArgumentException("Target language must be one of: 'vi', 'en', 'ja', 'ko', 'zh', 'fr', 'de', 'es'.", nameof(request.TargetLanguage));
+            throw new ArgumentException("Target language must be one of: 'vi', 'en', 'ja', 'ko', 'zh', 'th', 'id', 'tl', 'ar', 'fr', 'de', 'es'.", nameof(request.TargetLanguage));
 
         return (displayName, spokenLanguage, targetLanguage);
     }
@@ -747,7 +1022,7 @@ public sealed class MeetingService : IMeetingService
     {
         var normalized = targetLanguage?.Trim().ToLowerInvariant();
         if (string.IsNullOrEmpty(normalized) || !ValidLanguages.Contains(normalized))
-            throw new ArgumentException("Target language must be one of: 'vi', 'en', 'ja', 'ko', 'zh', 'fr', 'de', 'es'.", nameof(targetLanguage));
+            throw new ArgumentException("Target language must be one of: 'vi', 'en', 'ja', 'ko', 'zh', 'th', 'id', 'tl', 'ar', 'fr', 'de', 'es'.", nameof(targetLanguage));
         return normalized;
     }
 
@@ -766,6 +1041,146 @@ public sealed class MeetingService : IMeetingService
             decisions,
             actionItems,
             minutes.CreatedAt);
+    }
+
+    private static MeetingScheduleDto ToMeetingSchedule(Meeting meeting)
+    {
+        var attendees = meeting.Rsvps
+            .OrderByDescending(item => item.UpdatedAt)
+            .Select(item => new RsvpAttendeeDto(
+                item.Id,
+                item.DisplayName,
+                item.Status,
+                item.SpokenLanguage,
+                item.TargetLanguage,
+                item.UpdatedAt))
+            .ToList();
+
+        return new MeetingScheduleDto(
+            meeting.Id,
+            meeting.MeetingCode,
+            meeting.Name,
+            meeting.CreatedAt,
+            meeting.EndedAt,
+            meeting.ScheduledStartAt,
+            meeting.ScheduledEndAt,
+            meeting.Timezone ?? "Asia/Ho_Chi_Minh",
+            meeting.Agenda,
+            meeting.DefaultSpokenLanguage ?? "vi",
+            meeting.DefaultTargetLanguage ?? "ja",
+            meeting.DomainGlossary ?? "general",
+            attendees.Count(item => item.Status == "going"),
+            attendees.Count(item => item.Status == "maybe"),
+            attendees.Count(item => item.Status == "declined"),
+            attendees);
+    }
+
+    private static (string DisplayName, string? Email, string Status, string SpokenLanguage, string TargetLanguage)
+        ValidateRsvpInput(SubmitRsvpRequestDto request)
+    {
+        var displayName = request.DisplayName?.Trim();
+        if (string.IsNullOrWhiteSpace(displayName))
+            throw new ArgumentException("Display name cannot be empty.", nameof(request.DisplayName));
+        if (displayName.Length > 100)
+            throw new ArgumentException("Display name cannot exceed 100 characters.", nameof(request.DisplayName));
+
+        var status = request.Status?.Trim().ToLowerInvariant();
+        if (status is not ("going" or "maybe" or "declined"))
+            throw new ArgumentException("RSVP status must be 'going', 'maybe', or 'declined'.", nameof(request.Status));
+
+        var spokenLanguage = NormalizeRequiredLanguage(
+            request.SpokenLanguage,
+            ValidSpokenLanguages,
+            nameof(request.SpokenLanguage));
+        var targetLanguage = NormalizeRequiredLanguage(
+            request.TargetLanguage,
+            ValidLanguages,
+            nameof(request.TargetLanguage));
+
+        return (displayName, NormalizeEmail(request.Email), status, spokenLanguage, targetLanguage);
+    }
+
+    private static string NormalizeLanguage(
+        string? language,
+        string defaultValue,
+        HashSet<string> validValues,
+        string parameterName)
+    {
+        var normalized = string.IsNullOrWhiteSpace(language)
+            ? defaultValue
+            : language.Trim().ToLowerInvariant();
+        if (!validValues.Contains(normalized))
+            throw new ArgumentException($"Language '{normalized}' is not supported.", parameterName);
+        return normalized;
+    }
+
+    private static string NormalizeRequiredLanguage(
+        string? language,
+        HashSet<string> validValues,
+        string parameterName)
+    {
+        var normalized = language?.Trim().ToLowerInvariant();
+        if (string.IsNullOrEmpty(normalized) || !validValues.Contains(normalized))
+            throw new ArgumentException("Language is required and must be supported.", parameterName);
+        return normalized;
+    }
+
+    private static string NormalizeOptionalValue(string? value, string defaultValue) =>
+        string.IsNullOrWhiteSpace(value) ? defaultValue : value.Trim();
+
+    private static string? NormalizeEmail(string? email)
+    {
+        if (string.IsNullOrWhiteSpace(email))
+            return null;
+
+        var normalized = email.Trim().ToLowerInvariant();
+        if (normalized.Length > 254)
+            throw new ArgumentException("Email cannot exceed 254 characters.", nameof(email));
+        return normalized;
+    }
+
+    private static DateTime NormalizeUtc(DateTime value) => value.Kind switch
+    {
+        DateTimeKind.Utc => value,
+        DateTimeKind.Local => value.ToUniversalTime(),
+        _ => DateTime.SpecifyKind(value, DateTimeKind.Utc)
+    };
+
+    private static string FormatIcsDateTime(DateTime value) =>
+        NormalizeUtc(value).ToString("yyyyMMdd'T'HHmmss'Z'", CultureInfo.InvariantCulture);
+
+    private static string EscapeIcsText(string value) => value
+        .Replace("\\", "\\\\", StringComparison.Ordinal)
+        .Replace("\r\n", "\n", StringComparison.Ordinal)
+        .Replace('\r', '\n')
+        .Replace("\n", "\\n", StringComparison.Ordinal)
+        .Replace(";", "\\;", StringComparison.Ordinal)
+        .Replace(",", "\\,", StringComparison.Ordinal);
+
+    private static IEnumerable<string> FoldIcsLine(string line)
+    {
+        const int maxBytes = 75;
+        var current = new StringBuilder();
+        var currentBytes = 0;
+        var textElements = StringInfo.GetTextElementEnumerator(line);
+
+        while (textElements.MoveNext())
+        {
+            var element = (string)textElements.Current;
+            var elementBytes = Encoding.UTF8.GetByteCount(element);
+            if (currentBytes + elementBytes > maxBytes && current.Length > 0)
+            {
+                yield return current.ToString();
+                current.Clear();
+                current.Append(' ');
+                currentBytes = 1;
+            }
+
+            current.Append(element);
+            currentBytes += elementBytes;
+        }
+
+        yield return current.ToString();
     }
 
     private async Task ValidateHostTokenAsync(string token, Guid meetingId, CancellationToken ct = default)
@@ -868,10 +1283,16 @@ public sealed class MeetingService : IMeetingService
             throw Conflict("admission_already_used", "The admission token has already been used.");
     }
 
-    private static void EnsureMeetingActive(Meeting meeting, string meetingCode)
+    private void ReactivateMeetingIfEnded(Meeting meeting)
     {
         if (meeting.EndedAt != null)
-            throw new InvalidOperationException($"Meeting '{meetingCode}' has already ended.");
+        {
+            meeting.EndedAt = null;
+            _logger.LogInformation(
+                "Re-activated meeting {MeetingCode} (ID: {MeetingId}) on participant re-entry",
+                meeting.MeetingCode,
+                meeting.Id);
+        }
     }
 
     private static AdmissionPendingResponseDto BuildPendingResponse(
@@ -914,5 +1335,58 @@ public sealed class MeetingService : IMeetingService
         for (var i = 0; i < chars.Length; i++)
             chars[i] = AllowedChars[bytes[i] % AllowedChars.Length];
         return new string(chars);
+    }
+
+    public async Task<MeetingFeedbackResponseDto> SubmitFeedbackAsync(
+        string meetingCode,
+        SubmitMeetingFeedbackRequestDto request,
+        CancellationToken ct = default)
+    {
+        if (request.Rating < 1 || request.Rating > 5)
+        {
+            throw new ArgumentOutOfRangeException(nameof(request.Rating), "Rating must be between 1 and 5.");
+        }
+
+        if (string.IsNullOrWhiteSpace(request.Comment))
+        {
+            throw new ArgumentException("Comment cannot be empty.", nameof(request.Comment));
+        }
+
+        var normalizedCode = meetingCode.Trim().ToUpperInvariant();
+        var meeting = await _context.Meetings
+            .AsNoTracking()
+            .FirstOrDefaultAsync(m => m.MeetingCode == normalizedCode, ct);
+
+        var feedback = new MeetingFeedback
+        {
+            Id = Guid.NewGuid(),
+            MeetingId = meeting?.Id,
+            MeetingCode = normalizedCode,
+            Rating = request.Rating,
+            Category = request.Category?.Trim(),
+            Comment = request.Comment.Trim(),
+            UserName = request.UserName?.Trim(),
+            UserEmail = request.UserEmail?.Trim()?.ToLowerInvariant(),
+            CreatedAt = UtcNow()
+        };
+
+        _context.MeetingFeedbacks.Add(feedback);
+        await _context.SaveChangesAsync(ct);
+
+        _logger.LogInformation(
+            "Meeting feedback saved to database: Meeting={MeetingCode}, Rating={Rating}, Category={Category}",
+            normalizedCode,
+            feedback.Rating,
+            feedback.Category);
+
+        return new MeetingFeedbackResponseDto(
+            feedback.Id,
+            feedback.MeetingCode,
+            feedback.Rating,
+            feedback.Category,
+            feedback.Comment,
+            feedback.UserName,
+            feedback.UserEmail,
+            feedback.CreatedAt);
     }
 }

@@ -474,6 +474,30 @@ def test_glossary_domain_lookup():
     assert terms["độ trễ"] == "レイテンシ"
 
 
+@pytest.mark.asyncio
+async def test_contextual_provider_does_not_truncate_long_sentence_with_domain_term():
+    """Verify multi-clause sentences containing 'cơ sở dữ liệu' are translated in full, not truncated to 'データベース'."""
+    mock_fallback = MagicMock(spec=LocalTranslationProvider)
+    mock_fallback.translate = AsyncMock(
+        return_value="金曜日までに __ENTITY_0__ のデータベースを再確認し、__ENTITY_1__ に展開する必要があります。"
+    )
+    provider = ContextualTranslationProvider(fallback_provider=mock_fallback)
+
+    result = await provider.translate(
+        "Chúng ta cần kiểm tra lại cơ sở dữ liệu PostgreSQL và triển khai lên Docker trước thứ sáu.",
+        "vi",
+        "ja",
+        domain="engineering",
+    )
+
+    assert result != "データベース"
+    assert "PostgreSQL" in result
+    assert "Docker" in result
+    assert "データベース" in result
+    assert "デプロイ" in result
+    mock_fallback.translate.assert_awaited_once()
+
+
 # ---------------------------------------------------------------------------
 # 9. Fine-Tuning Dataset Collection
 # ---------------------------------------------------------------------------

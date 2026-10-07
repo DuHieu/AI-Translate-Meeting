@@ -1,6 +1,8 @@
+using System.Text;
 using AITranslateMeeting.Api.DTOs;
 using AITranslateMeeting.Api.Options;
 using AITranslateMeeting.Api.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.Extensions.Options;
@@ -53,6 +55,60 @@ public class MeetingsController : ControllerBase
         return CreatedAtAction(nameof(GetMeeting), new { meetingCode = response.MeetingCode }, response);
     }
 
+    [HttpGet("scheduled")]
+    [ProducesResponseType(typeof(IReadOnlyList<MeetingScheduleDto>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<IReadOnlyList<MeetingScheduleDto>>> GetScheduledMeetings(
+        [FromQuery] string? email,
+        CancellationToken ct)
+    {
+        var meetings = await _meetingService.GetUpcomingScheduledMeetingsAsync(email, ct);
+        return Ok(meetings);
+    }
+
+    [HttpGet("{meetingCode}/schedule")]
+    [ProducesResponseType(typeof(MeetingScheduleDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<MeetingScheduleDto>> GetMeetingSchedule(
+        [FromRoute] string meetingCode,
+        CancellationToken ct)
+    {
+        var schedule = await _meetingService.GetMeetingScheduleAsync(meetingCode, ct);
+        return Ok(schedule);
+    }
+
+    [HttpPost("{meetingCode}/rsvp")]
+    [ProducesResponseType(typeof(SubmitRsvpResponseDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<SubmitRsvpResponseDto>> SubmitRsvp(
+        [FromRoute] string meetingCode,
+        [FromBody] SubmitRsvpRequestDto request,
+        CancellationToken ct)
+    {
+        var response = await _meetingService.SubmitRsvpAsync(meetingCode, request, ct);
+        _auditLogService.LogEvent(
+            "MeetingRsvpSubmitted",
+            null,
+            null,
+            $"Code={meetingCode} Status={response.Status} Lang={response.SpokenLanguage}->{response.TargetLanguage}");
+        return Ok(response);
+    }
+
+    [HttpGet("{meetingCode}/calendar.ics")]
+    [Produces("text/calendar")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> DownloadCalendar(
+        [FromRoute] string meetingCode,
+        CancellationToken ct)
+    {
+        var icsContent = await _meetingService.GenerateCalendarIcsAsync(meetingCode, ct);
+        return File(
+            Encoding.UTF8.GetBytes(icsContent),
+            "text/calendar; charset=utf-8",
+            $"layameet-{meetingCode.ToLowerInvariant()}.ics");
+    }
+
     [HttpGet("{meetingCode}")]
     [ProducesResponseType(typeof(MeetingDetailsDto), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
@@ -75,6 +131,7 @@ public class MeetingsController : ControllerBase
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status429TooManyRequests)]
     public async Task<ActionResult<JoinMeetingResultDto>> JoinMeeting(
         [FromRoute] string meetingCode,
         [FromBody] JoinMeetingRequestDto request,
@@ -226,7 +283,18 @@ public class MeetingsController : ControllerBase
         return Ok(response);
     }
 
+    [HttpGet("history")]
+    [ProducesResponseType(typeof(IReadOnlyList<MeetingHistoryItemDto>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<IReadOnlyList<MeetingHistoryItemDto>>> GetMeetingHistory(
+        [FromQuery] string? email,
+        CancellationToken ct)
+    {
+        var history = await _meetingService.GetMeetingHistoryAsync(email, ct);
+        return Ok(history);
+    }
+
     [HttpGet("{meetingCode}/minutes")]
+    [AllowAnonymous]
     [ProducesResponseType(typeof(MeetingMinutesResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<MeetingMinutesResponse>> GetMeetingMinutes(
@@ -234,6 +302,23 @@ public class MeetingsController : ControllerBase
         CancellationToken ct)
     {
         var response = await _meetingService.GetMeetingMinutesAsync(meetingCode, ct);
+        return Ok(response);
+    }
+
+    [HttpPost("{meetingCode}/feedback")]
+    [ProducesResponseType(typeof(MeetingFeedbackResponseDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<MeetingFeedbackResponseDto>> SubmitFeedback(
+        [FromRoute] string meetingCode,
+        [FromBody] SubmitMeetingFeedbackRequestDto request,
+        CancellationToken ct)
+    {
+        var response = await _meetingService.SubmitFeedbackAsync(meetingCode, request, ct);
+        _auditLogService.LogEvent(
+            "MeetingFeedbackCaptured",
+            null,
+            null,
+            $"Code={meetingCode} Rating={response.Rating} Category={response.Category}");
         return Ok(response);
     }
 

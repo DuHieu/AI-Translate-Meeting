@@ -1,6 +1,6 @@
 {
-  "name": "LayaMeet - Nền tảng Họp Trực Tuyến Song Ngữ AI",
-  "short_name": "LayaMeet",
+  "name": "Laya Meet - Nền tảng Họp Trực Tuyến Song Ngữ AI",
+  "short_name": "Laya Meet",
   "description": "Nền tảng họp trực tuyến thông minh song ngữ thời gian thực Any-to-Any 50+ ngôn ngữ.",
   "start_url": "/",
   "display": "standalone",

@@ -1,3 +1,4 @@
+import { AdaptiveDialog } from '../components/common/AdaptiveDialog';
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ApiError, meetingApi } from '../api/meetingApi';
@@ -7,13 +8,23 @@ import {
   AdmissionPendingResponse,
   isAdmissionPending,
   JoinMeetingResponse,
+  MeetingSchedule,
+  MeetingSessionData,
   SupportedLanguage,
   SUPPORTED_LANGUAGES_LIST,
+  getLanguageOption,
 } from '../types/meeting';
-import { Video, Mic, MicOff, VideoOff, LogIn, ArrowLeft, BookOpen, ChevronDown, ChevronUp, SlidersHorizontal } from 'lucide-react';
+import { Video, Mic, MicOff, VideoOff, LogIn, ArrowLeft, BookOpen, ChevronDown, ChevronUp, SlidersHorizontal, Settings, X, Volume2, Globe } from 'lucide-react';
 import { LayaMeetLogo } from '../components/common/LayaMeetLogo';
 import { ThemeToggle } from '../components/common/ThemeToggle';
 import { NeuralLinguisticBackground } from '../components/common/NeuralLinguisticBackground';
+import { CountryFlag } from '../components/common/CountryFlag';
+import { GoogleAuthControl } from '../components/auth/GoogleAuthControl';
+import { useAuth } from '../context/auth-context-def';
+import { useLanguage } from '../context/language-context-def';
+import { AppLanguage } from '../i18n';
+import { getUserSettings, saveUserSettings } from '../utils/userSettings';
+import { CountdownLobbyCard } from '../components/meeting/CountdownLobbyCard';
 
 interface GlossaryDomainOption {
   id: string;
@@ -32,13 +43,170 @@ const GLOSSARY_DOMAINS: GlossaryDomainOption[] = [
   { id: 'legal', name: 'Pháp lý & Tuân thủ', desc: 'Điều khoản pháp lý, sở hữu trí tuệ, hợp đồng kinh tế' },
 ];
 
-export const PreJoinPage: React.FC = () => {
+const PREJOIN_COPY: Record<
+  AppLanguage,
+  {
+    back: string;
+    cameraOff: string;
+    subtitleTargetBadge: (name: string) => string;
+    displayNameLabel: string;
+    displayNamePlaceholder: string;
+    displayNameRequired: string;
+    languageLabel: string;
+    languageHelpText: string;
+    languageRequired: string;
+    nativeLanguageTitle: string;
+    nativeLanguageSubtitle: string;
+    otherLanguages: string;
+    customSpeakingPrompt: string;
+    speakingLanguageOption: string;
+    speakingSameAsNative: string;
+    advancedOptions: string;
+    advancedOptionsMobile: string;
+    glossaryDomainLabel: string;
+    customKeywordsLabel: string;
+    joinBtn: string;
+    joiningBtn: string;
+    waitingHostBtn: string;
+  }
+> = {
+  vi: {
+    back: 'Quay lại',
+    cameraOff: 'Camera đang tắt',
+    subtitleTargetBadge: (name: string) => `Phụ đề dịch sang: ${name}`,
+    displayNameLabel: 'Tên hiển thị',
+    displayNamePlaceholder: 'Nhập họ và tên của bạn',
+    displayNameRequired: 'Vui lòng nhập tên hiển thị của bạn.',
+    languageLabel: 'Ngôn ngữ của bạn (Nhận phụ đề)',
+    languageHelpText: 'Hệ thống sẽ dịch và hiển thị phụ đề theo ngôn ngữ này cho bạn khi nghe người khác nói.',
+    languageRequired: 'Vui lòng chọn ngôn ngữ của bạn.',
+    nativeLanguageTitle: 'Ngôn ngữ mẹ đẻ của bạn (Nhận phụ đề)',
+    nativeLanguageSubtitle: 'Hệ thống sẽ dịch và hiển thị phụ đề theo ngôn ngữ này cho bạn khi nghe người khác nói (kể cả khi bạn chỉ vào nghe mà không phát biểu).',
+    otherLanguages: 'Ngôn ngữ khác...',
+    customSpeakingPrompt: '+ Tùy chỉnh ngôn ngữ khi bạn nói (nếu khác tiếng mẹ đẻ)',
+    speakingLanguageOption: 'Ngôn ngữ phát biểu khi bạn nói:',
+    speakingSameAsNative: 'Đặt lại theo tiếng mẹ đẻ',
+    advancedOptions: 'Tùy chọn nâng cao (Từ điển chuyên ngành)',
+    advancedOptionsMobile: 'Thiết bị & Từ điển chuyên ngành',
+    glossaryDomainLabel: 'Lĩnh vực thuật ngữ cuộc họp:',
+    customKeywordsLabel: 'Từ khóa chuyên ngành bổ trợ (Tùy chọn):',
+    joinBtn: 'Tham gia ngay',
+    joiningBtn: 'Đang tham gia...',
+    waitingHostBtn: 'Đang chờ người tổ chức duyệt...',
+  },
+  en: {
+    back: 'Back',
+    cameraOff: 'Camera is off',
+    subtitleTargetBadge: (name: string) => `Subtitles translated to: ${name}`,
+    displayNameLabel: 'Display Name',
+    displayNamePlaceholder: 'Enter your full name',
+    displayNameRequired: 'Please enter your display name.',
+    languageLabel: 'Your Language (Subtitle Target)',
+    languageHelpText: 'The system will translate and display subtitles in this language for you when others speak.',
+    languageRequired: 'Please select your language.',
+    nativeLanguageTitle: 'Your Native Language (Subtitle Target)',
+    nativeLanguageSubtitle: 'The system will translate and display subtitles in this language for you when others speak (even if you only listen without speaking).',
+    otherLanguages: 'Other languages...',
+    customSpeakingPrompt: '+ Customize speaking language (if different from native)',
+    speakingLanguageOption: 'Speaking language (when you talk):',
+    speakingSameAsNative: 'Reset to native language',
+    advancedOptions: 'Advanced options (Domain glossary)',
+    advancedOptionsMobile: 'Devices & Domain Glossary',
+    glossaryDomainLabel: 'Meeting Terminology Domain:',
+    customKeywordsLabel: 'Supplementary keywords (Optional):',
+    joinBtn: 'Join Now',
+    joiningBtn: 'Joining...',
+    waitingHostBtn: 'Waiting for host approval...',
+  },
+  ja: {
+    back: '戻る',
+    cameraOff: 'カメラはオフです',
+    subtitleTargetBadge: (name: string) => `字幕翻訳先: ${name}`,
+    displayNameLabel: '表示名',
+    displayNamePlaceholder: 'お名前を入力してください',
+    displayNameRequired: '表示名を入力してください。',
+    languageLabel: 'あなたの言語（字幕翻訳先）',
+    languageHelpText: '他の参加者の発言をこの言語にリアルタイム翻訳して字幕表示します。',
+    languageRequired: '言語を選択してください。',
+    nativeLanguageTitle: '母国語（字幕の言語）',
+    nativeLanguageSubtitle: '他の参加者の発言をこの言語にリアルタイム翻訳して字幕表示します（発言せず聞くだけの場合でも適用されます）。',
+    otherLanguages: 'その他の言語...',
+    customSpeakingPrompt: '+ 発言時の言語をカスタマイズ（母国語と異なる場合）',
+    speakingLanguageOption: '発言時の言語:',
+    speakingSameAsNative: '母国語と同じにする',
+    advancedOptions: '高度な設定（専門用語辞書）',
+    advancedOptionsMobile: 'デバイス・専門用語辞書',
+    glossaryDomainLabel: '会議の用語ドメイン:',
+    customKeywordsLabel: '補助キーワード（任意）:',
+    joinBtn: '今すぐ参加',
+    joiningBtn: '参加中...',
+    waitingHostBtn: 'ホストの承認を待機中...',
+  },
+};
+
+function getInitialNativeLanguage(_appLanguage?: string): SupportedLanguage {
+  try {
+    const saved = localStorage.getItem('layameet:native-language');
+    if (saved && SUPPORTED_LANGUAGES_LIST.some((l) => l.code === saved)) {
+      return saved as SupportedLanguage;
+    }
+    const settings = getUserSettings();
+    if (settings.nativeLanguage && SUPPORTED_LANGUAGES_LIST.some((l) => l.code === settings.nativeLanguage)) {
+      return settings.nativeLanguage;
+    }
+  } catch {
+    // Ignore storage errors
+  }
+  return 'en';
+}
+
+function asSupportedLanguage(value?: string | null): SupportedLanguage | null {
+  return SUPPORTED_LANGUAGES_LIST.some((language) => language.code === value)
+    ? value as SupportedLanguage
+    : null;
+}
+
+interface PreJoinPageProps {
+  onJoined?: (session: MeetingSessionData) => void;
+}
+
+export const PreJoinPage: React.FC<PreJoinPageProps> = ({ onJoined }) => {
   const { meetingCode } = useParams<{ meetingCode: string }>();
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const { language } = useLanguage();
+  const copy = PREJOIN_COPY[language] || PREJOIN_COPY.vi;
 
-  const [displayName, setDisplayName] = useState('');
-  const [spokenLanguage, setSpokenLanguage] = useState<SupportedLanguage>('vi');
-  const [targetLanguage, setTargetLanguage] = useState<SupportedLanguage>('ja');
+  const [displayName, setDisplayName] = useState(() => {
+    return user?.fullName || localStorage.getItem('layameet:last-display-name') || '';
+  });
+
+  useEffect(() => {
+    if (user?.fullName && !displayName.trim()) {
+      setDisplayName(user.fullName);
+    }
+  }, [user?.fullName, displayName]);
+
+  const [nativeLanguage, setNativeLanguage] = useState<SupportedLanguage>(() => {
+    return getInitialNativeLanguage(language);
+  });
+  const [spokenLanguage, setSpokenLanguage] = useState<SupportedLanguage>(() => {
+    return getInitialNativeLanguage(language);
+  });
+  const [targetLanguage, setTargetLanguage] = useState<SupportedLanguage>(() => {
+    return getInitialNativeLanguage(language);
+  });
+  const handleSelectNativeLanguage = (code: SupportedLanguage) => {
+    setNativeLanguage(code);
+    setTargetLanguage(code);
+    setSpokenLanguage(code);
+    try {
+      localStorage.setItem('layameet:native-language', code);
+      saveUserSettings({ nativeLanguage: code });
+    } catch {
+      // Ignore
+    }
+  };
 
   const [meetingDomain, setMeetingDomain] = useState<string>(() => {
     return localStorage.getItem('ai-meeting-domain') || 'general';
@@ -56,6 +224,8 @@ export const PreJoinPage: React.FC = () => {
   const [inviteToken, setInviteToken] = useState('');
   const [pendingAdmission, setPendingAdmission] = useState<AdmissionPendingResponse | null>(null);
   const [admissionRejected, setAdmissionRejected] = useState(false);
+  const [schedule, setSchedule] = useState<MeetingSchedule | null>(null);
+  const [hasPreApprovedPass, setHasPreApprovedPass] = useState(false);
 
   const [audioDevices, setAudioDevices] = useState<MediaDeviceInfo[]>([]);
   const [videoDevices, setVideoDevices] = useState<MediaDeviceInfo[]>([]);
@@ -64,12 +234,94 @@ export const PreJoinPage: React.FC = () => {
   const [audioVolume, setAudioVolume] = useState<number>(0);
   const [permissionError, setPermissionError] = useState<string | null>(null);
   const [previewRetryCount, setPreviewRetryCount] = useState<number>(0);
+  const [isPlayingSpeakerTest, setIsPlayingSpeakerTest] = useState(false);
+
+  const handleTestSpeakerSound = useCallback(() => {
+    try {
+      setIsPlayingSpeakerTest(true);
+      const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+      const ctx = new AudioCtx();
+      const chord = [523.25, 659.25, 783.99]; // C5, E5, G5 gentle chord
+      chord.forEach((freq, idx) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(freq, ctx.currentTime + idx * 0.12);
+        gain.gain.setValueAtTime(0.12, ctx.currentTime + idx * 0.12);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + idx * 0.12 + 0.35);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(ctx.currentTime + idx * 0.12);
+        osc.stop(ctx.currentTime + idx * 0.12 + 0.36);
+      });
+      setTimeout(() => {
+        setIsPlayingSpeakerTest(false);
+        void ctx.close().catch(() => {});
+      }, 700);
+    } catch (err) {
+      console.warn('Audio speaker test playback failed', err);
+      setIsPlayingSpeakerTest(false);
+    }
+  }, []);
 
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const mediaStreamRef = useRef<MediaStream | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
   const animFrameRef = useRef<number | null>(null);
   const lastLevelUpdateRef = useRef(0);
+
+  useEffect(() => {
+    if (!meetingCode) return undefined;
+
+    const code = meetingCode.trim().toUpperCase();
+    const urlInviteToken = new URLSearchParams(window.location.search).get('invite')?.trim();
+    if (urlInviteToken) {
+      admissionStorage.saveInviteToken(code, urlInviteToken);
+    }
+    const storedInviteToken = urlInviteToken || admissionStorage.getInviteToken(code);
+    setInviteToken(storedInviteToken || '');
+    setHasPreApprovedPass(Boolean(storedInviteToken));
+    setSchedule(null);
+
+    let cancelled = false;
+    meetingApi
+      .getMeetingSchedule(code)
+      .then((meetingSchedule) => {
+        if (cancelled) return;
+        setSchedule(meetingSchedule);
+
+        const scheduledSpokenLanguage = asSupportedLanguage(
+          meetingSchedule.defaultSpokenLanguage,
+        );
+        const scheduledTargetLanguage = asSupportedLanguage(
+          meetingSchedule.defaultTargetLanguage,
+        );
+        if (scheduledSpokenLanguage) {
+          setSpokenLanguage(scheduledSpokenLanguage);
+          localStorage.setItem('ai-meeting-spoken-language', scheduledSpokenLanguage);
+        }
+        if (scheduledTargetLanguage) {
+          setTargetLanguage(scheduledTargetLanguage);
+          localStorage.setItem('ai-meeting-target-language', scheduledTargetLanguage);
+        }
+        if (meetingSchedule.domainGlossary?.trim()) {
+          setMeetingDomain(meetingSchedule.domainGlossary);
+          localStorage.setItem('ai-meeting-domain', meetingSchedule.domainGlossary);
+        }
+        if (meetingSchedule.agenda?.trim()) {
+          setCustomKeywords(meetingSchedule.agenda);
+          localStorage.setItem('ai-meeting-initial-prompt', meetingSchedule.agenda);
+        }
+      })
+      .catch((err: unknown) => {
+        if (cancelled || (err instanceof ApiError && err.status === 404)) return;
+        setError('Không thể tải lịch họp. Bạn vẫn có thể tiếp tục tham gia phòng.');
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [meetingCode]);
 
   // Load available devices
   const refreshDevices = useCallback(async () => {
@@ -269,7 +521,14 @@ export const PreJoinPage: React.FC = () => {
   const completeJoin = useCallback((joinRes: JoinMeetingResponse) => {
     const hostToken = admissionStorage.getHostToken(joinRes.meetingCode);
     admissionStorage.clearPendingToken(joinRes.meetingCode);
-    meetingStorage.saveSession({
+    admissionStorage.clearInviteToken(joinRes.meetingCode);
+    setInviteToken('');
+    try {
+      localStorage.setItem('layameet:last-display-name', joinRes.displayName);
+    } catch {
+      // Ignore storage errors
+    }
+    const sessionData: MeetingSessionData = {
       meetingCode: joinRes.meetingCode,
       meetingId: joinRes.meetingId,
       participantId: joinRes.participantId,
@@ -287,9 +546,14 @@ export const PreJoinPage: React.FC = () => {
       initialCameraOn: isCameraOn,
       audioDeviceId: selectedAudioId || undefined,
       videoDeviceId: selectedVideoId || undefined,
-    });
-    navigate(`/meeting/${joinRes.meetingCode}`);
-  }, [isMicOn, isCameraOn, selectedAudioId, selectedVideoId, navigate]);
+    };
+    meetingStorage.saveSession(sessionData);
+    if (onJoined) {
+      onJoined(sessionData);
+    } else {
+      navigate(`/meeting/${joinRes.meetingCode}`, { replace: true });
+    }
+  }, [isMicOn, isCameraOn, selectedAudioId, selectedVideoId, navigate, onJoined]);
 
   const admissionMessage = (err: unknown): string => {
     if (err instanceof ApiError) {
@@ -343,7 +607,11 @@ export const PreJoinPage: React.FC = () => {
     e.preventDefault();
     if (!meetingCode) return;
     if (!displayName.trim()) {
-      setError('Vui lòng nhập tên hiển thị của bạn.');
+      setError(copy.displayNameRequired);
+      return;
+    }
+    if (!nativeLanguage) {
+      setError(copy.languageRequired);
       return;
     }
 
@@ -353,13 +621,39 @@ export const PreJoinPage: React.FC = () => {
     const code = meetingCode.trim().toUpperCase();
 
     try {
-      const credential = admissionStorage.getHostToken(code) || inviteToken.trim() || undefined;
-      const result = await meetingApi.joinMeeting(code, {
-        displayName: displayName.trim(),
-        spokenLanguage,
-        targetLanguage,
-        admissionToken: credential,
-      });
+      const credential = admissionStorage.getHostToken(code)
+        || inviteToken.trim()
+        || admissionStorage.getInviteToken(code)
+        || undefined;
+      let result;
+      try {
+        result = await meetingApi.joinMeeting(code, {
+          displayName: displayName.trim(),
+          spokenLanguage,
+          targetLanguage,
+          admissionToken: credential,
+        });
+      } catch (joinErr: unknown) {
+        if (
+          credential
+          && joinErr instanceof ApiError
+          && (joinErr.code === 'admission_already_used'
+            || joinErr.code === 'admission_token_expired'
+            || joinErr.code?.startsWith('admission_token'))
+        ) {
+          admissionStorage.clearInviteToken(code);
+          admissionStorage.clearHostToken(code);
+          setInviteToken('');
+          setHasPreApprovedPass(false);
+          result = await meetingApi.joinMeeting(code, {
+            displayName: displayName.trim(),
+            spokenLanguage,
+            targetLanguage,
+          });
+        } else {
+          throw joinErr;
+        }
+      }
 
       stopPreview();
       if (isAdmissionPending(result)) {
@@ -377,7 +671,7 @@ export const PreJoinPage: React.FC = () => {
   };
 
   return (
-    <div className="relative min-h-screen bg-slate-100/90 dark:bg-[#070709] text-zinc-900 dark:text-zinc-100 flex flex-col items-center justify-center p-4 sm:p-6 transition-colors overflow-hidden">
+    <main className="prejoin-page relative min-h-dvh bg-slate-100/90 dark:bg-[#070709] text-zinc-900 dark:text-zinc-100 flex flex-col items-center justify-start sm:justify-center p-2.5 sm:p-6 transition-colors overflow-x-hidden overflow-y-auto">
       {/* ── Interactive Neural Linguistic Synapse Network (Mouse reactive) ── */}
       <NeuralLinguisticBackground />
 
@@ -388,29 +682,39 @@ export const PreJoinPage: React.FC = () => {
       </div>
 
       {/* ── Elevated High-Contrast Modal Card ────────────────────── */}
-      <div className="relative z-10 max-w-4xl w-full bg-white dark:bg-[#16161a] border border-zinc-200/90 dark:border-[#2e2e38] rounded-2xl shadow-[0_25px_60px_-15px_rgba(0,0,0,0.16),0_0_20px_rgba(0,0,0,0.04)] dark:shadow-[0_30px_70px_-15px_rgba(0,0,0,0.95),0_0_45px_rgba(37,99,235,0.12)] ring-1 ring-zinc-950/5 dark:ring-white/10 transition-colors overflow-hidden">
+      <div className="relative z-10 max-w-4xl w-full my-auto bg-white dark:bg-[#16161a] border border-zinc-200/90 dark:border-[#2e2e38] rounded-2xl shadow-[0_25px_60px_-15px_rgba(0,0,0,0.16)] dark:shadow-[0_25px_60px_-15px_rgba(0,0,0,0.8)] ring-1 ring-zinc-950/5 dark:ring-white/10 transition-colors overflow-hidden">
 
         {/* ── Header ──────────────────────────────────────────────── */}
-        <div className="flex items-center justify-between px-4 py-3.5 md:px-6 md:py-4 bg-zinc-50/90 dark:bg-[#1a1a1e]/90 border-b border-zinc-200 dark:border-[#2a2a30]">
-          <div className="flex items-center gap-3">
+        <div className="flex items-center justify-between px-3.5 py-2.5 md:px-6 md:py-4 bg-zinc-50/90 dark:bg-[#1a1a1e]/90 border-b border-zinc-200 dark:border-[#2a2a30]">
+          <div className="flex items-center gap-2.5 md:gap-3">
             <LayaMeetLogo size="sm" showWordmark={false} />
             <div>
-              <h1 className="text-sm font-bold text-zinc-900 dark:text-white leading-none">Chuẩn bị tham gia</h1>
-              <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1 flex items-center gap-1.5">
+              <h1 className="text-xs sm:text-sm font-bold text-zinc-900 dark:text-white leading-none">Chuẩn bị tham gia</h1>
+              <p className="text-[11px] sm:text-xs text-zinc-500 dark:text-zinc-400 mt-1 flex items-center gap-1.5">
                 <span>Phòng họp:</span>
-                <span className="font-mono text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/50 border border-blue-200/80 dark:border-blue-800/60 px-1.5 py-0.2 rounded text-[11px] font-bold uppercase tracking-wider">
+                <span className="font-mono text-zinc-800 dark:text-zinc-200 bg-zinc-100 dark:bg-zinc-800/80 border border-zinc-200 dark:border-zinc-700/80 px-2 py-0.5 rounded-md text-xs font-semibold tracking-wide select-all">
                   {meetingCode?.toUpperCase()}
                 </span>
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 sm:gap-2">
+            {/* Mobile Google Meet style Quick Settings Sheet trigger */}
+            <button
+              type="button"
+              onClick={() => setShowAdvancedSettings(true)}
+              aria-label="Mở cài đặt thiết bị và từ điển"
+              title="Cài đặt thiết bị & từ điển chuyên ngành"
+              className="md:hidden p-2 rounded-lg border border-zinc-300 dark:border-[#3a3a40] bg-white hover:bg-zinc-100 dark:bg-[#202024] text-zinc-700 dark:text-zinc-300 transition-colors cursor-pointer"
+            >
+              <Settings className="w-4 h-4" />
+            </button>
             <ThemeToggle />
             <button
               type="button"
               onClick={() => navigate('/')}
-              className="px-3 py-1.5 rounded-lg border border-zinc-300 dark:border-[#3a3a40] bg-white hover:bg-zinc-100 dark:bg-[#202024] dark:hover:bg-[#28282e] text-zinc-700 hover:text-zinc-900 dark:text-zinc-300 dark:hover:text-white text-xs font-medium flex items-center gap-1.5 transition-colors cursor-pointer shadow-2xs"
+              className="px-2.5 sm:px-3 py-1.5 rounded-lg border border-zinc-300 dark:border-[#3a3a40] bg-white hover:bg-zinc-100 dark:bg-[#202024] dark:hover:bg-[#28282e] text-zinc-700 hover:text-zinc-900 dark:text-zinc-300 dark:hover:text-white text-xs font-medium flex items-center gap-1.5 transition-colors cursor-pointer shadow-2xs"
             >
               <ArrowLeft className="w-3.5 h-3.5" />
               <span>Quay lại</span>
@@ -420,30 +724,47 @@ export const PreJoinPage: React.FC = () => {
 
         {/* ── Status Banners ───────────────────────────────────────── */}
         {error && (
-          <div role="alert" className="mx-4 md:mx-6 mt-4 p-3 rounded-lg bg-red-950/50 border border-red-900/50 text-red-400 text-xs">
+          <div role="alert" className="mx-3.5 md:mx-6 mt-3 p-2.5 md:p-3 rounded-lg bg-rose-50 dark:bg-rose-500/10 border border-rose-200 dark:border-rose-500/20 text-rose-700 dark:text-rose-300 text-xs">
             {error}
           </div>
         )}
         {pendingAdmission && (
-          <div role="status" aria-live="polite" className="mx-4 md:mx-6 mt-4 p-3 rounded-lg bg-amber-950/40 border border-amber-900/50 text-amber-300 text-xs">
+          <div role="status" aria-live="polite" className="mx-3.5 md:mx-6 mt-3 p-2.5 md:p-3 rounded-lg bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20 text-amber-800 dark:text-amber-300 text-xs">
             <span className="font-medium">Đang chờ host phê duyệt —</span>{' '}
             Trang sẽ tự động tiếp tục khi được chấp nhận.
           </div>
         )}
         {admissionRejected && (
-          <div role="alert" className="mx-4 md:mx-6 mt-4 p-3 rounded-lg bg-red-950/50 border border-red-900/50 text-red-400 text-xs">
+          <div role="alert" className="mx-3.5 md:mx-6 mt-3 p-2.5 md:p-3 rounded-lg bg-rose-50 dark:bg-rose-500/10 border border-rose-200 dark:border-rose-500/20 text-rose-700 dark:text-rose-300 text-xs">
             Host đã từ chối yêu cầu tham gia. Vui lòng quay lại trang chủ hoặc thử lại.
           </div>
         )}
 
+        {schedule && schedule.scheduledStartAt && new Date(schedule.scheduledStartAt).getTime() > Date.now() && (
+          <CountdownLobbyCard
+            schedule={schedule}
+            displayName={displayName}
+            email={user?.email}
+            spokenLanguage={spokenLanguage}
+            targetLanguage={targetLanguage}
+            hasPreApprovedPass={hasPreApprovedPass}
+            onPreApproved={(token) => {
+              admissionStorage.saveInviteToken(schedule.meetingCode, token);
+              setInviteToken(token);
+              setHasPreApprovedPass(true);
+            }}
+            onScheduleChange={setSchedule}
+          />
+        )}
+
         {/* ── Main Two-Column Layout ───────────────────────────────── */}
-        <div className="grid grid-cols-1 md:grid-cols-12 p-4 md:p-6 gap-5 md:gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-12 p-3.5 md:p-6 gap-3.5 md:gap-6">
 
           {/* Left col: Camera preview + device info */}
-          <div className="md:col-span-7 space-y-3">
+          <div className="prejoin-preview md:col-span-7 space-y-2.5 md:space-y-3">
 
-            {/* Camera preview */}
-            <div className="aspect-video bg-[#111112] rounded-xl border border-[#2e2e30] overflow-hidden relative flex items-center justify-center">
+            {/* Camera preview (compact height on mobile so form below is never cut off) */}
+            <div className="h-40 sm:h-48 md:h-auto md:aspect-video bg-[#111112] rounded-xl border border-[#2e2e30] overflow-hidden relative flex items-center justify-center">
               {isCameraOn ? (
                 <video
                   ref={videoRef}
@@ -453,18 +774,24 @@ export const PreJoinPage: React.FC = () => {
                   className="w-full h-full object-cover scale-x-[-1]"
                 />
               ) : (
-                <div className="flex flex-col items-center justify-center gap-2 text-zinc-600">
-                  <VideoOff className="w-10 h-10 stroke-[1.5]" />
-                  <span className="text-xs">Camera đang tắt</span>
+                <div className="flex flex-col items-center justify-center gap-1.5 text-zinc-600">
+                  <VideoOff className="w-8 h-8 md:w-10 md:h-10 stroke-[1.5]" />
+                  <span className="text-xs">{copy.cameraOff}</span>
                 </div>
               )}
 
+              {/* Language Indicator Pill (Top Left on Camera Preview) */}
+              <div className="absolute top-2.5 left-2.5 z-10 inline-flex items-center gap-1.5 rounded-full bg-black/75 backdrop-blur-md border border-white/15 px-2.5 py-1 text-[11px] font-medium text-zinc-100 shadow-md">
+                <CountryFlag code={nativeLanguage} size="xs" />
+                <span>{copy.subtitleTargetBadge(getLanguageOption(nativeLanguage).nativeName)}</span>
+              </div>
+
               {/* Mic / Camera toggle overlay */}
-              <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex items-center gap-2 bg-[#0f0f10]/90 px-3 py-2 rounded-lg border border-[#2e2e30]">
+              <div className="absolute bottom-2.5 md:bottom-3 left-1/2 -translate-x-1/2 flex items-center gap-2 bg-[#0f0f10]/90 px-2.5 py-1.5 md:px-3 md:py-2 rounded-full border border-[#2e2e30] shadow-lg">
                 <button
                   type="button"
                   onClick={() => setIsMicOn((prev) => !prev)}
-                  className={`w-9 h-9 rounded-lg flex items-center justify-center transition-colors cursor-pointer ${
+                  className={`w-11 h-11 rounded-full flex items-center justify-center transition-colors cursor-pointer ${
                     isMicOn
                       ? 'bg-[#222224] text-zinc-300 hover:bg-[#2a2a2c]'
                       : 'bg-red-600 text-white hover:bg-red-500'
@@ -476,7 +803,7 @@ export const PreJoinPage: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setIsCameraOn((prev) => !prev)}
-                  className={`w-9 h-9 rounded-lg flex items-center justify-center transition-colors cursor-pointer ${
+                  className={`w-11 h-11 rounded-full flex items-center justify-center transition-colors cursor-pointer ${
                     isCameraOn
                       ? 'bg-[#222224] text-zinc-300 hover:bg-[#2a2a2c]'
                       : 'bg-red-600 text-white hover:bg-red-500'
@@ -488,41 +815,74 @@ export const PreJoinPage: React.FC = () => {
               </div>
             </div>
 
-            {/* Device & mic check panel */}
-            <div className="bg-zinc-50/80 dark:bg-[#0e0e11] rounded-xl border border-zinc-200 dark:border-[#28282e] p-4 space-y-3 transition-colors shadow-2xs">
+            {/* Compact permission alert on mobile */}
+            {permissionError && (
+              <div className="md:hidden p-2 rounded-lg bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/50 text-amber-800 dark:text-amber-300 text-xs flex items-center justify-between gap-2">
+                <span>Chưa cấp quyền thiết bị. Vào Cài đặt trình duyệt → Quyền mic/camera để cho phép, hoặc tắt mic/cam và tham gia chỉ nghe. Mic/camera cần HTTPS hoặc localhost.</span>
+                <button
+                  type="button"
+                  onClick={handleGrantPermission}
+                  className="shrink-0 px-2 py-1 bg-amber-800 hover:bg-amber-900 text-white rounded text-xs font-medium transition-colors cursor-pointer"
+                >
+                  Cấp quyền
+                </button>
+              </div>
+            )}
+
+            {/* Device & mic check panel (Desktop inline; on Mobile moved to Google Meet Settings Sheet so Join button never overflows) */}
+            <div className="hidden md:block bg-zinc-50/80 dark:bg-[#0e0e11] rounded-xl border border-zinc-200 dark:border-[#28282e] p-3.5 md:p-4 space-y-3 transition-colors shadow-2xs">
               {permissionError && (
                 <div className="p-2.5 rounded-lg bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/50 text-amber-800 dark:text-amber-300 text-xs flex items-center justify-between gap-2">
                   <span className="truncate">Chưa cấp quyền: {permissionError}</span>
                   <button
                     type="button"
                     onClick={handleGrantPermission}
-                    className="shrink-0 px-2 py-1 bg-amber-600 hover:bg-amber-500 text-white rounded text-xs font-medium transition-colors cursor-pointer"
+                    className="shrink-0 px-2 py-1 bg-amber-800 hover:bg-amber-900 text-white rounded text-xs font-medium transition-colors cursor-pointer"
                   >
                     Cấp quyền
                   </button>
                 </div>
               )}
 
-              {/* Mic level meter */}
-              <div className="flex items-center gap-3">
-                <Mic className="w-3.5 h-3.5 text-zinc-500 dark:text-zinc-500 shrink-0" />
-                <span className="text-xs text-zinc-600 dark:text-zinc-400 shrink-0 w-20">Kiểm tra mic</span>
-                <div className="flex-1 h-1.5 bg-zinc-200 dark:bg-[#252528] rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-emerald-500 transition-all duration-75 rounded-full"
-                    style={{ width: `${isMicOn ? audioVolume : 0}%` }}
-                  />
+              {/* Mic & Speaker Audio Checks */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pt-0.5">
+                {/* Mic level meter */}
+                <div className="flex items-center gap-2.5 flex-1 min-w-0">
+                  <Mic className="w-3.5 h-3.5 text-zinc-500 dark:text-zinc-400 shrink-0" />
+                  <span className="text-xs text-zinc-600 dark:text-zinc-400 shrink-0">Mic</span>
+                  <div className="flex-1 h-1.5 bg-zinc-200 dark:bg-[#252528] rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-emerald-500 transition-all duration-75 rounded-full"
+                      style={{ width: `${isMicOn ? audioVolume : 0}%` }}
+                    />
+                  </div>
+                  <span className="text-[10px] text-zinc-500 dark:text-zinc-400 font-mono w-7 text-right shrink-0">
+                    {isMicOn ? `${audioVolume}%` : '—'}
+                  </span>
                 </div>
-                <span className="text-[10px] text-zinc-500 dark:text-zinc-400 font-mono w-7 text-right shrink-0">
-                  {isMicOn ? `${audioVolume}%` : '—'}
-                </span>
+
+                {/* Speaker Test Button (Zoom/Google Meet standard) */}
+                <button
+                  type="button"
+                  onClick={handleTestSpeakerSound}
+                  disabled={isPlayingSpeakerTest}
+                  title="Kiểm tra âm thanh phát ra loa/tai nghe"
+                  className={`px-2.5 py-1 rounded-lg border text-xs font-medium flex items-center gap-1.5 transition-colors cursor-pointer shrink-0 ${
+                    isPlayingSpeakerTest
+                      ? 'bg-blue-600 text-white border-blue-500 animate-pulse'
+                      : 'bg-white dark:bg-[#18181c] border-zinc-300 dark:border-[#323238] text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-[#222228]'
+                  }`}
+                >
+                  <Volume2 className={`w-3.5 h-3.5 ${isPlayingSpeakerTest ? 'text-white animate-bounce' : 'text-blue-500'}`} />
+                  <span>{isPlayingSpeakerTest ? 'Đang phát âm thanh...' : 'Nghe thử loa'}</span>
+                </button>
               </div>
 
               {/* Device selects */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 <div>
                   <label className="block text-[11px] font-medium text-zinc-600 dark:text-zinc-400 mb-1">Microphone</label>
-                  <select
+                  <select aria-label="Microphone"
                     value={selectedAudioId}
                     onChange={(e) => setSelectedAudioId(e.target.value)}
                     className="w-full bg-white dark:bg-[#18181c] border border-zinc-300 dark:border-[#323238] text-zinc-900 dark:text-zinc-100 text-xs rounded-lg px-2.5 py-2 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/30 transition shadow-2xs"
@@ -540,7 +900,7 @@ export const PreJoinPage: React.FC = () => {
                 </div>
                 <div>
                   <label className="block text-[11px] font-medium text-zinc-600 dark:text-zinc-400 mb-1">Camera</label>
-                  <select
+                  <select aria-label="Camera"
                     value={selectedVideoId}
                     onChange={(e) => setSelectedVideoId(e.target.value)}
                     className="w-full bg-white dark:bg-[#18181c] border border-zinc-300 dark:border-[#323238] text-zinc-900 dark:text-zinc-100 text-xs rounded-lg px-2.5 py-2 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/30 transition shadow-2xs"
@@ -563,71 +923,85 @@ export const PreJoinPage: React.FC = () => {
           {/* Right col: Form */}
           <form
             onSubmit={handleJoinNow}
-            className="md:col-span-5 flex flex-col gap-4 md:border-l md:border-zinc-200 md:dark:border-[#2a2a30] md:pl-6"
+            className="prejoin-form md:col-span-5 flex flex-col gap-3 md:gap-4 md:border-l md:border-zinc-200 md:dark:border-[#2a2a30] md:pl-6"
           >
+            {/* Google Sign-In via Supabase Auth */}
+            <GoogleAuthControl
+              variant="prejoin"
+              redirectPath={meetingCode ? `/meeting/${meetingCode}` : '/'}
+              onUserAuthenticated={(fullName) => {
+                if (!displayName.trim()) {
+                  setDisplayName(fullName);
+                }
+              }}
+            />
+
             {/* Display name */}
             <div>
-              <label htmlFor="display-name" className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1.5">
-                Tên hiển thị
+              <label htmlFor="display-name" className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1">
+                {copy.displayNameLabel}
               </label>
               <input
                 id="display-name"
                 type="text"
-                placeholder="Nhập họ và tên của bạn"
+                placeholder={copy.displayNamePlaceholder}
                 value={displayName}
                 onChange={(e) => setDisplayName(e.target.value)}
-                className="w-full bg-white dark:bg-[#18181c] border border-zinc-300 dark:border-[#323238] text-zinc-900 dark:text-white text-sm rounded-lg px-3 py-2.5 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition placeholder-zinc-400 dark:placeholder-zinc-500 shadow-2xs font-medium"
+                className="w-full bg-white dark:bg-[#18181c] border border-zinc-300 dark:border-[#323238] text-zinc-900 dark:text-white text-base sm:text-sm rounded-lg px-3 py-2 md:py-2.5 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition placeholder-zinc-400 dark:placeholder-zinc-500 shadow-2xs font-medium"
                 required
               />
             </div>
 
-            {/* Language pair */}
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label htmlFor="spoken-lang" className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1.5">
-                  Ngôn ngữ bạn nói
-                </label>
+            {/* Language Selector (Single Combobox, Required, Default EN) */}
+            <div>
+              <label
+                htmlFor="native-language-select"
+                className="flex items-center gap-1.5 text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1"
+              >
+                <Globe className="w-3.5 h-3.5 text-blue-500" />
+                <span>{copy.languageLabel}</span>
+                <span className="text-rose-500">*</span>
+              </label>
+              <div className="relative">
                 <select
-                  id="spoken-lang"
-                  value={spokenLanguage}
-                  onChange={(e) => setSpokenLanguage(e.target.value as SupportedLanguage)}
-                  className="w-full bg-white dark:bg-[#18181c] border border-zinc-300 dark:border-[#323238] text-zinc-900 dark:text-zinc-100 text-xs rounded-lg px-2.5 py-2.5 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition shadow-2xs font-medium"
+                  id="native-language-select"
+                  value={nativeLanguage}
+                  onChange={(e) => handleSelectNativeLanguage(e.target.value as SupportedLanguage)}
+                  className="w-full bg-white dark:bg-[#18181c] border border-zinc-300 dark:border-[#323238] text-zinc-900 dark:text-white text-base sm:text-sm rounded-lg pl-3 pr-10 py-2 md:py-2.5 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition shadow-2xs font-medium appearance-none cursor-pointer"
+                  required
                 >
                   {SUPPORTED_LANGUAGES_LIST.map((lang) => (
-                    <option key={lang.code} value={lang.code}>
-                      {lang.nativeName} ({lang.code})
+                    <option
+                      key={lang.code}
+                      value={lang.code}
+                      className="bg-white dark:bg-[#18181c] text-zinc-900 dark:text-white py-1"
+                    >
+                      {lang.flag} {lang.nativeName} {lang.name !== lang.nativeName ? `(${lang.name})` : ''}
                     </option>
                   ))}
                 </select>
+                <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-zinc-400">
+                  <ChevronDown className="w-4 h-4" />
+                </div>
               </div>
-              <div>
-                <label htmlFor="target-lang" className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1.5">
-                  Xem phụ đề bằng
-                </label>
-                <select
-                  id="target-lang"
-                  value={targetLanguage}
-                  onChange={(e) => setTargetLanguage(e.target.value as SupportedLanguage)}
-                  className="w-full bg-white dark:bg-[#18181c] border border-zinc-300 dark:border-[#323238] text-zinc-900 dark:text-zinc-100 text-xs rounded-lg px-2.5 py-2.5 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition shadow-2xs font-medium"
-                >
-                  {SUPPORTED_LANGUAGES_LIST.map((lang) => (
-                    <option key={lang.code} value={lang.code}>
-                      {lang.nativeName} ({lang.code})
-                    </option>
-                  ))}
-                </select>
-              </div>
+              <p className="mt-1 text-[11px] text-zinc-500 dark:text-zinc-400">
+                {copy.languageHelpText}
+              </p>
             </div>
 
-            {/* Collapsible Domain glossary (Advanced options) */}
-            <div className="pt-0.5">
+            {/* Mobile: Google Meet-style compact settings trigger pill; Desktop: Inline collapsible glossary */}
+            <div>
               <button
                 type="button"
+                aria-expanded={showAdvancedSettings}
                 onClick={() => setShowAdvancedSettings(!showAdvancedSettings)}
-                className="flex items-center gap-1.5 text-xs text-zinc-500 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-200 transition-colors cursor-pointer select-none py-1"
+                className="w-full md:w-auto flex items-center justify-between md:justify-start gap-1.5 px-3 py-2 md:p-0 md:py-0.5 rounded-xl md:rounded-none bg-zinc-100/90 md:bg-transparent dark:bg-[#1c1d22] md:dark:bg-transparent border border-zinc-200/80 md:border-0 dark:border-[#2c2e36] text-xs text-zinc-600 hover:text-zinc-900 dark:text-zinc-300 dark:hover:text-zinc-100 transition-colors cursor-pointer select-none"
               >
-                <SlidersHorizontal className="w-3.5 h-3.5 text-zinc-400" />
-                <span>Tùy chọn nâng cao (Từ điển chuyên ngành)</span>
+                <span className="flex items-center gap-1.5">
+                  <SlidersHorizontal className="w-3.5 h-3.5 text-blue-500 md:text-zinc-400" />
+                  <span className="md:hidden font-medium">{copy.advancedOptionsMobile}</span>
+                  <span className="hidden md:inline">{copy.advancedOptions}</span>
+                </span>
                 {showAdvancedSettings ? (
                   <ChevronUp className="w-3.5 h-3.5 text-zinc-400" />
                 ) : (
@@ -635,79 +1009,10 @@ export const PreJoinPage: React.FC = () => {
                 )}
               </button>
 
-              {showAdvancedSettings && (
-                <div className="mt-2.5 p-3.5 rounded-lg bg-zinc-100/60 dark:bg-[#151516] border border-zinc-200/80 dark:border-[#2a2a2c] space-y-3">
-                  <div>
-                    <div className="flex items-center gap-1.5 mb-1.5 text-xs font-medium text-zinc-700 dark:text-zinc-300">
-                      <BookOpen className="w-3.5 h-3.5 text-blue-500" />
-                      <label htmlFor="glossary-domain">Lĩnh vực thuật ngữ cuộc họp:</label>
-                    </div>
-                    <select
-                      id="glossary-domain"
-                      value={meetingDomain}
-                      onChange={(e) => {
-                        const newDomain = e.target.value;
-                        setMeetingDomain(newDomain);
-                        localStorage.setItem('ai-meeting-domain', newDomain);
-                      }}
-                      className="w-full bg-white dark:bg-[#1a1a1b] border border-zinc-300 dark:border-[#3a3a3d] text-zinc-900 dark:text-zinc-200 text-xs rounded-lg px-2.5 py-2 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/30 transition shadow-xs"
-                    >
-                      {GLOSSARY_DOMAINS.map((domain) => (
-                        <option key={domain.id} value={domain.id}>
-                          {domain.name}
-                        </option>
-                      ))}
-                    </select>
-                    <p className="text-[11px] text-zinc-500 dark:text-zinc-400 mt-1">
-                      {GLOSSARY_DOMAINS.find((d) => d.id === meetingDomain)?.desc || ''}
-                    </p>
-                  </div>
-
-                  <div>
-                    <label htmlFor="custom-keywords" className="block text-xs font-medium text-zinc-700 dark:text-zinc-300 mb-1.5">
-                      Từ khóa chuyên ngành bổ trợ (Tùy chọn):
-                    </label>
-                    <input
-                      id="custom-keywords"
-                      type="text"
-                      value={customKeywords}
-                      onChange={(e) => {
-                        setCustomKeywords(e.target.value);
-                        localStorage.setItem('ai-meeting-initial-prompt', e.target.value);
-                      }}
-                      placeholder="Ví dụ: SLA, KPI, Opex, Capex (phân cách bằng dấu phẩy)..."
-                      className="w-full bg-white dark:bg-[#1a1a1b] border border-zinc-300 dark:border-[#3a3a3d] text-zinc-900 dark:text-zinc-200 text-xs rounded-lg px-2.5 py-2 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/30 transition placeholder-zinc-400 dark:placeholder-zinc-600 shadow-xs"
-                    />
-                    <p className="text-[10px] text-zinc-400 dark:text-zinc-500 mt-1">
-                      Cung cấp thêm từ viết tắt hoặc thuật ngữ riêng của dự án để AI nhận dạng chính xác hơn.
-                    </p>
-                  </div>
-                </div>
-              )}
             </div>
 
-            {/* Invite token */}
-            {!meetingCode || !admissionStorage.getHostToken(meetingCode) ? (
-              <div>
-                <label htmlFor="invite-token" className="block text-xs font-semibold text-zinc-700 dark:text-zinc-300 mb-1.5">
-                  Invite token{' '}
-                  <span className="text-zinc-400 dark:text-zinc-500 font-normal">(nếu có)</span>
-                </label>
-                <textarea
-                  id="invite-token"
-                  value={inviteToken}
-                  onChange={(event) => setInviteToken(event.target.value.trim())}
-                  placeholder="Dán invite token do host cung cấp. Để trống để gửi yêu cầu chờ duyệt."
-                  rows={2}
-                  autoComplete="off"
-                  spellCheck={false}
-                  className="w-full resize-none bg-white dark:bg-[#16161a] border border-zinc-300/90 dark:border-[#32323a] text-zinc-900 dark:text-zinc-100 text-xs rounded-xl px-3 py-2.5 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/25 font-mono placeholder-zinc-400 dark:placeholder-zinc-600 transition shadow-2xs"
-                />
-              </div>
-            ) : null}
-
             {/* CTA — grows to bottom */}
-            <div className="mt-auto pt-2">
+            <div className="mt-auto pt-1 md:pt-2">
               <button
                 type="submit"
                 disabled={loading || Boolean(pendingAdmission)}
@@ -715,13 +1020,155 @@ export const PreJoinPage: React.FC = () => {
               >
                 <LogIn className="w-4 h-4" />
                 <span>
-                  {pendingAdmission ? 'Đang chờ duyệt...' : loading ? 'Đang tham gia...' : 'Tham gia ngay'}
+                  {pendingAdmission ? copy.waitingHostBtn : loading ? copy.joiningBtn : copy.joinBtn}
                 </span>
               </button>
             </div>
           </form>
         </div>
       </div>
-    </div>
+
+      {/* ── MOBILE: Google Meet Style Settings & Device Sheet (< md) ── */}
+      {showAdvancedSettings && (
+        <AdaptiveDialog label="Thiết lập thiết bị và từ điển cuộc họp" onClose={() => setShowAdvancedSettings(false)} className="prejoin-settings-dialog">
+          <div
+            className="w-full max-w-md max-h-[88dvh] overflow-y-auto bg-zinc-100 dark:bg-[#1e1f26] border border-zinc-200 dark:border-[#2e313d] rounded-3xl p-4 shadow-2xl space-y-3"
+          >
+            {/* Sheet Header */}
+            <div className="relative flex items-center justify-center py-1">
+              <span className="text-sm font-bold text-zinc-900 dark:text-zinc-100">
+                Thiết lập phòng họp &amp; AI
+              </span>
+              <button
+                type="button"
+                onClick={() => setShowAdvancedSettings(false)}
+                aria-label="Đóng thiết lập"
+                className="absolute right-1 p-1.5 rounded-full text-zinc-500 hover:bg-zinc-200 dark:hover:bg-white/10 cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Card 1: Audio & Video Devices */}
+            <div className="bg-white dark:bg-[#14151a] rounded-2xl p-3.5 border border-zinc-200/70 dark:border-white/[0.06] space-y-3">
+              <div className="text-xs font-bold text-zinc-800 dark:text-zinc-200 flex items-center gap-2">
+                <Mic className="w-3.5 h-3.5 text-emerald-500" />
+                <span>Thiết bị Âm thanh &amp; Camera</span>
+              </div>
+
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2 flex-1 min-w-0">
+                  <span className="text-[11px] text-zinc-500 dark:text-zinc-400 shrink-0">Mic</span>
+                  <div className="flex-1 h-1.5 bg-zinc-200 dark:bg-[#252528] rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-emerald-500 transition-all duration-75 rounded-full"
+                      style={{ width: `${isMicOn ? audioVolume : 0}%` }}
+                    />
+                  </div>
+                  <span className="text-[10px] text-zinc-500 dark:text-zinc-400 font-mono w-6 text-right">
+                    {isMicOn ? `${audioVolume}%` : '—'}
+                  </span>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handleTestSpeakerSound}
+                  disabled={isPlayingSpeakerTest}
+                  className={`px-2 py-1 rounded-lg border text-[11px] font-medium flex items-center gap-1.5 transition-colors cursor-pointer shrink-0 ${
+                    isPlayingSpeakerTest
+                      ? 'bg-blue-600 text-white border-blue-500 animate-pulse'
+                      : 'bg-zinc-100 dark:bg-[#1e2028] border-zinc-300 dark:border-[#323542] text-zinc-700 dark:text-zinc-300'
+                  }`}
+                >
+                  <Volume2 className={`w-3 h-3 ${isPlayingSpeakerTest ? 'text-white' : 'text-blue-500'}`} />
+                  <span>{isPlayingSpeakerTest ? 'Đang phát...' : 'Thử loa'}</span>
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 gap-2">
+                <div>
+                  <label className="block text-[11px] font-medium text-zinc-600 dark:text-zinc-400 mb-1">Microphone</label>
+                  <select aria-label="Microphone"
+                    value={selectedAudioId}
+                    onChange={(e) => setSelectedAudioId(e.target.value)}
+                    className="w-full bg-zinc-50 dark:bg-[#1c1e26] border border-zinc-300 dark:border-[#323238] text-zinc-900 dark:text-zinc-100 text-xs rounded-xl px-2.5 py-2 outline-none"
+                  >
+                    {audioDevices.length > 0 ? (
+                      audioDevices.map((d) => (
+                        <option key={d.deviceId} value={d.deviceId}>
+                          {d.label || `Microphone (${d.deviceId.slice(0, 5)})`}
+                        </option>
+                      ))
+                    ) : (
+                      <option value="">Microphone mặc định</option>
+                    )}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-[11px] font-medium text-zinc-600 dark:text-zinc-400 mb-1">Camera</label>
+                  <select aria-label="Camera"
+                    value={selectedVideoId}
+                    onChange={(e) => setSelectedVideoId(e.target.value)}
+                    className="w-full bg-zinc-50 dark:bg-[#1c1e26] border border-zinc-300 dark:border-[#323238] text-zinc-900 dark:text-zinc-100 text-xs rounded-xl px-2.5 py-2 outline-none"
+                  >
+                    {videoDevices.length > 0 ? (
+                      videoDevices.map((d) => (
+                        <option key={d.deviceId} value={d.deviceId}>
+                          {d.label || `Camera (${d.deviceId.slice(0, 5)})`}
+                        </option>
+                      ))
+                    ) : (
+                      <option value="">Camera mặc định</option>
+                    )}
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            {/* Card 2: AI Domain Glossary & Keywords */}
+            <div className="bg-white dark:bg-[#14151a] rounded-2xl p-3.5 border border-zinc-200/70 dark:border-white/[0.06] space-y-2.5">
+              <div className="flex items-center gap-1.5 text-xs font-bold text-zinc-800 dark:text-zinc-200">
+                <BookOpen className="w-3.5 h-3.5 text-blue-500" />
+                <span>Từ điển chuyên ngành AI</span>
+              </div>
+              <select aria-label="Chuyên ngành cuộc họp"
+                value={meetingDomain}
+                onChange={(e) => {
+                  const newDomain = e.target.value;
+                  setMeetingDomain(newDomain);
+                  localStorage.setItem('ai-meeting-domain', newDomain);
+                }}
+                className="w-full bg-zinc-50 dark:bg-[#1c1e26] border border-zinc-300 dark:border-[#323238] text-zinc-900 dark:text-zinc-200 text-base sm:text-xs rounded-xl px-2.5 py-2 outline-none"
+              >
+                {GLOSSARY_DOMAINS.map((domain) => (
+                  <option key={domain.id} value={domain.id}>
+                    {domain.name}
+                  </option>
+                ))}
+              </select>
+              <input
+                type="text"
+                value={customKeywords}
+                onChange={(e) => {
+                  setCustomKeywords(e.target.value);
+                  localStorage.setItem('ai-meeting-initial-prompt', e.target.value);
+                }}
+                aria-label="Từ khóa bổ trợ"
+                placeholder="Từ khóa bổ trợ: SLA, KPI, Opex, Capex..."
+                className="w-full bg-zinc-50 dark:bg-[#1c1e26] border border-zinc-300 dark:border-[#323238] text-zinc-900 dark:text-zinc-200 text-base sm:text-xs rounded-xl px-2.5 py-2 outline-none placeholder-zinc-400"
+              />
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setShowAdvancedSettings(false)}
+              className="w-full py-2.5 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold cursor-pointer"
+            >
+              Xong
+            </button>
+          </div>
+        </AdaptiveDialog>
+      )}
+    </main>
   );
 };

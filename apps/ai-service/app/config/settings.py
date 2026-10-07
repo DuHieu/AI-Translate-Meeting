@@ -6,14 +6,21 @@ class Settings(BaseSettings):
 
     REDIS_HOST: str = os.getenv("REDIS_HOST", "redis")
     REDIS_PORT: int = int(os.getenv("REDIS_PORT", "6379"))
-    WHISPER_MODEL: str = os.getenv("WHISPER_MODEL", "tiny")
-    WHISPER_DEVICE: str = os.getenv("WHISPER_DEVICE", "cpu")
-    WHISPER_COMPUTE_TYPE: str = os.getenv("WHISPER_COMPUTE_TYPE", "int8")
+    WHISPER_MODEL: str = os.getenv("WHISPER_MODEL", "base")
+    WHISPER_DEVICE: str = os.getenv("WHISPER_DEVICE", "auto")
+    WHISPER_COMPUTE_TYPE: str = os.getenv("WHISPER_COMPUTE_TYPE", "auto")
     WHISPER_PRELOAD: bool = os.getenv("WHISPER_PRELOAD", "false").lower() in ("true", "1", "yes")
+    WHISPER_DUAL_MODEL_ROUTING: bool = os.getenv(
+        "WHISPER_DUAL_MODEL_ROUTING", "true"
+    ).lower() in ("true", "1", "yes")
+    PHOWHISPER_MODEL_PATH: str = os.getenv(
+        "PHOWHISPER_MODEL_PATH", "diepho/PhoWhisper-base-ct2"
+    )
     WHISPER_INITIAL_PROMPT: str = os.getenv(
         "WHISPER_INITIAL_PROMPT",
-        "PR, Git, Docker, Kubernetes, LiveKit, FastAPI, API, bug, sprint, refactor, deploy, microservice, database",
+        "Cuộc họp trực tuyến. Chúng tôi trao đổi về công việc, kế hoạch, tiến độ dự án, báo cáo, giải pháp, PR, sprint, bug, deploy.",
     )
+
     DEFAULT_SOURCE_LANGUAGE: str = os.getenv("DEFAULT_SOURCE_LANGUAGE", "vi")
     DEFAULT_TARGET_LANGUAGE: str = os.getenv("DEFAULT_TARGET_LANGUAGE", "ja")
     CORS_ALLOWED_ORIGINS: str = os.getenv("CORS_ALLOWED_ORIGINS", "http://localhost:3000")
@@ -34,18 +41,48 @@ class Settings(BaseSettings):
     CONTEXTUAL_TRANSLATION_ENABLED: bool = os.getenv("CONTEXTUAL_TRANSLATION_ENABLED", "true").lower() in ("true", "1", "yes")
     TRANSLATION_PROVIDER: str = os.getenv("TRANSLATION_PROVIDER", "contextual")
     TRANSLATION_MODEL: str = os.getenv("TRANSLATION_MODEL", "meeting-v1")
-    TRANSLATION_TIMEOUT_MS: int = int(os.getenv("TRANSLATION_TIMEOUT_MS", "1000"))
+    TRANSLATION_TIMEOUT_MS: int = int(os.getenv("TRANSLATION_TIMEOUT_MS", "3500"))
     TRANSLATION_FALLBACK_PROVIDER: str = os.getenv("TRANSLATION_FALLBACK_PROVIDER", "local")
     TRANSLATION_CONTEXT_MAX_SEGMENTS: int = int(os.getenv("TRANSLATION_CONTEXT_MAX_SEGMENTS", "10"))
 
     REDIS_URL: str = os.getenv("REDIS_URL", "")
-    TRANSLATION_CACHE_ENABLED: bool = os.getenv("TRANSLATION_CACHE_ENABLED", "true").lower() in ("true", "1", "yes")
+    TRANSLATION_CACHE_ENABLED: bool = os.getenv("TRANSLATION_CACHE_ENABLED", "false").lower() in ("true", "1", "yes")
     TRANSLATION_CACHE_TTL_SECONDS: int = int(os.getenv("TRANSLATION_CACHE_TTL_SECONDS", "86400"))
 
     TRANSLATION_BACKEND: str = os.getenv("TRANSLATION_BACKEND", "gtx_cloud")
+    TRANSLATION_SECONDARY_BACKEND: str = os.getenv(
+        "TRANSLATION_SECONDARY_BACKEND", "mymemory"
+    )
     OFFLINE_TRANSLATION_URL: str = os.getenv(
         "OFFLINE_TRANSLATION_URL", "http://translation-service:5000/translate"
     )
+
+    # Server-managed premium translation credentials. Values must never be logged.
+    PRO_TRANSLATION_PROVIDER: str = os.getenv("PRO_TRANSLATION_PROVIDER", "groq")
+    PRO_OPENAI_API_KEY: str = os.getenv("PRO_OPENAI_API_KEY", "")
+    PRO_OPENAI_MODEL: str = os.getenv("PRO_OPENAI_MODEL", "gpt-4o-mini")
+    PRO_GEMINI_API_KEY: str = os.getenv("PRO_GEMINI_API_KEY", "")
+    PRO_GEMINI_MODEL: str = os.getenv("PRO_GEMINI_MODEL", "gemini-3.1-flash-lite")
+    PRO_DEEPL_API_KEY: str = os.getenv("PRO_DEEPL_API_KEY", "")
+    PRO_MEETING_TOKEN_QUOTA: int = int(os.getenv("PRO_MEETING_TOKEN_QUOTA", "100000"))
+    PRO_GRACEFUL_DOWNGRADE_ENABLED: bool = os.getenv(
+        "PRO_GRACEFUL_DOWNGRADE_ENABLED", "true"
+    ).lower() in ("true", "1", "yes")
+
+    # Groq — OpenAI-compatible, ~200ms latency, ideal for real-time
+    PRO_GROQ_API_KEY: str = os.getenv("PRO_GROQ_API_KEY", "")
+    PRO_GROQ_BASE_URL: str = os.getenv("PRO_GROQ_BASE_URL", "https://api.groq.com/openai/v1")
+    PRO_GROQ_MODEL: str = os.getenv("PRO_GROQ_MODEL", "qwen/qwen3.8-27b")
+
+    # DeepSeek V3 — OpenAI-compatible, ~10x cheaper than GPT-4
+    PRO_DEEPSEEK_API_KEY: str = os.getenv("PRO_DEEPSEEK_API_KEY", "")
+    PRO_DEEPSEEK_BASE_URL: str = os.getenv("PRO_DEEPSEEK_BASE_URL", "https://api.deepseek.com/v1")
+    PRO_DEEPSEEK_MODEL: str = os.getenv("PRO_DEEPSEEK_MODEL", "deepseek-chat")
+
+    # Qwen-MT — Alibaba DashScope OpenAI-compatible, best for Asian lang pairs (Vi/Zh/Ja)
+    PRO_QWEN_API_KEY: str = os.getenv("PRO_QWEN_API_KEY", "")
+    PRO_QWEN_BASE_URL: str = os.getenv("PRO_QWEN_BASE_URL", "https://dashscope.aliyuncs.com/compatible-mode/v1")
+    PRO_QWEN_MODEL: str = os.getenv("PRO_QWEN_MODEL", "qwen-mt-turbo")
 
     TRANSLATION_GLOSSARY_PATH: str = os.getenv("TRANSLATION_GLOSSARY_PATH", "")
     TRANSLATION_GLOSSARY_VERSION: str = os.getenv("TRANSLATION_GLOSSARY_VERSION", "1.0.0")
@@ -67,10 +104,14 @@ class Settings(BaseSettings):
     WHISPER_COMPRESSION_RATIO_THRESHOLD: float = float(os.getenv("WHISPER_COMPRESSION_RATIO_THRESHOLD", "2.4"))
 
     # Performance & Concurrency Optimizations
+    WHISPER_VAD_FILTER: bool = os.getenv("WHISPER_VAD_FILTER", "true").lower() in ("true", "1", "yes")
+    WHISPER_MAX_BUFFER_SECONDS: float = float(os.getenv("WHISPER_MAX_BUFFER_SECONDS", "7.0"))
     WHISPER_MAX_CONCURRENT_TRANSCRIBES: int = int(os.getenv("WHISPER_MAX_CONCURRENT_TRANSCRIBES", "2"))
-    WHISPER_CPU_THREADS: int = int(os.getenv("WHISPER_CPU_THREADS", "2"))
-    STT_INTERIM_MIN_DURATION_SECONDS: float = float(os.getenv("STT_INTERIM_MIN_DURATION_SECONDS", "1.0"))
-    STT_INTERIM_THROTTLE_SECONDS: float = float(os.getenv("STT_INTERIM_THROTTLE_SECONDS", "1.0"))
+    WHISPER_CPU_THREADS: int = int(os.getenv("WHISPER_CPU_THREADS", "4"))
+    STT_INTERIM_MIN_DURATION_SECONDS: float = float(os.getenv("STT_INTERIM_MIN_DURATION_SECONDS", "0.8"))
+    STT_INTERIM_THROTTLE_SECONDS: float = float(os.getenv("STT_INTERIM_THROTTLE_SECONDS", "0.8"))
     INTERIM_TRANSLATION_MIN_WORDS: int = int(os.getenv("INTERIM_TRANSLATION_MIN_WORDS", "3"))
+    VAD_ENERGY_THRESHOLD: float = float(os.getenv("VAD_ENERGY_THRESHOLD", "0.00004"))
+    VAD_RMS_THRESHOLD: float = float(os.getenv("VAD_RMS_THRESHOLD", "0.0025"))
 
 settings = Settings()

@@ -18,8 +18,10 @@ import { LegalModal } from '../components/common/LegalModal';
 import { meetingApi } from '../api/meetingApi';
 import { admissionStorage } from '../utils/admissionStorage';
 
+export type LandingVariant = 'japanese' | 'english' | 'chinese' | 'korean';
+
 interface LandingConfig {
-  variant: 'japanese' | 'english';
+  variant: LandingVariant;
   pageTitle: string;
   metaDescription: string;
   canonicalUrl: string;
@@ -33,7 +35,7 @@ interface LandingConfig {
   faqs: { q: string; a: string }[];
 }
 
-const CONFIGS: Record<'japanese' | 'english', LandingConfig> = {
+const CONFIGS: Record<LandingVariant, LandingConfig> = {
   japanese: {
     variant: 'japanese',
     pageTitle: 'Họp Song Ngữ Tiếng Nhật AI - Dịch Trực Tiếp Việt - Nhật <350ms | LayaMeet',
@@ -140,10 +142,116 @@ const CONFIGS: Record<'japanese' | 'english', LandingConfig> = {
       },
     ],
   },
+  chinese: {
+    variant: 'chinese',
+    pageTitle: 'Họp Song Ngữ Tiếng Trung AI - Dịch Trực Tiếp Việt - Trung <350ms | LayaMeet',
+    metaDescription: 'Phần mềm họp trực tuyến song ngữ Việt - Trung (Mandarin) thời gian thực. Tự do nói tiếng Việt, đối tác Trung Quốc nhận phụ đề chữ Hán giản thể/phồn thể <350ms, bảo mật RAM-only.',
+    canonicalUrl: 'https://layameet.com/hop-song-ngu-tieng-trung',
+    badgeText: 'Thương Mại & Sản Xuất Chuỗi Cung Ứng Việt - Trung',
+    flagPair: '🇻🇳 Tiếng Việt ⇄ 🇨🇳 中文 (Mandarin)',
+    h1: 'Họp Trực Tuyến Song Ngữ Tiếng Trung AI — Dịch Trực Tiếp Real-Time <350ms',
+    subheading: 'Xóa tan rào cản ngôn ngữ khi đàm phán với đối tác nhà xưởng, chuỗi cung ứng Đài Loan, Trung Quốc Đại Lục và Hồng Kông. Nói tiếng Việt tự nhiên, đối tác đọc phụ đề tiếng Trung tức thì.',
+    targetAudience: 'Dành cho các doanh nghiệp thương mại điện tử xuất nhập khẩu, ban quản lý nhà máy KCN, đối tác logistics và các đội ngũ tìm nguồn cung ứng (Sourcing/OEM/ODM).',
+    painPoints: [
+      {
+        title: 'Bất đồng ngôn ngữ chuyên ngành sản xuất & kỹ thuật',
+        desc: 'Nhiều thuật ngữ khuôn mẫu, BOM, thông số vật liệu khó diễn đạt chính xác bằng tiếng Anh thông thường với các chủ xưởng Trung Quốc.',
+      },
+      {
+        title: 'Chi phí thuê thông dịch viên tiếng Trung liên tục rất cao',
+        desc: 'Mỗi cuộc họp kiểm định tiến độ xuất xưởng đột xuất đều phụ thuộc vào phiên dịch viên, tốn kém chi phí và chậm trễ tiến độ ra hàng.',
+      },
+      {
+        title: 'Khó ghi nhớ chính xác yêu cầu giao dịch phức tạp',
+        desc: 'Các thỏa thuận về số lượng tối thiểu (MOQ), giá thành FOB và tiến độ thanh toán dễ bị sai lệch nếu không có biên bản lưu trữ rõ ràng.',
+      },
+    ],
+    solutionFeatures: [
+      {
+        title: 'Nhận dạng giọng nói tiếng Trung siêu tốc <350ms',
+        desc: 'Tối ưu hóa âm điệu 4 thanh điệu tiếng Quan Thoại (Mandarin) cùng các phương ngữ thương mại phổ biến, hiển thị chữ Hán chuẩn xác.',
+      },
+      {
+        title: 'Tự động tạo biên bản họp song ngữ Việt - Trung',
+        desc: 'Trích xuất rõ ràng các Action Items về ngày giao hàng, điều khoản hợp đồng và xuất file Markdown lưu trữ bảo mật.',
+      },
+      {
+        title: 'Bảo mật RAM-only tuyệt đối',
+        desc: 'Không lưu file âm thanh cuộc gọi, bảo vệ bí mật công thức sản phẩm, bản vẽ kỹ thuật và báo giá kinh doanh độc quyền.',
+      },
+    ],
+    faqs: [
+      {
+        q: 'Hệ thống có hỗ trợ cả chữ Hán Giản Thể (Trung Quốc) và Phồn Thể (Đài Loan) không?',
+        a: 'Có. LayaMeet hỗ trợ hiển thị cả Giản thể và Phồn thể tùy theo đối tác của bạn ở Trung Quốc đại lục hay Đài Loan.',
+      },
+      {
+        q: 'Chất lượng nhận diện giọng nói tiếng Trung có bị ảnh hưởng bởi tạp âm xưởng sản xuất không?',
+        a: 'Không. Bộ lọc VAD tích hợp công nghệ chống ồn giúp lọc triệt để tiếng ồn máy móc công nghiệp, chỉ nhận diện chính xác luồng giọng nói của người nói.',
+      },
+      {
+        q: 'Đối tác ở Trung Quốc có thể vào phòng họp bình thường không?',
+        a: 'Hoàn toàn truy cập được. LayaMeet sử dụng giao thức WebRTC trực tiếp và mạng CDN tốc độ cao, không bị chặn bởi tường lửa đối với các phiên họp doanh nghiệp hợp pháp.',
+      },
+    ],
+  },
+  korean: {
+    variant: 'korean',
+    pageTitle: 'Họp Song Ngữ Tiếng Hàn AI - Dịch Trực Tiếp Việt - Hàn <350ms | LayaMeet',
+    metaDescription: 'Nền tảng họp trực tuyến song ngữ Việt - Hàn thời gian thực. Tự do nói tiếng Việt, chuyên gia Hàn Quốc nhận phụ đề tiếng Hàn <350ms, tự động ghi biên bản họp cho doanh nghiệp FDI.',
+    canonicalUrl: 'https://layameet.com/hop-song-ngu-tieng-han',
+    badgeText: 'Hợp Tác Doanh Nghiệp FDI Việt Nam - Hàn Quốc',
+    flagPair: '🇻🇳 Tiếng Việt ⇄ 🇰🇷 한국어',
+    h1: 'Nền Tảng Họp Song Ngữ Tiếng Hàn AI — Dịch Trực Tiếp Việt - Hàn Siêu Tốc',
+    subheading: 'Giải pháp họp thông minh dành riêng cho các tập đoàn Hàn Quốc và đội ngũ nhân sự Việt Nam. Kỹ sư tự tin phát biểu tiếng Việt, chuyên gia Hàn Quốc theo dõi phụ đề Hangul tức thì.',
+    targetAudience: 'Dành cho các doanh nghiệp FDI Hàn Quốc (Samsung, LG, Hyundai vendors), công ty gia công phát triển phần mềm, xây dựng và thương mại xuất nhập khẩu Việt - Hàn.',
+    painPoints: [
+      {
+        title: 'Áp lực rào cản ngữ pháp và kính ngữ (Jondaetmal)',
+        desc: 'Văn hóa giao tiếp doanh nghiệp Hàn Quốc rất coi trọng kính ngữ, nhân sự Việt Nam thường e ngại phát biểu vì sợ dùng sai từ ngữ.',
+      },
+      {
+        title: 'Chuyên gia Hàn nói nhanh trong các cuộc họp điều hành',
+        desc: 'Các buổi họp giao ban sản xuất hàng ngày diễn ra nhanh chóng khiến nhân viên khó bắt kịp đầy đủ chỉ thị nếu không có phụ đề.',
+      },
+      {
+        title: 'Tốn thời gian biên dịch báo cáo sau buổi họp',
+        desc: 'Mỗi biên bản họp cần ít nhất 1-2 giờ để thông dịch viên dịch lại thành bản tóm tắt song ngữ cho ban giám đốc.',
+      },
+    ],
+    solutionFeatures: [
+      {
+        title: 'Phụ đề tiếng Hàn hiển thị tức thì dưới 350ms',
+        desc: 'Xử lý giọng nói tiếng Hàn và tiếng Việt theo khối 350ms, dịch nghĩa tự nhiên phù hợp với phong cách giao tiếp công sở chuyên nghiệp.',
+      },
+      {
+        title: 'Tự động trích xuất biên bản họp & Việc cần làm',
+        desc: 'Laya Sidecar phát hiện các quyết định của ban lãnh đạo và tự động tổng hợp danh sách công việc giao cho từng phòng ban.',
+      },
+      {
+        title: 'Triển khai On-Premise bảo mật dữ liệu tuyệt đối',
+        desc: 'Cam kết 100% RAM-only, tương thích hoàn toàn với các quy chuẩn bảo mật nghiêm ngặt của tập đoàn lớn.',
+      },
+    ],
+    faqs: [
+      {
+        q: 'Phần mềm có phân biệt được kính ngữ tiếng Hàn không?',
+        a: 'Có. Mô hình AI của LayaMeet được tinh chỉnh để tạo ra câu dịch tiếng Hàn chuẩn mực theo phong cách trang trọng (Hasipsio-che / Haeyo-che) phù hợp với bối cảnh kinh doanh.',
+      },
+      {
+        q: 'Có cần cài đặt ứng dụng riêng hay tài khoản trả phí trước không?',
+        a: 'Không. Chỉ cần gửi liên kết phòng họp là cả nhân sự Việt Nam và chuyên gia Hàn Quốc có thể mở ngay trên trình duyệt máy tính hoặc điện thoại.',
+      },
+      {
+        q: 'Hệ thống có hoạt động tốt khi đường truyền mạng giữa Việt Nam và Hàn Quốc bị chậm không?',
+        a: 'Có. LayaMeet sử dụng máy chủ media WebRTC phân tán với cơ chế tự động bù trừ băng thông (Adaptive Bitrate), đảm bảo giọng nói và phụ đề không bị ngắt quãng.',
+      },
+    ],
+  },
 };
 
 interface Props {
-  variant: 'japanese' | 'english';
+  variant: LandingVariant;
 }
 
 export const LanguagePairLandingPage: React.FC<Props> = ({ variant }) => {
@@ -178,7 +286,7 @@ export const LanguagePairLandingPage: React.FC<Props> = ({ variant }) => {
     try {
       const res = await meetingApi.createMeeting(`LayaMeet - ${config.flagPair}`);
       admissionStorage.saveHostToken(res.meetingCode, res.hostToken);
-      navigate(`/prejoin/${res.meetingCode}`);
+      navigate(`/meeting/${res.meetingCode}`);
     } catch (err) {
       console.error('Failed to create meeting:', err);
       setError('Không thể khởi tạo phòng họp lúc này. Vui lòng thử lại sau.');
@@ -188,15 +296,15 @@ export const LanguagePairLandingPage: React.FC<Props> = ({ variant }) => {
   };
 
   return (
-    <div className="min-h-screen bg-zinc-50 dark:bg-[#0f0f10] text-zinc-900 dark:text-zinc-100 flex flex-col font-sans selection:bg-blue-500 selection:text-white transition-colors">
+    <div className="content-page min-h-dvh bg-zinc-50 dark:bg-[#0f0f10] text-zinc-900 dark:text-zinc-100 flex flex-col font-sans selection:bg-blue-500 selection:text-white transition-colors">
       {/* ── Top Header ────────────────────────────────────────── */}
       <header className="sticky top-0 z-40 w-full border-b border-zinc-200/80 dark:border-[#2e2e30]/80 bg-zinc-50/80 dark:bg-[#0f0f10]/80 backdrop-blur-md">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-6">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 min-h-16 py-2 flex flex-wrap items-center justify-between gap-2">
+          <div className="flex min-w-0 flex-wrap items-center gap-2 sm:gap-6">
             <Link to="/" aria-label="Trang chủ LayaMeet">
               <LayaMeetLogo size="md" showBadge={true} />
             </Link>
-            <nav className="hidden md:flex items-center gap-4 text-xs font-semibold text-zinc-600 dark:text-zinc-400">
+            <nav className="flex flex-wrap items-center gap-4 text-xs font-semibold text-zinc-600 dark:text-zinc-400">
               <Link to="/#features" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
                 Tính năng
               </Link>
@@ -214,6 +322,7 @@ export const LanguagePairLandingPage: React.FC<Props> = ({ variant }) => {
             <button
               type="button"
               onClick={handleCreateMeeting}
+              aria-label="Tạo phòng họp"
               disabled={loading}
               className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-semibold text-xs transition shadow-sm cursor-pointer"
             >
@@ -234,6 +343,50 @@ export const LanguagePairLandingPage: React.FC<Props> = ({ variant }) => {
               <span>{config.flagPair}</span>
               <span className="text-zinc-300 dark:text-zinc-700">·</span>
               <span>{config.badgeText}</span>
+            </div>
+
+            {/* Language Pair Selector Tabs */}
+            <div className="flex flex-wrap items-center justify-center gap-2 pt-1 pb-2">
+              <Link
+                to="/hop-song-ngu-tieng-nhat"
+                className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-all ${
+                  variant === 'japanese'
+                    ? 'bg-blue-600 text-white shadow-xs font-semibold'
+                    : 'bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-300'
+                }`}
+              >
+                🇻🇳 VI ⇄ 🇯🇵 JA (Tiếng Nhật)
+              </Link>
+              <Link
+                to="/hop-song-ngu-tieng-anh"
+                className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-all ${
+                  variant === 'english'
+                    ? 'bg-blue-600 text-white shadow-xs font-semibold'
+                    : 'bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-300'
+                }`}
+              >
+                🇻🇳 VI ⇄ 🇺🇸 EN (Tiếng Anh)
+              </Link>
+              <Link
+                to="/hop-song-ngu-tieng-trung"
+                className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-all ${
+                  variant === 'chinese'
+                    ? 'bg-blue-600 text-white shadow-xs font-semibold'
+                    : 'bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-300'
+                }`}
+              >
+                🇻🇳 VI ⇄ 🇨🇳 ZH (Tiếng Trung)
+              </Link>
+              <Link
+                to="/hop-song-ngu-tieng-han"
+                className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-all ${
+                  variant === 'korean'
+                    ? 'bg-blue-600 text-white shadow-xs font-semibold'
+                    : 'bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-300'
+                }`}
+              >
+                🇻🇳 VI ⇄ 🇰🇷 KO (Tiếng Hàn)
+              </Link>
             </div>
 
             {/* H1 Primary SEO Title */}
@@ -325,7 +478,7 @@ export const LanguagePairLandingPage: React.FC<Props> = ({ variant }) => {
             {config.solutionFeatures.map((item, idx) => (
               <div
                 key={idx}
-                className="rounded-2xl border border-emerald-500/20 bg-emerald-500/5 dark:bg-emerald-950/10 p-6 space-y-3"
+                className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 dark:bg-emerald-500/10 p-6 space-y-3"
               >
                 <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400 font-bold text-sm">
                   <Check className="h-4 w-4 shrink-0" />
@@ -364,22 +517,22 @@ export const LanguagePairLandingPage: React.FC<Props> = ({ variant }) => {
                   <tr>
                     <td className="py-3 px-4 font-semibold">Độ trễ phụ đề (Latency)</td>
                     <td className="py-3 px-4 font-bold text-emerald-600 dark:text-emerald-400">&lt;350ms (Tức thì)</td>
-                    <td className="py-3 px-4 text-zinc-500">2 - 5 giây (Đợi hết câu)</td>
+                    <td className="py-3 px-4 text-zinc-600 dark:text-zinc-400">2 - 5 giây (Đợi hết câu)</td>
                   </tr>
                   <tr>
                     <td className="py-3 px-4 font-semibold">Lưu trữ file âm thanh</td>
                     <td className="py-3 px-4 font-bold text-emerald-600 dark:text-emerald-400">Zero Storage (RAM-only)</td>
-                    <td className="py-3 px-4 text-zinc-500">Lưu file trên Cloud</td>
+                    <td className="py-3 px-4 text-zinc-600 dark:text-zinc-400">Lưu file trên Cloud</td>
                   </tr>
                   <tr>
                     <td className="py-3 px-4 font-semibold">Trích xuất Action Items</td>
                     <td className="py-3 px-4 font-bold text-emerald-600 dark:text-emerald-400">Tự động (Markdown 1-Click)</td>
-                    <td className="py-3 px-4 text-zinc-500">Cần trả phí gói Pro đắt đỏ</td>
+                    <td className="py-3 px-4 text-zinc-600 dark:text-zinc-400">Cần trả phí gói Pro đắt đỏ</td>
                   </tr>
                   <tr>
                     <td className="py-3 px-4 font-semibold">Triển khai On-Premise riêng</td>
                     <td className="py-3 px-4 font-bold text-emerald-600 dark:text-emerald-400">Hỗ trợ 100% Air-gapped</td>
-                    <td className="py-3 px-4 text-zinc-500">Không hỗ trợ</td>
+                    <td className="py-3 px-4 text-zinc-600 dark:text-zinc-400">Không hỗ trợ</td>
                   </tr>
                 </tbody>
               </table>
@@ -425,6 +578,7 @@ export const LanguagePairLandingPage: React.FC<Props> = ({ variant }) => {
             <button
               type="button"
               onClick={handleCreateMeeting}
+              aria-label="Tạo phòng họp"
               disabled={loading}
               className="px-6 py-3 rounded-xl bg-white hover:bg-zinc-100 text-blue-600 font-bold text-xs transition shadow-md cursor-pointer"
             >

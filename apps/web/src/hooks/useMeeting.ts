@@ -21,7 +21,7 @@ export function useMeeting() {
     }
   }, []);
 
-  const joinMeeting = useCallback(async (meetingCode: string, displayName: string, spokenLanguage: SupportedLanguage = 'vi', targetLanguage: SupportedLanguage = 'ja'): Promise<JoinMeetingResult> => {
+  const joinMeeting = useCallback(async (meetingCode: string, displayName: string, spokenLanguage: SupportedLanguage = 'vi', targetLanguage: SupportedLanguage = 'vi'): Promise<JoinMeetingResult> => {
     setLoading(true);
     setError(null);
     try {

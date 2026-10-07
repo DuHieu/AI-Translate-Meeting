@@ -20,7 +20,9 @@ export const NeuralLinguisticBackground: React.FC = () => {
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    let animationFrameId: number;
+    let animationFrameId = 0;
+    let previousFrame = 0;
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
     let width = (canvas.width = window.innerWidth);
     let height = (canvas.height = window.innerHeight);
 
@@ -58,7 +60,7 @@ export const NeuralLinguisticBackground: React.FC = () => {
 
     const initParticles = () => {
       particles = [];
-      const count = Math.max(45, Math.min(100, Math.floor((width * height) / particleDensityFactor)));
+      const count = Math.max(18, Math.min(60, Math.floor((width * height) / particleDensityFactor)));
       for (let i = 0; i < count; i++) {
         particles.push({
           x: Math.random() * width,
@@ -77,7 +79,13 @@ export const NeuralLinguisticBackground: React.FC = () => {
     // Check dark mode
     const isDarkMode = () => document.documentElement.classList.contains('dark');
 
-    const render = () => {
+    const render = (timestamp = 0) => {
+      if (document.visibilityState !== 'visible') return;
+      if (!reducedMotion.matches && timestamp - previousFrame < 33) {
+        animationFrameId = requestAnimationFrame(render);
+        return;
+      }
+      previousFrame = timestamp;
       ctx.clearRect(0, 0, width, height);
       const dark = isDarkMode();
 
@@ -184,13 +192,18 @@ export const NeuralLinguisticBackground: React.FC = () => {
         ctx.fill();
       }
 
-      animationFrameId = requestAnimationFrame(render);
+      if (!reducedMotion.matches) animationFrameId = requestAnimationFrame(render);
     };
 
-    render();
+    const resume = () => { cancelAnimationFrame(animationFrameId); previousFrame = 0; render(33); };
+    document.addEventListener('visibilitychange', resume);
+    reducedMotion.addEventListener('change', resume);
+    resume();
 
     return () => {
       cancelAnimationFrame(animationFrameId);
+      document.removeEventListener('visibilitychange', resume);
+      reducedMotion.removeEventListener('change', resume);
       window.removeEventListener('resize', handleResize);
       window.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('mouseleave', handleMouseLeave);

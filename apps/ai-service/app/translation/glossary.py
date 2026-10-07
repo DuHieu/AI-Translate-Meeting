@@ -271,6 +271,18 @@ class GlossaryManager:
             restored = restored.replace(token, original)
             # Handle potential lowercase or spaced variants from translation providers
             restored = re.sub(re.escape(token), original, restored, flags=re.IGNORECASE)
+            token_index = re.search(r"(\d+)", token)
+            if token_index:
+                translated_token_pattern = re.compile(
+                    r"[_＿]{1,2}\s*"
+                    r"(?:ENTITY|THỰC[\s_]*THỂ|エンティティ|실체|实体|實體|ENTITÉ|ENTITÄT|ENTIDAD|"
+                    r"[A-ZÀ-Ỹa-zà-ỹ\u3040-\u30ff\u4e00-\u9fff]+)"
+                    r"(?:\s*[_＿]\s*|\s+)"
+                    + re.escape(token_index.group(1))
+                    + r"\s*[_＿]{1,2}",
+                    flags=re.IGNORECASE,
+                )
+                restored = translated_token_pattern.sub(original, restored)
         return restored
 
     def apply_glossary(

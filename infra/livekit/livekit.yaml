@@ -10,5 +10,5 @@ logging:
   json: false
   level: info
 room:
-  empty_timeout: 60s
-  departure_timeout: 20s
+  empty_timeout: 60
+  departure_timeout: 20

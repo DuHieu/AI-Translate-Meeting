@@ -1,3 +1,4 @@
+import { AdaptiveDialog } from '../common/AdaptiveDialog';
 import React from 'react';
 import { X, Grid, Layout, Square, Sidebar as SidebarIcon, Check } from 'lucide-react';
 
@@ -42,14 +43,14 @@ export const ChangeLayoutDialog: React.FC<ChangeLayoutDialogProps> = ({
   ];
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
+    <AdaptiveDialog label="Bố cục cuộc họp" onClose={onClose} className="meeting-settings-dialog">
       <div className="bg-slate-900 border border-slate-800 rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-6">
         <div className="flex items-center justify-between border-b border-slate-800 pb-4">
           <h3 className="text-lg font-bold text-slate-100">Change Meeting Layout</h3>
           <button
             type="button"
             onClick={onClose}
-            className="w-8 h-8 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-slate-100 flex items-center justify-center transition"
+            aria-label="Đóng cài đặt" className="w-11 h-11 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-slate-100 flex items-center justify-center transition"
           >
             <X className="w-4 h-4" />
           </button>
@@ -84,6 +85,6 @@ export const ChangeLayoutDialog: React.FC<ChangeLayoutDialogProps> = ({
           ))}
         </div>
       </div>
-    </div>
+    </AdaptiveDialog>
   );
 };

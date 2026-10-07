@@ -1,3 +1,4 @@
+import { copyText } from '../utils/clipboard';
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
@@ -108,26 +109,29 @@ services:
 export const DevelopersPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'createRoom' | 'wsConnect' | 'audioChunking' | 'dockerDeploy'>('createRoom');
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
+  const [copyError, setCopyError] = useState<string | null>(null);
   const [legalModalType, setLegalModalType] = useState<'privacy' | 'terms' | null>(null);
 
-  const handleCopy = (key: string, code: string) => {
-    navigator.clipboard.writeText(code);
+  const handleCopy = async (key: string, code: string) => {
+    const copied = await copyText(code);
+    setCopyError(copied ? null : 'Không thể sao chép tự động. Hãy chọn và sao chép mã ví dụ bên dưới.');
+    if (!copied) return;
     setCopiedKey(key);
     setTimeout(() => setCopiedKey(null), 2000);
   };
 
   return (
-    <div className="relative min-h-screen bg-zinc-50 dark:bg-[#0f0f10] text-zinc-900 dark:text-zinc-100 flex flex-col font-sans transition-colors overflow-x-hidden">
+    <div className="relative content-page min-h-dvh bg-zinc-50 dark:bg-[#0f0f10] text-zinc-900 dark:text-zinc-100 flex flex-col font-sans transition-colors overflow-x-hidden">
       {/* ── Navbar ──────────────────────────────────────────────── */}
       <header className="h-12 border-b border-[#2e2e30]/80 dark:border-[#2e2e30] border-zinc-200 bg-[#0f0f10]/85 dark:bg-[#0f0f10]/85 bg-white/85 backdrop-blur-md px-4 sm:px-6 flex items-center justify-between shrink-0 sticky top-0 z-30 transition-colors">
         <div className="flex items-center gap-4 sm:gap-6">
-          <Link to="/" className="flex items-center gap-2 group text-xs text-zinc-500 hover:text-zinc-900 dark:hover:text-white transition-colors">
+          <Link to="/" aria-label="Về trang chủ LayaMeet" className="flex items-center gap-2 group text-xs text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition-colors">
             <ArrowLeft className="w-3.5 h-3.5 group-hover:-translate-x-0.5 transition-transform" />
             <span className="hidden sm:inline">Trang chủ</span>
           </Link>
           <div className="h-4 w-px bg-zinc-300 dark:bg-zinc-800" />
           <LayaMeetLogo size="md" showBadge={true} />
-          <span className="px-2 py-0.5 rounded text-[11px] font-mono bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20 font-semibold">
+          <span className="px-2 py-0.5 rounded-md text-[11px] font-mono bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-700 font-semibold">
             DevHub
           </span>
         </div>
@@ -150,7 +154,7 @@ export const DevelopersPage: React.FC = () => {
       <main className="relative z-10 flex-1 max-w-5xl mx-auto w-full px-4 sm:px-6 py-10 sm:py-14 space-y-12">
         {/* Hero Section */}
         <div className="space-y-4">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 dark:bg-blue-950/40 border border-blue-200/80 dark:border-blue-800/60 text-blue-700 dark:text-blue-300 text-xs font-semibold">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-zinc-100 dark:bg-zinc-800/80 border border-zinc-200 dark:border-zinc-700 text-zinc-800 dark:text-zinc-200 text-xs font-medium">
             <Terminal className="w-3.5 h-3.5" />
             <span>LayaMeet Open Developer Ecosystem</span>
           </div>
@@ -265,7 +269,7 @@ export const DevelopersPage: React.FC = () => {
               <button
                 type="button"
                 onClick={() => handleCopy(activeTab, SNIPPETS[activeTab].code)}
-                className="flex items-center gap-1.5 text-xs text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 bg-zinc-100 dark:bg-[#222224] px-2.5 py-1 rounded-md border border-zinc-200 dark:border-[#333336] transition-colors cursor-pointer"
+                className="flex items-center gap-1.5 text-xs text-zinc-600 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-zinc-100 bg-zinc-100 dark:bg-[#222224] px-2.5 py-1 rounded-md border border-zinc-200 dark:border-[#333336] transition-colors cursor-pointer"
               >
                 {copiedKey === activeTab ? (
                   <>
@@ -281,16 +285,17 @@ export const DevelopersPage: React.FC = () => {
               </button>
             </div>
 
-            <pre className="p-4 rounded-xl bg-zinc-900 text-zinc-100 dark:bg-[#0c0c0d] dark:text-zinc-200 text-xs font-mono leading-relaxed overflow-x-auto border border-zinc-800">
+            {copyError && <p role="status" className="text-amber-300">{copyError}</p>}
+            <pre tabIndex={0} aria-label="Mã ví dụ tích hợp" className="p-4 rounded-xl bg-zinc-900 text-zinc-100 dark:bg-[#0c0c0d] dark:text-zinc-200 text-xs font-mono leading-relaxed overflow-x-auto border border-zinc-800">
               <code>{SNIPPETS[activeTab].code}</code>
             </pre>
           </div>
         </div>
 
         {/* Open Source & Commercial Protection FAQ */}
-        <div className="p-6 rounded-2xl border border-blue-500/30 bg-blue-50/50 dark:bg-blue-950/20 space-y-4">
-          <div className="flex items-center gap-2 text-blue-700 dark:text-blue-400 font-bold text-sm">
-            <BookOpen className="w-4 h-4" />
+        <div className="p-6 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/60 space-y-4">
+          <div className="flex items-center gap-2 text-zinc-900 dark:text-zinc-100 font-bold text-sm">
+            <BookOpen className="w-4 h-4 text-blue-600 dark:text-blue-400" />
             <span>Mô hình Cấp phép (Licensing) &amp; Bảo vệ Quyền sở hữu trí tuệ</span>
           </div>
 

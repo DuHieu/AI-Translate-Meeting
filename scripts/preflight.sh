@@ -77,8 +77,11 @@ fi
 
 # CPU Cores
 CPU_CORES=$(nproc 2>/dev/null || grep -c ^processor /proc/cpuinfo 2>/dev/null || echo 1)
-if (( CPU_CORES < 4 )); then
-  record_fail "Minimum 4 CPU cores required for pilot (Whisper tiny). Detected: $CPU_CORES cores."
+if (( CPU_CORES < 2 )); then
+  record_fail "Minimum 2 CPU cores required for pilot (Whisper tiny). Detected: $CPU_CORES cores."
+elif (( CPU_CORES < 4 )); then
+  log_warn "Detected $CPU_CORES CPU cores. Meets minimum entry for lightweight pilot (2 vCPU), but 4+ vCPU recommended."
+  ((WARN_COUNT++)) || true
 elif (( CPU_CORES < 8 )); then
   log_warn "Detected $CPU_CORES CPU cores. Sufficient for 'pilot' profile (4 vCPU), but 8+ vCPU recommended for 'business' profile."
   ((WARN_COUNT++)) || true

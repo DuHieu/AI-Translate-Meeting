@@ -1,0 +1,37 @@
+<svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="layaGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#2563eb" />
+      <stop offset="50%" stop-color="#3b82f6" />
+      <stop offset="100%" stop-color="#1d4ed8" />
+    </linearGradient>
+    <linearGradient id="subtleGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff" />
+      <stop offset="100%" stop-color="#e0e7ff" />
+    </linearGradient>
+  </defs>
+
+  <!-- Solid Premium Squircle Container -->
+  <rect width="64" height="64" rx="16" fill="url(#layaGrad)" />
+  <rect x="0.5" y="0.5" width="63" height="63" rx="15.5" stroke="rgba(255,255,255,0.25)" stroke-width="1" />
+
+  <!-- Monogram Letter L (Architectural geometric glyph) -->
+  <path
+    d="M18 16V44C18 46.2091 19.7909 48 22 48H44"
+    stroke="url(#subtleGrad)"
+    stroke-width="7"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+
+  <!-- Soundwave / Live translation accent bar parallel to base of L -->
+  <path
+    d="M28 38H46"
+    stroke="#93c5fd"
+    stroke-width="5"
+    stroke-linecap="round"
+  />
+
+  <!-- Active voice acoustic node -->
+  <circle cx="44" cy="22" r="3.5" fill="#60a5fa" />
+</svg>

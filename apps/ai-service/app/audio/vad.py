@@ -7,7 +7,7 @@ class VoiceActivityDetector:
     Filters out background silence, keystrokes, and empty buffers.
     """
 
-    def __init__(self, energy_threshold: float = 0.0005, rms_threshold: float = 0.012):
+    def __init__(self, energy_threshold: float = 0.00015, rms_threshold: float = 0.006):
         self.energy_threshold = energy_threshold
         self.rms_threshold = rms_threshold
 
@@ -23,4 +23,4 @@ class VoiceActivityDetector:
         if audio_data is None or len(audio_data) == 0:
             return False
         energy, rms = self.calculate_energy(audio_data)
-        return energy > self.energy_threshold or rms > self.rms_threshold
+        return rms > self.rms_threshold or energy > self.energy_threshold

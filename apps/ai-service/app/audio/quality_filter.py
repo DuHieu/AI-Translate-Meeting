@@ -66,6 +66,14 @@ class SpeechQualityFilter:
 
     # Pathological repetition pattern (a word or sound repeated 3+ times consecutively)
     REPETITION_REGEX = re.compile(r"(\b\w+\b)(?:\s+\1){3,}", re.IGNORECASE)
+    # Multi-word phrase repetition (e.g., 'đừng có đừng có đừng có')
+    PHRASE_REPETITION_REGEX = re.compile(
+        r"(\b(?:\w+\s+){1,3}\w+\b)(?:\s+\1){2,}", re.IGNORECASE
+    )
+    # CJK/Kana repeating loops (e.g., 'やめましょう やめましょう', 'しないでくださいしないでください')
+    CJK_REPETITION_REGEX = re.compile(
+        r"([\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9fff]{2,8})\1{2,}"
+    )
 
     def __init__(self, enabled: Optional[bool] = None):
         self.enabled = (
@@ -133,10 +141,22 @@ class SpeechQualityFilter:
         return bool(self.ACOUSTIC_NOISE_REGEX.match(clean))
 
     def has_pathological_repetition(self, text: str) -> bool:
-        """Detects looping stutter or infinite repeating words."""
+        """Detects looping stutter or infinite repeating words/phrases."""
         if not text:
             return False
-        return bool(self.REPETITION_REGEX.search(text))
+        clean = text.strip()
+        if self.REPETITION_REGEX.search(clean):
+            return True
+        if self.PHRASE_REPETITION_REGEX.search(clean):
+            return True
+        if self.CJK_REPETITION_REGEX.search(clean):
+            return True
+        words = clean.split()
+        if len(words) >= 6:
+            unique_ratio = len(set(w.lower() for w in words)) / len(words)
+            if unique_ratio < 0.35:
+                return True
+        return False
 
     def filter_speech(self, text: str, language: str = "vi") -> tuple[bool, str]:
         """
@@ -160,5 +180,40 @@ class SpeechQualityFilter:
 
         if self.has_pathological_repetition(clean_text):
             return False, "repetition_loop"
+
+        return True, ""
+
+    CORRUPT_TRANSLATION_MARKERS = (
+        "mymemory warning",
+        "quota exceeded",
+        "too many requests",
+        "translation limit",
+        "[error]",
+        "error:",
+    )
+
+    def filter_translation(self, text: str, language: str = "") -> tuple[bool, str]:
+        """
+        Validates that a translated string is genuine and not corrupted or looping.
+        Used to protect cache from being poisoned by flawed translation artifacts.
+        """
+        if not text or not text.strip():
+            return False, "empty"
+
+        clean = text.strip()
+        lower = clean.lower()
+
+        for marker in self.CORRUPT_TRANSLATION_MARKERS:
+            if marker in lower:
+                return False, f"corrupt_marker:{marker}"
+
+        if self.is_acoustic_noise(clean):
+            return False, "acoustic_noise"
+
+        if self.has_pathological_repetition(clean):
+            return False, "repetition_loop"
+
+        if self.is_hallucination(clean, language):
+            return False, "hallucination"
 
         return True, ""

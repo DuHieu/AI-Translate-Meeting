@@ -299,30 +299,34 @@ $SUDO chmod 700 "$INSTALL_DIR/shared"
 log_info "Step 3/8: Generating cryptographically secure configuration ($PROFILE profile)..."
 ENV_FILE="$INSTALL_DIR/shared/.env.production"
 
-bash "$REPO_ROOT/scripts/generate-config.sh" \
-  --app-domain "$APP_DOMAIN" \
-  --livekit-domain "$LIVEKIT_DOMAIN" \
-  --profile "$PROFILE" \
-  --image-tag "$IMAGE_TAG" \
-  --output "$ENV_FILE"
+if [[ ! -f "$ENV_FILE" ]]; then
+  bash "$REPO_ROOT/scripts/generate-config.sh" \
+    --app-domain "$APP_DOMAIN" \
+    --livekit-domain "$LIVEKIT_DOMAIN" \
+    --profile "$PROFILE" \
+    --image-tag "$IMAGE_TAG" \
+    --output "$ENV_FILE"
 
-$SUDO sed -i \
-  -e "s|^API_IMAGE=.*|API_IMAGE=ghcr.io/$IMAGE_NAMESPACE/ai-translate-meeting-api|" \
-  -e "s|^AI_SERVICE_IMAGE=.*|AI_SERVICE_IMAGE=ghcr.io/$IMAGE_NAMESPACE/ai-translate-meeting-ai-service|" \
-  -e "s|^LAYA_IMAGE=.*|LAYA_IMAGE=ghcr.io/$IMAGE_NAMESPACE/ai-translate-meeting-laya|" \
-  -e "s|^WEB_IMAGE=.*|WEB_IMAGE=ghcr.io/$IMAGE_NAMESPACE/ai-translate-meeting-web|" \
-  "$ENV_FILE"
+  $SUDO sed -i \
+    -e "s|^API_IMAGE=.*|API_IMAGE=ghcr.io/$IMAGE_NAMESPACE/ai-translate-meeting-api|" \
+    -e "s|^AI_SERVICE_IMAGE=.*|AI_SERVICE_IMAGE=ghcr.io/$IMAGE_NAMESPACE/ai-translate-meeting-ai-service|" \
+    -e "s|^LAYA_IMAGE=.*|LAYA_IMAGE=ghcr.io/$IMAGE_NAMESPACE/ai-translate-meeting-laya|" \
+    -e "s|^WEB_IMAGE=.*|WEB_IMAGE=ghcr.io/$IMAGE_NAMESPACE/ai-translate-meeting-web|" \
+    "$ENV_FILE"
 
-if [[ -n "$HOST_KEY" ]]; then
-  printf "HOST_SECURITY_KEY=%s\n" "$HOST_KEY" >> "$ENV_FILE"
+  if [[ -n "$HOST_KEY" ]]; then
+    printf "HOST_SECURITY_KEY=%s\n" "$HOST_KEY" >> "$ENV_FILE"
+  fi
+
+  if [[ -n "$LICENSE_KEY" ]]; then
+    printf "LICENSE_KEY=%s\n" "$LICENSE_KEY" >> "$ENV_FILE"
+  fi
+
+  $SUDO chmod 600 "$ENV_FILE"
+  log_ok "Configuration generated at $ENV_FILE (permissions: 0600)."
+else
+  log_ok "Existing configuration preserved at $ENV_FILE."
 fi
-
-if [[ -n "$LICENSE_KEY" ]]; then
-  printf "LICENSE_KEY=%s\n" "$LICENSE_KEY" >> "$ENV_FILE"
-fi
-
-$SUDO chmod 600 "$ENV_FILE"
-log_ok "Configuration generated at $ENV_FILE (permissions: 0600)."
 
 # 6. Copy Release Manifests
 log_info "Step 4/8: Packaging release manifests..."
@@ -331,6 +335,7 @@ RELEASE_DIR="$INSTALL_DIR/releases/$RELEASE_ID"
 $SUDO mkdir -p "$RELEASE_DIR"
 
 $SUDO cp "$REPO_ROOT/docker-compose.production.yml" "$RELEASE_DIR/"
+$SUDO sed -i 's/pull_policy: always/pull_policy: if_not_present/g' "$RELEASE_DIR/docker-compose.production.yml"
 $SUDO cp -r "$REPO_ROOT/infra" "$RELEASE_DIR/"
 $SUDO cp -r "$REPO_ROOT/scripts" "$RELEASE_DIR/"
 $SUDO cp -r "$REPO_ROOT/config" "$RELEASE_DIR/"
@@ -386,7 +391,7 @@ if $COMPOSE_CMD ps --status running postgres --quiet 2>/dev/null | grep -q .; th
 fi
 
 # Pull core services
-$COMPOSE_CMD pull postgres redis livekit api ai-service laya web caddy || true
+$COMPOSE_CMD pull postgres redis livekit caddy || true
 
 # Run one-shot database migration
 log_info "Running one-shot database schema migration..."

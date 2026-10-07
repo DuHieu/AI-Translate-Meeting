@@ -405,7 +405,7 @@ export const ComparisonLandingPage: React.FC<ComparisonLandingPageProps> = ({ co
   };
 
   return (
-    <div className="min-h-screen bg-[#fcfcfd] dark:bg-[#0c0c0d] text-zinc-900 dark:text-zinc-100 flex flex-col transition-colors selection:bg-blue-500 selection:text-white">
+    <div className="content-page min-h-dvh bg-[#fcfcfd] dark:bg-[#0c0c0d] text-zinc-900 dark:text-zinc-100 flex flex-col transition-colors selection:bg-blue-500 selection:text-white">
       {/* ── Top Navigation Bar ──────────────────────────────────── */}
       <header className="sticky top-0 z-40 w-full backdrop-blur-md bg-white/80 dark:bg-[#0c0c0d]/80 border-b border-zinc-200 dark:border-zinc-800">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
@@ -425,7 +425,7 @@ export const ComparisonLandingPage: React.FC<ComparisonLandingPageProps> = ({ co
             {/* Switch competitor button */}
             <Link
               to={config.competitorKey === 'zoom' ? '/so-sanh/layameet-vs-google-meet' : '/so-sanh/layameet-vs-zoom'}
-              className="text-xs text-zinc-600 dark:text-zinc-400 hover:text-blue-600 dark:hover:text-blue-400 px-2.5 py-1.5 rounded-lg border border-zinc-200 dark:border-zinc-800 hidden md:inline-flex items-center gap-1 transition"
+              className="text-xs text-zinc-600 dark:text-zinc-400 hover:text-blue-600 dark:hover:text-blue-400 px-2.5 py-1.5 rounded-lg border border-zinc-200 dark:border-zinc-800 inline-flex items-center gap-1 transition"
             >
               <span>Xem vs {config.competitorKey === 'zoom' ? 'Google Meet' : 'Zoom'}</span>
               <ArrowRight className="w-3 h-3" />
@@ -469,9 +469,9 @@ export const ComparisonLandingPage: React.FC<ComparisonLandingPageProps> = ({ co
           </p>
 
           {/* Verdict Box */}
-          <div className="max-w-3xl mx-auto p-4 sm:p-5 rounded-2xl bg-blue-50/50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-900/50 text-left text-xs sm:text-sm text-zinc-700 dark:text-zinc-300 space-y-1 shadow-sm">
-            <div className="font-bold text-blue-700 dark:text-blue-300 flex items-center gap-1.5">
-              <Sparkles className="w-4 h-4 text-blue-600" />
+          <div className="max-w-3xl mx-auto p-4 sm:p-5 rounded-xl bg-zinc-50 dark:bg-zinc-900/60 border border-zinc-200 dark:border-zinc-800 text-left text-xs sm:text-sm text-zinc-700 dark:text-zinc-300 space-y-1.5 shadow-xs">
+            <div className="font-semibold text-zinc-900 dark:text-zinc-100 flex items-center gap-1.5">
+              <Sparkles className="w-4 h-4 text-blue-600 dark:text-blue-400" />
               <span>Đánh giá tóm tắt (TL;DR):</span>
             </div>
             <p className="leading-relaxed">
@@ -518,11 +518,11 @@ export const ComparisonLandingPage: React.FC<ComparisonLandingPageProps> = ({ co
                 <thead className="bg-zinc-50 dark:bg-zinc-900 border-b border-zinc-200 dark:border-zinc-800 text-zinc-500 dark:text-zinc-400">
                   <tr>
                     <th className="py-4 px-5 font-semibold w-1/3">Tiêu chí đánh giá</th>
-                    <th className="py-4 px-5 font-bold text-blue-600 dark:text-blue-400 w-1/3 bg-blue-50/30 dark:bg-blue-950/10 border-x border-zinc-200 dark:border-zinc-800">
+                    <th className="py-4 px-5 font-semibold text-zinc-950 dark:text-white w-1/3 bg-zinc-100/50 dark:bg-zinc-800/40 border-x border-zinc-200 dark:border-zinc-800">
                       <div className="flex items-center gap-1.5">
-                        <Sparkles className="w-4 h-4 text-blue-500" />
+                        <Sparkles className="w-4 h-4 text-blue-600 dark:text-blue-400" />
                         <span>LayaMeet AI</span>
-                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-600 text-white font-medium ml-auto hidden sm:inline">Khuyên Dùng</span>
+                        <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20 font-semibold ml-auto hidden sm:inline">Khuyên Dùng</span>
                       </div>
                     </th>
                     <th className="py-4 px-5 font-semibold text-zinc-600 dark:text-zinc-400 w-1/3">
@@ -535,9 +535,9 @@ export const ComparisonLandingPage: React.FC<ComparisonLandingPageProps> = ({ co
                     <tr key={idx} className="hover:bg-zinc-50/50 dark:hover:bg-zinc-800/30 transition">
                       <td className="py-4 px-5 align-top">
                         <div className="font-semibold text-zinc-950 dark:text-white">{item.feature}</div>
-                        <div className="text-[11px] text-zinc-400 dark:text-zinc-500 mt-0.5">{item.category}</div>
+                        <div className="text-[11px] text-zinc-400 dark:text-zinc-400 mt-0.5">{item.category}</div>
                       </td>
-                      <td className="py-4 px-5 align-top bg-blue-50/20 dark:bg-blue-950/10 border-x border-zinc-200 dark:border-zinc-800">
+                      <td className="py-4 px-5 align-top bg-zinc-50/40 dark:bg-zinc-800/20 border-x border-zinc-200 dark:border-zinc-800">
                         <div className="flex items-start gap-1.5 font-bold text-emerald-600 dark:text-emerald-400">
                           <Check className="w-4 h-4 shrink-0 mt-0.5" />
                           <span>{item.layameet.highlight}</span>
@@ -551,7 +551,7 @@ export const ComparisonLandingPage: React.FC<ComparisonLandingPageProps> = ({ co
                           <X className="w-4 h-4 shrink-0 mt-0.5 text-zinc-400" />
                           <span>{item.competitor.highlight}</span>
                         </div>
-                        <p className="text-[11px] text-zinc-500 dark:text-zinc-500 mt-1 leading-relaxed">
+                        <p className="text-[11px] text-zinc-500 dark:text-zinc-400 mt-1 leading-relaxed">
                           {item.competitor.detail}
                         </p>
                       </td>

@@ -1,6 +1,7 @@
-import React, { useState, useMemo } from 'react';
-import { X, Copy, Check, QrCode, Share2, Mail, ExternalLink, Smartphone } from 'lucide-react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
+import { X, Copy, Check, QrCode, Share2, ChevronDown, ChevronUp } from 'lucide-react';
 import { generateQrSvgPath } from '../../utils/qrCodeGenerator';
+import { MeetingLinkPreviewCard } from './MeetingLinkPreviewCard';
 
 interface ShareMeetingModalProps {
   isOpen: boolean;
@@ -17,20 +18,31 @@ export const ShareMeetingModal: React.FC<ShareMeetingModalProps> = ({
 }) => {
   const [copiedLink, setCopiedLink] = useState(false);
   const [copiedCode, setCopiedCode] = useState(false);
-  const [copiedFullInvite, setCopiedFullInvite] = useState(false);
+  const [showQr, setShowQr] = useState(false);
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
 
   const inviteUrl = useMemo(() => {
-    if (typeof window === 'undefined') return `https://layameet.com/prejoin/${meetingCode}`;
-    return `${window.location.origin}/prejoin/${meetingCode}`;
+    if (typeof window === 'undefined') return `https://layameet.com/meeting/${meetingCode}`;
+    return `${window.location.origin}/meeting/${meetingCode}`;
   }, [meetingCode]);
 
   const qrData = useMemo(() => {
+    if (!showQr) return null;
     try {
       return generateQrSvgPath(inviteUrl);
     } catch {
       return null;
     }
-  }, [inviteUrl]);
+  }, [inviteUrl, showQr]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
 
   if (!isOpen) return null;
 
@@ -46,150 +58,157 @@ export const ShareMeetingModal: React.FC<ShareMeetingModalProps> = ({
     setTimeout(() => setCopiedCode(false), 2000);
   };
 
-  const fullInviteText = `Kính mời bạn tham gia: ${meetingTitle}\nThời gian thực: Song ngữ dịch AI trực tiếp\nMã phòng: ${meetingCode}\nĐường dẫn tham gia: ${inviteUrl}\n(Hỗ trợ cả máy tính & điện thoại)`;
+  const canNativeShare = typeof navigator !== 'undefined' && typeof navigator.share === 'function';
 
-  const handleCopyFullInvite = () => {
-    navigator.clipboard?.writeText(fullInviteText);
-    setCopiedFullInvite(true);
-    setTimeout(() => setCopiedFullInvite(false), 2000);
-  };
-
-  const handleShareTelegram = () => {
-    const text = encodeURIComponent(`Tham gia cuộc họp song ngữ LayaMeet: ${inviteUrl}`);
-    window.open(`https://t.me/share/url?url=${encodeURIComponent(inviteUrl)}&text=${text}`, '_blank');
-  };
-
-  const handleShareEmail = () => {
-    const subject = encodeURIComponent(`Lời mời tham gia: ${meetingTitle}`);
-    const body = encodeURIComponent(fullInviteText);
-    window.open(`mailto:?subject=${subject}&body=${body}`, '_blank');
+  const handleNativeShare = async () => {
+    try {
+      await navigator.share({
+        title: `${meetingTitle} · Phòng ${meetingCode}`,
+        text: `Tham gia phòng họp song ngữ LayaMeet (${meetingCode}):`,
+        url: inviteUrl,
+      });
+    } catch {
+      handleCopyLink();
+    }
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-      <div className="bg-slate-900 border border-slate-800 rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-6 max-h-[90vh] flex flex-col animate-in fade-in zoom-in-95 duration-150">
-        {/* Header */}
-        <div className="flex items-center justify-between border-b border-slate-800 pb-4">
-          <div className="flex items-center gap-2.5 font-bold text-slate-100 text-lg">
-            <div className="w-8 h-8 rounded-xl bg-sky-500/10 border border-sky-500/20 flex items-center justify-center text-sky-400">
-              <Share2 className="w-4 h-4" />
-            </div>
-            <span>Mời &amp; Mã QR Tham Gia</span>
+    <div
+      className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-end sm:items-center justify-center p-3 sm:p-4"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="share-meeting-dialog-title"
+        className="bg-white dark:bg-[#18181b] border border-zinc-200 dark:border-zinc-800 rounded-2xl max-w-sm w-full p-5 shadow-2xl space-y-4 animate-in fade-in zoom-in-95 duration-150"
+      >
+        {/* Clean Google Meet-style Header */}
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <h2
+              id="share-meeting-dialog-title"
+              className="text-base font-bold text-zinc-900 dark:text-zinc-100"
+            >
+              Cuộc họp của bạn đã sẵn sàng
+            </h2>
+            <p className="mt-0.5 text-xs text-zinc-500 dark:text-zinc-400">
+              Chia sẻ đường dẫn này với những người bạn muốn mời vào phòng họp.
+            </p>
           </div>
           <button
+            ref={closeButtonRef}
             type="button"
             onClick={onClose}
             aria-label="Đóng chia sẻ"
-            className="w-8 h-8 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-slate-100 flex items-center justify-center transition cursor-pointer"
+            className="w-8 h-8 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 flex items-center justify-center transition cursor-pointer shrink-0"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
 
-        {/* Scrollable Body */}
-        <div className="space-y-5 overflow-y-auto pr-1">
-          {/* QR Code Card */}
-          <div className="bg-slate-950/60 border border-slate-800 rounded-2xl p-4 flex flex-col items-center text-center space-y-3">
-            <div className="bg-white p-3 rounded-2xl shadow-lg border border-slate-200/20 inline-block">
+        {/* Rich Social/Chat Unfurl Preview Card (shows logo + title + room code + URL) */}
+        <MeetingLinkPreviewCard
+          url={inviteUrl}
+          meetingCode={meetingCode}
+          meetingTitle={meetingTitle}
+          interactive={false}
+        />
+
+        {/* Primary Action: 1-Click Copy Meeting Link (Google Meet style) */}
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={handleCopyLink}
+            className="flex-1 py-2.5 px-4 bg-blue-600 hover:bg-blue-500 text-white rounded-xl transition flex items-center justify-center gap-2 text-xs sm:text-sm font-semibold cursor-pointer shadow-sm shadow-blue-600/20"
+          >
+            {copiedLink ? (
+              <>
+                <Check className="w-4 h-4 text-emerald-200" />
+                <span>Đã sao chép đường dẫn</span>
+              </>
+            ) : (
+              <>
+                <Copy className="w-4 h-4" />
+                <span>Sao chép đường dẫn tham gia</span>
+              </>
+            )}
+          </button>
+
+          {canNativeShare && (
+            <button
+              type="button"
+              onClick={() => void handleNativeShare()}
+              aria-label="Chia sẻ qua ứng dụng khác"
+              title="Chia sẻ nhanh"
+              className="p-2.5 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-200 transition cursor-pointer shrink-0"
+            >
+              <Share2 className="w-4 h-4" />
+            </button>
+          )}
+        </div>
+
+        {/* Minimal Footer Row: Room Code Pill + Optional QR Toggle */}
+        <div className="pt-2 border-t border-zinc-200/80 dark:border-zinc-800 flex items-center justify-between gap-2 text-xs">
+          <button
+            type="button"
+            onClick={handleCopyCode}
+            title="Sao chép mã phòng"
+            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-zinc-100 dark:bg-zinc-800/80 hover:bg-zinc-200 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300 transition cursor-pointer"
+          >
+            <span className="text-zinc-500 dark:text-zinc-400">Mã phòng:</span>
+            <span className="font-mono font-semibold text-zinc-900 dark:text-zinc-100 tracking-wide uppercase">
+              {meetingCode}
+            </span>
+            {copiedCode ? (
+              <Check className="w-3.5 h-3.5 text-emerald-500" />
+            ) : (
+              <Copy className="w-3 h-3 text-zinc-400" />
+            )}
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setShowQr((prev) => !prev)}
+            className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-zinc-900 dark:hover:text-zinc-200 transition cursor-pointer font-medium"
+          >
+            <QrCode className="w-3.5 h-3.5 text-sky-500" />
+            <span>Mã QR</span>
+            {showQr ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+          </button>
+        </div>
+
+        {/* Collapsible QR Code (only shown when user clicks "Mã QR") */}
+        {showQr && (
+          <div className="bg-zinc-50 dark:bg-zinc-900/90 border border-zinc-200 dark:border-zinc-800 rounded-xl p-3 flex items-center gap-3.5 animate-in fade-in duration-150">
+            <div className="bg-white p-2 rounded-xl shadow-xs border border-zinc-200 shrink-0">
               {qrData ? (
                 <svg
                   viewBox={`0 0 ${qrData.sizeWithMargin} ${qrData.sizeWithMargin}`}
-                  className="w-44 h-44 sm:w-48 sm:h-48"
+                  className="w-24 h-24"
                   shapeRendering="crispEdges"
                 >
                   <rect width="100%" height="100%" fill="#ffffff" />
                   <path d={qrData.path} fill="#090d16" />
                 </svg>
               ) : (
-                <div className="w-44 h-44 flex items-center justify-center text-slate-400">
-                  <QrCode className="w-12 h-12 text-slate-500 animate-pulse" />
+                <div className="w-24 h-24 flex items-center justify-center text-zinc-400">
+                  <QrCode className="w-8 h-8 animate-pulse" />
                 </div>
               )}
             </div>
-
-            <div className="space-y-1">
-              <div className="inline-flex items-center gap-1.5 text-xs font-semibold text-sky-400 bg-sky-500/10 px-2.5 py-1 rounded-full">
-                <Smartphone className="w-3.5 h-3.5" />
-                <span>Quét bằng điện thoại để vào họp ngay</span>
+            <div className="space-y-1 text-left">
+              <div className="text-xs font-semibold text-zinc-900 dark:text-zinc-100">
+                Quét mã bằng điện thoại
               </div>
-              <p className="text-[11px] text-slate-500">
-                Không cần cài ứng dụng. Trình duyệt tự động mở phụ đề song ngữ.
+              <p className="text-[11px] leading-relaxed text-zinc-500 dark:text-zinc-400">
+                Mở camera hoặc Zalo quét mã để vào thẳng phòng họp <strong className="font-mono text-zinc-700 dark:text-zinc-200">{meetingCode}</strong>.
               </p>
             </div>
           </div>
-
-          {/* Meeting Code Box */}
-          <div className="space-y-1.5">
-            <label className="block text-xs font-medium text-slate-400">Mã phòng họp</label>
-            <div className="flex items-center gap-2">
-              <div className="flex-1 bg-slate-800/80 border border-slate-700 rounded-xl px-4 py-2.5 font-mono text-base font-bold text-sky-400 tracking-wider">
-                {meetingCode}
-              </div>
-              <button
-                type="button"
-                onClick={handleCopyCode}
-                className="px-3.5 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl border border-slate-700 transition flex items-center gap-1.5 text-xs font-semibold cursor-pointer shrink-0"
-              >
-                {copiedCode ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
-                <span>{copiedCode ? 'Đã chép' : 'Chép mã'}</span>
-              </button>
-            </div>
-          </div>
-
-          {/* Direct Invite Link */}
-          <div className="space-y-1.5">
-            <label className="block text-xs font-medium text-slate-400">Đường dẫn tham gia trực tiếp</label>
-            <div className="flex items-center gap-2">
-              <input
-                type="text"
-                readOnly
-                value={inviteUrl}
-                className="flex-1 bg-slate-800/80 border border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-300 font-mono outline-none truncate"
-              />
-              <button
-                type="button"
-                onClick={handleCopyLink}
-                className="px-3.5 py-2 bg-sky-600 hover:bg-sky-500 text-white rounded-xl transition flex items-center gap-1.5 text-xs font-semibold cursor-pointer shrink-0 shadow-md shadow-sky-600/20"
-              >
-                {copiedLink ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-                <span>{copiedLink ? 'Đã chép' : 'Chép link'}</span>
-              </button>
-            </div>
-          </div>
-
-          {/* Quick Sharing Buttons */}
-          <div className="pt-2 border-t border-slate-800 space-y-2.5">
-            <p className="text-xs font-medium text-slate-400">Chia sẻ nhanh qua kênh khác:</p>
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                type="button"
-                onClick={handleCopyFullInvite}
-                className="py-2.5 px-3 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-xl text-xs font-medium text-slate-200 flex items-center justify-center gap-2 transition cursor-pointer"
-              >
-                {copiedFullInvite ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
-                <span>{copiedFullInvite ? 'Đã sao chép' : 'Sao chép toàn bộ'}</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={handleShareTelegram}
-                className="py-2.5 px-3 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-xl text-xs font-medium text-slate-200 flex items-center justify-center gap-2 transition cursor-pointer"
-              >
-                <ExternalLink className="w-3.5 h-3.5 text-sky-400" />
-                <span>Gửi Telegram</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={handleShareEmail}
-                className="col-span-2 py-2.5 px-3 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-xl text-xs font-medium text-slate-200 flex items-center justify-center gap-2 transition cursor-pointer"
-              >
-                <Mail className="w-3.5 h-3.5 text-amber-400" />
-                <span>Gửi qua Email lời mời</span>
-              </button>
-            </div>
-          </div>
-        </div>
+        )}
       </div>
     </div>
   );

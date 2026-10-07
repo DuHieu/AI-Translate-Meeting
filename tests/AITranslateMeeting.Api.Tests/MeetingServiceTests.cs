@@ -355,6 +355,26 @@ public class MeetingServiceTests
     }
 
     [Fact]
+    public async Task JoinMeeting_AfterAllParticipantsLeft_ReactivatesMeetingAndAllowsRejoin()
+    {
+        var meeting = await _service.CreateMeetingAsync(new CreateMeetingRequestDto("Reusable Room Test"));
+        var firstJoin = Assert.IsType<JoinMeetingResponseDto>(
+            await _service.JoinMeetingAsync(meeting.MeetingCode, new JoinMeetingRequestDto("Hieu", "vi", "en", meeting.HostToken)));
+
+        await _service.LeaveMeetingAsync(meeting.MeetingCode, new LeaveMeetingRequestDto(firstJoin.ParticipantId), firstJoin.SessionToken);
+        var endedMeeting = await _dbContext.Meetings.FindAsync(meeting.MeetingId);
+        Assert.NotNull(endedMeeting!.EndedAt);
+
+        // Re-joining the same room code reactivates the meeting
+        var rejoined = Assert.IsType<JoinMeetingResponseDto>(
+            await _service.JoinMeetingAsync(meeting.MeetingCode, new JoinMeetingRequestDto("Hieu", "vi", "en", meeting.HostToken)));
+        Assert.Equal(meeting.MeetingCode, rejoined.MeetingCode);
+
+        var reactivatedMeeting = await _dbContext.Meetings.FindAsync(meeting.MeetingId);
+        Assert.Null(reactivatedMeeting!.EndedAt);
+    }
+
+    [Fact]
     public async Task EndMeeting_ByHost_SetsEndedAt_AndMarksParticipantsLeft()
     {
         var meeting = await _service.CreateMeetingAsync(new CreateMeetingRequestDto("Host End Test"));

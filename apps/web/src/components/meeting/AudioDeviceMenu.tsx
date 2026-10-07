@@ -1,3 +1,4 @@
+import { AdaptiveDialog } from '../common/AdaptiveDialog';
 import React, { useState } from 'react';
 import { useMediaDeviceSelect, useTrackVolume } from '@livekit/components-react';
 import { LocalAudioTrack } from 'livekit-client';
@@ -49,12 +50,8 @@ export const AudioDeviceMenu: React.FC<AudioDeviceMenuProps> = ({ microphoneTrac
   };
 
   return (
-    <>
-      {/* Invisible backdrop to dismiss menu on click outside */}
-      <div className="fixed inset-0 z-30" onClick={onClose} />
-
-      <div className="absolute bottom-24 left-1/2 -translate-x-1/2 sm:left-auto sm:translate-x-0 z-40 bg-slate-900 border border-slate-700/90 rounded-2xl p-4 shadow-2xl w-80 max-w-[90vw] space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-150 text-slate-100">
-        {/* Microphone Section */}
+    <AdaptiveDialog label="Microphone & loa" onClose={onClose} className="meeting-device-dialog">
+      <div className="p-4 space-y-4">
         <div>
           <div className="flex items-center justify-between text-xs font-semibold text-slate-400 mb-2 uppercase tracking-wider">
             <span className="flex items-center gap-1.5">
@@ -102,6 +99,7 @@ export const AudioDeviceMenu: React.FC<AudioDeviceMenuProps> = ({ microphoneTrac
           </div>
         </div>
 
+        {!('setSinkId' in HTMLMediaElement.prototype) && <p role="status" className="text-sm text-slate-300">Trình duyệt chọn loa theo hệ điều hành. Dùng Bluetooth hoặc cài đặt âm thanh của điện thoại để đổi đầu ra.</p>}
         {/* Speaker Section */}
         <div className="border-t border-slate-800 pt-3">
           <div className="flex items-center justify-between text-xs font-semibold text-slate-400 mb-2 uppercase tracking-wider">
@@ -148,6 +146,6 @@ export const AudioDeviceMenu: React.FC<AudioDeviceMenuProps> = ({ microphoneTrac
           </button>
         </div>
       </div>
-    </>
+    </AdaptiveDialog>
   );
 };

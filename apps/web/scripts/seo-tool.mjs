@@ -87,7 +87,7 @@ async function auditUrl(url) {
   }
 
   // 2. Title Tag (15 pts)
-  const titleMatch = html.match(/<title>([^<]*)<\/title>/i);
+  const titleMatch = html.match(/<title>([\s\S]*?)<\/title>/i);
   const title = titleMatch ? titleMatch[1].trim() : '';
   result.serpPreview.title = title;
   if (title.length > 0 && title.length <= 65) {
@@ -304,7 +304,7 @@ async function run() {
 
   // Xuất báo cáo Markdown nếu có cờ --report
   if (isReport) {
-    const reportPath = path.resolve(__dirname, '..', '..', 'docs', 'seo-audit-report.md');
+    const reportPath = path.resolve(__dirname, '..', '..', '..', 'docs', 'seo-audit-report.md');
     let md = `# Báo Cáo Kiểm Tra SEO Toàn Diện - LayaMeet (${new Date().toLocaleDateString('vi-VN')})\n\n`;
     for (const r of allResults) {
       md += `## Trang: ${r.url}\n`;

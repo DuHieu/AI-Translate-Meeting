@@ -1,3 +1,4 @@
+import { AdaptiveDialog } from '../common/AdaptiveDialog';
 import React from 'react';
 import { useMediaDeviceSelect } from '@livekit/components-react';
 import { Video, Check } from 'lucide-react';
@@ -14,11 +15,8 @@ export const VideoDeviceMenu: React.FC<VideoDeviceMenuProps> = ({ isOpen, onClos
   if (!isOpen) return null;
 
   return (
-    <>
-      {/* Invisible backdrop to dismiss menu on click outside */}
-      <div className="fixed inset-0 z-30" onClick={onClose} />
-
-      <div className="absolute bottom-24 left-1/2 -translate-x-1/2 sm:left-auto sm:translate-x-0 z-40 bg-slate-900 border border-slate-700/90 rounded-2xl p-4 shadow-2xl w-72 max-w-[90vw] space-y-3 animate-in fade-in slide-in-from-bottom-2 duration-150 text-slate-100">
+    <AdaptiveDialog label="Chọn camera" onClose={onClose} className="meeting-device-dialog">
+      <div className="p-4 space-y-4">
         <div className="flex items-center justify-between text-xs font-semibold text-slate-400 mb-1 uppercase tracking-wider">
           <span className="flex items-center gap-1.5">
             <Video className="w-3.5 h-3.5 text-sky-400" /> Chọn Camera
@@ -53,6 +51,6 @@ export const VideoDeviceMenu: React.FC<VideoDeviceMenuProps> = ({ isOpen, onClos
           )}
         </div>
       </div>
-    </>
+    </AdaptiveDialog>
   );
 };

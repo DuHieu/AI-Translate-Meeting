@@ -1,23 +1,24 @@
 import React, { useState, useEffect } from 'react';
-import { Mic, MicOff, Globe, Zap, ShieldCheck, CheckCircle2, Play, Pause, Sparkles } from 'lucide-react';
+import { Mic, Globe, Zap, CheckCircle2, Play, Pause, X } from 'lucide-react';
+import { useLanguage } from '../../context/language-context-def';
 
-// Lightweight, razor-sharp inline SVG flags for universal cross-platform rendering
-const FlagJP: React.FC<{ className?: string }> = ({ className = 'w-4 h-3' }) => (
-  <svg className={`${className} rounded-[2px] overflow-hidden inline-block shrink-0 shadow-xs border border-zinc-200 dark:border-zinc-700`} viewBox="0 0 900 600">
+// Razor-sharp inline SVG flags
+const FlagJP: React.FC<{ className?: string }> = ({ className = 'w-3.5 h-2.5' }) => (
+  <svg className={`${className} rounded-[2px] inline-block shrink-0 shadow-xs border border-zinc-700/50`} viewBox="0 0 900 600">
     <rect width="900" height="600" fill="#ffffff" />
     <circle cx="450" cy="300" r="180" fill="#bc002d" />
   </svg>
 );
 
-const FlagVN: React.FC<{ className?: string }> = ({ className = 'w-4 h-3' }) => (
-  <svg className={`${className} rounded-[2px] overflow-hidden inline-block shrink-0 shadow-xs border border-zinc-200 dark:border-zinc-700`} viewBox="0 0 900 600">
+const FlagVN: React.FC<{ className?: string }> = ({ className = 'w-3.5 h-2.5' }) => (
+  <svg className={`${className} rounded-[2px] inline-block shrink-0 shadow-xs border border-zinc-700/50`} viewBox="0 0 900 600">
     <rect width="900" height="600" fill="#da251d" />
     <polygon points="450,150 491,277 625,277 516,356 558,483 450,404 342,483 384,356 275,277 409,277" fill="#ffff00" />
   </svg>
 );
 
-const FlagUS: React.FC<{ className?: string }> = ({ className = 'w-4 h-3' }) => (
-  <svg className={`${className} rounded-[2px] overflow-hidden inline-block shrink-0 shadow-xs border border-zinc-200 dark:border-zinc-700`} viewBox="0 0 741 390">
+const FlagUS: React.FC<{ className?: string }> = ({ className = 'w-3.5 h-2.5' }) => (
+  <svg className={`${className} rounded-[2px] inline-block shrink-0 shadow-xs border border-zinc-700/50`} viewBox="0 0 741 390">
     <rect width="741" height="390" fill="#B22234" />
     <path d="M0,30H741M0,90H741M0,150H741M0,210H741M0,270H741M0,330H741" stroke="#fff" strokeWidth="30" />
     <rect width="296" height="210" fill="#3C3B6E" />
@@ -25,38 +26,12 @@ const FlagUS: React.FC<{ className?: string }> = ({ className = 'w-4 h-3' }) => 
   </svg>
 );
 
-const FlagZH: React.FC<{ className?: string }> = ({ className = 'w-4 h-3' }) => (
-  <svg className={`${className} rounded-[2px] overflow-hidden inline-block shrink-0 shadow-xs border border-zinc-200 dark:border-zinc-700`} viewBox="0 0 900 600">
-    <rect width="900" height="600" fill="#DE2910" />
-    <polygon points="150,60 178,146 269,146 195,200 223,286 150,232 77,286 105,200 31,146 122,146" fill="#FFDE00" />
-    <circle cx="300" cy="100" r="22" fill="#FFDE00" />
-    <circle cx="360" cy="160" r="22" fill="#FFDE00" />
-    <circle cx="360" cy="240" r="22" fill="#FFDE00" />
-    <circle cx="300" cy="300" r="22" fill="#FFDE00" />
-  </svg>
-);
-
-const FlagTH: React.FC<{ className?: string }> = ({ className = 'w-4 h-3' }) => (
-  <svg className={`${className} rounded-[2px] overflow-hidden inline-block shrink-0 shadow-xs border border-zinc-200 dark:border-zinc-700`} viewBox="0 0 900 600">
-    <rect width="900" height="600" fill="#A51931" />
-    <rect y="100" width="900" height="400" fill="#F4F5F8" />
-    <rect y="200" width="900" height="200" fill="#2D2A4A" />
-  </svg>
-);
-
-const FlagLA: React.FC<{ className?: string }> = ({ className = 'w-4 h-3' }) => (
-  <svg className={`${className} rounded-[2px] overflow-hidden inline-block shrink-0 shadow-xs border border-zinc-200 dark:border-zinc-700`} viewBox="0 0 900 600">
-    <rect width="900" height="600" fill="#CE1126" />
-    <rect y="150" width="900" height="300" fill="#002868" />
-    <circle cx="450" cy="300" r="110" fill="#ffffff" />
-  </svg>
-);
-
-type TargetLanguage = 'VI' | 'EN' | 'JA' | 'ZH' | 'TH' | 'LA';
+type TargetLanguage = 'VI' | 'EN' | 'JA';
 
 interface DialogueTurn {
   id: string;
   speaker: string;
+  shortName: string;
   role: string;
   avatarInitials: string;
   avatarBg: string;
@@ -65,7 +40,7 @@ interface DialogueTurn {
   sourceText: string;
   translations: Record<TargetLanguage, string>;
   actionItem?: {
-    text: string;
+    text: Record<TargetLanguage, string>;
     confidence: string;
   };
   latencyMs: number;
@@ -75,22 +50,24 @@ const DIALOGUE_SCRIPT: DialogueTurn[] = [
   {
     id: 'turn-1',
     speaker: 'Kenji Sato',
-    role: 'Lead Architect · Tokyo',
+    shortName: 'Kenji S.',
+    role: 'Tokyo',
     avatarInitials: 'KS',
-    avatarBg: 'bg-violet-600',
+    avatarBg: 'from-violet-600 to-indigo-700',
     flagComponent: FlagJP,
-    sourceLang: '日本語 (JA)',
+    sourceLang: 'JA',
     sourceText: '来週のリリースに向けて、多言語リアルタイム翻訳の遅延を350ms以下に最適化しました。',
     translations: {
-      VI: 'Trước thềm phát hành tuần tới, chúng tôi đã tối ưu độ trễ dịch đa ngữ thời gian thực xuống dưới 350ms.',
+      VI: 'Trước đợt phát hành tuần tới, chúng tôi đã tối ưu độ trễ dịch đa ngữ thời gian thực xuống dưới 350ms.',
       EN: 'Ahead of next week\'s release, we have optimized multi-language real-time translation latency to under 350ms.',
       JA: '来週のリリースに向けて、多言語リアルタイム翻訳の遅延を350ms以下に最適化しました。',
-      ZH: '针对下周的系统发布，我们已将多语言实时翻译延迟优化至350毫秒以内。',
-      TH: 'สำหรับเวอร์ชันสัปดาห์หน้า เราได้ปรับเวลาแฝงของการแปลหลายภาษาแบบเรียลไทม์ให้ต่ำกว่า 350ms แล้ว',
-      LA: 'ສຳລັບການປ່ອຍຕົວໃນອາທິດໜ້າ, ພວກເຮົາໄດ້ປັບປຸງຄວາມຊັກຊ້າໃນການແປພາສາເວລາຈິງໃຫ້ຫຼຸດລົງຕໍ່າກວ່າ 350ms.',
     },
     actionItem: {
-      text: 'Xác nhận benchmark STT đa ngữ <350ms trên cụm máy chủ Staging',
+      text: {
+        VI: 'Xác nhận benchmark STT đa ngữ <350ms trên cụm Staging',
+        EN: 'Verify multilingual STT benchmark <350ms on Staging cluster',
+        JA: 'Staging環境で多言語STTベンチマーク（<350ms）を検証',
+      },
       confidence: '98%',
     },
     latencyMs: 312,
@@ -98,22 +75,24 @@ const DIALOGUE_SCRIPT: DialogueTurn[] = [
   {
     id: 'turn-2',
     speaker: 'David Miller',
-    role: 'VP Engineering · San Francisco',
+    shortName: 'David M.',
+    role: 'San Francisco',
     avatarInitials: 'DM',
-    avatarBg: 'bg-emerald-600',
+    avatarBg: 'from-emerald-600 to-teal-700',
     flagComponent: FlagUS,
-    sourceLang: 'English (US)',
+    sourceLang: 'EN',
     sourceText: 'All global participants are receiving seamless local subtitles in their own language without any lag.',
     translations: {
-      VI: 'Tất cả thành viên toàn cầu đều nhận được phụ đề địa phương theo ngôn ngữ riêng mà không bị gián đoạn.',
+      VI: 'Tất cả thành viên toàn cầu đều nhận được phụ đề song ngữ theo ngôn ngữ riêng mà không bị gián đoạn.',
       EN: 'All global participants are receiving seamless local subtitles in their own language without any lag.',
       JA: '世界中の全参加者が、遅延なく各自の母国語でリアルタイム字幕を受信できています。',
-      ZH: '所有全球参会者都能毫无延迟地接收到各自母语的实时字幕。',
-      TH: 'ผู้เข้าร่วมประชุมทั่วโลกทุกคนได้รับคำบรรยายสดในภาษาของตนเองโดยไม่มีการดีเลย์',
-      LA: 'ຜູ້ເຂົ້າຮ່ວມທົ່ວໂລກທັງໝົດກຳລັງໄດ້ຮັບຄຳບັນຍາຍສົດຕາມພາສາຂອງຕົນເອງໂດຍບໍ່ມີການຊັກຊ້າ.',
     },
     actionItem: {
-      text: 'Mở rộng thử nghiệm phòng họp 10 quốc gia đồng thời vào thứ Năm',
+      text: {
+        VI: 'Thử nghiệm phòng họp 10 quốc gia đồng thời vào thứ Năm',
+        EN: 'Scale test 10 concurrent country regions this Thursday',
+        JA: '木曜日に10か国同時接続での会議室ストレステストを実施',
+      },
       confidence: '96%',
     },
     latencyMs: 295,
@@ -121,295 +100,271 @@ const DIALOGUE_SCRIPT: DialogueTurn[] = [
   {
     id: 'turn-3',
     speaker: 'Minh Nguyen',
-    role: 'AI Tech Lead · Đà Nẵng',
+    shortName: 'Minh N.',
+    role: 'Đà Nẵng',
     avatarInitials: 'MN',
-    avatarBg: 'bg-blue-600',
+    avatarBg: 'from-blue-600 to-cyan-700',
     flagComponent: FlagVN,
-    sourceLang: 'Tiếng Việt (VI)',
+    sourceLang: 'VI',
     sourceText: 'Phía Việt Nam đã sẵn sàng. Hệ thống Laya AI đang trích xuất Action Items đồng thời cho mọi ngôn ngữ.',
     translations: {
       VI: 'Phía Việt Nam đã sẵn sàng. Hệ thống Laya AI đang trích xuất Action Items đồng thời cho mọi ngôn ngữ.',
       EN: 'The Vietnam team is ready. The Laya AI engine is concurrently extracting Action Items across all languages.',
       JA: 'ベトナム側も準備完了です。Laya AIが全言語向けにアクションアイテムをリアルタイム抽出しています。',
-      ZH: '越南团队已准备就绪。Laya AI智能助手正面向所有语种同步提取待办事项与决议。',
-      TH: 'ทีมเวียดนามพร้อมแล้ว ระบบ Laya AI กำลังดึงรายการงานสำหรับทุกภาษาไปพร้อมกัน',
-      LA: 'ທີມຫວຽດນາມພ້ອມແລ້ວ. ລະບົບ Laya AI ພວມສະກັດລາຍການວຽກສຳລັບທຸກພາສາໄປພ້ອມໆກັນ.',
     },
     actionItem: {
-      text: 'Xuất biên bản họp đa ngữ tự động sang Markdown và gửi vào nhóm dự án',
+      text: {
+        VI: 'Xuất biên bản họp đa ngữ tự động sang Markdown cho dự án',
+        EN: 'Export multilingual smart meeting minutes to Markdown for project team',
+        JA: '多言語AI議事録をMarkdownで自動出力しプロジェクトへ共有',
+      },
       confidence: '95%',
     },
     latencyMs: 284,
   },
 ];
 
-const LANGUAGE_LABELS: Record<
-  TargetLanguage,
-  { label: string; code: string; flagComponent: React.FC<{ className?: string }> }
-> = {
-  VI: { label: 'Tiếng Việt', code: 'VI', flagComponent: FlagVN },
-  EN: { label: 'English (US)', code: 'EN', flagComponent: FlagUS },
-  JA: { label: '日本語', code: 'JA', flagComponent: FlagJP },
-  ZH: { label: '中文', code: 'ZH', flagComponent: FlagZH },
-  TH: { label: 'ไทย', code: 'TH', flagComponent: FlagTH },
-  LA: { label: 'ລາວ', code: 'LA', flagComponent: FlagLA },
-};
+interface InteractiveMeetingPreviewProps {
+  onClose?: () => void;
+}
 
-export const InteractiveMeetingPreview: React.FC = () => {
+export const InteractiveMeetingPreview: React.FC<InteractiveMeetingPreviewProps> = ({ onClose }) => {
+  const { language } = useLanguage();
   const [currentTurnIndex, setCurrentTurnIndex] = useState(0);
-  const [selectedLang, setSelectedLang] = useState<TargetLanguage>('VI');
+  const [selectedLang, setSelectedLang] = useState<TargetLanguage>(() => {
+    if (language === 'en') return 'EN';
+    if (language === 'ja') return 'JA';
+    return 'VI';
+  });
   const [isPlaying, setIsPlaying] = useState(true);
 
-  // Auto-cycle dialogue turns every 7 seconds
+  // Sync target subtitle preview with site language
+  useEffect(() => {
+    if (language === 'en') setSelectedLang('EN');
+    else if (language === 'ja') setSelectedLang('JA');
+    else if (language === 'vi') setSelectedLang('VI');
+  }, [language]);
+
+  // Auto-cycle dialogue turns every 6 seconds
   useEffect(() => {
     if (!isPlaying) return;
     const interval = setInterval(() => {
       setCurrentTurnIndex((prev) => (prev + 1) % DIALOGUE_SCRIPT.length);
-    }, 7000);
+    }, 6000);
     return () => clearInterval(interval);
   }, [isPlaying]);
 
   const currentTurn = DIALOGUE_SCRIPT[currentTurnIndex];
+  const otherParticipants = DIALOGUE_SCRIPT.filter((_, idx) => idx !== currentTurnIndex);
   const translatedText = currentTurn.translations[selectedLang] || currentTurn.translations.VI;
 
+  const tLabels = {
+    vi: {
+      title: 'Mô Phỏng Họp Song Ngữ AI',
+      speaking: 'Nói',
+      subLive: 'Dịch AI tức thì',
+      actionTitle: 'Action Item',
+      closeTip: 'Đóng bản xem trước (Tải lại trang để mở lại)',
+      playTip: 'Phát tự động',
+      pauseTip: 'Tạm dừng',
+    },
+    en: {
+      title: 'Live Bilingual Meeting Demo',
+      speaking: 'Speaking',
+      subLive: 'Live AI Subtitles',
+      actionTitle: 'Action Item',
+      closeTip: 'Close preview (Reload page to restore)',
+      playTip: 'Play',
+      pauseTip: 'Pause',
+    },
+    ja: {
+      title: 'リアルタイム多言語会議デモ',
+      speaking: '発言中',
+      subLive: 'AIリアルタイム字幕',
+      actionTitle: 'TODO / 決定事項',
+      closeTip: 'プレビューを閉じる（リロードで再表示）',
+      playTip: '再生',
+      pauseTip: '一時停止',
+    },
+  }[language] || {
+    title: 'Live Bilingual Meeting Demo',
+    speaking: 'Speaking',
+    subLive: 'Live AI Subtitles',
+    actionTitle: 'Action Item',
+    closeTip: 'Close preview (Reload page to restore)',
+    playTip: 'Play',
+    pauseTip: 'Pause',
+  };
+
   return (
-    <div className="w-full sm:w-[480px] lg:w-[540px] xl:w-[600px] 2xl:w-[660px] bg-white dark:bg-[#18181b] border border-zinc-200 dark:border-[#333336] rounded-2xl overflow-hidden shrink-0 shadow-2xl transition-all">
-      {/* ── Studio Top Chrome Bar ─────────────────────────────── */}
-      <div className="px-4 py-3 bg-zinc-50 dark:bg-[#121214] border-b border-zinc-200 dark:border-[#2b2b2e] flex items-center justify-between select-none">
+    <div className="w-full sm:w-[500px] lg:w-[540px] xl:w-[580px] bg-zinc-900 border border-zinc-700/60 dark:border-[#33353e] rounded-2xl overflow-hidden shrink-0 shadow-2xl transition-all">
+      {/* ── Studio Top Chrome Bar (Clean Mac-style with working close button) ── */}
+      <div className="px-3.5 py-2.5 bg-zinc-950/80 border-b border-zinc-800/80 flex items-center justify-between select-none">
         <div className="flex items-center gap-2">
-          {/* Mac-style subtle window controls */}
+          {/* Mac-style subtle window controls — Red dot closes the frame */}
           <div className="flex items-center gap-1.5">
-            <span className="w-2.5 h-2.5 rounded-full bg-red-400/90 dark:bg-red-500/70" />
-            <span className="w-2.5 h-2.5 rounded-full bg-amber-400/90 dark:bg-amber-500/70" />
-            <span className="w-2.5 h-2.5 rounded-full bg-emerald-400/90 dark:bg-emerald-500/70" />
+            <button
+              type="button"
+              onClick={onClose}
+              data-testid="preview-red-dot"
+              title={tLabels.closeTip}
+              aria-label={tLabels.closeTip}
+              className="w-2.5 h-2.5 rounded-full bg-red-500 hover:bg-red-400 cursor-pointer transition-colors"
+            />
+            <span className="w-2.5 h-2.5 rounded-full bg-amber-500/80" />
+            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500/80" />
           </div>
-          <span className="text-[11px] font-mono text-zinc-600 dark:text-zinc-400 pl-1 flex items-center gap-1.5">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-            <span className="font-semibold text-blue-600 dark:text-blue-400">LayaMeet</span>
-            <span className="text-zinc-400 dark:text-zinc-600">/</span>
-            <span>global-polyglot-room</span>
+          <span className="text-[11px] font-mono text-zinc-400 pl-1 flex items-center gap-1.5">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+            <span className="font-semibold text-zinc-200">{tLabels.title}</span>
           </span>
         </div>
 
         <div className="flex items-center gap-2">
           <button
+            type="button"
             onClick={() => setIsPlaying(!isPlaying)}
-            title={isPlaying ? 'Tạm dừng mô phỏng' : 'Tiếp tục mô phỏng'}
-            className="flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200/60 dark:hover:bg-zinc-800 transition-colors"
+            title={isPlaying ? tLabels.pauseTip : tLabels.playTip}
+            aria-label={isPlaying ? tLabels.pauseTip : tLabels.playTip}
+            className="p-1 rounded text-zinc-400 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
           >
-            {isPlaying ? (
-              <>
-                <Pause className="w-2.5 h-2.5 text-zinc-500" />
-                <span>Pause</span>
-              </>
-            ) : (
-              <>
-                <Play className="w-2.5 h-2.5 text-blue-500" />
-                <span className="text-blue-500 font-semibold">Play</span>
-              </>
-            )}
+            {isPlaying ? <Pause className="w-3 h-3" /> : <Play className="w-3 h-3 text-blue-400" />}
           </button>
-          <span className="text-[9px] font-mono font-medium text-zinc-600 dark:text-zinc-400 bg-zinc-200/70 dark:bg-zinc-800 px-1.5 py-0.5 rounded">
-            Any-to-Any
-          </span>
+
+          {/* Close button [✕] for explicit discovery */}
+          {onClose && (
+            <button
+              type="button"
+              onClick={onClose}
+              data-testid="preview-close-btn"
+              title={tLabels.closeTip}
+              aria-label={tLabels.closeTip}
+              className="p-1 rounded text-zinc-400 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          )}
         </div>
       </div>
 
-      {/* ── Polyglot Matrix Notice Banner ────────────────────────── */}
-      <div className="px-3 py-1.5 bg-blue-50/70 dark:bg-blue-950/30 border-b border-blue-200/60 dark:border-blue-900/40 flex items-center justify-between text-[10px] text-blue-800 dark:text-blue-300">
-        <span className="flex items-center gap-1.5 font-medium">
-          <Sparkles className="w-3 h-3 text-blue-600 dark:text-blue-400" />
-          <span>Mỗi thành viên tự chọn ngôn ngữ nghe/đọc riêng</span>
-        </span>
-        <span className="font-mono text-[9px] px-1.5 py-0.5 rounded bg-blue-100/80 dark:bg-blue-900/50">
-          50+ Ngôn ngữ
-        </span>
-      </div>
-
-      {/* ── Meeting Video Stage (3 Active Global Participants) ──── */}
-      <div className="p-2.5 bg-zinc-100/60 dark:bg-[#131315] grid grid-cols-3 gap-1.5 border-b border-zinc-200 dark:border-[#2b2b2e]">
-        {/* Participant 1: Kenji Sato (JP) */}
-        <div
-          onClick={() => setCurrentTurnIndex(0)}
-          className={`relative cursor-pointer rounded-lg p-2 border transition-all ${
-            currentTurn.id === 'turn-1'
-              ? 'bg-white dark:bg-[#1d1d20] border-blue-500/70 shadow-sm ring-1 ring-blue-500/25'
-              : 'bg-white/70 dark:bg-[#161618] border-zinc-200/80 dark:border-zinc-800 opacity-75 hover:opacity-100'
-          }`}
-        >
-          <div className="flex items-center justify-between mb-1.5">
-            <div className="w-6 h-6 rounded-md bg-violet-600 flex items-center justify-center text-white text-[10px] font-bold shadow-xs">
-              KS
-            </div>
-            {currentTurn.id === 'turn-1' ? (
-              <span className="w-4 h-4 rounded-full bg-emerald-500/10 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
-                <Mic className="w-2.5 h-2.5" />
-              </span>
-            ) : (
-              <span className="w-4 h-4 rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-400 flex items-center justify-center">
-                <MicOff className="w-2.5 h-2.5" />
-              </span>
-            )}
-          </div>
-          <div className="text-[11px] font-semibold text-zinc-900 dark:text-zinc-100 truncate flex items-center gap-1">
-            <span>Kenji S.</span>
-            <FlagJP className="w-3 h-2" />
-          </div>
-          <div className="text-[9px] text-zinc-500 dark:text-zinc-400 truncate">Tokyo</div>
+      {/* ── Realistic Video Conference Canvas ─────────────────────── */}
+      <div className="relative aspect-[16/10] bg-gradient-to-b from-[#181922] to-[#0c0d12] flex flex-col justify-between p-3.5 overflow-hidden">
+        {/* Subtle ambient audio reaction wave in background */}
+        <div className="absolute inset-0 pointer-events-none flex items-center justify-center opacity-25">
+          <div className="w-48 h-48 rounded-full bg-blue-600/20 blur-3xl animate-pulse" />
         </div>
 
-        {/* Participant 2: David Miller (US) */}
-        <div
-          onClick={() => setCurrentTurnIndex(1)}
-          className={`relative cursor-pointer rounded-lg p-2 border transition-all ${
-            currentTurn.id === 'turn-2'
-              ? 'bg-white dark:bg-[#1d1d20] border-blue-500/70 shadow-sm ring-1 ring-blue-500/25'
-              : 'bg-white/70 dark:bg-[#161618] border-zinc-200/80 dark:border-zinc-800 opacity-75 hover:opacity-100'
-          }`}
-        >
-          <div className="flex items-center justify-between mb-1.5">
-            <div className="w-6 h-6 rounded-md bg-emerald-600 flex items-center justify-center text-white text-[10px] font-bold shadow-xs">
-              DM
-            </div>
-            {currentTurn.id === 'turn-2' ? (
-              <span className="w-4 h-4 rounded-full bg-emerald-500/10 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
-                <Mic className="w-2.5 h-2.5" />
-              </span>
-            ) : (
-              <span className="w-4 h-4 rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-400 flex items-center justify-center">
-                <MicOff className="w-2.5 h-2.5" />
-              </span>
-            )}
-          </div>
-          <div className="text-[11px] font-semibold text-zinc-900 dark:text-zinc-100 truncate flex items-center gap-1">
-            <span>David M.</span>
-            <FlagUS className="w-3 h-2" />
-          </div>
-          <div className="text-[9px] text-zinc-500 dark:text-zinc-400 truncate">San Francisco</div>
-        </div>
-
-        {/* Participant 3: Minh Nguyen (VN) */}
-        <div
-          onClick={() => setCurrentTurnIndex(2)}
-          className={`relative cursor-pointer rounded-lg p-2 border transition-all ${
-            currentTurn.id === 'turn-3'
-              ? 'bg-white dark:bg-[#1d1d20] border-blue-500/70 shadow-sm ring-1 ring-blue-500/25'
-              : 'bg-white/70 dark:bg-[#161618] border-zinc-200/80 dark:border-zinc-800 opacity-75 hover:opacity-100'
-          }`}
-        >
-          <div className="flex items-center justify-between mb-1.5">
-            <div className="w-6 h-6 rounded-md bg-blue-600 flex items-center justify-center text-white text-[10px] font-bold shadow-xs">
-              MN
-            </div>
-            {currentTurn.id === 'turn-3' ? (
-              <span className="w-4 h-4 rounded-full bg-emerald-500/10 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
-                <Mic className="w-2.5 h-2.5" />
-              </span>
-            ) : (
-              <span className="w-4 h-4 rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-400 flex items-center justify-center">
-                <MicOff className="w-2.5 h-2.5" />
-              </span>
-            )}
-          </div>
-          <div className="text-[11px] font-semibold text-zinc-900 dark:text-zinc-100 truncate flex items-center gap-1">
-            <span>Minh N.</span>
-            <FlagVN className="w-3 h-2" />
-          </div>
-          <div className="text-[9px] text-zinc-500 dark:text-zinc-400 truncate">Đà Nẵng</div>
-        </div>
-      </div>
-
-      {/* ── Interactive Translation Selector Bar (6 Languages Matrix) */}
-      <div className="px-3 py-2 bg-zinc-50/80 dark:bg-[#151517] border-b border-zinc-200 dark:border-[#2b2b2e] flex flex-col sm:flex-row sm:items-center justify-between gap-1.5">
-        <div className="flex items-center gap-1.5 text-[11px] font-medium text-zinc-600 dark:text-zinc-300">
-          <Globe className="w-3.5 h-3.5 text-blue-500" />
-          <span>Ngôn ngữ bạn muốn xem:</span>
-        </div>
-        <div className="flex items-center gap-1 bg-zinc-200/70 dark:bg-[#202023] p-0.5 rounded-lg border border-zinc-200 dark:border-zinc-700/60 overflow-x-auto">
-          {(['VI', 'EN', 'JA', 'ZH', 'TH', 'LA'] as TargetLanguage[]).map((lang) => {
-            const FlagComp = LANGUAGE_LABELS[lang].flagComponent;
-            return (
-              <button
-                key={lang}
-                onClick={() => setSelectedLang(lang)}
-                className={`flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-medium transition-all shrink-0 ${
-                  selectedLang === lang
-                    ? 'bg-white dark:bg-zinc-800 text-blue-600 dark:text-blue-400 shadow-xs font-bold'
-                    : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200'
-                }`}
-              >
-                <FlagComp className="w-3 h-2" />
-                <span>{lang}</span>
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* ── Live Subtitle Stream & Translation Box ──────────────── */}
-      <div className="p-3.5 space-y-2.5">
-        <div className="bg-zinc-50 dark:bg-[#121214] rounded-xl border border-zinc-200 dark:border-[#2b2b2e] p-3 space-y-2">
-          {/* Header of speech bubble */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-1.5">
-              <span className="text-xs font-semibold text-zinc-900 dark:text-zinc-100 flex items-center gap-1">
-                <span>{currentTurn.speaker}</span>
-                <span className="text-[10px] text-zinc-500 font-normal">đang phát biểu bằng {currentTurn.sourceLang}</span>
+        {/* Top Floating Row: Action Item Toast (Left) & Secondary PIP Thumbnails (Right) */}
+        <div className="relative z-10 flex items-start justify-between gap-2">
+          {/* Compact Action Item pill (Clean, non-intrusive) */}
+          {currentTurn.actionItem ? (
+            <div className="max-w-[65%] px-2.5 py-1 rounded-md bg-zinc-900/90 border border-zinc-700/80 backdrop-blur-md text-[10px] text-zinc-200 flex items-center gap-1.5 shadow-sm">
+              <CheckCircle2 className="w-3 h-3 text-emerald-400 shrink-0" />
+              <span className="truncate font-medium">
+                {currentTurn.actionItem.text[selectedLang] || currentTurn.actionItem.text.VI}
               </span>
             </div>
-            <div className="flex items-center gap-1 text-[10px] font-mono text-zinc-500 dark:text-zinc-400">
-              <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
+          ) : <div />}
+
+          {/* Secondary PIP Attendee Tiles */}
+          <div className="flex items-center gap-1.5 shrink-0">
+            {otherParticipants.map((p) => {
+              const Flag = p.flagComponent;
+              return (
+                <button
+                  key={p.id}
+                  type="button"
+                  onClick={() => {
+                    const idx = DIALOGUE_SCRIPT.findIndex((d) => d.id === p.id);
+                    if (idx !== -1) setCurrentTurnIndex(idx);
+                  }}
+                  className="px-2 py-1 rounded-lg bg-zinc-900/80 hover:bg-zinc-800/90 border border-zinc-700/60 backdrop-blur-md flex items-center gap-1.5 text-[10px] text-zinc-300 transition-all cursor-pointer shadow-sm"
+                  title={`${p.speaker} (${p.role})`}
+                >
+                  <span className="font-semibold">{p.shortName}</span>
+                  <Flag />
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Center: Active Speaker Representation with Speech Pulse */}
+        <div className="relative z-10 flex flex-col items-center justify-center my-auto">
+          {/* Animated Avatar */}
+          <div className="relative">
+            <div className="absolute -inset-2 rounded-full bg-blue-500/25 blur-sm animate-pulse" />
+            <div className={`relative w-16 h-16 rounded-full bg-gradient-to-tr ${currentTurn.avatarBg} text-white font-bold text-lg flex items-center justify-center shadow-lg ring-2 ring-white/20`}>
+              {currentTurn.avatarInitials}
+            </div>
+            {/* Live Speaking Indicator */}
+            <span className="absolute bottom-0 right-0 w-4 h-4 rounded-full bg-emerald-500 ring-2 ring-zinc-900 flex items-center justify-center text-white">
+              <Mic className="w-2.5 h-2.5" />
+            </span>
+          </div>
+
+          {/* Speaker Name Tag Badge */}
+          <div className="mt-2 px-2.5 py-0.5 rounded-full bg-black/60 backdrop-blur-md border border-white/10 text-white text-[11px] font-semibold flex items-center gap-1.5">
+            <span>{currentTurn.speaker}</span>
+            <currentTurn.flagComponent />
+            <span className="text-[10px] text-zinc-400 font-normal">({currentTurn.role})</span>
+          </div>
+        </div>
+
+        {/* Bottom: Crystal Clear Bilingual Closed Caption Overlay (Google Meet Style) */}
+        <div className="relative z-10 w-full rounded-xl bg-black/85 backdrop-blur-md border border-white/10 p-3 shadow-xl space-y-1">
+          {/* Original Speech Line (subtle font-mono) */}
+          <div className="flex items-center justify-between text-[10px] text-zinc-400">
+            <span className="flex items-center gap-1 truncate">
+              <span className="font-medium text-zinc-300">{currentTurn.shortName}</span>
+              <span>({currentTurn.sourceLang}):</span>
+              <span className="italic truncate max-w-[260px] sm:max-w-[340px]">{currentTurn.sourceText}</span>
+            </span>
+            <span className="font-mono text-emerald-400 shrink-0 text-[9px] flex items-center gap-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
               <span>{currentTurn.latencyMs}ms</span>
-            </div>
+            </span>
           </div>
 
-          {/* Original transcript */}
-          <p className="text-xs text-zinc-600 dark:text-zinc-400 leading-relaxed font-mono">
-            {currentTurn.sourceText}
-          </p>
-
-          {/* Real-time Translation output */}
-          <div className="pt-2 border-t border-zinc-200/80 dark:border-zinc-800/80">
-            <div className="flex items-center gap-1 text-[10px] font-medium text-blue-600 dark:text-blue-400 mb-1">
-              <Zap className="w-3 h-3" />
-              <span>Dịch trực tiếp sang {LANGUAGE_LABELS[selectedLang].label}:</span>
-            </div>
-            <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 leading-snug">
+          {/* Real-time Subtitle Translation (High contrast, bold, immediate) */}
+          <div className="flex items-start gap-1.5 pt-0.5">
+            <Zap className="w-3.5 h-3.5 text-blue-400 shrink-0 mt-0.5" />
+            <p className="text-xs sm:text-sm font-bold text-white tracking-wide leading-snug">
               {translatedText}
             </p>
           </div>
         </div>
-
-        {/* ── Laya AI Sidecar: Action Item Live Extraction ────────── */}
-        {currentTurn.actionItem && (
-          <div className="bg-blue-50/70 dark:bg-blue-950/25 border border-blue-200/80 dark:border-blue-900/40 rounded-xl p-2.5 flex items-start gap-2">
-            <div className="w-5 h-5 rounded-md bg-blue-600/10 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0 mt-0.5">
-              <CheckCircle2 className="w-3.5 h-3.5" />
-            </div>
-            <div className="min-w-0 flex-1">
-              <div className="flex items-center justify-between gap-1 mb-0.5">
-                <span className="text-[10px] font-semibold tracking-wide uppercase text-blue-700 dark:text-blue-400">
-                  LayaMeet AI (Laya) · Action Item ({currentTurn.actionItem.confidence})
-                </span>
-                <span className="text-[9px] text-zinc-500 dark:text-zinc-400">Auto-logged</span>
-              </div>
-              <p className="text-xs text-zinc-800 dark:text-zinc-200 leading-tight">
-                {currentTurn.actionItem.text}
-              </p>
-            </div>
-          </div>
-        )}
       </div>
 
-      {/* ── Studio Telemetry Footer ─────────────────────────────── */}
-      <div className="px-3.5 py-2.5 bg-zinc-50 dark:bg-[#121214] border-t border-zinc-200 dark:border-[#2b2b2e] flex items-center justify-between text-[10px] font-mono text-zinc-500 dark:text-zinc-400">
-        <div className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400">
-          <ShieldCheck className="w-3.5 h-3.5" />
-          <span>LayaMeet On-Prem (int8)</span>
+      {/* ── Bottom Control Strip: Clean Speaker Switcher & Target Language Toggle ── */}
+      <div className="px-3.5 py-2 bg-zinc-950 border-t border-zinc-800/80 flex items-center justify-between text-xs text-zinc-400">
+        <div className="flex items-center gap-1 text-[11px]">
+          <Globe className="w-3.5 h-3.5 text-blue-400" />
+          <span className="hidden sm:inline text-zinc-300 font-medium">{tLabels.subLive}:</span>
         </div>
-        <div className="flex items-center gap-3">
-          <span>Chunk: 350ms</span>
-          <span>Matrix: Any-to-Any</span>
+
+        {/* Minimal 3-Language Selector Pills */}
+        <div className="flex items-center gap-1 bg-zinc-900 p-0.5 rounded-lg border border-zinc-800">
+          {(['VI', 'EN', 'JA'] as TargetLanguage[]).map((lang) => {
+            const isSelected = selectedLang === lang;
+            const flags = { VI: FlagVN, EN: FlagUS, JA: FlagJP };
+            const Flag = flags[lang];
+            return (
+              <button
+                key={lang}
+                type="button"
+                onClick={() => setSelectedLang(lang)}
+                className={`px-2 py-1 rounded-md text-[10px] font-semibold flex items-center gap-1 transition-all cursor-pointer ${
+                  isSelected
+                    ? 'bg-blue-600 text-white shadow-xs'
+                    : 'text-zinc-400 hover:text-zinc-200'
+                }`}
+              >
+                <Flag />
+                <span>{lang}</span>
+              </button>
+            );
+          })}
         </div>
       </div>
     </div>

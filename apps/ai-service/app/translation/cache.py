@@ -6,6 +6,7 @@ from collections import OrderedDict
 from typing import Optional
 
 from app.config.settings import settings
+from app.audio.quality_filter import SpeechQualityFilter
 
 logger = logging.getLogger("ai_service.translation.cache")
 
@@ -55,6 +56,8 @@ class TranslationCache:
     - All Redis failures fail open without breaking subtitles.
     """
 
+    enabled: bool = False
+
     def __init__(
         self,
         redis_host: Optional[str] = None,
@@ -71,6 +74,7 @@ class TranslationCache:
         self.redis_url = redis_url or settings.REDIS_URL
         self._redis = None
         self._l1 = InMemoryLRUCache(capacity=l1_capacity)
+        self.quality_filter = SpeechQualityFilter()
         self._init_redis()
 
     def _init_redis(self):
@@ -152,17 +156,30 @@ class TranslationCache:
         # 1. Tier-1 L1 In-Memory LRU Cache lookup
         cached_l1 = self._l1.get(key)
         if cached_l1 is not None:
-            logger.debug("L1 In-Memory Translation cache HIT key=%s", key[:40])
-            return cached_l1
+            is_valid, _ = self.quality_filter.filter_translation(cached_l1)
+            if not is_valid:
+                with self._l1._lock:
+                    self._l1._cache.pop(key, None)
+            else:
+                logger.debug("L1 In-Memory Translation cache HIT key=%s", key[:40])
+                return cached_l1
 
-        # 2. Tier-2 Redis lookup
+        # 2. Tier-2 Redis lookup (completely bypassed when self.enabled is False)
         if not self.enabled or self._redis is None:
             return None
         try:
             val = await self._redis.get(key)
             if val:
-                logger.debug("L2 Redis Translation cache HIT key=%s", key[:40])
                 val_str = str(val)
+                is_valid, reason = self.quality_filter.filter_translation(val_str)
+                if not is_valid:
+                    logger.warning("Evicting corrupt cached translation key=%s reason=%s", key[:40], reason)
+                    try:
+                        await self._redis.delete(key)
+                    except Exception:
+                        pass
+                    return None
+                logger.debug("L2 Redis Translation cache HIT key=%s", key[:40])
                 # Backfill Tier-1 L1 cache
                 self._l1.set(key, val_str)
                 return val_str
@@ -174,10 +191,18 @@ class TranslationCache:
 
     async def set(self, key: str, value: str, ttl: Optional[int] = None) -> bool:
         """Saves a translation into both L1 Memory and L2 Redis. Fails gracefully."""
+        if not value or not str(value).strip():
+            return False
+
+        is_valid, reason = self.quality_filter.filter_translation(value)
+        if not is_valid:
+            logger.warning("Refused to cache invalid translation key=%s reason=%s val=%.40s", key[:40], reason, value)
+            return False
+
         # 1. Populate Tier-1 L1 cache immediately
         self._l1.set(key, value)
 
-        # 2. Populate Tier-2 Redis
+        # 2. Populate Tier-2 Redis (completely bypassed when self.enabled is False)
         if not self.enabled or self._redis is None:
             return True
         try:

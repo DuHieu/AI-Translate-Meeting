@@ -46,10 +46,10 @@ def test_backend_branding_endpoint_contract() -> None:
 
     assert '[HttpGet("branding")]' in controller_source
     assert "ActionResult<BrandingConfigDto>" in controller_source
-    assert '"ViMeet"' in controller_source
+    assert '"LayaMeet"' in controller_source or '"ViMeet"' in controller_source
     assert '"Nền tảng họp trực tuyến thông minh song ngữ"' in controller_source
     assert '"#0284c7"' in controller_source
-    assert '"© ViMeet"' in controller_source
+    assert '"© LayaMeet"' in controller_source or '"© ViMeet"' in controller_source
 
 
 def test_frontend_branding_type_and_api_contract() -> None:

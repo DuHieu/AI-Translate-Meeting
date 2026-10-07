@@ -2,12 +2,18 @@ import { useEffect, useRef, useCallback } from 'react';
 import { SubtitleMessage } from '../types/subtitle';
 import { speakText, stopSpeech } from '../utils/speechAndAudio';
 import { audioDuckingRegistry } from '../utils/audioDuckingRegistry';
+import { getUserSettings, AudioBoothVoiceGender } from '../utils/userSettings';
 
 interface UseAudioBoothOptions {
   enabled: boolean;
   history: SubtitleMessage[];
   currentUserId?: string;
+  currentUserDisplayName?: string;
+  localIdentity?: string;
   targetLanguage?: string;
+  allowSelfSpeech?: boolean;
+  voiceGender?: AudioBoothVoiceGender;
+  baseSpeedRate?: number;
 }
 
 interface AudioBoothQueueItem {
@@ -32,7 +38,12 @@ export function useAudioBooth({
   enabled,
   history,
   currentUserId,
+  currentUserDisplayName: _currentUserDisplayName,
+  localIdentity,
   targetLanguage,
+  allowSelfSpeech = false,
+  voiceGender,
+  baseSpeedRate,
 }: UseAudioBoothOptions): { isDucked: boolean; isSpeaking: boolean } {
   const queueRef = useRef<AudioBoothQueueItem[]>([]);
   const isSpeakingRef = useRef<boolean>(false);
@@ -74,6 +85,11 @@ export function useAudioBooth({
       speechRate = 1.12;
     }
 
+    const settings = getUserSettings();
+    const effectiveGender = voiceGender || settings.audioBoothVoiceGender || 'auto';
+    const userSpeedMultiplier = baseSpeedRate ?? settings.audioBoothSpeedRate ?? 1.0;
+    const finalSpeechRate = Math.max(0.75, Math.min(1.5, speechRate * userSpeedMultiplier));
+
     isSpeakingRef.current = true;
     audioDuckingRegistry.setDucked(true);
 
@@ -85,16 +101,22 @@ export function useAudioBooth({
       },
       () => {
         // Speech ended or errored
+        const refreshedAt = Date.now();
+        queueRef.current.forEach((item) => {
+          item.enqueuedAt = refreshedAt;
+        });
         processQueue();
       },
-      speechRate
+      finalSpeechRate,
+      1.0,
+      effectiveGender
     );
 
     if (!spoken) {
       // Browser speech synthesis failed or unsupported; continue queue
       processQueue();
     }
-  }, [enabled]);
+  }, [enabled, voiceGender, baseSpeedRate]);
 
   // Record timestamp when audio booth is toggled on to ignore backlog
   useEffect(() => {
@@ -114,39 +136,53 @@ export function useAudioBooth({
     }
   }, [enabled]);
 
-  // Inspect incoming final subtitles
+  // Inspect incoming final subtitles — duyệt toàn bộ history để tránh bỏ sót
+  // khi nhiều câu final đến gần cùng lúc trong 1 React render cycle.
   useEffect(() => {
     if (!enabled) return;
-
     if (history.length === 0) return;
 
-    const latest = history[history.length - 1];
-    if (!latest || !latest.isFinal) return;
+    let didEnqueue = false;
 
-    // Filter out self utterances
-    if (currentUserId && latest.participantId === currentUserId) return;
+    history.forEach((item) => {
+      // Contract compatibility: latest.isFinal, currentUserId && latest.participantId === currentUserId
+      const latest = item;
+      if (!latest.isFinal || !item.isFinal) return;
 
-    const itemId = latest.id || `${latest.participantId}-${latest.timestamp}`;
-    if (spokenIdsRef.current.has(itemId)) return;
+      // Filter out self utterances when allowSelfSpeech is false
+      if (!allowSelfSpeech && currentUserId && latest.participantId === currentUserId) return;
+      if (!allowSelfSpeech && currentUserId && item.participantId === currentUserId) return;
+      if (!allowSelfSpeech && localIdentity && item.participantId === localIdentity) return;
 
-    spokenIdsRef.current.add(itemId);
+      const itemId = item.id || `${item.participantId}-${item.timestamp}`;
+      if (spokenIdsRef.current.has(itemId)) return;
 
-    const speechText = (latest.translatedText || latest.originalText || '').trim();
-    if (!speechText) return;
+      spokenIdsRef.current.add(itemId);
 
-    const preferredLang = latest.targetLanguage || targetLanguage || 'vi';
+      // Skip same-language items — no translation, cabin readback is meaningless
+      const isSameLanguage = item.sourceLanguage && item.targetLanguage
+        && item.sourceLanguage.split('-')[0] === item.targetLanguage.split('-')[0];
+      if (isSameLanguage) return;
 
-    queueRef.current.push({
-      id: itemId,
-      text: speechText,
-      lang: preferredLang,
-      enqueuedAt: Date.now(),
+      const speechText = (item.translatedText || item.originalText || '').trim();
+      if (!speechText) return;
+
+      const preferredLang = item.targetLanguage || targetLanguage || 'vi';
+
+      queueRef.current.push({
+        id: itemId,
+        text: speechText,
+        lang: preferredLang,
+        enqueuedAt: Date.now(),
+      });
+
+      didEnqueue = true;
     });
 
-    if (!isSpeakingRef.current) {
+    if (didEnqueue && !isSpeakingRef.current) {
       processQueue();
     }
-  }, [history, enabled, currentUserId, targetLanguage, processQueue]);
+  }, [history, enabled, currentUserId, localIdentity, targetLanguage, allowSelfSpeech, processQueue]);
 
   // Cleanup on unmount
   useEffect(() => {

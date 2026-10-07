@@ -23,6 +23,9 @@ import {
   useLocalParticipant,
   StartAudio,
 } from '@livekit/components-react';
+import { AdaptiveDialog } from '../common/AdaptiveDialog';
+import { MeetingLanguageDialog } from './MeetingLanguageDialog';
+import { useMeetingDisplay } from '../../hooks/useMeetingDisplay';
 import { MeetingTopBar } from './MeetingTopBar';
 import { MeetingStage } from './MeetingStage';
 import { MeetingBottomBar } from './MeetingBottomBar';
@@ -31,7 +34,6 @@ import { AiReadinessBanner } from './AiReadinessBanner';
 import { ParticipantsPanel } from './ParticipantsPanel';
 import { ChangeLayoutDialog, LayoutMode } from './ChangeLayoutDialog';
 import { MeetingSettingsDialog } from './MeetingSettingsDialog';
-import { MeetingDetailsDialog } from './MeetingDetailsDialog';
 import { PermissionBlockedModal } from './PermissionBlockedModal';
 import { ConnectionErrorModal } from './ConnectionErrorModal';
 import { PostMeetingModal } from './PostMeetingModal';
@@ -42,10 +44,15 @@ import { SubtitleOverlay } from '../subtitle/SubtitleOverlay';
 import { SubtitlePanel } from '../subtitle/SubtitlePanel';
 import { FloatingReactionsOverlay } from './FloatingReactionsOverlay';
 import { FloatingSubtitleWidget } from './FloatingSubtitleWidget';
+import { ChatPanel } from './ChatPanel';
+import { ActivitiesPanel } from './ActivitiesPanel';
+import { HostControlsPanel } from './HostControlsPanel';
+import { EmptyCallTimeoutModal } from './EmptyCallTimeoutModal';
 import { useSubtitle } from '../../hooks/useSubtitle';
 import { useAiReadiness } from '../../hooks/useAiReadiness';
 import { useAudioBooth } from '../../hooks/useAudioBooth';
 import {
+  AdmissionRequest,
   ChatMessage,
   FloatingReaction,
   MeetingSessionData,
@@ -57,10 +64,50 @@ import {
 } from '../../types/meeting';
 import { classifyMediaError } from '../../utils/mediaErrors';
 import { meetingStorage } from '../../utils/meetingStorage';
+import { admissionStorage } from '../../utils/admissionStorage';
 import { meetingService } from '../../services/meetingService';
 import { generateMeetingRecap } from '../../utils/aiRecapEngine';
 import { DEFAULT_BRANDING_CONFIG, meetingApi } from '../../api/meetingApi';
 import type { BrandingConfigDto } from '../../api/meetingApi';
+import { BellRing, Mic } from 'lucide-react';
+import { CountryFlag } from '../common/CountryFlag';
+import { getUserSettings, subscribeUserSettings } from '../../utils/userSettings';
+
+function playWaitingRoomKnockChime(): void {
+  try {
+    const AudioCtx =
+      window.AudioContext ||
+      (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+    if (!AudioCtx) return;
+    const ctx = new AudioCtx();
+    const now = ctx.currentTime;
+
+    // Gentle two-note Google Meet style bell chime (G5 -> B5)
+    const notes = [783.99, 987.77];
+    notes.forEach((freq, idx) => {
+      const start = now + idx * 0.14;
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(freq, start);
+
+      gain.gain.setValueAtTime(0.0001, start);
+      gain.gain.exponentialRampToValueAtTime(0.16, start + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.0001, start + 0.45);
+
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(start);
+      osc.stop(start + 0.46);
+    });
+
+    window.setTimeout(() => {
+      void ctx.close().catch(() => {});
+    }, 1000);
+  } catch {
+    // Ignore audio autoplay restrictions if user hasn't interacted yet
+  }
+}
 
 interface MeetingShellProps {
   session: MeetingSessionData;
@@ -157,7 +204,21 @@ export const MeetingShell: React.FC<MeetingShellProps> = ({
   isProPlan: initialProPlan = false,
   onUpgrade,
 }) => {
-  const [isProPlan, setIsProPlan] = useState<boolean>(initialProPlan);
+  const [isProPlan, setIsProPlan] = useState<boolean>(() => {
+    if (initialProPlan) return true;
+    return getUserSettings().unlimitedFreeMeeting !== false;
+  });
+
+  useEffect(() => {
+    if (initialProPlan) {
+      setIsProPlan(true);
+      return;
+    }
+    const unsub = subscribeUserSettings((s) => {
+      setIsProPlan(s.unlimitedFreeMeeting !== false);
+    });
+    return unsub;
+  }, [initialProPlan]);
   const room = useRoomContext();
   const connectionState = useConnectionState();
   const {
@@ -172,6 +233,7 @@ export const MeetingShell: React.FC<MeetingShellProps> = ({
     connectionState === ConnectionState.Connecting ||
     connectionState === ConnectionState.Reconnecting;
   const aiReadiness = useAiReadiness();
+
 
   // Track in-flight toggles to prevent concurrent negotiations on PeerConnection
   const isMediaNegotiatingRef = useRef(false);
@@ -204,11 +266,136 @@ export const MeetingShell: React.FC<MeetingShellProps> = ({
     null,
   );
 
-  const [isPeoplePanelOpen, setIsPeoplePanelOpen] = useState(false);
-  const [isSubtitlePanelOpen, setIsSubtitlePanelOpen] = useState(false);
+  type ActiveSidePanel = 'none' | 'people' | 'chat' | 'activities' | 'host_controls' | 'subtitles';
+  const [activeSidePanel, setActiveSidePanel] = useState<ActiveSidePanel>('none');
+  const [pinnedParticipantId, setPinnedParticipantId] = useState<string | null>(null);
+  const handleTogglePinParticipant = useCallback((participantId: string) => {
+    setPinnedParticipantId((curr) => (curr === participantId ? null : participantId));
+  }, []);
+  const [isCaptionsOn, setIsCaptionsOn] = useState(true);
+  const [isInfoCardOpen, setIsInfoCardOpen] = useState(false);
+  const [isEmptyCallTimeoutOpen, setIsEmptyCallTimeoutOpen] = useState(false);
+  const [showHandLowerPrompt, setShowHandLowerPrompt] = useState(false);
+  const aloneStartTimeRef = useRef<number | null>(null);
+
+  const activeSidePanelRef = useRef(activeSidePanel);
+  useEffect(() => {
+    activeSidePanelRef.current = activeSidePanel;
+  }, [activeSidePanel]);
+
+  const localMediaStateRef = useRef(localMediaState);
+  useEffect(() => {
+    localMediaStateRef.current = localMediaState;
+  }, [localMediaState]);
+
+  const sessionRef = useRef(session);
+  useEffect(() => {
+    sessionRef.current = session;
+  }, [session]);
+
+  const handleToggleMicRef = useRef<() => Promise<void>>();
+
+  const effectiveHostToken =
+    session.hostToken || admissionStorage.getHostToken(session.meetingCode) || undefined;
+  const isHost = session.role === 'host' && Boolean(effectiveHostToken);
+  const [pendingAdmissions, setPendingAdmissions] = useState<AdmissionRequest[]>([]);
+  const [dismissedKnockIds, setDismissedKnockIds] = useState<string[]>([]);
+  const notifiedAdmissionIdsRef = useRef<Set<string>>(new Set());
+
+  useEffect(() => {
+    if (!isHost || !effectiveHostToken || !session.meetingCode) return;
+
+    let isMounted = true;
+    const pollAdmissions = async () => {
+      try {
+        const list = await meetingApi.getAdmissions(session.meetingCode, effectiveHostToken);
+        if (!isMounted) return;
+        const pending = list.filter((req) => req.status === 'pending');
+
+        let hasNewKnock = false;
+        for (const req of pending) {
+          if (!notifiedAdmissionIdsRef.current.has(req.admissionId)) {
+            notifiedAdmissionIdsRef.current.add(req.admissionId);
+            hasNewKnock = true;
+          }
+        }
+        if (hasNewKnock) {
+          playWaitingRoomKnockChime();
+        }
+        setPendingAdmissions(pending);
+      } catch {
+        // Ignore transient polling errors
+      }
+    };
+
+    void pollAdmissions();
+    const interval = window.setInterval(pollAdmissions, 3000);
+    return () => {
+      isMounted = false;
+      window.clearInterval(interval);
+    };
+  }, [isHost, effectiveHostToken, session.meetingCode]);
+
+  const handleDecideAdmission = useCallback(
+    async (admissionId: string, decision: 'approved' | 'rejected') => {
+      if (!effectiveHostToken || !session.meetingCode) return;
+      try {
+        await meetingApi.decideAdmission(
+          session.meetingCode,
+          admissionId,
+          effectiveHostToken,
+          decision,
+        );
+        setPendingAdmissions((prev) => prev.filter((req) => req.admissionId !== admissionId));
+      } catch (e) {
+        console.error('Failed to decide admission', e);
+      }
+    },
+    [effectiveHostToken, session.meetingCode],
+  );
+
+  const handleApproveAllAdmissions = useCallback(async () => {
+    for (const req of pendingAdmissions) {
+      await handleDecideAdmission(req.admissionId, 'approved');
+    }
+  }, [pendingAdmissions, handleDecideAdmission]);
+
+  const handleHostMuteAll = useCallback(async () => {
+    if (!room || session.role !== 'host') return;
+    try {
+      const data = new TextEncoder().encode(JSON.stringify({ type: 'HOST_MUTE_ALL' }));
+      if (room.localParticipant) {
+        await room.localParticipant.publishData(data, { reliable: true });
+      }
+    } catch (e) {
+      console.warn('Failed to broadcast HOST_MUTE_ALL data message', e);
+    }
+  }, [room, session.role]);
+
+  const visibleKnockRequests = pendingAdmissions.filter(
+    (req) => !dismissedKnockIds.includes(req.admissionId),
+  );
+  const latestKnockRequest = visibleKnockRequests[0] || null;
+
+  const isPeoplePanelOpen = activeSidePanel === 'people';
+  const isSubtitlePanelOpen = activeSidePanel === 'subtitles';
+  const setIsPeoplePanelOpen = (open: boolean | ((prev: boolean) => boolean)) => {
+    setActiveSidePanel((cur) => {
+      const next = typeof open === 'function' ? open(cur === 'people') : open;
+      return next ? 'people' : 'none';
+    });
+  };
+  const setIsSubtitlePanelOpen = (open: boolean | ((prev: boolean) => boolean)) => {
+    setActiveSidePanel((cur) => {
+      const next = typeof open === 'function' ? open(cur === 'subtitles') : open;
+      return next ? 'subtitles' : 'none';
+    });
+  };
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isLanguageOpen, setIsLanguageOpen] = useState(false);
+  const [sidecarTab, setSidecarTab] = useState<'all' | 'actions' | 'recap'>('all');
+  const display = useMeetingDisplay();
   const [isLayoutMenuOpen, setIsLayoutMenuOpen] = useState(false);
-  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const [isPostMeetingOpen, setIsPostMeetingOpen] = useState(false);
   const [isFloatingSubtitleActive, setIsFloatingSubtitleActive] = useState<boolean>(false);
   const [isRecording, setIsRecording] = useState<boolean>(false);
@@ -470,8 +657,16 @@ export const MeetingShell: React.FC<MeetingShellProps> = ({
 
   // ── LiveKit In-Meeting Collaboration ───────────────────────────────
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
+  const [unreadChatCount, setUnreadChatCount] = useState<number>(0);
   const [reactions, setReactions] = useState<FloatingReaction[]>([]);
   const [raisedHands, setRaisedHands] = useState<Map<string, number>>(() => new Map());
+  const [isPushToTalkActive, setIsPushToTalkActive] = useState(false);
+
+  useEffect(() => {
+    if (activeSidePanel === 'chat') {
+      setUnreadChatCount(0);
+    }
+  }, [activeSidePanel]);
 
   const showFloatingReaction = useCallback((emoji: string, senderName: string) => {
     const reactionId = `react-${Date.now()}-${Math.random().toString(36).slice(2)}`;
@@ -507,6 +702,7 @@ export const MeetingShell: React.FC<MeetingShellProps> = ({
           typeof record.text === 'string'
         ) {
           const chatText = record.text;
+          setUnreadChatCount((prev) => (activeSidePanelRef.current === 'chat' ? 0 : prev + 1));
           setChatMessages((prev) => [
             ...prev,
             {
@@ -526,6 +722,12 @@ export const MeetingShell: React.FC<MeetingShellProps> = ({
               attachment: parseChatAttachment(record.attachment),
             },
           ]);
+        } else if (record.type === 'HOST_MUTE_ALL' || record.type === 'host_mute_all') {
+          if (sessionRef.current.role !== 'host') {
+            if (localMediaStateRef.current.micEnabled) {
+              void handleToggleMicRef.current?.();
+            }
+          }
         } else if (isCollaborationDataMessage(data) && data.type === 'RAISE_HAND') {
           const participantId = participant?.identity || data.participantId;
           setRaisedHands((current) => {
@@ -953,6 +1155,10 @@ export const MeetingShell: React.FC<MeetingShellProps> = ({
   }, [room, localParticipant]);
 
   const localAudioTrack = localMediaState.microphoneTrack;
+  const participants: Participant[] = Array.from<Participant>(room.remoteParticipants.values());
+  if (room.localParticipant) {
+    participants.unshift(room.localParticipant);
+  }
 
   const subtitleOptions = React.useMemo(
     () => ({
@@ -962,6 +1168,7 @@ export const MeetingShell: React.FC<MeetingShellProps> = ({
       targetLanguage: subtitleTargetLanguage,
       isMicOn: localMediaState.micEnabled,
       isAiReady: aiReadiness.state === 'ready',
+      isProPlan,
       audioTrack: localAudioTrack?.mediaStreamTrack || null,
     }),
     [
@@ -971,6 +1178,7 @@ export const MeetingShell: React.FC<MeetingShellProps> = ({
       subtitleTargetLanguage,
       localMediaState.micEnabled,
       aiReadiness.state,
+      isProPlan,
       localAudioTrack,
     ],
   );
@@ -985,6 +1193,9 @@ export const MeetingShell: React.FC<MeetingShellProps> = ({
     session.participantId,
     subtitleOptions,
   );
+
+  const remoteActiveSubtitle = activeSubtitle;
+  const remotePipelineStatuses = pipelineStatuses;
 
   const postMeetingRecap = React.useMemo(
     () => generateMeetingRecap(
@@ -1002,7 +1213,10 @@ export const MeetingShell: React.FC<MeetingShellProps> = ({
     enabled: sidecarPreferences.audioBooth,
     history: subtitleHistory,
     currentUserId: session.participantId,
+    currentUserDisplayName: session.displayName,
+    localIdentity: localParticipant?.identity,
     targetLanguage: subtitleOptions.targetLanguage,
+    allowSelfSpeech: participants.length <= 1,
   });
 
   const handleTargetLanguageChange = useCallback(async (language: SupportedLanguage) => {
@@ -1076,6 +1290,23 @@ export const MeetingShell: React.FC<MeetingShellProps> = ({
     syncLocalMediaState,
     handleMediaFailure,
   ]);
+  handleToggleMicRef.current = handleToggleMic;
+
+  const handlePushToTalk = useCallback((active: boolean) => {
+    if (active) {
+      if (!localMediaState.micEnabled) {
+        setIsPushToTalkActive(true);
+        void handleToggleMic();
+      }
+    } else {
+      if (isPushToTalkActive) {
+        setIsPushToTalkActive(false);
+        if (localMediaState.micEnabled) {
+          void handleToggleMic();
+        }
+      }
+    }
+  }, [localMediaState.micEnabled, handleToggleMic, isPushToTalkActive]);
 
   const handleToggleCamera = useCallback(async () => {
     if (!localParticipant) return;
@@ -1165,13 +1396,33 @@ export const MeetingShell: React.FC<MeetingShellProps> = ({
   const handleRetryConnection = () => {
     setConnectionError(null);
     meetingStorage.clearSession(session.meetingCode);
-    window.location.assign(`/join/${session.meetingCode}`);
+    window.location.assign(`/meeting/${session.meetingCode}`);
   };
 
   const handleOpenPostMeeting = () => {
     stopMeetingRecording();
     setIsPostMeetingOpen(true);
   };
+
+  const handleEmptyCallTimeoutLeave = useCallback(() => {
+    try {
+      stopMeetingRecording();
+    } catch {
+      // ignore
+    }
+    setIsEmptyCallTimeoutOpen(false);
+    try {
+      room.disconnect();
+    } catch {
+      // ignore
+    }
+    onLeaveRoom();
+  }, [onLeaveRoom, room, stopMeetingRecording]);
+
+  const handleEmptyCallTimeoutStay = useCallback(() => {
+    setIsEmptyCallTimeoutOpen(false);
+    aloneStartTimeRef.current = Date.now();
+  }, []);
 
   const handleSelectLayout = (mode: LayoutMode) => {
     setLayoutMode(mode);
@@ -1186,21 +1437,88 @@ export const MeetingShell: React.FC<MeetingShellProps> = ({
     });
   };
 
-  const handleToggleSubtitlePanel = () => {
-    setIsSubtitlePanelOpen((prev) => {
-      const next = !prev;
-      if (next) setIsPeoplePanelOpen(false);
-      return next;
-    });
-  };
+  const participantLanguages = React.useMemo(() => {
+    const map: Record<string, SupportedLanguage | string> = {};
+    if (localParticipant?.identity) {
+      map[localParticipant.identity] = session.spokenLanguage;
+    }
+    if (localParticipant?.sid) {
+      map[localParticipant.sid] = session.spokenLanguage;
+    }
+    map[session.participantId] = session.spokenLanguage;
+    map[session.identity] = session.spokenLanguage;
+    map[session.displayName] = session.spokenLanguage;
 
-  const participants: Participant[] = Array.from<Participant>(room.remoteParticipants.values());
-  if (room.localParticipant) {
-    participants.unshift(room.localParticipant);
-  }
+    for (const item of subtitleHistory) {
+      if (item.sourceLanguage) {
+        if (item.participantId) map[item.participantId] = item.sourceLanguage;
+        if (item.participantName) map[item.participantName] = item.sourceLanguage;
+      }
+    }
+    return map;
+  }, [
+    localParticipant?.identity,
+    localParticipant?.sid,
+    session.spokenLanguage,
+    session.participantId,
+    session.identity,
+    session.displayName,
+    subtitleHistory,
+  ]);
+
+  const handleToggleShowOriginal = useCallback(() => {
+    handleSidecarPreferencesChange({
+      ...sidecarPreferences,
+      showOriginal: !sidecarPreferences.showOriginal,
+    });
+  }, [handleSidecarPreferencesChange, sidecarPreferences]);
+
+  // Google Meet signature empty room timeout prompt (2min countdown when alone)
+  useEffect(() => {
+    if (participants.length <= 1 && connectionState === ConnectionState.Connected) {
+      if (aloneStartTimeRef.current === null) {
+        aloneStartTimeRef.current = Date.now();
+      }
+      const emptyTimeoutMs = Number(import.meta.env.VITE_EMPTY_ROOM_TIMEOUT_MS) || 5 * 60 * 1000;
+      const checkInterval = setInterval(() => {
+        if (aloneStartTimeRef.current && Date.now() - aloneStartTimeRef.current >= emptyTimeoutMs) {
+          setIsEmptyCallTimeoutOpen(true);
+        }
+      }, 1000);
+      return () => clearInterval(checkInterval);
+    } else {
+      aloneStartTimeRef.current = null;
+      setIsEmptyCallTimeoutOpen(false);
+    }
+  }, [participants.length, connectionState]);
+
+  // Google Meet signature hand lowering prompt when user starts speaking
+  useEffect(() => {
+    const isHandRaised = raisedHands.has(localParticipant?.identity || session.identity);
+    if (!isHandRaised) {
+      setShowHandLowerPrompt(false);
+      return;
+    }
+
+    if (isLocalSpeaking && !showHandLowerPrompt) {
+      const timer = setTimeout(() => {
+        setShowHandLowerPrompt(true);
+      }, 1500);
+      return () => clearTimeout(timer);
+    }
+  }, [isLocalSpeaking, raisedHands, localParticipant?.identity, session.identity, showHandLowerPrompt]);
+
+  useEffect(() => {
+    if (!showHandLowerPrompt) return;
+    const timer = setTimeout(() => {
+      handleToggleRaiseHand();
+      setShowHandLowerPrompt(false);
+    }, 6000);
+    return () => clearTimeout(timer);
+  }, [showHandLowerPrompt, handleToggleRaiseHand]);
 
   return (
-    <div className="h-screen w-screen bg-slate-950 text-slate-100 flex flex-col overflow-hidden relative font-sans">
+    <div className="meeting-shell bg-slate-950 text-slate-100 flex flex-col overflow-hidden relative font-sans">
       {/* Diagnostics Overlay */}
       {enableWebRtcDebug && <WebRtcDiagnostics />}
 
@@ -1209,10 +1527,11 @@ export const MeetingShell: React.FC<MeetingShellProps> = ({
         meetingCode={session.meetingCode}
         connectionState={connectionState}
         isHost={session.role === 'host'}
-        onOpenAdmission={() => setIsDetailsOpen(true)}
         branding={branding}
         isRecording={isRecording}
         isE2eeEnabled={sidecarPreferences.e2eeEnabled}
+        numParticipants={participants.length}
+        userDisplayName={session.displayName}
         isProPlan={isProPlan}
         timeRemainingSeconds={timeRemainingSeconds}
         onOpenUpgradeModal={handleOpenUpgradeModal}
@@ -1221,7 +1540,7 @@ export const MeetingShell: React.FC<MeetingShellProps> = ({
       {/* Connecting / Reconnecting Status Banner */}
       {isRoomConnecting && (
         <div className="absolute top-14 inset-x-0 z-30 flex justify-center pointer-events-none">
-          <div className="mt-2 px-4 py-2 rounded-2xl bg-amber-600/90 backdrop-blur-md text-white text-xs font-semibold flex items-center gap-2 shadow-lg">
+          <div className="mt-2 px-4 py-2 rounded-xl bg-amber-600 border border-amber-500 text-white text-xs font-semibold flex items-center gap-2 shadow-lg">
             <span className="w-2 h-2 rounded-full bg-white animate-pulse" />
             {connectionState === ConnectionState.Reconnecting
               ? 'Đang kết nối lại tới phòng họp...'
@@ -1230,43 +1549,114 @@ export const MeetingShell: React.FC<MeetingShellProps> = ({
         </div>
       )}
 
+      <div className="meeting-display-status" role="status">
+        {!display.online ? 'Mất mạng — đang chờ kết nối lại' : display.wakeStatus === 'active' ? 'Giữ màn hình sáng' : 'Nếu màn hình tự khóa, hãy chạm để tiếp tục cuộc họp'}
+      </div>
       <AiReadinessBanner state={aiReadiness.state} onRetry={aiReadiness.retry} />
 
       {/* Main Stage & Right Panel Drawer Container */}
-      <div className="flex-1 flex overflow-hidden relative">
+      <div className="meeting-workspace flex-1 min-h-0 flex overflow-hidden relative">
         <main className="flex-1 h-full relative overflow-hidden flex flex-col">
-          <MeetingStage
-            layoutMode={layoutMode}
-            meetingCode={session.meetingCode}
-            pipelineStatuses={pipelineStatuses}
-            raisedHands={raisedHands}
-          />
+          <div className="flex-1 min-h-0 relative overflow-hidden">
+            <MeetingStage
+              layoutMode={layoutMode}
+              meetingCode={session.meetingCode}
+              pipelineStatuses={pipelineStatuses}
+              raisedHands={raisedHands}
+              participantLanguages={participantLanguages}
+              isInfoCardOpen={isInfoCardOpen}
+              onToggleInfoCard={() => setIsInfoCardOpen((v) => !v)}
+              userEmailOrName={session.displayName || session.participantId}
+              pinnedParticipantId={pinnedParticipantId}
+              onTogglePin={handleTogglePinParticipant}
+            />
+          </div>
 
           <SubtitleOverlay
-            subtitle={activeSubtitle}
+            subtitle={remoteActiveSubtitle}
             recentSubtitles={subtitleHistory}
-            pipelineStatuses={pipelineStatuses}
+            pipelineStatuses={remotePipelineStatuses}
             showOriginal={sidecarPreferences.showOriginal}
+            targetLanguage={subtitleTargetLanguage}
+            onTargetLanguageChange={handleTargetLanguageChange}
+            onToggleShowOriginal={handleToggleShowOriginal}
+            isCaptionsOn={isCaptionsOn}
+            onOpenSettings={() => setIsSettingsOpen(true)}
+            currentUserId={session.participantId}
+            currentUserDisplayName={session.displayName}
+            localIdentity={localParticipant?.identity}
           />
 
           {/* Floating Reactions Overlay */}
           <FloatingReactionsOverlay reactions={reactions} />
         </main>
 
-        {/* Right Participants Side Drawer */}
-        {isPeoplePanelOpen && (
+        {/* One responsive panel for every collaboration tool. */}
+        {activeSidePanel !== 'none' && (
+          <AdaptiveDialog docked label="Công cụ cuộc họp" onClose={() => setActiveSidePanel('none')} className="meeting-panel">
+            <nav className="meeting-panel-tabs" aria-label="Công cụ cuộc họp">
+              {([
+                ['people', 'Mọi người'], ['chat', 'Chat'], ['subtitles', 'Trợ lý AI'],
+                ['activities', 'Hoạt động'], ...(isHost ? [['host_controls', 'Chủ phòng']] : []),
+              ] as [ActiveSidePanel, string][]).map(([id, label]) => (
+                <button type="button" key={id} aria-pressed={activeSidePanel === id} onClick={() => setActiveSidePanel(id)}>{label}</button>
+              ))}
+            </nav>
+            <div className="meeting-panel-body">
+        {activeSidePanel === 'people' && (
           <ParticipantsPanel
             participants={participants}
             raisedHands={raisedHands}
-            onClose={() => setIsPeoplePanelOpen(false)}
+            onClose={() => setActiveSidePanel('none')}
+            participantLanguages={participantLanguages}
+            isHost={session.role === 'host'}
+            meetingCode={session.meetingCode}
+            hostToken={effectiveHostToken}
+            pendingAdmissions={pendingAdmissions}
+            onDecideAdmission={handleDecideAdmission}
+            onApproveAllAdmissions={handleApproveAllAdmissions}
+            onMuteAll={handleHostMuteAll}
+          />
+        )}
+
+        {activeSidePanel === 'chat' && (
+          <ChatPanel
+            messages={chatMessages}
+            onSendMessage={handleSendChatMessage}
+            currentUserId={session.participantId}
+            isHost={session.role === 'host'}
+            onClose={() => setActiveSidePanel('none')}
+          />
+        )}
+
+        {activeSidePanel === 'activities' && (
+          <ActivitiesPanel
+            onClose={() => setActiveSidePanel('none')}
+            onOpenSubtitles={() => setActiveSidePanel('subtitles')}
+            onOpenMinutes={() => setActiveSidePanel('subtitles')}
+            onToggleRecording={handleToggleRecording}
+            isRecording={isRecording}
+            onToggleAudioBooth={handleToggleAudioBooth}
+            isAudioBoothActive={sidecarPreferences.audioBooth}
+          />
+        )}
+
+        {activeSidePanel === 'host_controls' && (
+          <HostControlsPanel
+            onClose={() => setActiveSidePanel('none')}
+            isHost={session.role === 'host'}
+            onOpenAdmission={() => setActiveSidePanel('people')}
+            meetingCode={session.meetingCode}
           />
         )}
 
         <SubtitlePanel
+          key={sidecarTab}
+          initialTab={sidecarTab}
           history={subtitleHistory}
           getExportHistory={getExportHistory}
-          isOpen={isSubtitlePanelOpen}
-          onClose={() => setIsSubtitlePanelOpen(false)}
+          isOpen={activeSidePanel === 'subtitles'}
+          onClose={() => setActiveSidePanel('none')}
           chatMessages={chatMessages}
           onSendChatMessage={handleSendChatMessage}
           currentUserId={session.participantId}
@@ -1279,6 +1669,9 @@ export const MeetingShell: React.FC<MeetingShellProps> = ({
           languageError={subtitleLanguageError}
           branding={branding}
         />
+            </div>
+          </AdaptiveDialog>
+        )}
       </div>
 
       {isFloatingSubtitleActive && sidecarPreferences.floatingSubtitleWidget && (
@@ -1303,7 +1696,18 @@ export const MeetingShell: React.FC<MeetingShellProps> = ({
         onToggleScreenShare={handleToggleScreenShare}
         onLeaveRoom={handleOpenPostMeeting}
         onOpenPeoplePanel={handleTogglePeoplePanel}
-        onToggleSubtitlePanel={handleToggleSubtitlePanel}
+        onToggleSubtitlePanel={() => setIsCaptionsOn((current) => !current)}
+        onOpenLanguage={() => setIsLanguageOpen(true)}
+        onOpenMeetingInfo={() => setIsInfoCardOpen(true)}
+        onOpenSubtitleHistory={() => { setSidecarTab('all'); setActiveSidePanel('subtitles'); }}
+        onOpenActions={() => {
+          handleSidecarPreferencesChange({ ...sidecarPreferences, showActions: true });
+          setSidecarTab('actions'); setActiveSidePanel('subtitles');
+        }}
+        onOpenRecap={() => {
+          handleSidecarPreferencesChange({ ...sidecarPreferences, showRecap: true });
+          setSidecarTab('recap'); setActiveSidePanel('subtitles');
+        }}
         onOpenSettings={() => setIsSettingsOpen(true)}
         onOpenLayoutMenu={() => setIsLayoutMenuOpen(true)}
         isSubtitlePanelOpen={isSubtitlePanelOpen}
@@ -1320,6 +1724,113 @@ export const MeetingShell: React.FC<MeetingShellProps> = ({
         isFloatingSubtitleEnabled={sidecarPreferences.floatingSubtitleWidget}
         isFloatingSubtitleActive={isFloatingSubtitleActive}
         onToggleFloatingSubtitle={handleToggleFloatingSubtitle}
+        spokenLanguage={session.spokenLanguage}
+        targetLanguage={subtitleTargetLanguage}
+        isPeoplePanelOpen={isPeoplePanelOpen}
+        activeSidePanel={activeSidePanel}
+        onToggleChatPanel={() => setActiveSidePanel((c) => c === 'chat' ? 'none' : 'chat')}
+        onToggleActivitiesPanel={() => setActiveSidePanel((c) => c === 'activities' ? 'none' : 'activities')}
+        onToggleHostControlsPanel={() => setActiveSidePanel((c) => c === 'host_controls' ? 'none' : 'host_controls')}
+        isCaptionsActive={isCaptionsOn}
+        isHost={session.role === 'host'}
+        pendingAdmissionsCount={pendingAdmissions.length}
+        onPushToTalk={handlePushToTalk}
+        unreadChatCount={unreadChatCount}
+      />
+
+      {/* Push-to-Talk Floating Indicator (Zoom & Meet style) */}
+      {isPushToTalkActive && (
+        <div className="fixed bottom-20 left-1/2 -translate-x-1/2 z-50 bg-emerald-600 border border-emerald-400 text-white text-xs font-semibold px-4 py-2 rounded-full shadow-2xl flex items-center gap-2 animate-pulse pointer-events-none select-none">
+          <Mic className="w-4 h-4 animate-bounce" />
+          <span>Đang giữ phím Space để nói — Nhả phím để tắt mic</span>
+        </div>
+      )}
+
+      {/* Google Meet style Waiting Room Knock Notification with Bell Chime */}
+      {isHost && latestKnockRequest && activeSidePanel !== 'people' && (
+        <div
+          role="alertdialog"
+          aria-label="Yêu cầu tham gia cuộc họp"
+          className="fixed top-16 right-4 z-50 w-[calc(100%-2rem)] max-w-sm rounded-xl bg-slate-900 border border-slate-800 p-4 shadow-2xl text-slate-100 space-y-3"
+        >
+          <div className="flex items-start gap-3">
+            <div className="w-9 h-9 rounded-full bg-amber-500/20 border border-amber-500/40 text-amber-300 flex items-center justify-center shrink-0">
+              <BellRing className="w-4 h-4 animate-bounce" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-1.5">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-amber-400">
+                  Có người chờ duyệt vào phòng
+                </span>
+                {visibleKnockRequests.length > 1 && (
+                  <span className="px-1.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 text-[10px] font-bold">
+                    +{visibleKnockRequests.length - 1} khác
+                  </span>
+                )}
+              </div>
+              <p className="mt-1 text-xs font-medium text-white flex items-center gap-1.5 flex-wrap">
+                <CountryFlag code={latestKnockRequest.spokenLanguage || 'vi'} size="xs" />
+                <strong className="font-bold text-sky-300 truncate max-w-[160px]">
+                  {latestKnockRequest.displayName}
+                </strong>
+                <span>muốn tham gia cuộc họp này</span>
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center justify-end gap-2 pt-1 border-t border-slate-800">
+            <button
+              type="button"
+              onClick={() => {
+                setActiveSidePanel('people');
+              }}
+              className="mr-auto text-[11px] font-semibold text-zinc-400 hover:text-zinc-200 transition cursor-pointer"
+            >
+              Xem danh sách ({pendingAdmissions.length})
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setDismissedKnockIds((prev) => [...prev, latestKnockRequest.admissionId]);
+                void handleDecideAdmission(latestKnockRequest.admissionId, 'rejected');
+              }}
+              className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-red-950/40 text-slate-300 hover:text-red-300 border border-slate-700 hover:border-red-600/50 text-xs font-medium transition cursor-pointer"
+            >
+              Từ chối
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setDismissedKnockIds((prev) => [...prev, latestKnockRequest.admissionId]);
+                void handleDecideAdmission(latestKnockRequest.admissionId, 'approved');
+              }}
+              className="px-3.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold shadow-sm transition cursor-pointer"
+            >
+              Chấp nhận
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Google Meet signature speech-detected hand lowering toast (media_1791225242514.png) */}
+      {showHandLowerPrompt && (
+        <div className="fixed bottom-16 left-4 z-40 bg-[#28292a] border border-zinc-700/80 text-zinc-100 text-xs px-4 py-3 rounded-2xl shadow-2xl flex items-center gap-3 max-w-sm animate-in fade-in">
+          <span>Có vẻ như bạn đã nói điều gì đó nên yêu cầu phát biểu của bạn sẽ kết thúc.</span>
+          <button
+            type="button"
+            onClick={() => setShowHandLowerPrompt(false)}
+            className="text-sky-400 hover:text-sky-300 font-semibold whitespace-nowrap cursor-pointer"
+          >
+            Tiếp tục giơ tay phát biểu
+          </button>
+        </div>
+      )}
+
+      {/* Google Meet signature empty room timeout modal (media_1791224986153.png) */}
+      <EmptyCallTimeoutModal
+        isOpen={isEmptyCallTimeoutOpen}
+        onStay={handleEmptyCallTimeoutStay}
+        onLeave={handleEmptyCallTimeoutLeave}
       />
 
       {/* Pure Audio Renderer for LiveKit WebRTC Audio Streams (no useTracks dependency) */}
@@ -1335,7 +1846,7 @@ export const MeetingShell: React.FC<MeetingShellProps> = ({
 
       {/* Audio Booth Quick Toast */}
       {audioBoothToast && (
-        <div className="fixed bottom-20 left-1/2 -translate-x-1/2 z-50 bg-slate-850/95 border border-sky-500/50 text-slate-100 text-xs px-4 py-2.5 rounded-2xl shadow-2xl flex items-center gap-2 max-w-md pointer-events-none transition-all">
+        <div className="fixed bottom-20 left-1/2 -translate-x-1/2 z-50 bg-[#1e2025] border border-[#353942] text-zinc-100 text-xs px-4 py-2.5 rounded-xl shadow-2xl flex items-center gap-2 max-w-md pointer-events-none transition-all">
           <span className="text-sky-400 font-bold">🎧 Audio Booth:</span>
           <span>{audioBoothToast}</span>
         </div>
@@ -1345,7 +1856,7 @@ export const MeetingShell: React.FC<MeetingShellProps> = ({
         <div
           role="alert"
           aria-live="assertive"
-          className="fixed bottom-24 left-1/2 z-[90] flex w-[calc(100%-2rem)] max-w-md -translate-x-1/2 items-start gap-3 rounded-xl border border-amber-400/50 bg-amber-950/95 px-4 py-3 text-sm text-amber-100 shadow-2xl"
+          className="fixed bottom-24 left-1/2 z-[90] flex w-[calc(100%-2rem)] max-w-md -translate-x-1/2 items-start gap-3 rounded-xl border border-amber-500 bg-[#251808] px-4 py-3 text-sm text-amber-100 shadow-2xl"
         >
           <span aria-hidden="true">⏳</span>
           <span className="flex-1">{meetingLimitWarning}</span>
@@ -1361,13 +1872,13 @@ export const MeetingShell: React.FC<MeetingShellProps> = ({
       )}
 
       {recordingError && (
-        <div role="alert" className="fixed bottom-24 left-1/2 z-50 flex max-w-sm -translate-x-1/2 items-center gap-3 rounded-2xl border border-red-500/40 bg-slate-900/95 px-4 py-3 text-xs text-slate-200 shadow-xl">
+        <div role="alert" className="fixed bottom-24 left-1/2 z-50 flex max-w-sm -translate-x-1/2 items-center gap-3 rounded-xl border border-rose-500/50 bg-[#201214] px-4 py-3 text-xs text-rose-100 shadow-xl">
           <span>{recordingError}</span>
           <button
             type="button"
             onClick={() => setRecordingError(null)}
             aria-label="Đóng thông báo ghi hình"
-            className="ml-auto text-slate-400 transition hover:text-white"
+            className="ml-auto text-rose-300 transition hover:text-white"
           >
             ×
           </button>
@@ -1408,6 +1919,15 @@ export const MeetingShell: React.FC<MeetingShellProps> = ({
       )}
 
       {/* Dialog Modals */}
+      {isLanguageOpen && <MeetingLanguageDialog
+        spokenLanguage={session.spokenLanguage}
+        targetLanguage={subtitleTargetLanguage}
+        updating={isUpdatingSubtitleLanguage}
+        error={subtitleLanguageError}
+        onTargetChange={handleTargetLanguageChange}
+        onClose={() => setIsLanguageOpen(false)}
+        onRejoin={onLeaveRoom}
+      />}
       {isLayoutMenuOpen && (
         <ChangeLayoutDialog
           currentLayout={layoutMode}
@@ -1419,17 +1939,10 @@ export const MeetingShell: React.FC<MeetingShellProps> = ({
       {isSettingsOpen && (
         <MeetingSettingsDialog
           onClose={() => setIsSettingsOpen(false)}
+          meetingId={session.meetingId}
+          meetingCode={session.meetingCode}
           sidecarPreferences={sidecarPreferences}
           onSidecarPreferencesChange={handleSidecarPreferencesChange}
-        />
-      )}
-
-      {isDetailsOpen && (
-        <MeetingDetailsDialog
-          meetingCode={session.meetingCode}
-          role={session.role}
-          hostToken={session.hostToken}
-          onClose={() => setIsDetailsOpen(false)}
         />
       )}
 
@@ -1453,6 +1966,7 @@ export const MeetingShell: React.FC<MeetingShellProps> = ({
         isOpen={isPostMeetingOpen}
         meetingCode={session.meetingCode}
         recap={postMeetingRecap}
+        history={subtitleHistory}
         branding={branding}
         recordingDownloadUrl={recordingDownloadUrl}
         onClose={() => setIsPostMeetingOpen(false)}

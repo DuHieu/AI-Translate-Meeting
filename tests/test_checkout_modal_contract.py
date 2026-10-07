@@ -23,6 +23,12 @@ def test_billing_api_exposes_payment_order_contract() -> None:
         "accountNumber: string",
         "accountName: string",
         "createdAt: string",
+        "customerEmail?: string | null",
+        "customerName?: string | null",
+        "userId?: string | null",
+        "planId?: string",
+        "paidAt?: string | null",
+        "subscriptionExpiresAt?: string | null",
     ):
         assert field in source
 
@@ -31,6 +37,9 @@ def test_billing_api_exposes_payment_order_contract() -> None:
     assert "/api/billing/create-order" in source
     assert "async getPaymentOrder(orderCode: string)" in source
     assert "/api/billing/order/${encodeURIComponent(orderCode.trim())}" in source
+    assert "export interface AccountSubscriptionResponse" in source
+    assert "async getAccountSubscription(email: string)" in source
+    assert "/api/billing/subscription?${query.toString()}" in source
 
 
 def test_checkout_modal_supports_vietqr_and_pending_order_polling() -> None:
@@ -48,10 +57,16 @@ def test_checkout_modal_supports_vietqr_and_pending_order_polling() -> None:
     assert "meetingApi.createPaymentOrder" in source
     assert "meetingApi.getPaymentOrder" in source
     assert "2_500" in source
-    assert "order.status.toLowerCase() !== 'pending'" in source
-    assert "latest.status.toLowerCase() === 'paid'" in source
+    assert "status !== 'pending'" in source
+    assert "status === 'paid'" in source
     assert "onPaymentSuccess?.()" in source
-    assert "Thanh toán thành công! Gói Pro đã được kích hoạt" in source
+    assert "createPortal" in source
+    assert "useAuth" in source
+    assert "useLanguage" in source
+    assert "if (!user?.email) return" in source
+    assert "layameet:pending-checkout-plan" in source
+    assert "signInWithGoogle" in source
+    assert "Pro Unlimited đã được kích hoạt" in source
     assert "src={order.qrUrl}" in source
     for label in (
         "Ngân hàng",
@@ -62,8 +77,9 @@ def test_checkout_modal_supports_vietqr_and_pending_order_polling() -> None:
     ):
         assert label in source
     assert "navigator.clipboard.writeText" in source
-    assert "99.000đ / tháng" in source
-    assert "Gói LayaMeet Pro 1 Tháng" in source
+    assert "99.000đ · $4.99" in source
+    assert "948.000đ · $47.88" in source
+    assert "'pro_annual'" in source
 
 
 def test_checkout_modal_is_wired_into_meeting_and_pricing() -> None:
@@ -82,4 +98,6 @@ def test_checkout_modal_is_wired_into_meeting_and_pricing() -> None:
     assert "tier.id === 'pro'" in pricing_section
     assert "setIsCheckoutOpen(true)" in pricing_section
     assert "<CheckoutModal" in pricing_section
-    assert "initialPlanId=\"pro\"" in pricing_section
+    assert "initialPlanId={isAnnual ? 'pro_annual' : 'pro'}" in pricing_section
+    assert "meetingApi.getAccountSubscription(user.email)" in pricing_section
+    assert "layameet:pending-checkout-plan" in pricing_section

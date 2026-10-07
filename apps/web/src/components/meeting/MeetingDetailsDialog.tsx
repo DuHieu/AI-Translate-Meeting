@@ -1,7 +1,11 @@
+import { copyText } from '../../utils/clipboard';
+import { AdaptiveDialog } from '../common/AdaptiveDialog';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { X, Copy, Check, Info, UserCheck, UserX } from 'lucide-react';
 import { meetingApi } from '../../api/meetingApi';
 import { AdmissionRequest, InviteResponse } from '../../types/meeting';
+import { MeetingLinkPreviewCard } from './MeetingLinkPreviewCard';
+import { CountryFlag } from '../common/CountryFlag';
 
 interface MeetingDetailsDialogProps {
   meetingCode: string;
@@ -23,6 +27,10 @@ export const MeetingDetailsDialog: React.FC<MeetingDetailsDialogProps> = ({
   const [error, setError] = useState<string | null>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
 
+  const inviteUrl = typeof window !== 'undefined'
+    ? `${window.location.origin}/meeting/${meetingCode}`
+    : `https://layameet.com/meeting/${meetingCode}`;
+
   useEffect(() => {
     closeButtonRef.current?.focus();
   }, []);
@@ -42,9 +50,8 @@ export const MeetingDetailsDialog: React.FC<MeetingDetailsDialogProps> = ({
     return () => window.clearInterval(timer);
   }, [loadAdmissions]);
 
-  const handleCopy = () => {
-    const text = `Tham gia phòng họp LayaMeet (layameet.com)\nMã phòng: ${meetingCode}`;
-    navigator.clipboard.writeText(text);
+  const handleCopy = async () => {
+    if (!(await copyText(inviteUrl))) { setError(`Không thể sao chép tự động. Đường dẫn: ${inviteUrl}`); return; }
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
@@ -64,7 +71,7 @@ export const MeetingDetailsDialog: React.FC<MeetingDetailsDialogProps> = ({
 
   const handleCopyInvite = async () => {
     if (!invite) return;
-    await navigator.clipboard.writeText(invite.token);
+    if (!(await copyText(invite.token))) { setError('Không thể sao chép tự động. Hãy chọn invite hiển thị để sao chép.'); return; }
     setCopied(true);
     window.setTimeout(() => setCopied(false), 2000);
   };
@@ -81,11 +88,8 @@ export const MeetingDetailsDialog: React.FC<MeetingDetailsDialogProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
+    <AdaptiveDialog label="Thông tin cuộc họp và lời mời" onClose={onClose} className="meeting-details-dialog">
       <div
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="meeting-details-title"
         className="bg-slate-900 border border-slate-800 rounded-3xl max-w-md w-full max-h-[90vh] overflow-y-auto p-6 shadow-2xl space-y-6"
       >
         <div className="flex items-center justify-between border-b border-slate-800 pb-4">
@@ -146,7 +150,10 @@ export const MeetingDetailsDialog: React.FC<MeetingDetailsDialogProps> = ({
                   <div key={item.admissionId} className="flex items-center gap-2 p-3 rounded-xl bg-slate-800 border border-slate-700">
                     <div className="min-w-0 flex-1">
                       <div className="text-sm text-white truncate">{item.displayName}</div>
-                      <div className="text-[11px] text-slate-400">{item.spokenLanguage} → {item.targetLanguage}</div>
+                      <div className="flex items-center gap-1.5 text-[11px] text-slate-400">
+                        <CountryFlag code={item.spokenLanguage || 'vi'} size="xs" />
+                        <span>{item.spokenLanguage ? item.spokenLanguage.toUpperCase() : 'VI'}</span>
+                      </div>
                     </div>
                     <button
                       type="button"
@@ -181,33 +188,32 @@ export const MeetingDetailsDialog: React.FC<MeetingDetailsDialogProps> = ({
             </div>
           )}
 
-        <div className="space-y-4">
-          <div>
-            <label className="block text-xs font-medium text-slate-400 mb-1">Joining Code</label>
-            <div className="p-3 bg-slate-800 border border-slate-700 rounded-xl text-lg font-mono font-bold text-sky-400 text-center tracking-widest uppercase">
-              {meetingCode}
-            </div>
-          </div>
+        <div className="space-y-3">
+          <MeetingLinkPreviewCard
+            url={inviteUrl}
+            meetingCode={meetingCode}
+            interactive={false}
+          />
 
           <button
             type="button"
             onClick={handleCopy}
-            className="w-full py-3.5 bg-sky-600 hover:bg-sky-500 text-white font-semibold rounded-xl transition flex items-center justify-center gap-2 shadow-lg shadow-sky-600/20"
+            className="w-full py-2.5 bg-sky-600 hover:bg-sky-500 text-white text-xs sm:text-sm font-semibold rounded-xl transition flex items-center justify-center gap-2 shadow-lg shadow-sky-600/20 cursor-pointer"
           >
             {copied ? (
               <>
-                <Check className="w-5 h-5 text-emerald-300" />
-                <span>Copied Joining Info!</span>
+                <Check className="w-4 h-4 text-emerald-300" />
+                <span>Đã sao chép đường dẫn tham gia</span>
               </>
             ) : (
               <>
-                <Copy className="w-5 h-5" />
-                <span>Copy Joining Info</span>
+                <Copy className="w-4 h-4" />
+                <span>Sao chép đường dẫn tham gia</span>
               </>
             )}
           </button>
         </div>
       </div>
-    </div>
+    </AdaptiveDialog>
   );
 };

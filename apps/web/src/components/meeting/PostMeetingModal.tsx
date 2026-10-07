@@ -1,14 +1,20 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { CheckCircle2, Copy, Download, ListTodo, LogOut, Save, Share2, Video, X } from 'lucide-react';
-import { meetingApi } from '../../api/meetingApi';
+import { CheckCircle2, Copy, Download, FileDown, ListTodo, LogOut, Sparkles, Video, X } from 'lucide-react';
+import { meetingApi, setCachedMeetingMinutes } from '../../api/meetingApi';
 import type { BrandingConfigDto } from '../../api/meetingApi';
 import type { SaveMeetingMinutesRequest } from '../../types/meeting';
 import type { GeneratedRecap } from '../../utils/aiRecapEngine';
+import type { SubtitleMessage } from '../../types/subtitle';
+import { buildTranscriptMarkdown, toMeetingTranscript } from '../../utils/meetingMinutes';
+import { exportBrandedMeetingPdf } from '../../utils/brandedPdfExport';
+import { meetingStorage } from '../../utils/meetingStorage';
+import { WorkflowSyncPanel } from './WorkflowSyncPanel';
 
 interface PostMeetingModalProps {
   isOpen: boolean;
   meetingCode: string;
   recap: GeneratedRecap;
+  history: SubtitleMessage[];
   branding: BrandingConfigDto;
   recordingDownloadUrl?: string | null;
   onClose: () => void;
@@ -19,6 +25,7 @@ function buildMarkdown(
   meetingCode: string,
   recap: GeneratedRecap,
   branding: BrandingConfigDto,
+  history: SubtitleMessage[],
 ): string {
   const actions = recap.actionItems.length
     ? recap.actionItems.map((item) => {
@@ -31,6 +38,7 @@ function buildMarkdown(
       })
     : ['- Không có action item.'];
 
+  const transcript = toMeetingTranscript(history);
   return [
     `# ${branding.brandName} — Biên bản cuộc họp ${meetingCode}`,
     '',
@@ -46,6 +54,7 @@ function buildMarkdown(
     '',
     '## Action items',
     ...actions,
+    ...buildTranscriptMarkdown(transcript),
     '',
     '---',
     '_Biên bản cuộc họp được tổng hợp & dịch tự động bởi [LayaMeet AI](https://layameet.com) — Nền tảng họp trực tuyến xóa bỏ rào cản ngôn ngữ._',
@@ -56,6 +65,7 @@ export const PostMeetingModal: React.FC<PostMeetingModalProps> = ({
   isOpen,
   meetingCode,
   recap,
+  history,
   branding,
   recordingDownloadUrl,
   onClose,
@@ -64,16 +74,57 @@ export const PostMeetingModal: React.FC<PostMeetingModalProps> = ({
   const modalRef = useRef<HTMLDivElement>(null);
   const closeRef = useRef<HTMLButtonElement>(null);
   const [status, setStatus] = useState<{ kind: 'success' | 'error'; message: string } | null>(null);
-  const [isSaving, setIsSaving] = useState(false);
+
+  const _getPublicRecapUrl = () => new URL(`/recap/${encodeURIComponent(meetingCode)}`, window.location.origin).toString();
+
   const markdownContent = useMemo(
-    () => buildMarkdown(meetingCode, recap, branding),
-    [branding, meetingCode, recap],
+    () => buildMarkdown(meetingCode, recap, branding, history),
+    [branding, history, meetingCode, recap],
   );
+
+  const savePayload = useMemo<SaveMeetingMinutesRequest>(() => ({
+    title: `${branding.brandName} — Biên bản cuộc họp ${meetingCode}`,
+    summary: recap.executiveHighlights.join('\n'),
+    markdownContent,
+    decisions: recap.decisions,
+    actionItems: recap.actionItems,
+    transcript: toMeetingTranscript(history),
+  }), [branding.brandName, history, markdownContent, meetingCode, recap.actionItems, recap.decisions, recap.executiveHighlights]);
 
   useEffect(() => {
     if (!isOpen) return;
     const previouslyFocused = document.activeElement as HTMLElement | null;
     setStatus(null);
+
+    const now = new Date().toISOString();
+    setCachedMeetingMinutes(meetingCode, {
+      id: `local-${meetingCode.toUpperCase()}`,
+      meetingCode: meetingCode.toUpperCase(),
+      title: savePayload.title,
+      summary: savePayload.summary,
+      markdownContent: savePayload.markdownContent,
+      decisions: savePayload.decisions ?? [],
+      actionItems: savePayload.actionItems ?? [],
+      createdAt: now,
+      transcript: savePayload.transcript,
+    });
+
+    meetingStorage.addLocalHistory({
+      meetingId: '',
+      meetingCode: meetingCode.toUpperCase(),
+      name: `Cuộc họp ${meetingCode.toUpperCase()}`,
+      createdAt: now,
+      endedAt: now,
+      hasMinutes: true,
+      title: savePayload.title,
+      summaryExcerpt: savePayload.summary.split('\n')[0]?.substring(0, 100) || '',
+      participantCount: 0,
+    });
+
+    meetingApi.saveMeetingMinutes(meetingCode, savePayload).catch(err => {
+      console.error('Failed to save meeting minutes to cloud:', err);
+    });
+
     closeRef.current?.focus();
 
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -99,24 +150,16 @@ export const PostMeetingModal: React.FC<PostMeetingModalProps> = ({
       document.removeEventListener('keydown', handleKeyDown);
       previouslyFocused?.focus();
     };
-  }, [isOpen, onClose]);
+  }, [isOpen, meetingCode, onClose, savePayload]);
 
   if (!isOpen) return null;
-
-  const savePayload: SaveMeetingMinutesRequest = {
-    title: `${branding.brandName} — Biên bản cuộc họp ${meetingCode}`,
-    summary: recap.executiveHighlights.join('\n'),
-    markdownContent,
-    decisions: recap.decisions,
-    actionItems: recap.actionItems,
-  };
 
   const handleCopy = async () => {
     try {
       await navigator.clipboard.writeText(markdownContent);
-      setStatus({ kind: 'success', message: 'Đã sao chép biên bản.' });
+      setStatus({ kind: 'success', message: 'Đã sao chép biên bản tóm tắt vào clipboard.' });
     } catch {
-      setStatus({ kind: 'error', message: 'Không thể sao chép. Hãy thử tải file Markdown.' });
+      setStatus({ kind: 'error', message: 'Không thể sao chép. Hãy thử tải file.' });
     }
   };
 
@@ -127,152 +170,228 @@ export const PostMeetingModal: React.FC<PostMeetingModalProps> = ({
     link.download = `meeting-minutes-${meetingCode.toLowerCase()}.md`;
     link.click();
     URL.revokeObjectURL(url);
-    setStatus({ kind: 'success', message: 'Đã tải biên bản Markdown.' });
+    setStatus({ kind: 'success', message: 'Đã tải file Markdown (.md).' });
+    meetingApi.saveMeetingMinutes(meetingCode, savePayload).catch(() => {});
   };
 
-  const handleSave = async () => {
-    setIsSaving(true);
-    setStatus(null);
+  const handlePdfExport = async () => {
     try {
-      await meetingApi.saveMeetingMinutes(meetingCode, savePayload);
-      setStatus({ kind: 'success', message: 'Đã lưu biên bản lên máy chủ.' });
+      await exportBrandedMeetingPdf({
+        meetingCode,
+        title: savePayload.title,
+        createdAt: new Date().toISOString(),
+        executiveHighlights: recap.executiveHighlights,
+        decisions: recap.decisions,
+        actionItems: recap.actionItems,
+      }, branding);
+      setStatus({ kind: 'success', message: 'Đã mở giao diện in. Chọn “Save as PDF” để lưu file.' });
+      meetingApi.saveMeetingMinutes(meetingCode, savePayload).catch(() => {});
     } catch (error) {
-      setStatus({
-        kind: 'error',
-        message: error instanceof Error ? error.message : 'Không thể lưu biên bản lên máy chủ.',
-      });
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  const handleShareViral = async () => {
-    const highlights = recap.executiveHighlights.slice(0, 3).map((h) => `• ${h}`).join('\n');
-    const shareText = [
-      `📝 [TÓM TẮT BIÊN BẢN CUỘC HỌP ${meetingCode.toUpperCase()}]`,
-      '',
-      `✨ Điểm chính đã thống nhất:`,
-      highlights || '• Cuộc họp đã hoàn thành thành công.',
-      '',
-      recap.actionItems.length > 0
-        ? `📌 Việc cần làm: ${recap.actionItems.length} đầu việc đã được phân công.`
-        : '',
-      '',
-      `🚀 Biên bản được tổng hợp & dịch tự động bởi LayaMeet AI.`,
-      `👉 Trải nghiệm phòng họp trực tuyến dịch song ngữ thời gian thực miễn phí tại: https://layameet.com`,
-    ]
-      .filter(Boolean)
-      .join('\n');
-
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: `Biên bản cuộc họp ${meetingCode} - LayaMeet`,
-          text: shareText,
-          url: 'https://layameet.com',
-        });
-        setStatus({ kind: 'success', message: 'Đã mở giao diện chia sẻ.' });
-        return;
-      } catch {
-        // Fallback to clipboard if share was dismissed
-      }
-    }
-
-    try {
-      await navigator.clipboard.writeText(shareText);
-      setStatus({
-        kind: 'success',
-        message: 'Đã sao chép tóm tắt & link LayaMeet! Bạn có thể dán ngay vào Zalo/Slack.',
-      });
-    } catch {
-      setStatus({ kind: 'error', message: 'Không thể sao chép nội dung chia sẻ.' });
+      setStatus({ kind: 'error', message: error instanceof Error ? error.message : 'Không thể xuất PDF.' });
     }
   };
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 p-3 backdrop-blur-sm sm:p-6">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm sm:p-6">
       <div
         ref={modalRef}
         role="dialog"
         aria-modal="true"
         aria-labelledby="post-meeting-title"
-        className="flex max-h-[92vh] w-full max-w-4xl flex-col overflow-hidden rounded-2xl border border-zinc-700 bg-zinc-950 shadow-2xl"
+        className="post-meeting-dialog flex max-h-[calc(var(--app-height,100dvh)-2rem)] w-full max-w-3xl flex-col overflow-hidden rounded-2xl border border-[#3c4043] bg-[#202124] text-[#e8eaed] shadow-2xl"
       >
-        <header className="flex items-start justify-between border-b border-zinc-800 px-5 py-4 sm:px-6">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-wider text-sky-400">
-              {branding.brandName} · Post-meeting recap
-            </p>
-            <h2 id="post-meeting-title" className="mt-1 text-xl font-semibold text-white">
-              Biên bản cuộc họp {meetingCode}
-            </h2>
+        {/* Header */}
+        <header className="flex items-center justify-between border-b border-[#3c4043] px-6 py-4">
+          <div className="flex items-center gap-3">
+            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#8ab4f8]/15 text-[#8ab4f8]">
+              <Sparkles className="h-5 w-5" />
+            </div>
+            <div>
+              <h2 id="post-meeting-title" className="text-base font-semibold text-white">
+                Biên bản cuộc họp
+              </h2>
+              <p className="text-xs text-[#9aa0a6]">
+                Phòng: <span className="font-mono font-medium text-zinc-300">{meetingCode.toUpperCase()}</span> · {branding.brandName}
+              </p>
+            </div>
           </div>
-          <button ref={closeRef} type="button" onClick={onClose} aria-label="Đóng biên bản" className="rounded-lg p-2 text-zinc-400 hover:bg-zinc-800 hover:text-white focus:outline-none focus:ring-2 focus:ring-sky-500">
+          <button
+            ref={closeRef}
+            type="button"
+            onClick={onClose}
+            aria-label="Đóng"
+            className="rounded-full p-2 text-[#9aa0a6] hover:bg-[#3c4043] hover:text-white transition-colors focus:outline-none focus:ring-2 focus:ring-[#8ab4f8]"
+          >
             <X className="h-5 w-5" />
           </button>
         </header>
 
-        <div className="grid flex-1 gap-4 overflow-y-auto p-5 sm:p-6 lg:grid-cols-2">
+        {/* Body */}
+        <div className="flex-1 space-y-4 overflow-y-auto p-6">
+          {/* Recording Banner (if present) */}
           {recordingDownloadUrl && (
-            <section className="flex flex-wrap items-center gap-3 rounded-xl border border-red-900/70 bg-red-950/20 p-4 lg:col-span-2">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-red-500/15 text-red-300">
-                <Video className="h-5 w-5" aria-hidden="true" />
-              </div>
-              <div className="min-w-0 flex-1">
-                <h3 className="text-sm font-semibold text-zinc-100">Bản ghi cuộc họp</h3>
-                <p className="mt-1 text-xs text-zinc-400">Video WebM đã sẵn sàng để lưu về thiết bị.</p>
+            <div className="flex items-center justify-between rounded-xl border border-[#3c4043] bg-[#303134] px-4 py-3">
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-red-500/15 text-red-400">
+                  <Video className="h-4 w-4" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-xs font-medium text-white">Bản ghi cuộc họp đã sẵn sàng</p>
+                  <p className="text-[11px] text-[#9aa0a6] truncate">Video định dạng WebM có thể tải về thiết bị</p>
+                </div>
               </div>
               <a
                 href={recordingDownloadUrl}
                 download={`meeting-recording-${meetingCode.toLowerCase()}.webm`}
-                className="inline-flex min-h-11 items-center gap-2 rounded-lg bg-red-600 px-3 py-2 text-sm font-medium text-white hover:bg-red-500 focus:outline-none focus:ring-2 focus:ring-red-400"
+                className="shrink-0 inline-flex items-center gap-1.5 rounded-full bg-[#3c4043] hover:bg-[#5f6368] text-xs font-medium text-white px-3.5 py-1.5 transition-colors"
               >
-                <Download className="h-4 w-4" /> Tải video
+                <Download className="h-3.5 w-3.5" /> Tải video
               </a>
-            </section>
+            </div>
           )}
 
-          <section className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-4 lg:col-span-2">
-            <h3 className="mb-3 text-sm font-semibold text-zinc-100">Executive highlights</h3>
-            <ul className="space-y-2 text-sm leading-6 text-zinc-300">
-              {recap.executiveHighlights.map((item) => <li key={item}>• {item}</li>)}
-            </ul>
+          {/* Executive Highlights */}
+          <section className="rounded-xl border border-[#3c4043] bg-[#282a2d] p-4">
+            <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-[#8ab4f8]">
+              Điểm chính cuộc họp
+            </h3>
+            {recap.executiveHighlights.length > 0 ? (
+              <ul className="space-y-1.5 text-sm text-[#bdc1c6] leading-relaxed">
+                {recap.executiveHighlights.map((item, idx) => (
+                  <li key={idx} className="flex items-start gap-2">
+                    <span className="text-[#8ab4f8] mt-1 shrink-0">•</span>
+                    <span>{item}</span>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="text-sm text-[#9aa0a6]">Cuộc họp không có ghi chú nổi bật.</p>
+            )}
           </section>
 
-          <section className="rounded-xl border border-emerald-900/70 bg-emerald-950/20 p-4">
-            <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold text-emerald-300"><CheckCircle2 className="h-4 w-4" /> Decisions</h3>
-            {recap.decisions.length ? (
-              <ul className="space-y-2 text-sm text-zinc-300">{recap.decisions.map((item) => <li key={item}>• {item}</li>)}</ul>
-            ) : <p className="text-sm text-zinc-500">Chưa có quyết định được ghi nhận.</p>}
-          </section>
+          {/* Decisions & Action items Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Decisions */}
+            <section className="rounded-xl border border-[#3c4043] bg-[#282a2d] p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <CheckCircle2 className="h-4 w-4 text-[#81c995]" />
+                <h3 className="text-xs font-semibold uppercase tracking-wider text-[#81c995]">
+                  Quyết định ({recap.decisions.length})
+                </h3>
+              </div>
+              {recap.decisions.length > 0 ? (
+                <ul className="space-y-2 text-sm text-[#bdc1c6]">
+                  {recap.decisions.map((item, idx) => (
+                    <li key={idx} className="flex items-start gap-2 text-xs sm:text-sm">
+                      <span className="text-[#81c995] shrink-0 font-bold">✓</span>
+                      <span>{item}</span>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-xs text-[#9aa0a6]">Chưa ghi nhận quyết định nào.</p>
+              )}
+            </section>
 
-          <section className="rounded-xl border border-amber-900/70 bg-amber-950/20 p-4">
-            <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold text-amber-300"><ListTodo className="h-4 w-4" /> Action items</h3>
-            {recap.actionItems.length ? (
-              <ul className="space-y-3 text-sm text-zinc-300">{recap.actionItems.map((item, index) => (
-                <li key={`${item.task}-${index}`} className="rounded-lg bg-black/20 p-3">
-                  <p className="font-medium text-zinc-100">{item.task}</p>
-                  <p className="mt-1 text-xs text-zinc-500">{[item.owner, item.deadline, item.priority].filter(Boolean).join(' · ') || 'Chưa có người phụ trách/hạn chót'}</p>
-                </li>
-              ))}</ul>
-            ) : <p className="text-sm text-zinc-500">Chưa có action item được ghi nhận.</p>}
-          </section>
+            {/* Action Items */}
+            <section className="rounded-xl border border-[#3c4043] bg-[#282a2d] p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <ListTodo className="h-4 w-4 text-[#fdd663]" />
+                <h3 className="text-xs font-semibold uppercase tracking-wider text-[#fdd663]">
+                  Việc cần làm ({recap.actionItems.length})
+                </h3>
+              </div>
+              {recap.actionItems.length > 0 ? (
+                <ul className="space-y-2.5 text-sm text-[#bdc1c6]">
+                  {recap.actionItems.map((item, idx) => (
+                    <li key={idx} className="rounded-lg bg-[#202124] p-2.5 border border-[#3c4043]">
+                      <p className="text-xs sm:text-sm font-medium text-white">{item.task}</p>
+                      {(item.owner || item.deadline || item.priority) && (
+                        <div className="mt-1 flex flex-wrap gap-1.5 text-[11px] text-[#9aa0a6]">
+                          {item.owner && <span className="rounded bg-[#303134] px-1.5 py-0.5">{item.owner}</span>}
+                          {item.deadline && <span className="rounded bg-[#303134] px-1.5 py-0.5">{item.deadline}</span>}
+                          {item.priority && <span className="rounded bg-[#303134] px-1.5 py-0.5">{item.priority}</span>}
+                        </div>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-xs text-[#9aa0a6]">Chưa có việc cần làm được giao.</p>
+              )}
+            </section>
+          </div>
+
+          {/* Advanced Integrations (Discreet and Collapsed by default) */}
+          <details className="rounded-xl border border-[#3c4043]/60 bg-[#282a2d]/30 p-3 text-xs text-[#9aa0a6]">
+            <summary className="cursor-pointer select-none font-medium hover:text-[#e8eaed] transition-colors">
+              Tùy chọn đồng bộ nâng cao (Slack / Trello)
+            </summary>
+            <div className="mt-3 pt-3 border-t border-[#3c4043]/60">
+              <WorkflowSyncPanel
+                meetingCode={meetingCode}
+                title={savePayload.title}
+                decisions={recap.decisions}
+                actionItems={recap.actionItems}
+              />
+            </div>
+          </details>
         </div>
 
-        <footer className="border-t border-zinc-800 px-5 py-4 sm:px-6">
-          {status && <p role={status.kind === 'error' ? 'alert' : 'status'} className={`mb-3 text-sm ${status.kind === 'error' ? 'text-rose-400' : 'text-emerald-400'}`}>{status.message}</p>}
-          <div className="flex flex-wrap items-center gap-2">
-            <button
-              type="button"
-              onClick={handleShareViral}
-              className="inline-flex min-h-11 items-center gap-2 rounded-lg bg-emerald-600 px-3.5 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-400"
+        {/* Footer */}
+        <footer className="border-t border-[#3c4043] bg-[#202124] px-6 py-4">
+          {status && (
+            <p
+              role={status.kind === 'error' ? 'alert' : 'status'}
+              className={`mb-3 text-xs ${status.kind === 'error' ? 'text-rose-400' : 'text-emerald-400'}`}
             >
-              <Share2 className="h-4 w-4" /> Chia sẻ Zalo / Slack
-            </button>
-            <button type="button" onClick={handleCopy} className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-zinc-700 px-3 py-2 text-sm text-zinc-200 hover:bg-zinc-800 focus:outline-none focus:ring-2 focus:ring-sky-500"><Copy className="h-4 w-4" /> Sao chép</button>
-            <button type="button" onClick={handleDownload} className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-zinc-700 px-3 py-2 text-sm text-zinc-200 hover:bg-zinc-800 focus:outline-none focus:ring-2 focus:ring-sky-500"><Download className="h-4 w-4" /> Tải Markdown</button>
-            <button type="button" onClick={handleSave} disabled={isSaving} className="inline-flex min-h-11 items-center gap-2 rounded-lg bg-sky-600 px-3 py-2 text-sm font-medium text-white hover:bg-sky-500 disabled:cursor-not-allowed disabled:opacity-60 focus:outline-none focus:ring-2 focus:ring-sky-400"><Save className="h-4 w-4" /> {isSaving ? 'Đang lưu…' : 'Lưu lên máy chủ'}</button>
-            <button type="button" onClick={onLeaveRoom} className="ml-auto inline-flex min-h-11 items-center gap-2 rounded-lg bg-rose-600 px-3 py-2 text-sm font-medium text-white hover:bg-rose-500 focus:outline-none focus:ring-2 focus:ring-rose-400"><LogOut className="h-4 w-4" /> Rời cuộc họp</button>
+              {status.message}
+            </p>
+          )}
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+            {/* Left export tools */}
+            <div className="flex items-center gap-2 flex-wrap">
+              <button
+                type="button"
+                onClick={handleCopy}
+                className="inline-flex items-center gap-1.5 rounded-full border border-[#5f6368] px-3.5 py-1.5 text-xs sm:text-sm font-medium text-zinc-200 hover:bg-[#303134] hover:text-white transition-colors"
+              >
+                <Copy className="h-3.5 w-3.5 text-[#8ab4f8]" /> Sao chép tóm tắt
+              </button>
+              <button
+                type="button"
+                onClick={() => void handlePdfExport()}
+                className="inline-flex items-center gap-1.5 rounded-full border border-[#5f6368] px-3.5 py-1.5 text-xs sm:text-sm font-medium text-zinc-200 hover:bg-[#303134] hover:text-white transition-colors"
+              >
+                <FileDown className="h-3.5 w-3.5 text-[#8ab4f8]" /> Xuất biên bản PDF
+              </button>
+              <button
+                type="button"
+                onClick={handleDownload}
+                className="inline-flex items-center gap-1.5 rounded-full border border-[#3c4043] px-3 py-1.5 text-xs font-medium text-[#9aa0a6] hover:bg-[#303134] hover:text-zinc-200 transition-colors"
+                title="Tải biên bản định dạng Markdown"
+              >
+                <Download className="h-3.5 w-3.5" /> .MD
+              </button>
+            </div>
+
+            {/* Right actions */}
+            <div className="flex items-center justify-end gap-2 shrink-0">
+              <button
+                type="button"
+                onClick={onClose}
+                className="rounded-full px-4 py-2 text-xs sm:text-sm font-medium text-[#9aa0a6] hover:bg-[#303134] hover:text-white transition-colors"
+              >
+                Đóng
+              </button>
+              <button
+                type="button"
+                onClick={onLeaveRoom}
+                className="inline-flex items-center gap-1.5 rounded-full bg-[#b91c1c] px-4 py-2 text-xs sm:text-sm font-medium text-white hover:bg-[#991b1b] shadow-sm transition-colors"
+              >
+                <LogOut className="h-3.5 w-3.5" /> Rời cuộc họp
+              </button>
+            </div>
           </div>
         </footer>
       </div>

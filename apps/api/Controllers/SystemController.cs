@@ -64,11 +64,11 @@ public sealed class SystemController : ControllerBase
     public ActionResult<BrandingConfigDto> GetBranding()
     {
         return Ok(new BrandingConfigDto(
-            BrandName: _configuration["Branding:BrandName"] ?? "ViMeet",
+            BrandName: _configuration["Branding:BrandName"] ?? "LayaMeet",
             Slogan: _configuration["Branding:Slogan"] ?? "Nền tảng họp trực tuyến thông minh song ngữ",
             LogoUrl: _configuration["Branding:LogoUrl"],
             PrimaryColor: _configuration["Branding:PrimaryColor"] ?? "#0284c7",
-            CopyrightText: _configuration["Branding:CopyrightText"] ?? "© ViMeet"
+            CopyrightText: _configuration["Branding:CopyrightText"] ?? "© LayaMeet"
         ));
     }
 

@@ -1,3 +1,4 @@
+import { AdaptiveDialog } from '../common/AdaptiveDialog';
 import React, { useEffect, useState } from 'react';
 import {
   ShieldCheck,
@@ -102,7 +103,7 @@ export const SystemStatusModal: React.FC<SystemStatusModalProps> = ({ isOpen, on
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-fade-in font-sans">
+    <AdaptiveDialog label="Trạng thái hệ thống" onClose={onClose} className="system-status-dialog">
       <div className="relative w-full max-w-2xl bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl p-6 overflow-hidden max-h-[90vh] flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between pb-4 border-b border-slate-800">
@@ -130,7 +131,7 @@ export const SystemStatusModal: React.FC<SystemStatusModalProps> = ({ isOpen, on
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto py-4 space-y-6 pr-1">
+        <div tabIndex={0} role="region" aria-label="Chi tiết trạng thái hệ thống" className="flex-1 overflow-y-auto py-4 space-y-6 pr-1">
           {loading ? (
             <div className="flex flex-col items-center justify-center py-12 text-slate-400 text-sm gap-3">
               <RefreshCw className="w-6 h-6 animate-spin text-sky-400" />
@@ -397,14 +398,14 @@ export const SystemStatusModal: React.FC<SystemStatusModalProps> = ({ isOpen, on
                   <span className="text-[10px] text-slate-500 font-normal">Zero-PII / Tokens Redacted</span>
                 </div>
 
-                <div className="p-2 rounded-xl bg-slate-950/50 border border-slate-800/80 text-xs max-h-32 overflow-y-auto space-y-1 custom-scrollbar">
+                <div tabIndex={0} role="region" aria-label="Nhật ký sự kiện hệ thống" className="p-2 rounded-xl bg-slate-950/50 border border-slate-800/80 text-xs max-h-32 overflow-y-auto space-y-1 custom-scrollbar">
                   {auditLogs.length === 0 ? (
                     <p className="text-slate-500 text-[11px] italic py-1 px-1">Chưa ghi nhận sự kiện bảo mật nào trong phiên hiện tại.</p>
                   ) : (
                     auditLogs.map((evt) => (
                       <div key={evt.id} className="flex items-center justify-between gap-2 p-1.5 rounded-lg bg-slate-900/60 border border-slate-800/50 text-[11px]">
                         <div className="flex items-center gap-2 min-w-0">
-                          <span className="px-1.5 py-0.5 rounded text-[10px] font-mono bg-sky-950 text-sky-400 border border-sky-800/50 flex-shrink-0">
+                          <span className="px-1.5 py-0.5 rounded-md text-[10px] font-mono bg-zinc-800 text-zinc-300 border border-zinc-700/80 flex-shrink-0">
                             {evt.eventType}
                           </span>
                           <span className="text-slate-300 truncate" title={evt.details}>
@@ -446,6 +447,6 @@ export const SystemStatusModal: React.FC<SystemStatusModalProps> = ({ isOpen, on
           ) : null}
         </div>
       </div>
-    </div>
+    </AdaptiveDialog>
   );
 };

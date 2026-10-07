@@ -55,7 +55,7 @@ public sealed class NotificationDispatcher : INotificationDispatcher
     public async Task DispatchPaymentSuccessAsync(PaymentOrderResponse order, CancellationToken cancellationToken = default)
     {
         var message =
-            $"💰 <b>[ViMeet] Thanh toán VIP thành công!</b>\n" +
+            $"💰 <b>[LayaMeet] Thanh toán VIP thành công!</b>\n" +
             $"• Mã đơn: <code>{order.OrderCode}</code>\n" +
             $"• Gói: <b>{order.PlanName}</b>\n" +
             $"• Số tiền: <b>{order.Amount:N0} đ</b>\n" +
@@ -71,7 +71,7 @@ public sealed class NotificationDispatcher : INotificationDispatcher
     public async Task DispatchEnterpriseLeadAsync(EnterpriseLeadRecord lead, CancellationToken cancellationToken = default)
     {
         var message =
-            $"🏢 <b>[ViMeet] Khách hàng Doanh nghiệp mới!</b>\n" +
+            $"🏢 <b>[LayaMeet] Khách hàng Doanh nghiệp mới!</b>\n" +
             $"• Khách hàng: <b>{lead.FullName}</b>\n" +
             $"• Công ty: <b>{lead.Company ?? "Cá nhân"}</b>\n" +
             $"• Email: <code>{lead.Email}</code>\n" +
@@ -89,7 +89,7 @@ public sealed class NotificationDispatcher : INotificationDispatcher
 
     public async Task<bool> SendTestNotificationAsync(string message, CancellationToken cancellationToken = default)
     {
-        var formatted = $"🧪 <b>[ViMeet Test Notification]</b>\n{message}\n<i>Timestamp: {DateTime.UtcNow:yyyy-MM-dd HH:mm:ss} UTC</i>";
+        var formatted = $"🧪 <b>[LayaMeet Test Notification]</b>\n{message}\n<i>Timestamp: {DateTime.UtcNow:yyyy-MM-dd HH:mm:ss} UTC</i>";
         var tgOk = await SendTelegramMessageAsync(formatted, cancellationToken);
         var whOk = await SendWebhookPayloadAsync("test.ping", new { message, timestamp = DateTime.UtcNow }, cancellationToken);
         return tgOk || whOk;

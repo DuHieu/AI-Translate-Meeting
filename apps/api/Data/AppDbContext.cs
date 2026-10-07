@@ -12,8 +12,10 @@ public class AppDbContext : DbContext
     public DbSet<Meeting> Meetings => Set<Meeting>();
     public DbSet<MeetingParticipant> MeetingParticipants => Set<MeetingParticipant>();
     public DbSet<MeetingAdmission> MeetingAdmissions => Set<MeetingAdmission>();
+    public DbSet<MeetingRsvp> MeetingRsvps => Set<MeetingRsvp>();
     public DbSet<MeetingMinute> MeetingMinutes => Set<MeetingMinute>();
     public DbSet<ParticipantSession> ParticipantSessions => Set<ParticipantSession>();
+    public DbSet<MeetingFeedback> MeetingFeedbacks => Set<MeetingFeedback>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -30,10 +32,20 @@ public class AppDbContext : DbContext
             entity.Property(e => e.Name).HasColumnName("name").HasMaxLength(200).IsRequired();
             entity.Property(e => e.CreatedAt).HasColumnName("created_at").IsRequired();
             entity.Property(e => e.EndedAt).HasColumnName("ended_at");
+            entity.Property(e => e.ScheduledStartAt).HasColumnName("scheduled_start_at");
+            entity.Property(e => e.ScheduledEndAt).HasColumnName("scheduled_end_at");
+            entity.Property(e => e.Timezone).HasColumnName("timezone").HasMaxLength(64);
+            entity.Property(e => e.Agenda).HasColumnName("agenda").HasMaxLength(2000);
+            entity.Property(e => e.DefaultSpokenLanguage).HasColumnName("default_spoken_language").HasMaxLength(10);
+            entity.Property(e => e.DefaultTargetLanguage).HasColumnName("default_target_language").HasMaxLength(10);
+            entity.Property(e => e.DomainGlossary).HasColumnName("domain_glossary").HasMaxLength(64);
+            entity.Property(e => e.HostEmail).HasColumnName("host_email").HasMaxLength(254);
 
             entity.HasIndex(e => e.MeetingCode).IsUnique();
             entity.HasIndex(e => e.RoomName).IsUnique();
             entity.HasIndex(e => e.EndedAt);
+            entity.HasIndex(e => e.ScheduledStartAt);
+            entity.HasIndex(e => e.HostEmail);
 
             entity.HasMany(e => e.Participants)
                   .WithOne(p => p.Meeting)
@@ -43,6 +55,11 @@ public class AppDbContext : DbContext
             entity.HasMany(e => e.Admissions)
                   .WithOne(a => a.Meeting)
                   .HasForeignKey(a => a.MeetingId)
+                  .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasMany(e => e.Rsvps)
+                  .WithOne(r => r.Meeting)
+                  .HasForeignKey(r => r.MeetingId)
                   .OnDelete(DeleteBehavior.Cascade);
         });
 
@@ -86,6 +103,31 @@ public class AppDbContext : DbContext
 
             entity.HasIndex(e => new { e.MeetingId, e.Status });
             entity.HasIndex(e => e.ExpiresAt);
+        });
+
+        modelBuilder.Entity<MeetingRsvp>(entity =>
+        {
+            entity.ToTable("meeting_rsvps");
+
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.MeetingId).HasColumnName("meeting_id").IsRequired();
+            entity.Property(e => e.DisplayName).HasColumnName("display_name").HasMaxLength(100).IsRequired();
+            entity.Property(e => e.Email).HasColumnName("email").HasMaxLength(254);
+            entity.Property(e => e.Status).HasColumnName("status").HasMaxLength(20).IsRequired();
+            entity.Property(e => e.SpokenLanguage).HasColumnName("spoken_language").HasMaxLength(10).IsRequired();
+            entity.Property(e => e.TargetLanguage).HasColumnName("target_language").HasMaxLength(10).IsRequired();
+            entity.Property(e => e.AdmissionId).HasColumnName("admission_id");
+            entity.Property(e => e.CreatedAt).HasColumnName("created_at").IsRequired();
+            entity.Property(e => e.UpdatedAt).HasColumnName("updated_at").IsRequired();
+
+            entity.HasIndex(e => new { e.MeetingId, e.Email }).IsUnique();
+            entity.HasIndex(e => e.AdmissionId);
+
+            entity.HasOne<MeetingAdmission>()
+                  .WithMany()
+                  .HasForeignKey(e => e.AdmissionId)
+                  .OnDelete(DeleteBehavior.SetNull);
         });
 
         modelBuilder.Entity<MeetingMinute>(entity =>
@@ -137,6 +179,30 @@ public class AppDbContext : DbContext
                   .WithMany()
                   .HasForeignKey(e => e.ParticipantId)
                   .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<MeetingFeedback>(entity =>
+        {
+            entity.ToTable("meeting_feedbacks");
+
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.MeetingId).HasColumnName("meeting_id");
+            entity.Property(e => e.MeetingCode).HasColumnName("meeting_code").HasMaxLength(12).IsRequired();
+            entity.Property(e => e.Rating).HasColumnName("rating").IsRequired();
+            entity.Property(e => e.Category).HasColumnName("category").HasMaxLength(50);
+            entity.Property(e => e.Comment).HasColumnName("comment").HasMaxLength(2000).IsRequired();
+            entity.Property(e => e.UserName).HasColumnName("user_name").HasMaxLength(100);
+            entity.Property(e => e.UserEmail).HasColumnName("user_email").HasMaxLength(254);
+            entity.Property(e => e.CreatedAt).HasColumnName("created_at").IsRequired();
+
+            entity.HasIndex(e => e.MeetingCode);
+            entity.HasIndex(e => e.CreatedAt);
+
+            entity.HasOne(e => e.Meeting)
+                  .WithMany()
+                  .HasForeignKey(e => e.MeetingId)
+                  .OnDelete(DeleteBehavior.SetNull);
         });
     }
 }

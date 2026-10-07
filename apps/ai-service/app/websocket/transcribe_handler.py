@@ -1,4 +1,5 @@
 import asyncio
+import hashlib
 import io
 import json
 import logging
@@ -10,6 +11,7 @@ import numpy as np
 from fastapi import WebSocket, WebSocketDisconnect
 
 from app.audio.audio_processor import AudioProcessor
+from app.audio.local_agreement import LocalAgreement
 from app.audio.vad import VoiceActivityDetector
 from app.config.settings import settings
 from app.schemas.subtitle import (
@@ -19,25 +21,76 @@ from app.schemas.subtitle import (
     SubtitleBroadcastMessage,
     SubtitleData,
 )
-from app.speech.whisper_service import SpeechToTextService
+from app.speech.whisper_service import SpeechToTextService, detect_text_language
 from app.services.laya_client import LayaDecisionClient
 from app.translation.cache import TranslationCache
 from app.translation.context_manager import ContextSegment, MeetingContextManager
 from app.translation.contextual_provider import (
     ContextualTranslationProvider,
 )
-from app.translation.glossary import GlossaryManager
+from app.translation.glossary import GlossaryManager, get_room_glossary
 from app.translation.base import TranslationProvider
 from app.translation.local_provider import LocalTranslationProvider
+from app.translation import qa_evaluator
 from app.websocket.meeting_connection_manager import (
     MeetingConnectionManager,
     ParticipantConnection,
 )
 
 from app.audio.quality_filter import SpeechQualityFilter
+from app.audio.homophone_normalizer import homophone_normalizer
 from app.security.moderation import ContentModerationFilter
 
 logger = logging.getLogger("ai_service")
+
+WEBM_EBML_HEADER = b"\x1a\x45\xdf\xa3"
+WEBM_CLUSTER_HEADER = b"\x1f\x43\xb6\x75"
+
+
+def _prepare_audio_frame(
+    raw_bytes: bytes,
+    webm_header_bytes: bytes | None,
+) -> tuple[bytes | None, bytes | None, bool]:
+    """Returns a decodable payload and never labels a bare WebM cluster as PCM."""
+    if raw_bytes.startswith(WEBM_EBML_HEADER):
+        cluster_index = raw_bytes.find(WEBM_CLUSTER_HEADER)
+        header = raw_bytes[:cluster_index] if cluster_index > 0 else raw_bytes
+        return raw_bytes, header, True
+
+    if raw_bytes.startswith(WEBM_CLUSTER_HEADER):
+        if not webm_header_bytes:
+            return None, None, True
+        return webm_header_bytes + raw_bytes, webm_header_bytes, True
+
+    if raw_bytes.startswith((b"RIFF", b"OggS")):
+        return raw_bytes, webm_header_bytes, True
+
+    if webm_header_bytes:
+        return webm_header_bytes + raw_bytes, webm_header_bytes, True
+
+    return raw_bytes, webm_header_bytes, False
+
+
+def _resolve_listener_target_language(
+    listener: ParticipantConnection,
+    listener_count: int,
+    speaker_id: str,
+    configured_source_language: str,
+    spoken_language: str,
+) -> str:
+    configured_source = configured_source_language.lower().split("-", 1)[0]
+    spoken = spoken_language.lower().split("-", 1)[0]
+    preferred_target = listener.target_language.lower().split("-", 1)[0]
+    is_speaker_or_solo = listener.participant_id == speaker_id or listener_count == 1
+
+    if (
+        is_speaker_or_solo
+        and configured_source != "auto"
+        and spoken == preferred_target
+        and configured_source != preferred_target
+    ):
+        return configured_source_language
+    return listener.target_language
 
 
 
@@ -155,18 +208,63 @@ class TranscribeWebSocketHandler:
                 await websocket.send_text(initial_sub.model_dump_json())
 
             # Isolated per-connection state for streaming audio chunk buffering & VAD
-            vad = VoiceActivityDetector()
+            try:
+                vad = VoiceActivityDetector(
+                    energy_threshold=getattr(settings, "VAD_ENERGY_THRESHOLD", 0.00004),
+                    rms_threshold=getattr(settings, "VAD_RMS_THRESHOLD", 0.0025),
+                )
+            except TypeError:
+                vad = VoiceActivityDetector()
             audio_buffer: list[np.ndarray] = []
+            pre_roll_buffer: list[np.ndarray] = []
             silence_chunks: int = 0
             dropped_chunks: int = 0
             utterance_t0: float | None = None
             last_interim_time: float = 0.0
             speaker_sequence: int = 0
             partial_seq: int = 0
-            active_initial_prompt: str | None = getattr(settings, "WHISPER_INITIAL_PROMPT", None)
+            local_agreement = LocalAgreement(
+                min_words=getattr(settings, "LOCAL_AGREEMENT_MIN_WORDS", 3),
+                min_cjk_chars=getattr(settings, "LOCAL_AGREEMENT_MIN_CJK_CHARS", 6),
+            )
+            room_terms = get_room_glossary(meeting_id) if meeting_id else {}
+            base_prompt = getattr(settings, "WHISPER_INITIAL_PROMPT", None)
+            if source_language.lower() == "auto":
+                active_initial_prompt = None
+            else:
+                prompt_parts = []
+                if base_prompt:
+                    prompt_parts.append(base_prompt.strip().rstrip("."))
+                if participant_name and participant_name not in ("Guest", "Participant", "User"):
+                    prompt_parts.append(f"Người tham gia: {participant_name}")
+                if room_terms:
+                    prompt_parts.append("Thuật ngữ: " + ", ".join(list(room_terms.keys())[:15]))
+                active_initial_prompt = (". ".join(prompt_parts) + ".") if prompt_parts else base_prompt
+                if active_initial_prompt and len(active_initial_prompt) > 600:
+                    truncated = active_initial_prompt[:600]
+                    if "." in truncated:
+                        active_initial_prompt = truncated.rsplit(".", 1)[0] + "."
+                    else:
+                        active_initial_prompt = truncated
+
+            active_translation_tier = "standard"
+            active_byok_enabled = False
+            active_byok_provider = "openai"
+            active_byok_api_key = ""
+
+            def _provider_version() -> str:
+                base_version = getattr(self.translator, "model_version", "v1")
+                meeting_scope = hashlib.sha256(meeting_id.encode("utf-8")).hexdigest()[:8]
+                if active_byok_enabled and active_byok_api_key:
+                    return f"{base_version}:byok:{active_byok_provider}:{meeting_scope}"
+                if active_translation_tier == "pro":
+                    return f"{base_version}:pro:{meeting_scope}"
+                return f"{base_version}:standard"
+
             session_spoken_lang: str = (
                 "vi" if source_language.lower() == "auto" else source_language
             )
+            webm_header_bytes: bytes | None = None
 
             while True:
 
@@ -192,33 +290,49 @@ class TranscribeWebSocketHandler:
                 text = ""
                 lang = source_language
                 is_final = True
+                segment_stt_confidence = 0.88
                 t0_bench = time.perf_counter()
 
                 # A. AUDIO CHUNK PROCESSING (Realtime Streaming with VAD)
                 if raw_bytes:
                     input_kind = "audio"
-                    # 1. Decode chunk to 16kHz float32
-                    try:
-                        if len(raw_bytes) >= 4 and raw_bytes[:4] in (b"RIFF", b"OggS", b"\x1a\x45\xdf\xa3"):
+                    # 1. Decode container frames safely, otherwise treat input as 16-bit PCM.
+                    prepared_frame, webm_header_bytes, is_container = _prepare_audio_frame(
+                        raw_bytes,
+                        webm_header_bytes,
+                    )
+                    if prepared_frame is None:
+                        logger.debug("Skipping WebM cluster received before its EBML header")
+                        continue
+                    if is_container:
+                        try:
                             from faster_whisper.audio import decode_audio
-                            chunk_pcm = decode_audio(io.BytesIO(raw_bytes), sampling_rate=16000)
-                        else:
-                            chunk_pcm = self.audio_processor.pcm_to_float32(raw_bytes)
-                    except Exception as ex:
-                        logger.warning("Audio decoding failed, fallback PCM: %s", ex)
-                        chunk_pcm = self.audio_processor.pcm_to_float32(raw_bytes)
+                            chunk_pcm = decode_audio(io.BytesIO(prepared_frame), sampling_rate=16000)
+                        except Exception as ex:
+                            logger.warning("Skipping undecodable container audio frame: %s", ex)
+                            continue
+                    else:
+                        try:
+                            chunk_pcm = self.audio_processor.pcm_to_float32(prepared_frame)
+                        except (TypeError, ValueError) as ex:
+                            logger.warning("Skipping malformed PCM audio frame: %s", ex)
+                            continue
 
                     # 2. Voice Activity Detection (VAD)
                     has_speech = vad.contains_speech(chunk_pcm)
 
                     if not has_speech:
                         if len(audio_buffer) == 0:
+                            pre_roll_buffer.append(chunk_pcm)
+                            if len(pre_roll_buffer) > 2:
+                                pre_roll_buffer.pop(0)
                             dropped_chunks += 1
                             continue
                         else:
                             silence_chunks += 1
-                            # 2 consecutive silence chunks (approx 500-700ms pause) marks end of sentence
-                            if silence_chunks < 2:
+                            audio_buffer.append(chunk_pcm)
+                            # Consecutive silence chunks (default 2 chunks = 700ms pause) marks natural sentence pause
+                            if silence_chunks < getattr(settings, "VAD_SILENCE_CHUNKS_FINAL", 2):
                                 continue
                             is_final = True
                     else:
@@ -240,16 +354,20 @@ class TranscribeWebSocketHandler:
                                 meeting_id,
                                 current_utterance_id,
                             )
+                        if len(audio_buffer) == 0 and pre_roll_buffer:
+                            audio_buffer.extend(pre_roll_buffer)
+                            pre_roll_buffer.clear()
                         audio_buffer.append(chunk_pcm)
                         curr_duration = sum(len(c) for c in audio_buffer) / 16000.0
 
-                        # Cap maximum utterance buffer at 4.0s for finalization
-                        if curr_duration >= 4.0:
+                        # Cap maximum utterance buffer at configured duration (default 7.0s) for safety finalization
+                        max_buffer_seconds = getattr(settings, "WHISPER_MAX_BUFFER_SECONDS", 7.0)
+                        if curr_duration >= max_buffer_seconds:
                             is_final = True
                         # Throttle interim STT to every configured interval of accumulated speech
                         elif (
-                            curr_duration >= getattr(settings, "STT_INTERIM_MIN_DURATION_SECONDS", 1.0)
-                            and (time.perf_counter() - last_interim_time) >= getattr(settings, "STT_INTERIM_THROTTLE_SECONDS", 1.0)
+                            curr_duration >= getattr(settings, "STT_INTERIM_MIN_DURATION_SECONDS", 0.8)
+                            and (time.perf_counter() - last_interim_time) >= getattr(settings, "STT_INTERIM_THROTTLE_SECONDS", 0.8)
                         ):
                             is_final = False
                             last_interim_time = time.perf_counter()
@@ -290,23 +408,36 @@ class TranscribeWebSocketHandler:
                             language=effective_stt_lang,
                             is_final=is_final,
                             initial_prompt=active_initial_prompt,
+                            vad_filter=False,
                         )
                     except TypeError:
-                        transcript = await self.stt.transcribe(
-                            full_audio,
-                            language=effective_stt_lang,
-                            is_final=is_final,
-                        )
+                        try:
+                            transcript = await self.stt.transcribe(
+                                full_audio,
+                                language=effective_stt_lang,
+                                is_final=is_final,
+                                initial_prompt=active_initial_prompt,
+                            )
+                        except TypeError:
+                            transcript = await self.stt.transcribe(
+                                full_audio,
+                                language=effective_stt_lang,
+                                is_final=is_final,
+                            )
                     t_stt_end = time.perf_counter()
+                    last_interim_time = t_stt_end
                     stt_latency_ms = (t_stt_end - t_stt_start) * 1000
 
                     text = transcript.text.strip()
                     lang = transcript.language or session_spoken_lang
+                    segment_stt_confidence = getattr(
+                        transcript, "language_probability", 0.88
+                    )
 
                     # Dynamic spoken language smoothing & session anchor update
                     if source_language.lower() == "auto":
                         lang_prob = getattr(transcript, "language_probability", 0.0)
-                        if is_final or lang_prob >= 0.65 or len(audio_buffer) >= 3:
+                        if is_final or lang_prob >= 0.45 or len(audio_buffer) >= 3:
                             session_spoken_lang = lang
                         else:
                             lang = session_spoken_lang
@@ -315,8 +446,10 @@ class TranscribeWebSocketHandler:
                         if is_final:
                             await _finish_overlap_tracking()
                             audio_buffer.clear()
+                            pre_roll_buffer.clear()
                             silence_chunks = 0
                             utterance_t0 = None
+                            local_agreement.reset()
                         continue
 
                 # B. TEXT MESSAGE PROCESSING (Direct, benchmark text input, or session config)
@@ -336,25 +469,47 @@ class TranscribeWebSocketHandler:
                                 await self.context_manager.set_domain(meeting_id, new_domain)
                             if "initialPrompt" in parsed and isinstance(parsed["initialPrompt"], str):
                                 active_initial_prompt = parsed["initialPrompt"].strip()
+                            requested_tier = parsed.get("translationTier")
+                            if isinstance(requested_tier, str):
+                                normalized_tier = requested_tier.strip().lower()
+                                if normalized_tier in ("standard", "pro"):
+                                    active_translation_tier = normalized_tier
+                            if isinstance(parsed.get("byokEnabled"), bool):
+                                active_byok_enabled = parsed["byokEnabled"]
+                            requested_provider = parsed.get("byokProvider")
+                            if isinstance(requested_provider, str):
+                                normalized_provider = requested_provider.strip().lower()
+                                if normalized_provider in ("openai", "gemini", "deepl"):
+                                    active_byok_provider = normalized_provider
+                            requested_key = parsed.get("byokApiKey")
+                            if isinstance(requested_key, str):
+                                active_byok_api_key = requested_key.strip()
+                            if not active_byok_enabled:
+                                active_byok_api_key = ""
                             logger.info(
-                                "Updated session config meeting=%s initialPrompt=%s",
+                                "Updated session config meeting=%s tier=%s byok_enabled=%s "
+                                "byok_provider=%s initial_prompt_configured=%s",
                                 meeting_id,
-                                active_initial_prompt,
+                                active_translation_tier,
+                                active_byok_enabled,
+                                active_byok_provider,
+                                bool(active_initial_prompt),
                             )
                             continue
                         text = parsed.get("text", "")
                         lang = parsed.get("language", source_language)
-                        if lang.lower() == "auto":
-                            from app.speech.whisper_service import (
-                                JAPANESE_KANA_REGEX,
-                                VIETNAMESE_DIACRITICS_REGEX,
-                            )
-                            if JAPANESE_KANA_REGEX.search(text):
-                                lang = "ja"
-                            elif VIETNAMESE_DIACRITICS_REGEX.search(text):
-                                lang = "vi"
-                            else:
-                                lang = session_spoken_lang
+                        text_lang, text_confidence = detect_text_language(
+                            text,
+                            session_spoken_lang if lang.lower() == "auto" else lang,
+                        )
+                        if lang.lower() == "auto" or text_confidence >= 0.85:
+                            lang = text_lang
+                        if text_confidence >= 0.45:
+                            session_spoken_lang = lang
+                        if "confidence" in parsed and isinstance(parsed["confidence"], (int, float)):
+                            segment_stt_confidence = max(0.0, min(1.0, float(parsed["confidence"])))
+                        else:
+                            segment_stt_confidence = text_confidence
                         is_final = parsed.get("isFinal", True)
                         if "_t0" in parsed:
                             t0_bench = float(parsed["_t0"])
@@ -368,6 +523,9 @@ class TranscribeWebSocketHandler:
                 else:
                     continue
 
+                # Acoustic & technical homophone normalization
+                text = homophone_normalizer.normalize(text, language=lang)
+
                 # Guardrail Layer: Speech Quality (Hallucination & Filler) & Content Moderation
                 is_valid_speech, reject_reason = self.quality_filter.filter_speech(text, lang)
                 if not is_valid_speech:
@@ -380,8 +538,10 @@ class TranscribeWebSocketHandler:
                     if is_final:
                         await _finish_overlap_tracking()
                         audio_buffer.clear()
+                        pre_roll_buffer.clear()
                         silence_chunks = 0
                         utterance_t0 = None
+                        local_agreement.reset()
                     continue
 
                 # Content Moderation & Policy Guard (Profanity, slurs, DLP/PII)
@@ -393,8 +553,10 @@ class TranscribeWebSocketHandler:
                     if is_final:
                         await _finish_overlap_tracking()
                         audio_buffer.clear()
+                        pre_roll_buffer.clear()
                         silence_chunks = 0
                         utterance_t0 = None
+                        local_agreement.reset()
                     continue
                 elif moderation_action == "masked":
                     text = moderated_text
@@ -404,7 +566,17 @@ class TranscribeWebSocketHandler:
                 if not listeners:
                     listeners = [current_conn]
 
-                unique_targets = {l.target_language for l in listeners}
+                listener_targets = {
+                    listener.participant_id: _resolve_listener_target_language(
+                        listener=listener,
+                        listener_count=len(listeners),
+                        speaker_id=participant_id,
+                        configured_source_language=source_language,
+                        spoken_language=lang,
+                    )
+                    for listener in listeners
+                }
+                unique_targets = set(listener_targets.values())
 
                 # Resolve meeting domain and context
                 meeting_domain = await self.context_manager.get_domain(meeting_id)
@@ -439,21 +611,21 @@ class TranscribeWebSocketHandler:
                     prompt_context = await self.context_manager.get_prompt_context(meeting_id, max_segments=5)
                     context_hash = await self.context_manager.get_context_hash(meeting_id, max_segments=5)
 
-                    async def _translate_final_target(tl: str) -> tuple[str, str]:
+                    async def _translate_final_target(tl: str) -> tuple[str, str, str, bool]:
                         if tl.lower() == lang.lower():
-                            return tl, text
+                            return tl, text, "offline_pattern", False
 
                         # Tier-1/Tier-2 General Cache Check (sub-0.1ms L1, sub-2ms L2 Redis)
                         gen_key = self.cache.build_general_key(
                             source_lang=lang,
                             target_lang=tl,
                             text=text,
-                            provider_version=getattr(self.translator, "model_version", "v1"),
+                            provider_version=_provider_version(),
                         )
                         cached_gen = await self.cache.get(gen_key)
                         if cached_gen:
                             logger.debug("General cache hit for final translation (<0.1ms)")
-                            return tl, cached_gen
+                            return tl, cached_gen, "cache", True
 
                         ckey = self.cache.build_key(
                             meeting_id=meeting_id,
@@ -462,13 +634,13 @@ class TranscribeWebSocketHandler:
                             text=text,
                             context_hash=context_hash,
                             glossary_version=self.glossary_manager.get_version(),
-                            provider_version=getattr(self.translator, "model_version", "v1"),
+                            provider_version=_provider_version(),
                         )
                         cached = await self.cache.get(ckey)
                         if cached:
                             logger.debug("Cache hit for final translation (<50ms)")
                             await self.cache.set(gen_key, cached)
-                            return tl, cached
+                            return tl, cached, "cache", True
 
                         res = await self._dispatch_translate(
                             text=text,
@@ -480,18 +652,29 @@ class TranscribeWebSocketHandler:
                             context=prompt_context,
                             domain=detected_domain,
                             terminology_sensitivity=sensitivity,
+                            translation_tier=active_translation_tier,
+                            byok_enabled=active_byok_enabled,
+                            byok_provider=active_byok_provider,
+                            byok_api_key=active_byok_api_key,
                         )
                         await self.cache.set(ckey, res)
                         await self.cache.set(gen_key, res)
 
-                        return tl, res
+                        provider_used = getattr(
+                            self.translator, "last_provider_name", "offline_pattern"
+                        )
+                        return tl, res, provider_used, False
 
                     t_trans_start = time.perf_counter()
                     trans_entries = await asyncio.gather(
                         *[_translate_final_target(tl) for tl in unique_targets],
                         return_exceptions=False,
                     )
-                    translations = dict(trans_entries)
+                    translations = {entry[0]: entry[1] for entry in trans_entries}
+                    translation_meta = {
+                        entry[0]: {"provider": entry[2], "cacheHit": entry[3]}
+                        for entry in trans_entries
+                    }
                     t_trans_end = time.perf_counter()
                     trans_latency_ms = (t_trans_end - t_trans_start) * 1000
 
@@ -500,7 +683,11 @@ class TranscribeWebSocketHandler:
                     speaker_sequence += 1
 
                     async def _send_to_listener(listener: ParticipantConnection):
-                        listener_translated = translations.get(listener.target_language, text)
+                        listener_target = listener_targets.get(
+                            listener.participant_id,
+                            listener.target_language,
+                        )
+                        listener_translated = translations.get(listener_target, text)
                         sub_msg = SubtitleBroadcastMessage(
                             data=SubtitleData(
                                 id=sub_id,
@@ -508,7 +695,7 @@ class TranscribeWebSocketHandler:
                                 participantId=participant_id,
                                 participantName=participant_name,
                                 sourceLanguage=lang,
-                                targetLanguage=listener.target_language,
+                                targetLanguage=listener_target,
                                 originalText=text,
                                 translatedText=listener_translated,
                                 isFinal=True,
@@ -570,19 +757,44 @@ class TranscribeWebSocketHandler:
                     await _finish_overlap_tracking()
 
                     # Update rolling meeting context with final dialogue segment
+                    context_target_language = listener_targets.get(
+                        participant_id,
+                        target_language,
+                    )
                     await self.context_manager.add_segment(
                         meeting_id=meeting_id,
                         segment=ContextSegment(
                             source_text=text,
-                            translated_text=translations.get(target_language, text),
+                            translated_text=translations.get(context_target_language, text),
                             source_language=lang,
-                            target_language=target_language,
+                            target_language=context_target_language,
                             speaker_id=participant_id,
                             speaker_name=participant_name,
                             domain=detected_domain,
                             is_final=True,
                         ),
                     )
+
+                    # QA telemetry runs outside the subtitle critical path. Raw text is
+                    # retained only when the admin explicitly enables training mode.
+                    for qa_target, qa_translation in translations.items():
+                        if qa_target.lower() == lang.lower():
+                            continue
+                        qa_meta = translation_meta.get(qa_target, {})
+                        asyncio.create_task(
+                            qa_evaluator.qa_manager.record_segment(
+                                meeting_code=meeting_id,
+                                source_lang=lang,
+                                target_lang=qa_target,
+                                source_text=text,
+                                translated_text=qa_translation,
+                                stt_confidence=segment_stt_confidence,
+                                provider=str(qa_meta.get("provider", "offline_pattern")),
+                                latency_ms=trans_latency_ms,
+                                cache_hit=bool(qa_meta.get("cacheHit", False)),
+                                domain=detected_domain,
+                            )
+                        )
 
                     # Async Laya sidecar enrichment
                     saved_utterance_id = sub_id
@@ -591,8 +803,10 @@ class TranscribeWebSocketHandler:
                     finalization_t0 = None
                     input_kind = "unknown"
                     audio_buffer.clear()
+                    pre_roll_buffer.clear()
                     silence_chunks = 0
                     utterance_t0 = None
+                    local_agreement.reset()
 
                     asyncio.create_task(
                         self._enrich_laya_async(
@@ -602,12 +816,42 @@ class TranscribeWebSocketHandler:
                             source_language=lang,
                             original_text=text,
                             translations=translations,
+                            translation_targets=listener_targets,
                             utterance_id=saved_utterance_id,
                         )
                     )
 
                 else:
-                    # Partial / Interim transcript: debounce & cancel outdated partial work
+                    # Partial / Interim transcript: check Local Agreement for early prefix commit
+                    committed_seg, remaining_text = local_agreement.process(text, is_final=False)
+                    if committed_seg:
+                        # Early commit prefix as isFinal=True to cut perceived latency <200ms
+                        early_commit_id = f"{current_utterance_id}-c{partial_seq}"
+                        asyncio.create_task(
+                            self._broadcast_early_committed_prefix(
+                                meeting_id=meeting_id,
+                                participant_id=participant_id,
+                                participant_name=participant_name,
+                                source_lang=lang,
+                                committed_text=committed_seg,
+                                utterance_id=early_commit_id,
+                                listeners=listeners,
+                                listener_targets=listener_targets,
+                                unique_targets=unique_targets,
+                                meeting_domain=meeting_domain,
+                                provider_version=_provider_version(),
+                                active_translation_tier=active_translation_tier,
+                                active_byok_enabled=active_byok_enabled,
+                                active_byok_provider=active_byok_provider,
+                                active_byok_api_key=active_byok_api_key,
+                            )
+                        )
+
+                    # Continue with uncommitted remaining text as interim
+                    interim_text = remaining_text if (committed_seg or remaining_text != text) else text
+                    if not interim_text:
+                        continue
+
                     partial_seq += 1
                     this_seq = partial_seq
 
@@ -636,7 +880,7 @@ class TranscribeWebSocketHandler:
                                     source_lang=p_lang,
                                     target_lang=tl,
                                     text=p_text,
-                                    provider_version=getattr(self.translator, "model_version", "v1"),
+                                    provider_version=_provider_version(),
                                 )
                                 cached_gen = await self.cache.get(gen_key)
                                 if cached_gen:
@@ -649,7 +893,7 @@ class TranscribeWebSocketHandler:
                                     text=p_text,
                                     context_hash=context_hash,
                                     glossary_version=self.glossary_manager.get_version(),
-                                    provider_version=getattr(self.translator, "model_version", "v1"),
+                                    provider_version=_provider_version(),
                                 )
                                 cached = await self.cache.get(ckey)
                                 if cached:
@@ -671,6 +915,10 @@ class TranscribeWebSocketHandler:
                                     context=prompt_context,
                                     domain=detected_domain,
                                     terminology_sensitivity=sensitivity,
+                                    translation_tier=active_translation_tier,
+                                    byok_enabled=active_byok_enabled,
+                                    byok_provider=active_byok_provider,
+                                    byok_api_key=active_byok_api_key,
                                 )
                                 await self.cache.set(ckey, res)
                                 await self.cache.set(gen_key, res)
@@ -694,7 +942,11 @@ class TranscribeWebSocketHandler:
 
                             # Broadcast partial to listeners
                             async def _send_partial(listener: ParticipantConnection):
-                                listener_translated = p_translations.get(listener.target_language, p_text)
+                                listener_target = listener_targets.get(
+                                    listener.participant_id,
+                                    listener.target_language,
+                                )
+                                listener_translated = p_translations.get(listener_target, p_text)
                                 sub_msg = SubtitleBroadcastMessage(
                                     data=SubtitleData(
                                         id=utterance_id,
@@ -702,7 +954,7 @@ class TranscribeWebSocketHandler:
                                         participantId=participant_id,
                                         participantName=participant_name,
                                         sourceLanguage=p_lang,
-                                        targetLanguage=listener.target_language,
+                                        targetLanguage=listener_target,
                                         originalText=p_text,
                                         translatedText=listener_translated,
                                         isFinal=False,
@@ -727,7 +979,7 @@ class TranscribeWebSocketHandler:
                             logger.debug("Partial translation error: %s", ex)
 
                     in_flight_partial_task = asyncio.create_task(
-                        _process_partial_transcript(this_seq, current_utterance_id, text, lang)
+                        _process_partial_transcript(this_seq, current_utterance_id, interim_text, lang)
                     )
 
         except WebSocketDisconnect:
@@ -798,6 +1050,101 @@ class TranscribeWebSocketHandler:
 
         await asyncio.gather(*[_send(listener) for listener in listeners], return_exceptions=True)
 
+    async def _broadcast_early_committed_prefix(
+        self,
+        meeting_id: str,
+        participant_id: str,
+        participant_name: str,
+        source_lang: str,
+        committed_text: str,
+        utterance_id: str,
+        listeners: list[ParticipantConnection],
+        listener_targets: dict[str, str],
+        unique_targets: set[str],
+        meeting_domain: str,
+        provider_version: str,
+        active_translation_tier: str = "standard",
+        active_byok_enabled: bool = False,
+        active_byok_provider: str = "openai",
+        active_byok_api_key: str = "",
+    ):
+        """Translates and broadcasts early committed prefix segment (Local Agreement) as isFinal=True."""
+        try:
+            prompt_context = await self.context_manager.get_prompt_context(meeting_id, max_segments=5)
+
+            async def _translate_target(tl: str) -> tuple[str, str]:
+                if tl.lower() == source_lang.lower():
+                    return tl, committed_text
+
+                gen_key = self.cache.build_general_key(
+                    source_lang=source_lang,
+                    target_lang=tl,
+                    text=committed_text,
+                    provider_version=provider_version,
+                )
+                cached = await self.cache.get(gen_key)
+                if cached:
+                    return tl, cached
+
+                res = await self._dispatch_translate(
+                    text=committed_text,
+                    source_lang=source_lang,
+                    target_lang=tl,
+                    meeting_id=meeting_id,
+                    participant_id=participant_id,
+                    participant_name=participant_name,
+                    context=prompt_context,
+                    domain=meeting_domain,
+                    terminology_sensitivity="low",
+                    translation_tier=active_translation_tier,
+                    byok_enabled=active_byok_enabled,
+                    byok_provider=active_byok_provider,
+                    byok_api_key=active_byok_api_key,
+                )
+                await self.cache.set(gen_key, res)
+                return tl, res
+
+            if unique_targets:
+                trans_entries = await asyncio.gather(
+                    *[_translate_target(tl) for tl in unique_targets],
+                    return_exceptions=True,
+                )
+                translations = {
+                    item[0]: item[1]
+                    for item in trans_entries
+                    if isinstance(item, tuple) and len(item) == 2
+                }
+            else:
+                translations = {}
+
+            for listener in listeners:
+                target_lang = listener_targets.get(
+                    listener.participant_id, listener.target_language
+                )
+                trans_text = translations.get(target_lang, committed_text)
+                sub_msg = SubtitleBroadcastMessage(
+                    data=SubtitleData(
+                        id=utterance_id,
+                        meetingId=meeting_id,
+                        participantId=participant_id,
+                        participantName=participant_name,
+                        sourceLanguage=source_lang,
+                        targetLanguage=target_lang,
+                        originalText=committed_text,
+                        translatedText=trans_text,
+                        isFinal=True,
+                        tags=[],
+                        confidence=0.95,
+                    )
+                )
+                try:
+                    async with listener.send_lock:
+                        await listener.websocket.send_text(sub_msg.model_dump_json())
+                except Exception:
+                    pass
+        except Exception as ex:
+            logger.debug("Failed to broadcast early committed prefix: %s", ex)
+
     async def _dispatch_translate(
 
         self,
@@ -810,6 +1157,10 @@ class TranscribeWebSocketHandler:
         context: list[dict[str, Any]],
         domain: str,
         terminology_sensitivity: str,
+        translation_tier: str = "standard",
+        byok_enabled: bool = False,
+        byok_provider: str = "openai",
+        byok_api_key: str = "",
     ) -> str:
         tr = self.translator
         if isinstance(tr, ContextualTranslationProvider):
@@ -823,6 +1174,10 @@ class TranscribeWebSocketHandler:
                 context=context,
                 domain=domain,
                 terminology_sensitivity=terminology_sensitivity,
+                translation_tier=translation_tier,
+                byok_enabled=byok_enabled,
+                byok_provider=byok_provider,
+                byok_api_key=byok_api_key,
             )
         return await tr.translate(text, source_lang, target_lang)
 
@@ -835,6 +1190,7 @@ class TranscribeWebSocketHandler:
         source_language: str,
         original_text: str,
         translations: dict[str, str],
+        translation_targets: dict[str, str],
         utterance_id: str,
     ):
         """Asynchronously queries Laya for Action Items and Decisions and broadcasts to room."""
@@ -857,7 +1213,11 @@ class TranscribeWebSocketHandler:
                     return
 
                 async def _send_enriched(listener: ParticipantConnection):
-                    listener_translated = translations.get(listener.target_language, original_text)
+                    listener_target = translation_targets.get(
+                        listener.participant_id,
+                        listener.target_language,
+                    )
+                    listener_translated = translations.get(listener_target, original_text)
                     enriched_msg = SubtitleBroadcastMessage(
                         data=SubtitleData(
                             id=utterance_id,
@@ -865,7 +1225,7 @@ class TranscribeWebSocketHandler:
                             participantId=participant_id,
                             participantName=participant_name,
                             sourceLanguage=source_language,
-                            targetLanguage=listener.target_language,
+                            targetLanguage=listener_target,
                             originalText=original_text,
                             translatedText=listener_translated,
                             isFinal=True,

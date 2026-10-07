@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 using Moq;
+using System.Text;
 using Xunit;
 
 namespace AITranslateMeeting.Api.Tests;
@@ -336,4 +337,148 @@ public class MeetingsControllerTests
         var ok = Assert.IsType<OkObjectResult>(result.Result);
         Assert.Same(expected, ok.Value);
     }
+
+    [Fact]
+    public async Task GetScheduledMeetings_ReturnsEmailFilteredUpcomingMeetings()
+    {
+        var expected = new List<MeetingScheduleDto>();
+        _mockMeetingService
+            .Setup(service => service.GetUpcomingScheduledMeetingsAsync(
+                "owner@example.com",
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(expected);
+
+        var result = await _controller.GetScheduledMeetings("owner@example.com", CancellationToken.None);
+
+        var ok = Assert.IsType<OkObjectResult>(result.Result);
+        Assert.Same(expected, ok.Value);
+    }
+
+    [Fact]
+    public async Task GetMeetingSchedule_ReturnsPublicSchedule()
+    {
+        var expected = CreateScheduleDto("ABCXYZ");
+        _mockMeetingService
+            .Setup(service => service.GetMeetingScheduleAsync("ABCXYZ", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(expected);
+
+        var result = await _controller.GetMeetingSchedule("ABCXYZ", CancellationToken.None);
+
+        var ok = Assert.IsType<OkObjectResult>(result.Result);
+        Assert.Same(expected, ok.Value);
+    }
+
+    [Fact]
+    public async Task SubmitRsvp_ReturnsPreApprovedAdmissionPass()
+    {
+        var request = new SubmitRsvpRequestDto("Tanaka", "tanaka@example.com", "going", "ja", "vi");
+        var expected = new SubmitRsvpResponseDto(
+            Guid.NewGuid(),
+            "ABCXYZ",
+            "Tanaka",
+            "going",
+            "ja",
+            "vi",
+            "PRE_APPROVED_TOKEN",
+            DateTime.UtcNow.AddHours(24));
+        _mockMeetingService
+            .Setup(service => service.SubmitRsvpAsync("ABCXYZ", request, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(expected);
+
+        var result = await _controller.SubmitRsvp("ABCXYZ", request, CancellationToken.None);
+
+        var ok = Assert.IsType<OkObjectResult>(result.Result);
+        Assert.Same(expected, ok.Value);
+    }
+
+    [Fact]
+    public async Task DownloadCalendar_ReturnsUtf8IcsAttachment()
+    {
+        const string ics = "BEGIN:VCALENDAR\r\nEND:VCALENDAR\r\n";
+        _mockMeetingService
+            .Setup(service => service.GenerateCalendarIcsAsync("ABCXYZ", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(ics);
+
+        var result = await _controller.DownloadCalendar("ABCXYZ", CancellationToken.None);
+
+        var file = Assert.IsType<FileContentResult>(result);
+        Assert.Equal("text/calendar; charset=utf-8", file.ContentType);
+        Assert.Equal("layameet-abcxyz.ics", file.FileDownloadName);
+        Assert.Equal(ics, Encoding.UTF8.GetString(file.FileContents));
+    }
+
+    [Fact]
+    public async Task SubmitFeedback_WithValidPayload_ReturnsOkAndLogsAudit()
+    {
+        var request = new SubmitMeetingFeedbackRequestDto(
+            Rating: 5,
+            Category: "audio_stt",
+            Comment: "Chất lượng dịch rất tốt, độ trễ thấp.",
+            UserName: "Nguyen Van A",
+            UserEmail: "a@example.com");
+
+        var expectedResponse = new MeetingFeedbackResponseDto(
+            Guid.NewGuid(),
+            "ABCXYZ",
+            request.Rating,
+            request.Category,
+            request.Comment,
+            request.UserName,
+            request.UserEmail,
+            DateTime.UtcNow);
+
+        _mockMeetingService
+            .Setup(s => s.SubmitFeedbackAsync("ABCXYZ", request, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(expectedResponse);
+
+        var result = await _controller.SubmitFeedback("ABCXYZ", request, CancellationToken.None);
+
+        var okResult = Assert.IsType<OkObjectResult>(result.Result);
+        var actualResponse = Assert.IsType<MeetingFeedbackResponseDto>(okResult.Value);
+        Assert.Equal(5, actualResponse.Rating);
+        Assert.Equal("ABCXYZ", actualResponse.MeetingCode);
+        Assert.Equal(request.Comment, actualResponse.Comment);
+
+        _mockAuditLogService.Verify(a => a.LogEvent(
+            "MeetingFeedbackCaptured",
+            null,
+            null,
+            It.Is<string>(d => d.Contains("Rating=5"))), Times.Once);
+    }
+
+    [Fact]
+    public async Task GetMeetingHistory_ReturnsOk_WithHistoryList()
+    {
+        var mockHistory = new List<MeetingHistoryItemDto>
+        {
+            new MeetingHistoryItemDto(Guid.NewGuid(), "HIST-1", "H1", DateTime.UtcNow, null, true, "Title", "Summary", 5)
+        };
+        _mockMeetingService.Setup(s => s.GetMeetingHistoryAsync("test@example.com", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(mockHistory);
+
+        var result = await _controller.GetMeetingHistory("test@example.com", CancellationToken.None);
+
+        var okResult = Assert.IsType<OkObjectResult>(result.Result);
+        var returnedHistory = Assert.IsAssignableFrom<IReadOnlyList<MeetingHistoryItemDto>>(okResult.Value);
+        Assert.Single(returnedHistory);
+        Assert.Equal("HIST-1", returnedHistory[0].MeetingCode);
+    }
+
+    private static MeetingScheduleDto CreateScheduleDto(string meetingCode) => new(
+        Guid.NewGuid(),
+        meetingCode,
+        "Planning",
+        DateTime.UtcNow,
+        null,
+        DateTime.UtcNow.AddHours(1),
+        DateTime.UtcNow.AddHours(2),
+        "Asia/Ho_Chi_Minh",
+        null,
+        "vi",
+        "ja",
+        "general",
+        0,
+        0,
+        0,
+        []);
 }

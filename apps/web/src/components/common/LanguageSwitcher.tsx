@@ -9,7 +9,12 @@ const LANGUAGE_OPTIONS: Array<{ code: AppLanguage; label: string; flag: string }
   { code: 'ja', label: '日本語', flag: '🇯🇵' },
 ];
 
-export const LanguageSwitcher: React.FC<{ className?: string }> = ({ className = '' }) => {
+export interface LanguageSwitcherProps {
+  className?: string;
+  onSelect?: (lang: AppLanguage) => void;
+}
+
+export const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({ className = '', onSelect }) => {
   const { language, setLanguage } = useLanguage();
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -56,11 +61,14 @@ export const LanguageSwitcher: React.FC<{ className?: string }> = ({ className =
                 type="button"
                 onClick={() => {
                   setLanguage(opt.code);
+                  if (onSelect) {
+                    onSelect(opt.code);
+                  }
                   setIsOpen(false);
                 }}
                 className={`w-full flex items-center justify-between px-3 py-2 text-left transition-colors cursor-pointer ${
                   isSelected
-                    ? 'bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 font-semibold'
+                    ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-medium'
                     : 'text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800/60'
                 }`}
               >
@@ -68,7 +76,7 @@ export const LanguageSwitcher: React.FC<{ className?: string }> = ({ className =
                   <span className="text-sm">{opt.flag}</span>
                   <span>{opt.label}</span>
                 </span>
-                {isSelected && <Check className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400 shrink-0" />}
+                {isSelected && <Check className="w-3.5 h-3.5 text-zinc-900 dark:text-zinc-100 shrink-0" />}
               </button>
             );
           })}
