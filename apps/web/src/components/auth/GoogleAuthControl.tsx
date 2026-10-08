@@ -1,14 +1,17 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { useNavigate } from 'react-router-dom';
 import {
   ChevronDown,
   Loader2,
   LogOut,
   RefreshCw,
   UserCheck,
+  Sliders,
 } from 'lucide-react';
 import { useAuth } from '../../context/auth-context-def';
 import { useLanguage } from '../../context/language-context-def';
+import { useUserPlan } from '../../hooks/useUserPlan';
 
 const AUTH_LABELS = {
   vi: {
@@ -79,6 +82,8 @@ export const GoogleAuthControl: React.FC<GoogleAuthControlProps> = ({
   const labels = AUTH_LABELS[language] || AUTH_LABELS.vi;
   const { user, loading, signInWithGoogle, signOut, clearAuthError } = useAuth();
 
+  const navigate = useNavigate();
+  const plan = useUserPlan();
   const [menuOpen, setMenuOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const triggerRef = useRef<HTMLButtonElement | null>(null);
@@ -137,39 +142,77 @@ export const GoogleAuthControl: React.FC<GoogleAuthControlProps> = ({
             ref={menuRef}
             role="dialog"
             aria-label={user.email}
-            className="fixed top-14 right-4 z-[9999] w-72 rounded-2xl border border-zinc-200 dark:border-[#2c2c34] bg-white dark:bg-[#1b1b20] p-4 text-zinc-900 dark:text-zinc-100 shadow-2xl animate-in fade-in zoom-in-95 duration-120"
+            className="fixed top-14 right-4 z-[9999] w-80 rounded-2xl border border-zinc-200 dark:border-[#2c2c34] bg-white dark:bg-[#18191f] p-4 text-zinc-900 dark:text-zinc-100 shadow-2xl animate-in fade-in zoom-in-95 duration-120"
           >
-            <div className="text-center text-xs font-medium text-zinc-500 dark:text-zinc-400 truncate pb-3">
-              {user.email}
-            </div>
-
-            <div className="flex flex-col items-center pb-4">
+            {/* User Profile Header (Single Avatar, Compact) */}
+            <div className="flex items-center gap-3 pb-3 border-b border-zinc-100 dark:border-[#272832]">
               {user.avatarUrl ? (
                 <img
                   src={user.avatarUrl}
                   alt={user.fullName}
-                  className="h-14 w-14 rounded-full object-cover ring-2 ring-blue-500/30 mb-2"
+                  className="h-10 w-10 rounded-full object-cover ring-2 ring-blue-500/30 shrink-0"
                   referrerPolicy="no-referrer"
                 />
               ) : (
-                <div className="flex h-14 w-14 items-center justify-center rounded-full bg-blue-600 text-lg font-bold text-white mb-2">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-600 text-sm font-bold text-white shrink-0">
                   {user.fullName.charAt(0).toUpperCase()}
                 </div>
               )}
-              <div className="text-sm font-bold text-zinc-900 dark:text-zinc-100 truncate max-w-full">
-                {labels.greetingPrefix} {user.fullName}!
+              <div className="min-w-0 flex-1">
+                <div className="text-sm font-bold text-zinc-900 dark:text-zinc-100 truncate">
+                  {user.fullName}
+                </div>
+                <div className="text-xs text-zinc-500 dark:text-zinc-400 truncate">
+                  {user.email}
+                </div>
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-2 pt-1">
+            {/* Plan / Subscription Block */}
+            <div className="my-3 p-3 rounded-xl bg-zinc-50 dark:bg-[#202128] border border-zinc-200/80 dark:border-[#2b2d37]">
+              <div className="flex items-center justify-between gap-2 mb-1.5">
+                <span className="text-[11px] font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
+                  {language === 'vi' ? 'Gói hiện tại' : language === 'ja' ? '現在のプラン' : 'Current Plan'}
+                </span>
+                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold tracking-wider uppercase bg-blue-500/15 text-blue-600 dark:bg-blue-500/25 dark:text-blue-400 border border-blue-500/25">
+                  {plan.badge}
+                </span>
+              </div>
+              <div className="text-xs font-semibold text-zinc-800 dark:text-zinc-200">
+                {plan.roomsSummary}
+              </div>
+              {plan.expiresAt && (
+                <div className="text-[11px] text-zinc-500 dark:text-zinc-400 mt-1">
+                  {language === 'vi' ? 'Hạn dùng: ' : language === 'ja' ? '期限: ' : 'Expires: '}
+                  {new Date(plan.expiresAt).toLocaleDateString()}
+                </div>
+              )}
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex flex-col gap-1 pt-1">
+              <button
+                type="button"
+                onClick={() => {
+                  setMenuOpen(false);
+                  navigate('/settings?tab=plan');
+                }}
+                className="w-full flex items-center justify-start gap-2.5 rounded-xl px-3 py-2 text-xs font-semibold text-zinc-700 hover:text-zinc-950 dark:text-zinc-200 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-white/[0.08] transition-colors cursor-pointer text-left"
+              >
+                <Sliders className="w-4 h-4 text-blue-500 shrink-0" />
+                <span>{language === 'vi' ? 'Quản lý tài khoản & Gói' : language === 'ja' ? 'アカウント・プラン管理' : 'Manage Account & Plan'}</span>
+              </button>
+
               <button
                 type="button"
                 onClick={() => void handleSwitchAccount()}
-                className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-zinc-200 dark:border-[#32323c] bg-zinc-50 hover:bg-zinc-100 dark:bg-[#23232a] dark:hover:bg-[#2b2b34] px-3 py-2 text-xs font-semibold text-zinc-700 dark:text-zinc-200 transition-colors cursor-pointer"
+                className="w-full flex items-center justify-start gap-2.5 rounded-xl px-3 py-2 text-xs font-medium text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-white/[0.06] transition-colors cursor-pointer text-left"
               >
-                <RefreshCw className="w-3.5 h-3.5" />
-                <span className="truncate">{labels.switchAccount}</span>
+                <RefreshCw className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
+                <span>{labels.switchAccount}</span>
               </button>
+
+              <div className="my-1 border-t border-zinc-100 dark:border-[#272832]" />
 
               <button
                 type="button"
@@ -177,10 +220,10 @@ export const GoogleAuthControl: React.FC<GoogleAuthControlProps> = ({
                   setMenuOpen(false);
                   await signOut();
                 }}
-                className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-zinc-200 dark:border-[#32323c] bg-zinc-50 hover:bg-red-500/10 hover:border-red-500/30 hover:text-red-600 dark:bg-[#23232a] dark:hover:bg-red-500/15 dark:hover:text-red-400 px-3 py-2 text-xs font-semibold text-zinc-700 dark:text-zinc-200 transition-colors cursor-pointer"
+                className="w-full flex items-center justify-start gap-2.5 rounded-xl px-3 py-2 text-xs font-semibold text-red-600 dark:text-red-400 hover:bg-red-500/10 transition-colors cursor-pointer text-left"
               >
-                <LogOut className="w-3.5 h-3.5" />
-                <span className="truncate">{labels.signOut}</span>
+                <LogOut className="w-3.5 h-3.5 text-red-500 shrink-0" />
+                <span>{labels.signOut}</span>
               </button>
             </div>
           </div>,
@@ -199,7 +242,7 @@ export const GoogleAuthControl: React.FC<GoogleAuthControlProps> = ({
             onClick={() => setMenuOpen((prev) => !prev)}
             data-testid="supabase-user-pill"
             className="flex items-center gap-2 rounded-full border border-zinc-200 dark:border-[#32323a] bg-white hover:bg-zinc-50 dark:bg-[#18181c] dark:hover:bg-[#222228] pl-1.5 pr-2.5 py-1 text-xs font-medium text-zinc-800 dark:text-zinc-100 transition-colors cursor-pointer shadow-2xs"
-            title={`${user.fullName} (${user.email})`}
+            title={`${user.fullName} (${user.email}) - ${plan.badge}`}
           >
             {user.avatarUrl ? (
               <img
@@ -215,6 +258,9 @@ export const GoogleAuthControl: React.FC<GoogleAuthControlProps> = ({
             )}
             <span className="max-w-[110px] truncate hidden sm:inline font-semibold">
               {user.fullName}
+            </span>
+            <span className="hidden sm:inline-flex items-center px-1.5 py-0.2 rounded text-[9px] font-bold tracking-wider uppercase bg-blue-500/15 text-blue-600 dark:bg-blue-500/25 dark:text-blue-400 border border-blue-500/25">
+              {plan.badge}
             </span>
             <ChevronDown className="w-3.5 h-3.5 text-zinc-400 hidden sm:inline" />
           </button>

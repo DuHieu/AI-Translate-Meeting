@@ -18,6 +18,7 @@ const BlogListingPage = lazy(() => import('./pages/BlogListingPage').then((modul
 const BlogPostPage = lazy(() => import('./pages/BlogPostPage').then((module) => ({ default: module.BlogPostPage })));
 const AuthCallbackPage = lazy(() => import('./pages/AuthCallbackPage').then((module) => ({ default: module.AuthCallbackPage })));
 const SettingsPage = lazy(() => import('./pages/SettingsPage').then((module) => ({ default: module.SettingsPage })));
+const SystemStatusPage = lazy(() => import('./pages/SystemStatusPage').then((module) => ({ default: module.SystemStatusPage })));
 
 const LegacyMeetingRedirect: React.FC = () => {
   const { meetingCode } = useParams<{ meetingCode: string }>();
@@ -50,6 +51,7 @@ export const App: React.FC = () => {
                 <Route path="/admin" element={<AdminDashboardPage />} />
                 <Route path="/developers" element={<DevelopersPage />} />
                 <Route path="/settings" element={<SettingsPage />} />
+                <Route path="/system-status" element={<SystemStatusPage />} />
                 <Route path="/cai-dat" element={<Navigate to="/settings" replace />} />
                 <Route path="/cam-nang" element={<BlogListingPage forcedLanguage="vi" />} />
                 <Route path="/cam-nang/:slug" element={<BlogPostPage />} />

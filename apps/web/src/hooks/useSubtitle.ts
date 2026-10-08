@@ -317,6 +317,26 @@ export function useSubtitle(meetingId?: string, participantId?: string, options?
       es: 'es-ES',
     };
     let lastRecognitionResultAt = 0;
+    let accumulatedSentenceParts: string[] = [];
+    let sentenceFlushTimer: number | null = null;
+    const SENTENCE_COMPLETION_DEBOUNCE_MS = 650;
+
+    const flushAccumulatedSentence = () => {
+      if (sentenceFlushTimer !== null) {
+        window.clearTimeout(sentenceFlushTimer);
+        sentenceFlushTimer = null;
+      }
+      if (accumulatedSentenceParts.length === 0) return;
+      const completeSentence = accumulatedSentenceParts.join(' ').replace(/\s+/g, ' ').trim();
+      accumulatedSentenceParts = [];
+      if (completeSentence) {
+        subtitleWsService.sendSpeechText(
+          completeSentence,
+          sourceLanguageRef.current,
+          true,
+        );
+      }
+    };
 
     const startBrowserRecognition = () => {
       const speechWindow = window as typeof window & {
@@ -339,18 +359,31 @@ export function useSubtitle(meetingId?: string, participantId?: string, options?
         pendingSamples = new Float32Array(0);
       };
       recognition.onresult = (event) => {
+        let hasInterim = false;
         for (let index = event.resultIndex; index < event.results.length; index++) {
           const result = event.results[index];
           const transcript = result[0]?.transcript?.trim();
-          if (transcript) {
-            recognitionActive = true;
-            lastRecognitionResultAt = Date.now();
-            subtitleWsService.sendSpeechText(
-              transcript,
-              sourceLanguageRef.current,
-              result.isFinal,
-            );
+          if (!transcript) continue;
+
+          recognitionActive = true;
+          lastRecognitionResultAt = Date.now();
+
+          if (result.isFinal) {
+            accumulatedSentenceParts.push(transcript);
+          } else {
+            hasInterim = true;
           }
+        }
+
+        if (sentenceFlushTimer !== null) {
+          window.clearTimeout(sentenceFlushTimer);
+          sentenceFlushTimer = null;
+        }
+
+        if (accumulatedSentenceParts.length > 0) {
+          const combinedWords = accumulatedSentenceParts.join(' ').split(/\s+/).length;
+          const waitMs = !hasInterim && combinedWords >= 20 ? 250 : SENTENCE_COMPLETION_DEBOUNCE_MS;
+          sentenceFlushTimer = window.setTimeout(flushAccumulatedSentence, waitMs);
         }
       };
       recognition.onerror = (event) => {
@@ -369,6 +402,8 @@ export function useSubtitle(meetingId?: string, participantId?: string, options?
               recognitionActive = false;
             }
           }, 250);
+        } else {
+          flushAccumulatedSentence();
         }
       };
 
@@ -496,6 +531,7 @@ export function useSubtitle(meetingId?: string, participantId?: string, options?
     return () => {
       disposed = true;
       recognitionShouldRestart = false;
+      flushAccumulatedSentence();
       if (recognitionRestartTimer !== null) window.clearTimeout(recognitionRestartTimer);
       if (recognition) {
         recognition.onend = null;

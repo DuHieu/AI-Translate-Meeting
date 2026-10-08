@@ -364,13 +364,6 @@ class TranscribeWebSocketHandler:
                         max_buffer_seconds = getattr(settings, "WHISPER_MAX_BUFFER_SECONDS", 7.0)
                         if curr_duration >= max_buffer_seconds:
                             is_final = True
-                        # Throttle interim STT to every configured interval of accumulated speech
-                        elif (
-                            curr_duration >= getattr(settings, "STT_INTERIM_MIN_DURATION_SECONDS", 0.8)
-                            and (time.perf_counter() - last_interim_time) >= getattr(settings, "STT_INTERIM_THROTTLE_SECONDS", 0.8)
-                        ):
-                            is_final = False
-                            last_interim_time = time.perf_counter()
                         else:
                             continue
 
@@ -822,33 +815,9 @@ class TranscribeWebSocketHandler:
                     )
 
                 else:
-                    # Partial / Interim transcript: check Local Agreement for early prefix commit
-                    committed_seg, remaining_text = local_agreement.process(text, is_final=False)
-                    if committed_seg:
-                        # Early commit prefix as isFinal=True to cut perceived latency <200ms
-                        early_commit_id = f"{current_utterance_id}-c{partial_seq}"
-                        asyncio.create_task(
-                            self._broadcast_early_committed_prefix(
-                                meeting_id=meeting_id,
-                                participant_id=participant_id,
-                                participant_name=participant_name,
-                                source_lang=lang,
-                                committed_text=committed_seg,
-                                utterance_id=early_commit_id,
-                                listeners=listeners,
-                                listener_targets=listener_targets,
-                                unique_targets=unique_targets,
-                                meeting_domain=meeting_domain,
-                                provider_version=_provider_version(),
-                                active_translation_tier=active_translation_tier,
-                                active_byok_enabled=active_byok_enabled,
-                                active_byok_provider=active_byok_provider,
-                                active_byok_api_key=active_byok_api_key,
-                            )
-                        )
-
-                    # Continue with uncommitted remaining text as interim
-                    interim_text = remaining_text if (committed_seg or remaining_text != text) else text
+                    # Partial / Interim transcript: do not prematurely split or commit fragments as isFinal=True.
+                    # Full translation accuracy requires complete sentence context.
+                    interim_text = text.strip()
                     if not interim_text:
                         continue
 

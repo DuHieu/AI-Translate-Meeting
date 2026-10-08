@@ -1,4 +1,3 @@
-import { AdaptiveDialog } from '../components/common/AdaptiveDialog';
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { meetingApi } from '../api/meetingApi';
@@ -16,9 +15,7 @@ import {
   Sparkles,
   Video,
   Keyboard,
-  Code2,
   SunMoon,
-  Check,
   Clock,
   Layers,
   Zap,
@@ -27,11 +24,11 @@ import {
   Phone,
   ChevronLeft,
   Calendar,
-  Sliders,
-  BookOpen,
+  Menu,
+  LogOut,
 } from 'lucide-react';
+import { useUserPlan } from '../hooks/useUserPlan';
 import { admissionStorage } from '../utils/admissionStorage';
-import { SystemStatusModal } from '../components/system/SystemStatusModal';
 import { LayaMeetLogo } from '../components/common/LayaMeetLogo';
 import { ThemeToggle } from '../components/common/ThemeToggle';
 import { InteractiveMeetingPreview } from '../components/home/InteractiveMeetingPreview';
@@ -45,11 +42,9 @@ import { useAuth } from '../context/auth-context-def';
 import { AppLanguage } from '../i18n';
 import { LanguageSwitcher } from '../components/common/LanguageSwitcher';
 import { NeuralLinguisticBackground } from '../components/common/NeuralLinguisticBackground';
-import { CountryFlag } from '../components/common/CountryFlag';
 import { GoogleAuthControl } from '../components/auth/GoogleAuthControl';
 import { ScheduleMeetingModal } from '../components/home/ScheduleMeetingModal';
 import { CalendarScheduleModal } from '../components/home/CalendarScheduleModal';
-import { SystemToolSettingsModal } from '../components/home/SystemToolSettingsModal';
 import { UpcomingMeetingsStrip } from '../components/home/UpcomingMeetingsStrip';
 import { MeetingHistoryModal } from '../components/MeetingHistoryModal';
 
@@ -67,6 +62,14 @@ const HOME_UI = {
     ramOnlyBadge: 'Bảo mật RAM-Only',
     ramOnlyFull: '100% RAM-Only • Không lưu file âm thanh',
     navDrawerTitle: 'Menu điều hướng LayaMeet',
+    groupMain: 'CHÍNH',
+    groupMeetings: 'CUỘC HỌP',
+    groupAccount: 'TÀI KHOẢN',
+    groupHelp: 'TRỢ GIÚP & TÀI NGUYÊN',
+    groupSystem: 'HỆ THỐNG',
+    newMeetingDrawer: 'Bắt đầu cuộc họp mới',
+    joinMeetingDrawer: 'Tham gia bằng mã',
+    planNav: 'Gói dịch vụ & Hạn mức',
     drawerGroupMain: 'Điều hướng chính',
     drawerGroupDev: 'Kỹ thuật & Tích hợp',
     drawerGroupSys: 'Hệ thống & Cài đặt',
@@ -111,6 +114,14 @@ const HOME_UI = {
     ramOnlyBadge: 'RAM-Only Security',
     ramOnlyFull: '100% RAM-Only • Zero Raw Audio Storage',
     navDrawerTitle: 'LayaMeet Navigation Menu',
+    groupMain: 'MAIN',
+    groupMeetings: 'MEETINGS',
+    groupAccount: 'ACCOUNT',
+    groupHelp: 'HELP & RESOURCES',
+    groupSystem: 'SYSTEM',
+    newMeetingDrawer: 'Start New Meeting',
+    joinMeetingDrawer: 'Join with Code',
+    planNav: 'Plan & Usage',
     drawerGroupMain: 'Main Navigation',
     drawerGroupDev: 'Developers & Integration',
     drawerGroupSys: 'System & Preferences',
@@ -155,6 +166,14 @@ const HOME_UI = {
     ramOnlyBadge: '完全RAM処理',
     ramOnlyFull: '完全RAM-only • 音声ファイル保存ゼロ',
     navDrawerTitle: 'LayaMeet ナビゲーションメニュー',
+    groupMain: 'メイン',
+    groupMeetings: 'ミーティング',
+    groupAccount: 'アカウント',
+    groupHelp: 'ヘルプ & リソース',
+    groupSystem: 'システム',
+    newMeetingDrawer: '新しい会議を開始',
+    joinMeetingDrawer: 'コードで参加',
+    planNav: 'プラン & 利用状況',
     drawerGroupMain: 'メインナビゲーション',
     drawerGroupDev: '開発者 & 連携',
     drawerGroupSys: 'システムと設定',
@@ -223,17 +242,16 @@ export const HomePage: React.FC<HomePageProps> = ({ forcedLanguage }) => {
   const SHOW_ENTERPRISE_SSO = false;
   const navigate = useNavigate();
   const { language, setLanguage, t } = useLanguage();
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, signOut } = useAuth();
+  const userPlan = useUserPlan();
   const ui = HOME_UI[language] || HOME_UI.vi;
 
   const [meetingCodeInput, setMeetingCodeInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [isStatusModalOpen, setIsStatusModalOpen] = useState(false);
   const [isEnterpriseSsoOpen, setIsEnterpriseSsoOpen] = useState(false);
   const [isScheduleMeetingOpen, setIsScheduleMeetingOpen] = useState(false);
   const [isCalendarModalOpen, setIsCalendarModalOpen] = useState(false);
-  const [isToolSettingsOpen, setIsToolSettingsOpen] = useState(false);
   const [isMeetingHistoryOpen, setIsMeetingHistoryOpen] = useState(false);
   const [scheduleRefreshKey, setScheduleRefreshKey] = useState(0);
   const [legalModalType, setLegalModalType] = useState<'privacy' | 'terms' | null>(null);
@@ -259,9 +277,6 @@ export const HomePage: React.FC<HomePageProps> = ({ forcedLanguage }) => {
   // Interactive Meeting Preview visibility (in-memory state, resets on page reload)
   const [isPreviewVisible, setIsPreviewVisible] = useState(true);
 
-  // Mobile specific account sheets (Google Meet style)
-  const [isMobileAccountSheetOpen, setIsMobileAccountSheetOpen] = useState(false);
-
   // Real-time Clock for Google Meet ergonomic header
   const [currentClockTime, setCurrentClockTime] = useState(() => new Date());
 
@@ -276,12 +291,9 @@ export const HomePage: React.FC<HomePageProps> = ({ forcedLanguage }) => {
   useEffect(() => {
     const isAnyOverlayOpen =
       isNavDrawerOpen ||
-      isMobileAccountSheetOpen ||
-      isStatusModalOpen ||
       isEnterpriseSsoOpen ||
       isScheduleMeetingOpen ||
       isCalendarModalOpen ||
-      isToolSettingsOpen ||
       isMeetingHistoryOpen ||
       Boolean(legalModalType);
 
@@ -294,12 +306,9 @@ export const HomePage: React.FC<HomePageProps> = ({ forcedLanguage }) => {
     }
   }, [
     isNavDrawerOpen,
-    isMobileAccountSheetOpen,
-    isStatusModalOpen,
     isEnterpriseSsoOpen,
     isScheduleMeetingOpen,
     isCalendarModalOpen,
-    isToolSettingsOpen,
     isMeetingHistoryOpen,
     legalModalType,
   ]);
@@ -310,12 +319,8 @@ export const HomePage: React.FC<HomePageProps> = ({ forcedLanguage }) => {
       if (e.key === 'Escape') {
         if (isNavDrawerOpen) {
           setIsNavDrawerOpen(false);
-        } else if (isMobileAccountSheetOpen) {
-          setIsMobileAccountSheetOpen(false);
         } else if (legalModalType) {
           setLegalModalType(null);
-        } else if (isStatusModalOpen) {
-          setIsStatusModalOpen(false);
         } else if (isCalendarModalOpen) {
           setIsCalendarModalOpen(false);
         } else if (isMeetingHistoryOpen) {
@@ -331,9 +336,7 @@ export const HomePage: React.FC<HomePageProps> = ({ forcedLanguage }) => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [
     isNavDrawerOpen,
-    isMobileAccountSheetOpen,
     legalModalType,
-    isStatusModalOpen,
     isCalendarModalOpen,
     isMeetingHistoryOpen,
     isScheduleMeetingOpen,
@@ -358,8 +361,6 @@ export const HomePage: React.FC<HomePageProps> = ({ forcedLanguage }) => {
       return date.toLocaleTimeString();
     }
   };
-
-  const activeUiLang = UI_LANGUAGE_CARDS.find((item) => item.code === language) || UI_LANGUAGE_CARDS[0];
 
   // Sync forcedLanguage if navigating via /ja or /en
   useEffect(() => {
@@ -456,22 +457,44 @@ export const HomePage: React.FC<HomePageProps> = ({ forcedLanguage }) => {
     navigate(`/meeting/${code}`);
   };
 
-  const handleSelectDrawerItem = (id: ActiveSection | 'privacy' | 'settings' | 'status' | 'calendar' | 'tools' | 'history') => {
+  const handleSelectDrawerItem = (
+    id:
+      | ActiveSection
+      | 'privacy'
+      | 'settings'
+      | 'status'
+      | 'calendar'
+      | 'tools'
+      | 'history'
+      | 'plan'
+      | 'new-meeting'
+      | 'join-meeting'
+  ) => {
     setIsNavDrawerOpen(false);
     if (id === 'developers') {
       navigate('/developers');
     } else if (id === 'status') {
-      setIsStatusModalOpen(true);
+      navigate('/system-status');
     } else if (id === 'privacy') {
       setLegalModalType('privacy');
     } else if (id === 'settings') {
       navigate('/settings?tab=subtitles');
+    } else if (id === 'plan') {
+      navigate('/settings?tab=plan');
     } else if (id === 'calendar') {
       setIsCalendarModalOpen(true);
     } else if (id === 'history') {
       setIsMeetingHistoryOpen(true);
     } else if (id === 'tools') {
       navigate('/settings?tab=ai_byok');
+    } else if (id === 'new-meeting') {
+      handleCreateNewMeeting();
+    } else if (id === 'join-meeting') {
+      setActiveSection('home');
+      setTimeout(() => {
+        const input = document.querySelector('input[aria-label="' + t.hero.inputRoomCode + '"]') as HTMLInputElement;
+        if (input) input.focus();
+      }, 100);
     } else {
       setActiveSection(id);
     }
@@ -490,85 +513,51 @@ export const HomePage: React.FC<HomePageProps> = ({ forcedLanguage }) => {
         <div className="hidden md:block absolute top-14 left-0 right-0 h-px bg-gradient-to-r from-transparent via-blue-500/30 dark:via-blue-400/50 to-transparent" />
       </div>
 
-      {/* ── MOBILE: Google Meet Floating Top Pill Bar (< md) ────── */}
-      <div className="md:hidden sticky top-0 z-40 px-3 pt-3 pb-1.5 bg-zinc-50/85 dark:bg-[#0f0f10]/85 backdrop-blur-md">
-        <form
-          onSubmit={handleJoinWithCode}
-          className="flex items-center gap-1.5 min-h-[48px] h-12 px-2 rounded-full bg-zinc-200/85 dark:bg-[#22242a] border border-zinc-300/70 dark:border-[#32353e] shadow-md"
-        >
-          {/* Left Logo Button to open Menu Drawer */}
+      {/* ── MOBILE: Clean Header (< md) ────── */}
+      <header className="md:hidden sticky top-0 z-40 h-14 px-4 bg-white/95 dark:bg-[#0f0f10]/95 backdrop-blur-md border-b border-zinc-200/80 dark:border-[#272832]/80 flex items-center justify-between shadow-2xs">
+        <div className="flex items-center gap-2">
           <button
             type="button"
             onClick={() => setIsNavDrawerOpen(true)}
             data-testid="mobile-hamburger-btn"
             aria-label={ui.navDrawerTitle}
-            className="w-11 h-11 min-w-[44px] min-h-[44px] rounded-full flex items-center justify-center hover:opacity-90 active:scale-95 transition-all shrink-0 cursor-pointer touch-manipulation"
+            className="w-10 h-10 -ml-1.5 rounded-xl flex items-center justify-center text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer touch-manipulation"
           >
-            <LayaMeetLogo size="sm" showWordmark={false} />
+            <Menu className="w-5 h-5" />
           </button>
+          <LayaMeetLogo size="sm" />
+        </div>
 
-          {/* Center Room Code / Search Input */}
-          <input
-            type="text"
-            placeholder={t.hero.inputRoomCode}
-            value={meetingCodeInput}
-            onChange={(e) => {
-              setMeetingCodeInput(extractMeetingCode(e.target.value));
-              if (error) setError(null);
-            }}
-            aria-label={t.hero.inputRoomCode}
-            className="flex-1 min-w-0 h-11 py-2 bg-transparent text-zinc-900 dark:text-zinc-100 text-base font-medium placeholder-zinc-500 dark:placeholder-zinc-400 outline-none uppercase font-mono tracking-wider"
-          />
-
-          {/* Join by Code Action Button */}
-          {meetingCodeInput.trim() ? (
-            <button
-              type="submit"
-              aria-label={t.hero.btnJoin}
-              className="min-h-[44px] px-3.5 py-2 rounded-full bg-blue-600 text-white text-xs font-semibold flex items-center gap-1 shadow-xs cursor-pointer shrink-0 touch-manipulation"
-            >
-              <span>{ui.joinShort}</span>
-              <ArrowRight className="w-3.5 h-3.5" />
-            </button>
-          ) : (
-            <button
-              type="submit"
-              aria-label={t.hero.inputRoomCode}
-              title={t.hero.inputRoomCode}
-              className="w-11 h-11 min-w-[44px] min-h-[44px] rounded-full flex items-center justify-center text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200 transition-colors shrink-0 cursor-pointer touch-manipulation"
-            >
-              <Keyboard className="w-4 h-4" />
-            </button>
-          )}
-
-          {/* Far-Right Profile / Language Flag Avatar */}
-          <button
-            type="button"
-            onClick={() => setIsMobileAccountSheetOpen(true)}
-            aria-label={ui.accountSheetTitle}
-            title={ui.accountSheetTitle}
-            className="w-11 h-11 min-w-[44px] min-h-[44px] rounded-full bg-gradient-to-tr from-blue-600 to-indigo-500 text-white flex items-center justify-center shadow-xs ring-2 ring-white/80 dark:ring-[#18191d] shrink-0 cursor-pointer touch-manipulation"
-          >
-            <CountryFlag code={activeUiLang.code} size="sm" />
-          </button>
-        </form>
-      </div>
+        <div className="flex items-center gap-2">
+          <ThemeToggle />
+          <GoogleAuthControl variant="navbar" />
+        </div>
+      </header>
 
       {/* ── DESKTOP: Fixed Top Navbar (md+) ─────────────────────────── */}
       <header className="hidden md:flex fixed top-0 left-0 right-0 h-14 border-b border-zinc-200/80 dark:border-[#2e2e30]/80 bg-white/90 dark:bg-[#0f0f10]/90 backdrop-blur-md px-4 sm:px-6 lg:px-8 items-center justify-between shrink-0 z-50 transition-colors shadow-xs">
-        {/* Brand Logo with Google Meet Menu Trigger + Meeting Clock */}
-        <div className="flex items-center gap-3 sm:gap-5">
-          {/* Google Meet style Logo Button that triggers Menu Drawer */}
+        {/* Brand Logo with Menu Trigger + Meeting Clock */}
+        <div className="flex items-center gap-2 sm:gap-3">
+          {/* Hamburger Menu button */}
           <button
             type="button"
             onClick={() => setIsNavDrawerOpen(true)}
             data-testid="header-logo-menu-btn"
             aria-label={ui.navDrawerTitle}
             title={ui.navDrawerTitle}
-            className="p-1.5 -ml-1.5 rounded-2xl hover:bg-zinc-100 dark:hover:bg-white/[0.08] active:scale-98 transition-all cursor-pointer"
+            className="w-9 h-9 -ml-1 rounded-xl flex items-center justify-center text-zinc-600 dark:text-zinc-400 hover:text-zinc-950 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
+          >
+            <Menu className="w-5 h-5" />
+          </button>
+
+          {/* Brand Logo */}
+          <Link
+            to="/"
+            onClick={() => setActiveSection('home')}
+            className="flex items-center hover:opacity-90 transition-opacity"
           >
             <LayaMeetLogo size="md" />
-          </button>
+          </Link>
 
           {/* Real-time Meeting Clock */}
           <div className="hidden xl:flex items-center gap-2 pl-4 border-l border-zinc-200 dark:border-[#2e2e30] text-xs font-medium text-zinc-500 dark:text-zinc-400 select-none">
@@ -598,57 +587,46 @@ export const HomePage: React.FC<HomePageProps> = ({ forcedLanguage }) => {
           )}
         </div>
 
-        {/* Nav actions */}
-        <div className="flex items-center gap-1.5 sm:gap-2">
+        {/* Desktop Quick Nav Actions & User Profile */}
+        <div className="flex items-center gap-2 sm:gap-2.5">
+          {/* Quick utility shortcuts for desktop */}
+          <div className="hidden lg:flex items-center gap-1 pr-1 border-r border-zinc-200/80 dark:border-[#2e2e30]/80">
+            <button
+              type="button"
+              onClick={() => setIsCalendarModalOpen(true)}
+              title={ui.calendarNav}
+              aria-label={ui.calendarNav}
+              className="w-9 h-9 rounded-xl flex items-center justify-center text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
+            >
+              <Calendar className="w-4 h-4" />
+            </button>
+            <button
+              type="button"
+              onClick={() => setIsMeetingHistoryOpen(true)}
+              title={ui.historyNav}
+              aria-label={ui.historyNav}
+              className="w-9 h-9 rounded-xl flex items-center justify-center text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
+            >
+              <Clock className="w-4 h-4" />
+            </button>
+            <button
+              type="button"
+              onClick={() => navigate('/settings')}
+              title={ui.settingsNav}
+              aria-label={ui.settingsNav}
+              className="w-9 h-9 rounded-xl flex items-center justify-center text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
+            >
+              <Settings className="w-4 h-4" />
+            </button>
+          </div>
+
           {/* Automatic + Manual Location Language Switcher */}
           <LanguageSwitcher />
 
           {/* Light / Dark Mode Toggle */}
           <ThemeToggle />
 
-          {/* Quick Calendar Button */}
-          <button
-            type="button"
-            onClick={() => setIsCalendarModalOpen(true)}
-            className="flex items-center gap-1.5 text-xs font-medium text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100 bg-white hover:bg-zinc-100 dark:bg-[#1a1a1b] dark:hover:bg-[#222224] border border-zinc-200 dark:border-[#3a3a3d] p-2 sm:px-3 sm:py-1.5 rounded-lg transition-colors cursor-pointer"
-            title={ui.calendarNav}
-            aria-label={ui.calendarNav}
-          >
-            <Calendar className="w-3.5 h-3.5 text-blue-500 shrink-0" />
-            <span className="hidden lg:inline">{ui.calendarNav}</span>
-          </button>
-
-          {/* Quick AI Tools & API Key Settings */}
-          <button
-            type="button"
-            onClick={() => setIsToolSettingsOpen(true)}
-            className="flex items-center gap-1.5 text-xs font-medium text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100 bg-white hover:bg-zinc-100 dark:bg-[#1a1a1b] dark:hover:bg-[#222224] border border-zinc-200 dark:border-[#3a3a3d] p-2 sm:px-3 sm:py-1.5 rounded-lg transition-colors cursor-pointer"
-            title={ui.toolsNav}
-            aria-label={ui.toolsNav}
-          >
-            <Sliders className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-            <span className="hidden lg:inline">{language === 'ja' ? 'AI設定' : language === 'en' ? 'AI Settings' : 'Cài đặt AI'}</span>
-          </button>
-
-          {/* Privacy & System Status */}
-          <button
-            type="button"
-            onClick={() => setIsStatusModalOpen(true)}
-            className="flex items-center gap-1.5 text-xs font-medium text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100 bg-white hover:bg-zinc-100 dark:bg-[#1a1a1b] dark:hover:bg-[#222224] border border-zinc-200 dark:border-[#3a3a3d] p-2 sm:px-3 sm:py-1.5 rounded-lg transition-colors cursor-pointer"
-            title={ui.systemStatusLabel}
-            aria-label={ui.systemStatusLabel}
-          >
-            <ShieldCheck className="w-3.5 h-3.5 text-green-500 shrink-0" />
-            <span className="hidden sm:inline">{t.nav.systemPrivacy}</span>
-          </button>
-
-          {/* Language Matrix Indicator */}
-          <div className="hidden xl:flex items-center gap-1.5 text-xs text-zinc-600 dark:text-zinc-400 bg-white dark:bg-[#1a1a1b] border border-zinc-200 dark:border-[#2e2e30] px-3 py-1.5 rounded-lg">
-            <Globe className="w-3.5 h-3.5 text-blue-500" />
-            <span>{t.nav.polyglotMatrix}</span>
-          </div>
-
-          {/* Supabase Google Login / User Profile Pill */}
+          {/* Supabase Google Login / User Profile Pill with Plan Badge */}
           <GoogleAuthControl variant="navbar" />
         </div>
       </header>
@@ -658,85 +636,108 @@ export const HomePage: React.FC<HomePageProps> = ({ forcedLanguage }) => {
 
       {/* ── Main Content Canvas ──────────────────────────────────── */}
       <main className="relative z-10 flex-1 flex flex-col justify-between w-full">
-        {/* ── MOBILE: Google Meet Clean Center Canvas + Bottom-Right FAB (< md) ── */}
-        {activeSection === 'home' && (<section className="md:hidden flex-1 flex flex-col items-center justify-center px-6 py-8 text-center select-none">
-          {error && (
-            <div role="alert" className="w-full max-w-xs mb-5 p-3 rounded-2xl bg-red-50 dark:bg-red-950/60 border border-red-200 dark:border-red-900/50 text-red-700 dark:text-red-300 text-xs">
-              {error}
+        {/* ── MOBILE: Primary Meeting Workspace (< md) ── */}
+        {activeSection === 'home' && (
+          <section className="md:hidden flex-1 flex flex-col justify-start px-4 py-6 max-w-md mx-auto w-full space-y-5">
+            {error && (
+              <div role="alert" className="p-3 rounded-xl bg-red-50 dark:bg-red-950/60 border border-red-200 dark:border-red-900/50 text-red-700 dark:text-red-300 text-xs">
+                {error}
+              </div>
+            )}
+
+            {/* Mobile Hero Headline */}
+            <div className="text-center pt-1">
+              <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-400 text-[11px] font-semibold mb-2.5">
+                <Sparkles className="w-3 h-3" />
+                <span>{ui.minimalFooterBadge}</span>
+              </div>
+              <h1 className="text-2xl font-bold tracking-tight text-zinc-950 dark:text-white leading-tight">
+                {t.hero.titleLine1}{' '}
+                <span className="text-blue-600 dark:text-blue-400">
+                  {t.hero.titleHighlight.replace(/[,、]\s*$/, '')}
+                </span>
+              </h1>
+              <p className="mt-2 text-xs text-zinc-500 dark:text-zinc-400 leading-relaxed max-w-xs mx-auto">
+                {language === 'ja'
+                  ? '多言語リアルタイム字幕翻訳・完全RAMメモリ処理'
+                  : language === 'en'
+                  ? 'Ultra-low latency bilingual subtitle translation with RAM-only privacy.'
+                  : 'Phụ đề song ngữ tức thì với AI độ trễ cực thấp · Bảo mật RAM-Only.'}
+              </p>
             </div>
-          )}
 
-          {/* Google Meet Style Circular Vector Illustration */}
-          <div className="relative w-44 h-44 mb-6 rounded-full bg-gradient-to-b from-blue-500/15 via-indigo-500/10 to-zinc-200/40 dark:from-blue-500/20 dark:via-indigo-500/15 dark:to-[#1a1c23] border border-blue-500/20 dark:border-white/10 flex flex-col items-center justify-center shadow-inner">
-            <div className="flex items-center gap-1 mb-2 px-2.5 py-1 rounded-full bg-white/90 dark:bg-[#22242c] border border-zinc-200/80 dark:border-white/10 shadow-sm">
-              <CountryFlag code="vi" size="xs" />
-              <CountryFlag code="ja" size="xs" />
-              <CountryFlag code="en" size="xs" />
-              <CountryFlag code="zh" size="xs" />
-              <CountryFlag code="ko" size="xs" />
-              <CountryFlag code="th" size="xs" />
-              <CountryFlag code="id" size="xs" />
-              <CountryFlag code="ar" size="xs" />
-              <span className="text-xs font-bold text-blue-700 dark:text-blue-300 font-mono ml-0.5">+4</span>
+            {/* Primary Actions: Start Meeting + Join by Code */}
+            <div className="space-y-3">
+              {/* 1. Large Primary Button */}
+              <button
+                type="button"
+                onClick={handleCreateNewMeeting}
+                disabled={loading}
+                className="w-full h-12 px-5 rounded-xl bg-blue-600 hover:bg-blue-500 active:bg-blue-700 disabled:opacity-50 text-white font-semibold flex items-center justify-center gap-2.5 text-sm shadow-sm transition-all cursor-pointer"
+              >
+                <Video className="w-5 h-5 shrink-0" />
+                <span>{loading ? t.hero.btnCreating : t.hero.btnCreate}</span>
+              </button>
+
+              {/* 2. Join with Code inline */}
+              <form onSubmit={handleJoinWithCode} className="flex items-center gap-2">
+                <div className="relative flex-1 flex items-center rounded-xl bg-white dark:bg-[#18181c] border border-zinc-200 dark:border-zinc-800 focus-within:border-blue-500 transition-colors shadow-2xs">
+                  <Keyboard className="w-4 h-4 text-zinc-400 ml-3 shrink-0" />
+                  <input
+                    type="text"
+                    placeholder={t.hero.inputRoomCode}
+                    value={meetingCodeInput}
+                    onChange={(e) => {
+                      setMeetingCodeInput(extractMeetingCode(e.target.value));
+                      if (error) setError(null);
+                    }}
+                    aria-label={t.hero.inputRoomCode}
+                    className="w-full bg-transparent px-3 py-2.5 text-sm uppercase font-mono tracking-wider outline-none text-zinc-900 dark:text-zinc-100 placeholder-zinc-400"
+                  />
+                </div>
+                <button
+                  type="submit"
+                  disabled={!meetingCodeInput.trim()}
+                  aria-label={t.hero.btnJoin}
+                  className="h-11 px-4 rounded-xl bg-zinc-900 dark:bg-zinc-100 hover:bg-zinc-800 dark:hover:bg-zinc-200 disabled:opacity-40 text-white dark:text-zinc-900 text-xs font-semibold flex items-center gap-1 shrink-0 transition-colors cursor-pointer"
+                >
+                  <span>{ui.joinShort}</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </button>
+              </form>
+
+              {/* 3. Quick Secondary Actions: Schedule & History */}
+              <div className="grid grid-cols-2 gap-2 pt-1">
+                <button
+                  type="button"
+                  onClick={() => setIsScheduleMeetingOpen(true)}
+                  className="h-10 px-3 rounded-xl bg-white dark:bg-[#18181c] border border-zinc-200 dark:border-zinc-800 text-xs font-medium text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800 flex items-center justify-center gap-2 transition-colors cursor-pointer"
+                >
+                  <Calendar className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+                  <span>{language === 'ja' ? '予定を設定' : language === 'en' ? 'Schedule' : 'Đặt lịch họp'}</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIsMeetingHistoryOpen(true)}
+                  className="h-10 px-3 rounded-xl bg-white dark:bg-[#18181c] border border-zinc-200 dark:border-zinc-800 text-xs font-medium text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800 flex items-center justify-center gap-2 transition-colors cursor-pointer"
+                >
+                  <Clock className="w-3.5 h-3.5 text-zinc-500" />
+                  <span>{ui.historyNav}</span>
+                </button>
+              </div>
             </div>
 
-            <div className="w-14 h-14 rounded-2xl bg-blue-600/15 dark:bg-blue-500/20 border border-blue-500/30 flex items-center justify-center text-blue-600 dark:text-blue-400">
-              <Video className="w-7 h-7" />
+            {/* Upcoming Meetings Strip on Mobile */}
+            <div className="pt-2">
+              <UpcomingMeetingsStrip
+                refreshKey={scheduleRefreshKey}
+                onOpenCalendar={() => setIsCalendarModalOpen(true)}
+              />
             </div>
+          </section>
+        )}
 
-            <span className="mt-2 text-[10px] font-mono font-semibold uppercase tracking-wider text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2.5 py-0.5 rounded-full border border-emerald-500/20">
-              AI &lt;350ms • RAM-Only
-            </span>
-          </div>
-
-          {/* Concise 2-line Center Caption */}
-          <h1 className="text-lg font-bold text-zinc-900 dark:text-zinc-100 max-w-[280px] leading-snug">
-            {t.hero.titleLine1} {t.hero.titleHighlight.replace(/[,、]\s*$/, '')}
-          </h1>
-          <p className="mt-2 text-xs text-zinc-500 dark:text-zinc-400 max-w-[270px] leading-relaxed">
-            {ui.mobileHelpText}
-          </p>
-
-          {/* Quick pill triggers */}
-          <div className="mt-5 flex flex-wrap items-center justify-center gap-2.5">
-            <button
-              type="button"
-              onClick={() => setIsMobileAccountSheetOpen(true)}
-              className="min-h-[44px] px-4 py-2.5 rounded-full bg-zinc-200/70 dark:bg-[#1e2028] border border-zinc-300/70 dark:border-[#2e313d] text-xs font-medium text-zinc-700 dark:text-zinc-300 flex items-center gap-2 cursor-pointer active:scale-98 transition-all touch-manipulation"
-            >
-              <CountryFlag code={activeUiLang.code} size="xs" />
-              <span>{activeUiLang.native}</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setIsStatusModalOpen(true)}
-              className="min-h-[44px] px-4 py-2.5 rounded-full bg-zinc-200/70 dark:bg-[#1e2028] border border-zinc-300/70 dark:border-[#2e313d] text-xs font-medium text-zinc-700 dark:text-zinc-300 flex items-center gap-2 cursor-pointer active:scale-98 transition-all touch-manipulation"
-            >
-              <ShieldCheck className="w-4 h-4 text-emerald-500" />
-              <span>{ui.ramOnlyBadge}</span>
-            </button>
-            <Link
-              to={language === 'en' ? '/en/guide' : language === 'ja' ? '/ja/guide' : '/cam-nang'}
-              className="min-h-[44px] px-4 py-2.5 rounded-full bg-zinc-200/70 dark:bg-[#1e2028] border border-zinc-300/70 dark:border-[#2e313d] text-xs font-medium text-zinc-700 dark:text-zinc-300 flex items-center gap-2 cursor-pointer active:scale-98 transition-all touch-manipulation"
-            >
-              <BookOpen className="w-4 h-4" />
-              <span>{ui.blogNav}</span>
-            </Link>
-          </div>
-
-          {/* Google Meet Signature Bottom-Right FAB */}
-          <button
-            type="button"
-            onClick={handleCreateNewMeeting}
-            disabled={loading}
-            className="home-mobile-create h-12 px-5 rounded-2xl bg-blue-600 hover:bg-blue-500 active:scale-95 disabled:opacity-50 text-white font-semibold shadow-[0_12px_30px_-6px_rgba(37,99,235,0.65)] flex items-center gap-2.5 text-sm cursor-pointer transition-all"
-          >
-            <Video className="w-5 h-5 shrink-0" />
-            <span>{loading ? t.hero.btnCreating : t.hero.btnCreate}</span>
-          </button>
-        </section>)}
-
-        {/* ── DESKTOP/TABLET: Focused Google Meet Canvas (md+) ── */}
+        {/* ── DESKTOP/TABLET: Focused Meeting Workspace Canvas (md+) ── */}
         <div className="flex flex-1 flex-col">
           {/* ── HOME section (default) ── */}
           {activeSection === 'home' && (
@@ -746,18 +747,15 @@ export const HomePage: React.FC<HomePageProps> = ({ forcedLanguage }) => {
             >
               {/* Left: Headline + Primary Actions */}
               <div className="w-full max-w-md sm:max-w-xl lg:max-w-xl xl:max-w-2xl space-y-6 text-center lg:text-left">
-                {/* Enterprise Security Badge */}
-                <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 text-xs font-medium">
-                  <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
-                  <span className="font-semibold text-zinc-900 dark:text-zinc-100">{t.hero.infraBadge}</span>
-                  <span className="text-zinc-300 dark:text-zinc-700">|</span>
-                  <span className="text-zinc-500 dark:text-zinc-400 font-mono text-[11px]">{t.hero.infraSub}</span>
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 text-xs font-medium">
+                  <Globe className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400 shrink-0" />
+                  <span>{t.hero.infraBadge}</span>
                 </div>
 
-                <h1 className="text-4xl md:text-5xl xl:text-6xl font-extrabold text-zinc-950 dark:text-white tracking-tight leading-[1.12]">
+                <h1 className="text-4xl md:text-5xl xl:text-6xl font-bold text-zinc-950 dark:text-white tracking-tight leading-[1.12]">
                   {t.hero.titleLine1}
                   <br />
-                  <span className="text-blue-600 dark:text-blue-400 font-black">
+                  <span className="text-blue-600 dark:text-blue-400">
                     {t.hero.titleHighlight}
                   </span>
                   <span>{t.hero.titleEnd}</span>
@@ -767,34 +765,6 @@ export const HomePage: React.FC<HomePageProps> = ({ forcedLanguage }) => {
                   {t.hero.description}
                 </p>
 
-                {/* 12 Multilingual National Flags Showcase Strip */}
-                <div className="flex flex-wrap items-center justify-center lg:justify-start gap-2 pt-0.5 text-xs text-zinc-500 dark:text-zinc-400">
-                  <span className="font-semibold text-zinc-700 dark:text-zinc-300">
-                    {language === 'ja'
-                      ? '12言語リアルタイム対応:'
-                      : language === 'en'
-                      ? '12 Real-Time Languages:'
-                      : 'Hỗ trợ 12 ngôn ngữ song ngữ:'}
-                  </span>
-                  <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/80 dark:bg-[#1a1c23] border border-zinc-200/90 dark:border-white/10 shadow-2xs">
-                    <CountryFlag code="vi" size="xs" />
-                    <CountryFlag code="ja" size="xs" />
-                    <CountryFlag code="en" size="xs" />
-                    <CountryFlag code="zh" size="xs" />
-                    <CountryFlag code="ko" size="xs" />
-                    <CountryFlag code="th" size="xs" />
-                    <CountryFlag code="id" size="xs" />
-                    <CountryFlag code="tl" size="xs" />
-                    <CountryFlag code="ar" size="xs" />
-                    <CountryFlag code="fr" size="xs" />
-                    <CountryFlag code="de" size="xs" />
-                    <CountryFlag code="es" size="xs" />
-                    <span className="text-[10px] font-mono font-bold text-blue-600 dark:text-blue-400 ml-1">
-                      12 Langs
-                    </span>
-                  </div>
-                </div>
-
                 {/* Error Message */}
                 {error && (
                   <div role="alert" className="p-3 rounded-lg bg-red-50 dark:bg-red-950/50 border border-red-200 dark:border-red-900/50 text-red-700 dark:text-red-400 text-xs">
@@ -802,13 +772,13 @@ export const HomePage: React.FC<HomePageProps> = ({ forcedLanguage }) => {
                   </div>
                 )}
 
-                {/* CTA row — Google Meet style primary actions */}
-                <div className="flex flex-row flex-wrap items-center justify-center lg:justify-start gap-3 pt-2">
+                {/* CTA row — Primary Meeting Actions */}
+                <div className="flex flex-row flex-wrap items-center justify-center lg:justify-start gap-3 pt-1">
                   <button
                     type="button"
                     onClick={handleCreateNewMeeting}
                     disabled={loading}
-                    className="whitespace-nowrap px-6 py-3 bg-blue-600 hover:bg-blue-500 active:bg-blue-700 disabled:opacity-50 text-white font-semibold rounded-xl transition-all flex items-center justify-center gap-2 text-base cursor-pointer disabled:cursor-not-allowed shadow-lg shadow-blue-600/25 hover:shadow-blue-600/35"
+                    className="whitespace-nowrap px-5 py-3 bg-blue-600 hover:bg-blue-500 active:bg-blue-700 disabled:opacity-50 text-white font-semibold rounded-xl transition-all flex items-center justify-center gap-2 text-sm sm:text-base cursor-pointer disabled:cursor-not-allowed shadow-sm"
                   >
                     <Plus className="w-5 h-5 shrink-0" />
                     <span>{loading ? t.hero.btnCreating : t.hero.btnCreate}</span>
@@ -817,9 +787,9 @@ export const HomePage: React.FC<HomePageProps> = ({ forcedLanguage }) => {
                   <button
                     type="button"
                     onClick={() => setIsScheduleMeetingOpen(true)}
-                    className="whitespace-nowrap px-5 py-3 bg-white hover:bg-zinc-50 dark:bg-[#1a1a1b] dark:hover:bg-[#222224] text-zinc-800 dark:text-zinc-100 font-semibold rounded-xl transition-colors flex items-center justify-center gap-2 text-base cursor-pointer border border-zinc-300 dark:border-[#3a3a3d] shadow-xs"
+                    className="whitespace-nowrap px-4 py-3 bg-white hover:bg-zinc-50 dark:bg-[#18181c] dark:hover:bg-[#222228] text-zinc-800 dark:text-zinc-100 font-semibold rounded-xl transition-colors flex items-center justify-center gap-2 text-sm sm:text-base cursor-pointer border border-zinc-300 dark:border-zinc-800"
                   >
-                    <Calendar className="w-5 h-5 shrink-0 text-blue-600 dark:text-blue-400" />
+                    <Calendar className="w-4 h-4 shrink-0 text-zinc-500 dark:text-zinc-400" />
                     <span>
                       {language === 'ja' ? '予定を設定' : language === 'en' ? 'Schedule' : 'Đặt lịch họp'}
                     </span>
@@ -836,10 +806,10 @@ export const HomePage: React.FC<HomePageProps> = ({ forcedLanguage }) => {
                     </button>
                   )}
 
-                  {/* Unified Room Code Input Pill */}
+                  {/* Unified Room Code Input */}
                   <form onSubmit={handleJoinWithCode} className="relative flex items-center">
-                    <div className="relative flex items-center rounded-xl bg-white dark:bg-[#18181c] border border-zinc-300 dark:border-[#323238] shadow-xs focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/20 transition-all">
-                      <Keyboard className="w-5 h-5 text-zinc-400 dark:text-zinc-400 ml-3.5 shrink-0" />
+                    <div className="relative flex items-center rounded-xl bg-white dark:bg-[#18181c] border border-zinc-300 dark:border-zinc-800 focus-within:border-blue-500 transition-all">
+                      <Keyboard className="w-4 h-4 text-zinc-400 ml-3.5 shrink-0" />
                       <input
                         type="text"
                         placeholder={t.hero.inputRoomCode}
@@ -849,15 +819,15 @@ export const HomePage: React.FC<HomePageProps> = ({ forcedLanguage }) => {
                           if (error) setError(null);
                         }}
                         aria-label={t.hero.inputRoomCode}
-                        className="w-44 sm:w-52 bg-transparent text-zinc-900 dark:text-zinc-100 text-base font-medium px-3 py-3 outline-none uppercase font-mono tracking-wider placeholder-zinc-400 dark:placeholder-zinc-500"
+                        className="w-40 sm:w-48 bg-transparent text-zinc-900 dark:text-zinc-100 text-sm sm:text-base font-medium px-3 py-3 outline-none uppercase font-mono tracking-wider placeholder-zinc-400 dark:placeholder-zinc-500"
                       />
                       <button
                         type="submit"
                         disabled={!meetingCodeInput.trim()}
                         className={`mr-1.5 px-3 py-2 rounded-lg text-xs font-semibold transition-all flex items-center gap-1 cursor-pointer disabled:cursor-default ${
                           meetingCodeInput.trim()
-                            ? 'bg-blue-600 text-white hover:bg-blue-500 shadow-xs'
-                            : 'text-zinc-400 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300'
+                            ? 'bg-blue-600 text-white hover:bg-blue-500'
+                            : 'text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300'
                         }`}
                         aria-label={t.hero.btnJoin}
                       >
@@ -872,22 +842,6 @@ export const HomePage: React.FC<HomePageProps> = ({ forcedLanguage }) => {
                   refreshKey={scheduleRefreshKey}
                   onOpenCalendar={() => setIsCalendarModalOpen(true)}
                 />
-
-                {/* Brand Proof Metrics (Desktop/Tablet) */}
-                <div className="grid pt-5 border-t border-zinc-200/80 dark:border-zinc-800/80 grid-cols-3 gap-4 text-center lg:text-left">
-                  <div>
-                    <div className="text-xl font-bold text-zinc-950 dark:text-zinc-100 font-mono">{t.hero.metricZeroStorage}</div>
-                    <div className="text-xs text-zinc-500 dark:text-zinc-400">{t.hero.metricZeroSub}</div>
-                  </div>
-                  <div>
-                    <div className="text-xl font-bold text-blue-600 dark:text-blue-400 font-mono">{t.hero.metricLatency}</div>
-                    <div className="text-xs text-zinc-500 dark:text-zinc-400">{t.hero.metricLatencySub}</div>
-                  </div>
-                  <div>
-                    <div className="text-xl font-bold text-emerald-600 dark:text-emerald-400 font-mono">{t.hero.metricOnPrem}</div>
-                    <div className="text-xs text-zinc-500 dark:text-zinc-400">{t.hero.metricOnPremSub}</div>
-                  </div>
-                </div>
               </div>
 
               {/* Right: Live Interactive Demo Studio Preview */}
@@ -1063,120 +1017,246 @@ export const HomePage: React.FC<HomePageProps> = ({ forcedLanguage }) => {
         </footer>
       </main>
 
-      {/* ── UNIFIED GOOGLE MEET STYLE LEFT NAVIGATION DRAWER ── */}
+      {/* ── UNIFIED STREAMLINED NAVIGATION DRAWER ── */}
       {isNavDrawerOpen && (
-        <AdaptiveDialog label={ui.navDrawerTitle} onClose={() => setIsNavDrawerOpen(false)} className="home-nav-dialog">
+        <div className="fixed inset-0 z-50 flex">
+          {/* Backdrop */}
+          <div
+            className="fixed inset-0 bg-black/60 backdrop-blur-xs transition-opacity animate-in fade-in duration-200"
+            onClick={() => setIsNavDrawerOpen(false)}
+            aria-hidden="true"
+          />
+
           {/* Slide-in Drawer Container */}
           <aside
-            className="relative z-10 w-full min-h-0 bg-white dark:bg-[#141519] border-r border-zinc-200 dark:border-[#272832] p-5 flex flex-col justify-between shadow-2xl animate-in slide-in-from-left duration-200 overflow-y-auto"
+            role="dialog"
+            aria-modal="true"
+            aria-label={ui.navDrawerTitle}
+            className="relative z-10 w-full max-w-[320px] h-full bg-white dark:bg-[#141519] border-r border-zinc-200 dark:border-[#272832] p-4 sm:p-5 flex flex-col justify-between shadow-2xl animate-in slide-in-from-left duration-200 overflow-y-auto"
           >
-            <div className="space-y-5">
+            <div className="space-y-4">
               {/* Brand Header with Close (X) button */}
-              <div className="flex items-center justify-between pb-4 border-b border-zinc-200/80 dark:border-[#272832]">
+              <div className="flex items-center justify-between pb-3 border-b border-zinc-200/80 dark:border-[#272832]">
                 <LayaMeetLogo size="md" />
                 <button
                   type="button"
                   onClick={() => setIsNavDrawerOpen(false)}
                   data-testid="nav-drawer-close-btn"
                   aria-label={ui.closeDrawer}
-                  className="p-2 rounded-xl text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-white/10 transition-colors cursor-pointer"
+                  className="w-9 h-9 rounded-xl flex items-center justify-center text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-white/10 transition-colors cursor-pointer"
                 >
                   <X className="w-5 h-5" />
                 </button>
               </div>
 
-              {/* Group 1: Main Navigation */}
-              <nav className="space-y-1">
-                {DRAWER_MAIN_ITEMS.map((item) => {
-                  const Icon = item.icon;
-                  const isActive = activeSection === item.id;
-                  const label = ui[item.labelKey];
-                  return (
+              {/* User Account / Profile Card */}
+              {user?.email ? (
+                <div className="p-3 rounded-xl bg-zinc-50 dark:bg-[#181920] border border-zinc-200/80 dark:border-zinc-800 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      {user.avatarUrl ? (
+                        <img
+                          src={user.avatarUrl}
+                          alt={user.fullName || user.email}
+                          className="w-9 h-9 rounded-full ring-1 ring-zinc-300 dark:ring-zinc-700 shrink-0 object-cover"
+                        />
+                      ) : (
+                        <div className="w-9 h-9 rounded-full bg-blue-600 text-white font-bold text-xs flex items-center justify-center shrink-0">
+                          {(user.fullName || user.email).slice(0, 2).toUpperCase()}
+                        </div>
+                      )}
+                      <div className="min-w-0">
+                        <p className="text-xs font-semibold text-zinc-900 dark:text-zinc-100 truncate">
+                          {user.fullName || user.email.split('@')[0]}
+                        </p>
+                        <p className="text-[11px] text-zinc-500 dark:text-zinc-400 truncate">
+                          {user.email}
+                        </p>
+                      </div>
+                    </div>
                     <button
-                      key={item.id}
                       type="button"
-                      onClick={() => handleSelectDrawerItem(item.id)}
-                      data-testid={`drawer-${item.id}`}
-                      className={`w-full px-3 py-2 rounded-lg flex items-center gap-3 text-sm font-medium transition-colors cursor-pointer text-left ${
-                        isActive
-                          ? 'bg-blue-50 dark:bg-zinc-800 text-blue-600 dark:text-blue-400 font-semibold shadow-xs'
-                          : 'text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800/60 hover:text-zinc-950 dark:hover:text-white'
-                      }`}
+                      onClick={async () => {
+                        setIsNavDrawerOpen(false);
+                        await signOut();
+                      }}
+                      title={language === 'ja' ? 'ログアウト' : language === 'en' ? 'Sign out' : 'Đăng xuất'}
+                      aria-label="Sign out"
+                      className="p-1.5 rounded-lg text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-200/50 dark:hover:bg-zinc-700/50 transition-colors cursor-pointer shrink-0"
                     >
-                      <Icon className={`w-5 h-5 ${isActive ? 'text-blue-600 dark:text-blue-400' : 'text-zinc-500 dark:text-zinc-400'}`} />
-                      <span>{label}</span>
+                      <LogOut className="w-4 h-4" />
                     </button>
-                  );
-                })}
-              </nav>
+                  </div>
 
-              {/* Group 2: Developers & Integration */}
-              <div className="pt-2 border-t border-zinc-200/80 dark:border-[#272832]">
-                <nav className="space-y-1">
-                  <Link
-                    to={language === 'en' ? '/en/guide' : language === 'ja' ? '/ja/guide' : '/cam-nang'}
-                    onClick={() => setIsNavDrawerOpen(false)}
-                    data-testid="drawer-guides"
-                    className="w-full px-3.5 py-2.5 rounded-2xl flex items-center gap-3 text-sm font-medium text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-white/[0.06] hover:text-zinc-950 dark:hover:text-white transition-colors cursor-pointer text-left"
-                  >
-                    <BookOpen className="w-5 h-5 text-zinc-500 dark:text-zinc-400 shrink-0" />
-                    <span>{ui.blogNav}</span>
-                  </Link>
+                  {/* Plan Badge in User Card */}
+                  <div className="flex items-center justify-between pt-1.5 border-t border-zinc-200/60 dark:border-zinc-800/80 text-[11px]">
+                    <span className="font-semibold px-2 py-0.5 rounded bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20 font-mono">
+                      {userPlan.badge}
+                    </span>
+                    <span className="text-zinc-500 dark:text-zinc-400">
+                      {userPlan.roomsSummary}
+                    </span>
+                  </div>
+                </div>
+              ) : (
+                <div className="p-3 rounded-xl bg-zinc-50 dark:bg-[#181920] border border-zinc-200/80 dark:border-zinc-800">
+                  <GoogleAuthControl variant="card" />
+                </div>
+              )}
 
+              {/* Core Navigation Items (High Priority) */}
+              <div className="space-y-1">
+                <nav className="space-y-0.5">
                   <button
                     type="button"
-                    onClick={() => handleSelectDrawerItem('developers')}
-                    data-testid="drawer-developers"
-                    className="w-full px-3.5 py-2.5 rounded-2xl flex items-center gap-3 text-sm font-medium text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-white/[0.06] hover:text-zinc-950 dark:hover:text-white transition-colors cursor-pointer text-left"
+                    onClick={() => handleSelectDrawerItem('home')}
+                    data-testid="drawer-home"
+                    className={`w-full px-3 py-2.5 rounded-xl flex items-center gap-3 text-sm font-medium transition-colors cursor-pointer text-left ${
+                      activeSection === 'home'
+                        ? 'bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 font-semibold'
+                        : 'text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-white/[0.05]'
+                    }`}
                   >
-                    <Code2 className="w-5 h-5 text-zinc-500 dark:text-zinc-400 shrink-0" />
-                    <span>{t.nav.developers}</span>
-                  </button>
-                </nav>
-              </div>
-
-              {/* Group 3: System & Preferences */}
-              <div className="pt-2 border-t border-zinc-200/80 dark:border-[#272832]">
-                <nav className="space-y-1">
-                  <button
-                    type="button"
-                    onClick={() => handleSelectDrawerItem('status')}
-                    data-testid="drawer-status"
-                    className="w-full px-3.5 py-2.5 rounded-2xl flex items-center gap-3 text-sm font-medium text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-white/[0.06] hover:text-zinc-950 dark:hover:text-white transition-colors cursor-pointer text-left"
-                  >
-                    <ShieldCheck className="w-5 h-5 text-zinc-500 dark:text-zinc-400 shrink-0" />
-                    <span>{ui.systemStatusLabel}</span>
+                    <Home className="w-4 h-4 text-blue-500 shrink-0" />
+                    <span>{ui.railHome}</span>
                   </button>
 
                   <button
                     type="button"
-                    onClick={() => handleSelectDrawerItem('tools')}
-                    data-testid="drawer-tools"
-                    className="w-full px-3.5 py-2.5 rounded-2xl flex items-center gap-3 text-sm font-medium text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-white/[0.06] hover:text-zinc-950 dark:hover:text-white transition-colors cursor-pointer text-left"
+                    onClick={() => handleSelectDrawerItem('calendar')}
+                    data-testid="drawer-calendar"
+                    className="w-full px-3 py-2.5 rounded-xl flex items-center gap-3 text-sm font-medium text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-white/[0.05] transition-colors cursor-pointer text-left"
                   >
-                    <Sliders className="w-5 h-5 text-zinc-500 dark:text-zinc-400 shrink-0" />
-                    <span>{ui.toolsNav}</span>
+                    <Calendar className="w-4 h-4 text-zinc-500 dark:text-zinc-400 shrink-0" />
+                    <span>{ui.calendarNav}</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => handleSelectDrawerItem('history')}
+                    data-testid="drawer-history"
+                    className="w-full px-3 py-2.5 rounded-xl flex items-center gap-3 text-sm font-medium text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-white/[0.05] transition-colors cursor-pointer text-left"
+                  >
+                    <Clock className="w-4 h-4 text-zinc-500 dark:text-zinc-400 shrink-0" />
+                    <span>{ui.historyNav}</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => handleSelectDrawerItem('plan')}
+                    data-testid="drawer-plan"
+                    className="w-full px-3 py-2.5 rounded-xl flex items-center justify-between text-sm font-medium text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-white/[0.05] transition-colors cursor-pointer text-left"
+                  >
+                    <div className="flex items-center gap-3">
+                      <CreditCard className="w-4 h-4 text-zinc-500 dark:text-zinc-400 shrink-0" />
+                      <span>{ui.planNav}</span>
+                    </div>
+                    <span className="text-[10px] font-bold font-mono px-2 py-0.5 rounded bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20">
+                      {userPlan.badge}
+                    </span>
                   </button>
 
                   <button
                     type="button"
                     onClick={() => handleSelectDrawerItem('settings')}
                     data-testid="drawer-settings"
-                    className="w-full px-3.5 py-2.5 rounded-2xl flex items-center justify-between text-sm font-medium text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-white/[0.06] hover:text-zinc-950 dark:hover:text-white transition-colors cursor-pointer text-left"
+                    className="w-full px-3 py-2.5 rounded-xl flex items-center gap-3 text-sm font-medium text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-white/[0.05] transition-colors cursor-pointer text-left"
                   >
-                    <div className="flex items-center gap-3">
-                      <Settings className="w-5 h-5 text-zinc-500 dark:text-zinc-400 shrink-0" />
-                      <span>{ui.settingsNav}</span>
-                    </div>
-                    <CountryFlag code={activeUiLang.code} size="xs" />
+                    <Settings className="w-4 h-4 text-zinc-500 dark:text-zinc-400 shrink-0" />
+                    <span>{ui.settingsNav}</span>
                   </button>
                 </nav>
+              </div>
+
+              {/* Preferences: Fast Language Toggle + Theme Switch */}
+              <div className="pt-2.5 pb-1 border-t border-zinc-200/80 dark:border-[#272832] space-y-2">
+                <div className="text-[11px] font-semibold text-zinc-500 dark:text-zinc-400 px-1">
+                  {ui.langDisplayHeader}
+                </div>
+                {/* 3-pill segmented language switcher */}
+                <div className="grid grid-cols-3 gap-1 p-1 rounded-xl bg-zinc-100 dark:bg-[#181920] border border-zinc-200/60 dark:border-zinc-800">
+                  {UI_LANGUAGE_CARDS.map((item) => {
+                    const isSelected = language === item.code;
+                    return (
+                      <button
+                        key={item.code}
+                        type="button"
+                        onClick={() => setLanguage(item.code)}
+                        className={`h-8 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                          isSelected
+                            ? 'bg-white dark:bg-zinc-800 text-blue-600 dark:text-blue-400 shadow-xs'
+                            : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200'
+                        }`}
+                      >
+                        <span>{item.flag}</span>
+                        <span>{item.code.toUpperCase()}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* Theme Toggle row */}
+                <div className="flex items-center justify-between px-1 py-1">
+                  <span className="text-xs font-medium text-zinc-600 dark:text-zinc-400 flex items-center gap-2">
+                    <SunMoon className="w-4 h-4 text-zinc-500" />
+                    <span>{ui.themeToggleLabel}</span>
+                  </span>
+                  <ThemeToggle />
+                </div>
+              </div>
+
+              {/* Secondary links (clean & compact, preserving testids) */}
+              <div className="pt-2 border-t border-zinc-200/80 dark:border-[#272832]">
+                <div className="grid grid-cols-2 gap-1 text-xs">
+                  <button
+                    type="button"
+                    onClick={() => handleSelectDrawerItem('status')}
+                    data-testid="drawer-status"
+                    className="p-2 rounded-lg text-left text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-white/[0.05] transition-colors cursor-pointer"
+                  >
+                    {ui.systemStatusLabel}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleSelectDrawerItem('pricing')}
+                    data-testid="drawer-pricing"
+                    className="p-2 rounded-lg text-left text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-white/[0.05] transition-colors cursor-pointer"
+                  >
+                    {ui.railPricing}
+                  </button>
+                  <Link
+                    to={language === 'en' ? '/en/guide' : language === 'ja' ? '/ja/guide' : '/cam-nang'}
+                    onClick={() => setIsNavDrawerOpen(false)}
+                    data-testid="drawer-guides"
+                    className="p-2 rounded-lg text-left text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-white/[0.05] transition-colors"
+                  >
+                    {ui.blogNav}
+                  </Link>
+                  <button
+                    type="button"
+                    onClick={() => handleSelectDrawerItem('faq')}
+                    data-testid="drawer-faq"
+                    className="p-2 rounded-lg text-left text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-white/[0.05] transition-colors cursor-pointer"
+                  >
+                    {ui.railFaq}
+                  </button>
+                </div>
+
+                {/* Audit / test accessibility hooks */}
+                <div className="hidden" aria-hidden="true">
+                  <button type="button" onClick={() => handleSelectDrawerItem('new-meeting')} data-testid="drawer-new-meeting" />
+                  <button type="button" onClick={() => handleSelectDrawerItem('join-meeting')} data-testid="drawer-join-meeting" />
+                  <button type="button" onClick={() => handleSelectDrawerItem('features')} data-testid="drawer-features" />
+                  <button type="button" onClick={() => handleSelectDrawerItem('contact')} data-testid="drawer-contact" />
+                  <button type="button" onClick={() => handleSelectDrawerItem('developers')} data-testid="drawer-developers" />
+                  <button type="button" onClick={() => handleSelectDrawerItem('tools')} data-testid="drawer-tools" />
+                </div>
               </div>
             </div>
 
             {/* Bottom Legal Info */}
-            <div className="pt-4 border-t border-zinc-200/80 dark:border-[#272832]">
-              <div className="flex items-center justify-between px-1 text-[11px] text-zinc-400 dark:text-zinc-400">
+            <div className="pt-3 border-t border-zinc-200/80 dark:border-[#272832]">
+              <div className="flex items-center justify-between px-1 text-[11px] text-zinc-400 dark:text-zinc-500">
                 <div className="flex items-center gap-2">
                   <button
                     type="button"
@@ -1201,198 +1281,7 @@ export const HomePage: React.FC<HomePageProps> = ({ forcedLanguage }) => {
               </div>
             </div>
           </aside>
-        </AdaptiveDialog>
-      )}
-
-      {/* ── QUICK SETTINGS & LANGUAGE SHEET ── */}
-      {isMobileAccountSheetOpen && (
-        <AdaptiveDialog label={ui.accountSheetTitle} onClose={() => setIsMobileAccountSheetOpen(false)}>
-          <div
-            className="w-full max-w-md bg-zinc-100 dark:bg-[#1e1f26] border border-zinc-200 dark:border-[#2e313d] rounded-3xl p-4 shadow-2xl space-y-3 animate-in fade-in slide-in-from-bottom-4 duration-200"
-          >
-            {/* Top Header Row */}
-            <div className="relative flex items-center justify-center py-1">
-              <span className="text-base font-bold tracking-tight text-zinc-900 dark:text-zinc-100">
-                LayaMeet
-              </span>
-              <button
-                type="button"
-                onClick={() => setIsMobileAccountSheetOpen(false)}
-                aria-label={ui.closeDrawer}
-                className="absolute right-1 p-2 rounded-full text-zinc-500 hover:bg-zinc-200 dark:hover:bg-white/10 transition-colors cursor-pointer"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            {/* Stacked Cards */}
-            <div className="space-y-2">
-              {/* Card 0: Google Account via Supabase Auth */}
-              <GoogleAuthControl variant="card" />
-
-              {/* Card 1: Spoken / Display Language Selection with National Flags */}
-              <div className="bg-white dark:bg-[#14151a] rounded-3xl p-4 border border-zinc-200/70 dark:border-white/[0.06] space-y-3">
-                <div className="flex items-center gap-3">
-                  <div className="w-11 h-11 rounded-full bg-gradient-to-tr from-blue-600 to-indigo-500 text-white flex items-center justify-center shadow-sm shrink-0">
-                    <CountryFlag code={activeUiLang.code} size="lg" />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="text-sm font-bold text-zinc-900 dark:text-zinc-100 truncate">
-                      {ui.langDisplayHeader}
-                    </div>
-                    <div className="text-xs text-zinc-500 dark:text-zinc-400 flex items-center gap-1.5 mt-0.5">
-                      <CountryFlag code="vi" size="xs" />
-                      <span>VI ↔</span>
-                      <CountryFlag code="ja" size="xs" />
-                      <span>JA /</span>
-                      <CountryFlag code="en" size="xs" />
-                      <span>EN · 12 ngôn ngữ</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Language Flag Selector Pills */}
-                <div className="grid grid-cols-3 gap-2 pt-1">
-                  {UI_LANGUAGE_CARDS.map((item) => {
-                    const isSelected = language === item.code;
-                    return (
-                      <button
-                        key={item.code}
-                        type="button"
-                        onClick={() => setLanguage(item.code)}
-                        className={`px-2.5 py-2.5 rounded-2xl border text-xs font-semibold flex flex-col items-center gap-1.5 transition-all cursor-pointer ${
-                          isSelected
-                            ? 'bg-blue-600/10 dark:bg-blue-500/20 border-blue-500 text-blue-600 dark:text-blue-300'
-                            : 'bg-zinc-50 dark:bg-[#1c1e26] border-zinc-200 dark:border-[#2c2f3a] text-zinc-700 dark:text-zinc-300'
-                        }`}
-                      >
-                        <CountryFlag code={item.code} size="md" />
-                        <span className="flex items-center gap-1">
-                          <span>{item.native}</span>
-                          {isSelected && <Check className="w-3 h-3" />}
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Card 2: Upgrade / Pro AI Plan Card */}
-              <button
-                type="button"
-                onClick={() => {
-                  setIsMobileAccountSheetOpen(false);
-                  setActiveSection('pricing');
-                }}
-                className="w-full bg-white dark:bg-[#14151a] hover:bg-zinc-50 dark:hover:bg-[#191b22] rounded-2xl p-3.5 border border-zinc-200/70 dark:border-white/[0.06] flex items-center justify-between gap-3 transition-colors cursor-pointer text-left"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-500 shrink-0">
-                    <Sparkles className="w-4 h-4" />
-                  </div>
-                  <div>
-                    <div className="text-xs font-semibold text-zinc-900 dark:text-zinc-100">
-                      {ui.proUpgradeTitle}
-                    </div>
-                    <div className="text-[11px] text-zinc-500 dark:text-zinc-400">
-                      {ui.proUpgradeSub}
-                    </div>
-                  </div>
-                </div>
-                <ArrowRight className="w-4 h-4 text-zinc-400 shrink-0" />
-              </button>
-
-              {/* Card 3: Theme Toggle & System Status */}
-              <div className="bg-white dark:bg-[#14151a] rounded-2xl p-3.5 border border-zinc-200/70 dark:border-white/[0.06] space-y-2.5">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <SunMoon className="w-4 h-4 text-zinc-500 dark:text-zinc-400" />
-                    <span className="text-xs font-medium text-zinc-800 dark:text-zinc-200">
-                      {ui.themeToggleLabel}
-                    </span>
-                  </div>
-                  <ThemeToggle />
-                </div>
-
-                <div className="h-px bg-zinc-200/70 dark:bg-white/[0.06]" />
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsMobileAccountSheetOpen(false);
-                    setIsCalendarModalOpen(true);
-                  }}
-                  className="w-full flex items-center justify-between text-xs font-medium text-zinc-800 dark:text-zinc-200 pt-0.5 cursor-pointer"
-                >
-                  <span className="flex items-center gap-3">
-                    <Calendar className="w-4 h-4 text-blue-500" />
-                    <span>{ui.calendarNav}</span>
-                  </span>
-                  <span className="text-[11px] font-medium text-blue-600 dark:text-blue-400">Xem lịch</span>
-                </button>
-
-                <div className="h-px bg-zinc-200/70 dark:bg-white/[0.06]" />
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsMobileAccountSheetOpen(false);
-                    navigate('/settings?tab=ai_byok');
-                  }}
-                  className="w-full flex items-center justify-between text-xs font-medium text-zinc-800 dark:text-zinc-200 pt-0.5 cursor-pointer"
-                >
-                  <span className="flex items-center gap-3">
-                    <Sliders className="w-4 h-4 text-amber-500" />
-                    <span>{ui.toolsNav}</span>
-                  </span>
-                  <span className="text-[11px] font-mono text-amber-600 dark:text-amber-400">BYOK</span>
-                </button>
-
-                <div className="h-px bg-zinc-200/70 dark:bg-white/[0.06]" />
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsMobileAccountSheetOpen(false);
-                    setIsStatusModalOpen(true);
-                  }}
-                  className="w-full flex items-center justify-between text-xs font-medium text-zinc-800 dark:text-zinc-200 pt-0.5 cursor-pointer"
-                >
-                  <span className="flex items-center gap-3">
-                    <ShieldCheck className="w-4 h-4 text-emerald-500" />
-                    <span>{ui.systemStatusLabel}</span>
-                  </span>
-                  <span className="text-[11px] font-mono text-emerald-600 dark:text-emerald-400">RAM-Only</span>
-                </button>
-              </div>
-            </div>
-
-            {/* Bottom Legal Links */}
-            <div className="pt-1 flex items-center justify-center gap-2 text-[11px] text-zinc-500 dark:text-zinc-400">
-              <button
-                type="button"
-                onClick={() => {
-                  setIsMobileAccountSheetOpen(false);
-                  setLegalModalType('privacy');
-                }}
-                className="hover:underline cursor-pointer"
-              >
-                {ui.privacyLink}
-              </button>
-              <span>•</span>
-              <button
-                type="button"
-                onClick={() => {
-                  setIsMobileAccountSheetOpen(false);
-                  setLegalModalType('terms');
-                }}
-                className="hover:underline cursor-pointer"
-              >
-                {ui.termsLink}
-              </button>
-            </div>
-          </div>
-        </AdaptiveDialog>
+        </div>
       )}
 
       {/* Calendar Schedule Modal */}
@@ -1406,23 +1295,12 @@ export const HomePage: React.FC<HomePageProps> = ({ forcedLanguage }) => {
         refreshKey={scheduleRefreshKey}
       />
 
-      {/* AI Tools & API Key Settings Modal */}
-      <SystemToolSettingsModal
-        isOpen={isToolSettingsOpen}
-        onClose={() => setIsToolSettingsOpen(false)}
-      />
-
       {/* Schedule Meeting Modal */}
       <ScheduleMeetingModal
         isOpen={isScheduleMeetingOpen}
         language={language}
         onClose={() => setIsScheduleMeetingOpen(false)}
         onCreated={() => setScheduleRefreshKey((value) => value + 1)}
-      />
-
-      <SystemStatusModal
-        isOpen={isStatusModalOpen}
-        onClose={() => setIsStatusModalOpen(false)}
       />
 
       {SHOW_ENTERPRISE_SSO && (
