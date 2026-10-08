@@ -1,6 +1,8 @@
 name: Build and Deploy Production
 
 on:
+  push:
+    branches: [ main ]
   workflow_dispatch:
 
 permissions:
@@ -53,7 +55,9 @@ jobs:
         with:
           context: ${{ matrix.context }}
           push: true
-          tags: ghcr.io/${{ steps.image.outputs.namespace }}/ai-translate-meeting-${{ matrix.name }}:${{ github.sha }}
+          tags: |
+            ghcr.io/${{ steps.image.outputs.namespace }}/ai-translate-meeting-${{ matrix.name }}:${{ github.sha }}
+            ghcr.io/${{ steps.image.outputs.namespace }}/ai-translate-meeting-${{ matrix.name }}:latest
           cache-from: type=gha,scope=${{ matrix.name }}
           cache-to: type=gha,mode=max,scope=${{ matrix.name }}
           provenance: mode=max
