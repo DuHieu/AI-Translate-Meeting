@@ -68,6 +68,9 @@ jobs:
     needs: [verify, publish-images]
     runs-on: ubuntu-latest
     environment: production
+    permissions:
+      contents: read
+      packages: read
     steps:
       - uses: actions/checkout@v4
       - name: Configure pinned SSH host identity
@@ -95,6 +98,8 @@ jobs:
           VPS_PORT: ${{ secrets.VPS_PORT }}
           VPS_USER: ${{ secrets.VPS_USER }}
           VPS_DEPLOY_PATH: ${{ vars.VPS_DEPLOY_PATH }}
+          GHCR_USER: ${{ github.actor }}
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -Eeuo pipefail
           deploy_root="${VPS_DEPLOY_PATH:-/opt/ai-translate-meeting}"
@@ -105,11 +110,14 @@ jobs:
           fi
           archive="/tmp/ai-translate-meeting-${GITHUB_SHA}.tgz"
           scp -P "$port" "${RUNNER_TEMP}/deployment-${GITHUB_SHA}.tgz" "$VPS_USER@$VPS_HOST:$archive"
-          ssh -p "$port" "$VPS_USER@$VPS_HOST" 'bash -s' -- "$deploy_root" "$GITHUB_SHA" "$archive" <<'REMOTE'
+          ssh -p "$port" "$VPS_USER@$VPS_HOST" 'bash -s' -- "$deploy_root" "$GITHUB_SHA" "$archive" "$GHCR_USER" "$GHCR_TOKEN" <<'REMOTE'
           set -Eeuo pipefail
           deploy_root="$1"
           image_tag="$2"
           archive="$3"
+          ghcr_user="$4"
+          ghcr_token="$5"
+          echo "$ghcr_token" | docker login ghcr.io -u "$ghcr_user" --password-stdin
           release_dir="$deploy_root/releases/$image_tag"
           mkdir -p "$release_dir" "$deploy_root/shared"
           tar -xzf "$archive" -C "$release_dir"
