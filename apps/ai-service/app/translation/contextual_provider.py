@@ -71,6 +71,7 @@ class ContextualTranslationProvider(TranslationProvider):
             f"contextual_translation_provider_{id(self)}",
             default="offline_pattern",
         )
+        self._last_provider_name_val: str = "offline_pattern"
         self.premium_provider = premium_provider or PremiumTranslationProvider()
         self.quota_manager = quota_manager or default_quota_manager
 
@@ -123,11 +124,18 @@ class ContextualTranslationProvider(TranslationProvider):
 
     @property
     def last_provider_name(self) -> str:
-        return self._last_provider_name.get()
+        var_val = self._last_provider_name.get()
+        if var_val != "offline_pattern":
+            return var_val
+        return self._last_provider_name_val
 
     @last_provider_name.setter
     def last_provider_name(self, value: str) -> None:
-        self._last_provider_name.set(value)
+        self._last_provider_name_val = value
+        try:
+            self._last_provider_name.set(value)
+        except Exception:
+            pass
 
     async def translate(
         self,
@@ -226,6 +234,11 @@ class ContextualTranslationProvider(TranslationProvider):
                 ),
                 timeout=self.timeout_seconds,
             )
+            if self._last_provider_name_val != "offline_pattern":
+                try:
+                    self._last_provider_name.set(self._last_provider_name_val)
+                except Exception:
+                    pass
         except asyncio.TimeoutError:
             fallback_used = True
             logger.warning(

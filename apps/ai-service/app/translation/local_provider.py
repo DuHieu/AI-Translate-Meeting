@@ -50,6 +50,7 @@ class LocalTranslationProvider(TranslationProvider):
             f"local_translation_provider_{id(self)}",
             default="offline_pattern",
         )
+        self._last_provider_name_val: str = "offline_pattern"
         self._quality_filter = SpeechQualityFilter()
         if self.cache_enabled:
             self._init_redis()
@@ -85,11 +86,18 @@ class LocalTranslationProvider(TranslationProvider):
 
     @property
     def last_provider_name(self) -> str:
-        return self._last_provider_name.get()
+        var_val = self._last_provider_name.get()
+        if var_val != "offline_pattern":
+            return var_val
+        return self._last_provider_name_val
 
     @last_provider_name.setter
     def last_provider_name(self, value: str) -> None:
-        self._last_provider_name.set(value)
+        self._last_provider_name_val = value
+        try:
+            self._last_provider_name.set(value)
+        except Exception:
+            pass
 
     def _init_redis(self):
         try:

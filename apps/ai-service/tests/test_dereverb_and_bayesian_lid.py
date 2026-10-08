@@ -77,16 +77,9 @@ def test_bayesian_lid_resolves_loanword_reverberation_sample(monkeypatch):
 
     service = SpeechToTextService(model_size="base")
 
-    # If faster_whisper is available with real weights, run end-to-end;
-    # otherwise mock the raw model output to reflect the empirical raw Whisper output
+    # Mock the raw model output to reflect the empirical raw Whisper output
     # ('en', 0.3156 with vi second candidate 0.2212) before dereverberation & Bayesian prior
-    try:
-        from faster_whisper import WhisperModel
-        has_real_model = True
-    except ImportError:
-        has_real_model = False
-
-    if not has_real_model:
+    if getattr(service, "_model", None) is None:
         mock_model = MagicMock()
         mock_model.detect_language.return_value = (
             "en",

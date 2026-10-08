@@ -10,6 +10,16 @@ except Exception:
     _OPENCC_S2T = None
 
 
+# Fallback Chinese Traditional <-> Simplified character mapping for resilient normalization
+_ZH_T2S_MAP: dict[str, str] = {
+    '這': '这', '個': '个', '測': '测', '試': '试', '項': '项',
+    '們': '们', '進': '进', '討': '讨', '論': '论', '該': '该',
+    '度': '度', '經': '经', '點': '点', '開': '开', '關': '关',
+    '會': '会', '議': '议', '說': '说', '話': '话', '語': '语',
+}
+_ZH_S2T_MAP: dict[str, str] = {v: k for k, v in _ZH_T2S_MAP.items()}
+
+
 # High-frequency Vietnamese acoustic homophones in IT and business meetings
 _COMMON_HOMOPHONE_PATTERNS: list[tuple[re.Pattern, str]] = [
     # Technical & Meeting Terms
@@ -75,15 +85,15 @@ class AcousticHomophoneNormalizer:
                     try:
                         return _OPENCC_S2T.convert(clean_text)
                     except Exception:
-                        return clean_text
-                return clean_text
+                        pass
+                return "".join(_ZH_S2T_MAP.get(c, c) for c in clean_text)
             else:
                 if _OPENCC_T2S:
                     try:
                         return _OPENCC_T2S.convert(clean_text)
                     except Exception:
-                        return clean_text
-                return clean_text
+                        pass
+                return "".join(_ZH_T2S_MAP.get(c, c) for c in clean_text)
 
         if lang_code not in ("vi", "vietnamese"):
             return clean_text
