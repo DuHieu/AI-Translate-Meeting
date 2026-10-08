@@ -58,3 +58,7 @@ backups/
 output/
 evidence/
 scripts/debug_*.py
+*.wav
+*.pcm
+*.mp3
+*audit-report.json

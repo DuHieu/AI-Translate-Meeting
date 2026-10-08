@@ -5,7 +5,7 @@ interface AdaptiveDialogProps extends Pick<React.DialogHTMLAttributes<HTMLDialog
   label: string;
   onClose: () => void;
   className?: string;
-  /** Dock in the layout on desktop; use a modal bottom sheet below 1024px. */
+  /** Dock on desktop; use the visible viewport as a modal screen below 1024px. */
   docked?: boolean;
 }
 
@@ -14,6 +14,7 @@ export function AdaptiveDialog({ children, label, onClose, className = '', docke
   const closeRef = useRef(onClose);
   closeRef.current = onClose;
   const startY = useRef<number | null>(null);
+  const closeAfterTouch = useRef(false);
   const backdropPointer = useRef(false);
   useEffect(() => {
     const dialog = ref.current!;
@@ -65,10 +66,26 @@ export function AdaptiveDialog({ children, label, onClose, className = '', docke
         className="sheet-handle"
         aria-label={`Đóng ${label}`}
         onClick={onClose}
-        onPointerDown={(event) => { startY.current = event.clientY; event.currentTarget.setPointerCapture(event.pointerId); }}
+        onPointerDown={(event) => { startY.current = event.clientY; closeAfterTouch.current = false; event.currentTarget.setPointerCapture(event.pointerId); }}
         onPointerUp={(event) => {
-          if (startY.current !== null && event.clientY - startY.current > 48) onClose();
+          const swiped = startY.current !== null && event.clientY - startY.current > 48;
           startY.current = null;
+          if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId);
+          // Finish the touch sequence before removing its target and consume the
+          // swipe's synthetic click. The next independent tap must still work.
+          if (swiped && event.pointerType === 'touch') closeAfterTouch.current = true;
+          else if (swiped) requestAnimationFrame(() => closeRef.current());
+        }}
+        onTouchEnd={(event) => {
+          if (!closeAfterTouch.current) return;
+          event.preventDefault();
+          closeAfterTouch.current = false;
+          onClose();
+        }}
+        onPointerCancel={(event) => {
+          startY.current = null;
+          closeAfterTouch.current = false;
+          if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId);
         }}
       ><span aria-hidden="true" /></button>
       <div className="adaptive-dialog__content">{children}</div>

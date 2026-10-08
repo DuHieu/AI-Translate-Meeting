@@ -1,0 +1,43 @@
+import fs from 'node:fs';import path from 'node:path';
+import { ownedRoomCleanup } from './qa-room-cleanup.mjs';
+process.env.PLAYWRIGHT_BROWSERS_PATH ||= path.resolve('../../output/playwright/browsers');
+const {chromium}=await import('playwright');const {default:AxeBuilder}=await import('@axe-core/playwright');
+const base=process.env.MOBILE_BASE_URL||'http://localhost:4186';const out=path.resolve(`../../output/playwright/mobile-20261008/${process.env.EXTRA_RUN||'quality-extra'}`);fs.mkdirSync(out,{recursive:true});
+const roomCleanup=ownedRoomCleanup(base,out);
+const browser=await chromium.launch({args:['--use-fake-device-for-media-stream','--use-fake-ui-for-media-stream']});const rows=[];
+const extraRoutes=[['article-vi-benchmark','/cam-nang/ket-qua-benchmark-ai-audio-lid-1000-voice-xau-ngap-ngung'],['article-vi-comparison','/cam-nang/so-sanh-chi-tiet-layameet-vs-zoom-ai'],['article-en-comparison','/en/guide/layameet-vs-zoom-ai-comparison'],['article-vi-alias','/vi/guide/hop-song-ngu-viet-nhat-khong-can-phien-dich-vien']];
+const widths=process.env.EXTRA_WIDTHS?process.env.EXTRA_WIDTHS.split(',').map(Number):[360,390,430,768,1024,1280,1440,1920];
+try {for(const width of widths){
+ const context=await browser.newContext({viewport:{width,height:width<768?844:900},hasTouch:true,isMobile:width<768,locale:'vi-VN',permissions:['microphone','camera']});await context.tracing.start({screenshots:true,snapshots:true,sources:true});const page=await context.newPage();roomCleanup.track(page);page.setDefaultTimeout(15000);const httpErrors=[];const browserErrors=[];page.on('pageerror',error=>browserErrors.push(error.message));page.on('response',response=>{if(response.status()>=400&&response.url().startsWith(base))httpErrors.push({status:response.status(),path:new URL(response.url()).pathname});});
+ async function capture(name){const file=path.join(out,`${name}-${width}.png`);await page.screenshot({path:file});const row={name,width,file};
+  row.measurement=await page.evaluate(()=>({width:document.documentElement.clientWidth,scroll:document.documentElement.scrollWidth}));
+  if([390,1440].includes(width)){const axe=await new AxeBuilder({page}).withTags(['wcag2a','wcag2aa','wcag21aa','wcag22aa']).analyze();fs.writeFileSync(path.join(out,`axe-${name}-${width}.json`),JSON.stringify(axe,null,2));row.violations=axe.violations.map(v=>({id:v.id,nodes:v.nodes.length}));}
+  rows.push(row);fs.writeFileSync(path.join(out,'results.json'),JSON.stringify(rows,null,2));console.log(width,name,row.violations?.map(v=>v.id).join(',')||'-');
+ }
+ const menu=async(label)=>{await page.getByRole('button',{name:'Thêm',exact:true}).tap();await page.getByRole('dialog',{name:'Tùy chọn cuộc họp',exact:true}).getByRole('button',{name:label,exact:true}).tap();};
+ if(process.env.EXTRA_TOUCH_DIAGNOSTIC)await page.addInitScript(()=>{window.__qaTouchEvents=[];for(const type of ['touchstart','touchend','pointerdown','pointerup','click'])document.addEventListener(type,event=>{const button=event.target.closest?.('button');window.__qaTouchEvents.push({type,label:button?.getAttribute('aria-label')||button?.textContent?.trim().slice(0,50),trusted:event.isTrusted});if(window.__qaTouchEvents.length>40)window.__qaTouchEvents.shift();},{capture:true,passive:true});});
+ try{
+ await page.goto(base);await page.locator('.cookie-consent').waitFor();await page.getByRole('button',{name:'Từ chối',exact:true}).tap();
+ await page.getByRole('button',{name:'Tạo cuộc họp mới',exact:true}).tap();await page.locator('#display-name').waitFor();const code=new URL(page.url()).pathname.split('/').at(-1);
+ for(const alias of ['join','prejoin']){await page.goto(`${base}/${alias}/${code}`);await page.locator('#display-name').waitFor();if(!new URL(page.url()).pathname.startsWith('/meeting/'))throw new Error('Legacy route did not redirect');await capture(`alias-${alias}`);}
+ await page.getByRole('button').filter({hasText:/Thiết bị & Từ điển|Tùy chọn nâng cao/}).tap();await capture('prejoin-advanced');await page.keyboard.press('Escape');
+ await page.locator('#display-name').pressSequentially('QA extra');await page.locator('#native-language-select').selectOption('en');await page.locator('button[type=submit]').tap();await page.getByRole('button',{name:'Tắt mic',exact:true}).waitFor({timeout:45000});
+ for(const [name,label] of [['audio-devices','Microphone & loa'],['video-devices','Chọn camera'],['layout','Đổi bố cục hiển thị'],['activities','Hoạt động'],['host','Bộ điều khiển của người tổ chức'],['recap','Tóm tắt'],['subtitle-history','Lịch sử phụ đề & xuất']]){
+  await menu(label);await page.locator('dialog[open]').waitFor();await capture(name);await page.keyboard.press('Escape');
+ }
+ await menu('Phụ đề nổi (PiP)');const widget=page.getByRole('region',{name:'Cửa sổ phụ đề nổi',exact:true});await widget.waitFor();await capture('floating-subtitles');
+ await widget.getByRole('button',{name:'Mở PiP ngoài màn hình',exact:true}).tap();await widget.locator('button[aria-pressed=true],p[role=status]').first().waitFor();await capture('pip-or-capability');
+ const pipClose=widget.getByRole('button',{name:'Đóng PiP',exact:true});if(await pipClose.count())await pipClose.tap();await widget.getByRole('button',{name:'Thu nhỏ cửa sổ phụ đề nổi',exact:true}).tap();await widget.waitFor({state:'hidden'});
+ await menu('Chat');const chooser=page.waitForEvent('filechooser');await page.getByRole('button',{name:'Đính kèm tệp tin',exact:true}).tap();await(await chooser).setFiles({name:'QA-mobile-chat.txt',mimeType:'text/plain',buffer:Buffer.from('QA local attachment; no user data')});await capture('chat-attachment');
+ await page.getByRole('button',{name:'Gửi tin nhắn',exact:true}).tap();await page.getByText('QA-mobile-chat.txt',{exact:true}).waitFor();await page.getByRole('button',{name:'Bỏ tệp đính kèm',exact:true}).waitFor({state:'hidden'});await capture('chat-file-metadata-sent');await page.keyboard.press('Escape');
+ await menu('Thông tin cuộc họp');await page.getByText('Cuộc họp đã sẵn sàng',{exact:true}).waitFor();await capture('meeting-information');await page.getByRole('button',{name:'Đóng',exact:true}).tap();
+ if(width<1024){await menu('Chat');const dialog=page.locator('dialog[open]').last();const rect=await dialog.locator('.sheet-handle').boundingBox();const cdp=await context.newCDPSession(page);const point={x:rect.x+rect.width/2,y:rect.y+10,id:1};await cdp.send('Input.synthesizeScrollGesture',{x:point.x,y:point.y,yDistance:70,gestureSourceType:'touch',speed:400,preventFling:true});await dialog.waitFor({state:'hidden'});/* Keep this input session until the context closes. */await capture('swipe-close');}
+ await page.getByRole('button',{name:'Rời',exact:true}).tap();await page.getByRole('button',{name:'Rời cuộc họp',exact:true}).tap();
+ await page.goto(base);await page.locator('[data-testid=mobile-hamburger-btn]:visible,[data-testid=header-logo-menu-btn]:visible').first().tap();await page.getByTestId('drawer-pricing').tap();
+ const upgrade=page.getByRole('button',{name:/Đăng Ký Gói Tháng/}).first();await upgrade.waitFor();await upgrade.tap();await page.getByRole('dialog').waitFor();await capture('checkout-login');await page.keyboard.press('Escape');
+ for(const [name,route] of extraRoutes){await page.goto(`${base}${route}`);await page.locator('h1').waitFor();await capture(name);}
+ await page.goto(`${base}/cai-dat`);await page.locator('main').waitFor();if(!new URL(page.url()).pathname.startsWith('/settings'))throw new Error('Settings alias failed');await capture('settings-alias');
+ }catch(error){await page.screenshot({path:path.join(out,`failure-${width}.png`)}).catch(()=>{});rows.push({width,error:error.message,httpErrors,browserErrors,touchEvents:process.env.EXTRA_TOUCH_DIAGNOSTIC?await page.evaluate(()=>window.__qaTouchEvents):undefined,visibleText:(await page.locator('body').innerText().catch(()=>'' )).slice(0,6000)});fs.writeFileSync(path.join(out,'results.json'),JSON.stringify(rows,null,2));console.log(width,'ERROR',error.message.split('\n')[0]);}
+ finally{await context.tracing.stop({path:path.join(out,`trace-${width}.zip`)});await context.close();await roomCleanup.cleanup();}
+}}finally{await browser.close();}
+process.exitCode=rows.some(r=>r.error||r.violations?.length||r.measurement?.scroll>r.measurement?.width+1)?1:0;

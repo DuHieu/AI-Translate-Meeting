@@ -86,6 +86,14 @@ export const MeetingTopBar: React.FC<MeetingTopBarProps> = ({
         ) : (
           <LayaMeetLogo size="sm" showWordmark={true} showBadge={false} />
         )}
+
+        {_meetingCode && (
+          <div className="hidden sm:flex items-center gap-1.5 pl-2 border-l border-zinc-200 dark:border-[#2e2e30]">
+            <span className="font-mono text-xs font-semibold px-2 py-0.5 rounded-md bg-zinc-100 dark:bg-[#1a1a1b] text-zinc-700 dark:text-zinc-300 border border-zinc-200 dark:border-[#3a3a3d]">
+              {_meetingCode}
+            </span>
+          </div>
+        )}
       </div>
 
       {/* Right-side controls */}

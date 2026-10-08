@@ -1,11 +1,13 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
+import { ownedRoomCleanup } from './qa-room-cleanup.mjs';
 
 const baseURL = process.env.MOBILE_BASE_URL || 'http://localhost:5173';
 const run = process.env.MOBILE_RUN || 'run-01';
 const out = process.env.MOBILE_ARTIFACT_ROOT || path.resolve(`../../output/playwright/mobile-20261008/${run}`);
 fs.mkdirSync(out, { recursive: true });
+const roomCleanup = ownedRoomCleanup(baseURL, out);
 process.env.PLAYWRIGHT_BROWSERS_PATH ||= path.resolve('../../output/playwright/browsers');
 const { chromium, webkit, devices } = await import('playwright');
 const { default: AxeBuilder } = await import('@axe-core/playwright');
@@ -15,7 +17,8 @@ const definitions = [
   { name: 'ipad-webkit', engine: webkit, device: devices['iPad Mini'] },
   { name: 'desktop1440', engine: chromium, device: { viewport: { width: 1440, height: 900 }, hasTouch: true, isMobile: false } },
 ];
-const selected = process.env.MOBILE_DEVICE ? definitions.filter(d => d.name === process.env.MOBILE_DEVICE) : definitions;
+const selected = process.env.MOBILE_DEVICE ? definitions.filter(d => d.name === process.env.MOBILE_DEVICE || (process.env.MOBILE_DEVICE === 'webkit' && d.engine===webkit) || (process.env.MOBILE_DEVICE === 'chromium' && d.engine===chromium)) : definitions;
+if (!selected.length) throw new Error('MOBILE_DEVICE không khớp thiết bị kiểm thử nào.');
 const results = [];
 const cleanError = value => String(value).replace(/(?:Bearer\s+|token[=:])[^\s&"']+/gi, '[redacted]').slice(0, 2400);
 async function waitUntil(fn, timeout = 15000) {
@@ -27,7 +30,7 @@ for (const definition of selected) {
   const deviceOut = path.join(out, definition.name);
   fs.mkdirSync(deviceOut, { recursive: true });
   let browser, context, page;
-  const deviceResult = { device: definition.name, baseURL, scope: 'Live local API + LiveKit; emulated device; fake media', steps: [], audits: [], errors: [] };
+  const deviceResult = { device: definition.name, baseURL, playwrightVersion:JSON.parse(fs.readFileSync(new URL('../node_modules/playwright/package.json',import.meta.url),'utf8')).version, scope: 'Live local API + LiveKit; emulated device; fake media', steps: [], audits: [], errors: [] };
   results.push(deviceResult);
   let code;
   async function evidence(name) {
@@ -60,7 +63,7 @@ for (const definition of selected) {
     browser = await definition.engine.launch({ headless: !process.env.MOBILE_HEADFUL, args: definition.engine === chromium ? ['--use-fake-device-for-media-stream', '--use-fake-ui-for-media-stream'] : [] });
     context = await browser.newContext({ ...definition.device, hasTouch: true, permissions: ['camera', 'microphone'], locale: 'vi-VN', timezoneId: 'Asia/Bangkok', recordVideo: { dir: path.join(deviceOut, 'video') } });
     await context.tracing.start({ screenshots: true, snapshots: true, sources: true });
-    page = await context.newPage();
+    page = await context.newPage(); roomCleanup.track(page);
     page.setDefaultTimeout(12000);
     page.on('pageerror', error => deviceResult.errors.push(cleanError(error.message)));
     page.on('crash', () => { deviceResult.crashed=true; });
@@ -281,6 +284,7 @@ for (const definition of selected) {
     deviceResult.trace = path.join(deviceOut, 'trace.zip');
     await context?.tracing.stop({ path: deviceResult.trace }).catch(() => {});
     await context?.close(); await browser?.close();
+    await roomCleanup.cleanup();
     fs.writeFileSync(path.join(out, 'results.json'), JSON.stringify(results, null, 2));
   }
 }

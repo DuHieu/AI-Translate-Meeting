@@ -1,11 +1,13 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import { ownedRoomCleanup } from './qa-room-cleanup.mjs';
 process.env.PLAYWRIGHT_BROWSERS_PATH ||= path.resolve('../../output/playwright/browsers');
 const { chromium } = await import('playwright');
 const { default: AxeBuilder } = await import('@axe-core/playwright');
 const base = process.env.MOBILE_BASE_URL || 'http://localhost:5173';
 const out = path.resolve(`../../output/playwright/mobile-20261008/${process.env.QUALITY_RUN || 'quality'}`);
 fs.mkdirSync(out, { recursive: true });
+const roomCleanup=ownedRoomCleanup(base,out);
 const routes = [
   ['home', '/'], ['ja', '/ja'], ['en', '/en'], ['settings', '/settings'], ['developers', '/developers'], ['admin', '/admin'], ['auth-callback', '/auth/callback'],
   ['guide-vi', '/cam-nang'], ['guide-vi-alias', '/vi/guide'], ['guide-en', '/en/guide'], ['guide-ja', '/ja/guide'],
@@ -15,9 +17,9 @@ const routes = [
 ];
 const rows = [];
 const browser = await chromium.launch({ args: ['--use-fake-device-for-media-stream', '--use-fake-ui-for-media-stream'] });
-for (const width of [360, 390, 430, 768, 1024, 1280, 1440, 1920]) {
+try { for (const width of [360, 390, 430, 768, 1024, 1280, 1440, 1920]) {
   const context = await browser.newContext({ viewport: { width, height: width < 768 ? 844 : 900 }, hasTouch: true, isMobile: width < 768, locale: 'vi-VN', deviceScaleFactor: 1 });
-  const page = await context.newPage();
+  const page = await context.newPage(); roomCleanup.track(page);
   page.setDefaultTimeout(15000);
   const consoleErrors = [];
   page.on('pageerror', e => consoleErrors.push(e.message.slice(0, 300)));
@@ -131,6 +133,7 @@ for (const width of [360, 390, 430, 768, 1024, 1280, 1440, 1920]) {
     catch(error) { rows.push({name,width,error:error.message.slice(0,200)}); console.log(width,name,'ERROR'); }
   }
   await context.close();
+  await roomCleanup.cleanup();
 }
-await browser.close();
+} finally { await browser.close(); await roomCleanup.cleanup(); }
 console.log('Quality artifacts',out);

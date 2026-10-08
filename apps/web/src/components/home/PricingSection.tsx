@@ -332,7 +332,7 @@ export const PricingSection: React.FC<PricingSectionProps> = ({ onSelectTier, on
 
           {/* Billing Interval Switcher */}
           <div className="pt-2 flex items-center justify-center gap-3">
-            <button type="button" className={`text-xs font-medium cursor-pointer transition-colors ${!isAnnual ? 'text-zinc-950 dark:text-white font-semibold' : 'text-zinc-500'}`} onClick={() => setIsAnnual(false)}>
+            <button type="button" className={`text-xs font-medium cursor-pointer transition-colors ${!isAnnual ? 'text-zinc-950 dark:text-white font-semibold' : 'text-zinc-600 dark:text-zinc-400'}`} onClick={() => setIsAnnual(false)}>
               {content.monthly}
             </button>
             <button
@@ -351,7 +351,7 @@ export const PricingSection: React.FC<PricingSectionProps> = ({ onSelectTier, on
                 }`}
               />
             </button>
-            <button type="button" className={`text-xs font-medium cursor-pointer transition-colors flex items-center gap-1.5 ${isAnnual ? 'text-zinc-950 dark:text-white font-semibold' : 'text-zinc-500'}`} onClick={() => setIsAnnual(true)}>
+            <button type="button" className={`text-xs font-medium cursor-pointer transition-colors flex items-center gap-1.5 ${isAnnual ? 'text-zinc-950 dark:text-white font-semibold' : 'text-zinc-600 dark:text-zinc-400'}`} onClick={() => setIsAnnual(true)}>
               <span>{content.annual}</span>
               <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
                 {content.save20}
@@ -460,7 +460,7 @@ export const PricingSection: React.FC<PricingSectionProps> = ({ onSelectTier, on
                     }}
                     className={`w-full py-2.5 px-4 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
                       tier.popular
-                        ? 'bg-blue-600 hover:bg-blue-500 text-white shadow-md shadow-blue-500/20'
+                        ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-500/20'
                         : tier.id === 'enterprise'
                         ? 'bg-zinc-900 hover:bg-zinc-800 dark:bg-white dark:hover:bg-zinc-100 text-white dark:text-zinc-900'
                         : 'bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-800 dark:text-zinc-200 border border-zinc-200 dark:border-zinc-700'

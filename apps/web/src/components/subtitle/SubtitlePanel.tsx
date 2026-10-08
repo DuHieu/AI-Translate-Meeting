@@ -529,7 +529,7 @@ export const SubtitlePanel: React.FC<SubtitlePanelProps> = ({
             type="button"
             onClick={handleGenerateRecap}
             disabled={history.length === 0 || isGeneratingRecap}
-            className="w-full rounded-xl bg-sky-600 px-3 py-2.5 text-sm font-medium text-white transition hover:bg-sky-500 disabled:opacity-40"
+            className="w-full rounded-xl bg-sky-700 px-3 py-2.5 text-sm font-medium text-white transition hover:bg-sky-800 disabled:opacity-40"
           >
             {isGeneratingRecap ? 'Đang tạo tóm tắt…' : 'Tạo tóm tắt cuộc họp'}
           </button>
@@ -693,7 +693,7 @@ export const SubtitlePanel: React.FC<SubtitlePanelProps> = ({
               return (
                 <div key={message.id} className={`flex flex-col ${isMe ? 'items-end' : 'items-start'}`}>
                   <span className="mb-1 px-1 text-[10px] text-zinc-400">{message.senderName}</span>
-                  <div className={`max-w-[90%] space-y-2 rounded-xl px-3 py-2 text-xs leading-5 ${isMe ? 'bg-sky-600 text-white' : 'bg-slate-800 text-zinc-200'}`}>
+                  <div className={`max-w-[90%] space-y-2 rounded-xl px-3 py-2 text-xs leading-5 ${isMe ? 'bg-sky-700 text-white' : 'bg-slate-800 text-zinc-200'}`}>
                     {message.text && <p className="break-words">{message.text}</p>}
                     {links.length > 0 && (
                       <div className="space-y-1.5 pt-0.5">

@@ -13,7 +13,7 @@ function scan(dir) {
       const lines = fs.readFileSync(file, 'utf8').split('\n');
       lines.forEach((line, index) => {
         if (/<Route |<(button|input|select|textarea|Link)\b|onClick=|onSubmit=|onPointer|onMouse|onContextMenu|hidden (md|lg|sm):|md:hidden|getDisplayMedia|setSinkId|clipboard|PictureInPicture|wakeLock|visualViewport/.test(line)) {
-          rows.push({ file: path.relative(root, file).replace(source, 'apps/web/src').replaceAll('\\', '/'), line: index + 1, code: line.trim() });
+          rows.push({ file: path.relative(root, file).replaceAll('\\', '/').replace(source, 'apps/web/src'), line: index + 1, code: line.trim() });
         }
       });
     }

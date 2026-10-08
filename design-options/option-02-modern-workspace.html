@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="vi" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>LayaMeet — Option 02: Modern Meeting Workspace</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#f0f7ff',
+              500: '#0284c7',
+              600: '#2563eb',
+              700: '#1d4ed8',
+            }
+          },
+          fontFamily: {
+            sans: ['Inter', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
+            mono: ['JetBrains Mono', 'Menlo', 'monospace']
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    :root {
+      --bg-base: #f8fafc;
+      --bg-surface: #ffffff;
+      --border-subtle: #e2e8f0;
+      --border-default: #cbd5e1;
+      --text-primary: #0f172a;
+      --text-secondary: #475569;
+      --accent: #2563eb;
+    }
+    html.dark {
+      --bg-base: #090a0f;
+      --bg-surface: #11131a;
+      --border-subtle: #1e2230;
+      --border-default: #2d3348;
+      --text-primary: #f8fafc;
+      --text-secondary: #94a3b8;
+      --accent: #3b82f6;
+    }
+    body {
+      background-color: var(--bg-base);
+      color: var(--text-primary);
+      font-family: 'Inter', -apple-system, sans-serif;
+      overflow: hidden;
+    }
+    .workspace-shell {
+      height: 100dvh;
+    }
+    .scrollbar-thin::-webkit-scrollbar {
+      width: 5px;
+    }
+    .scrollbar-thin::-webkit-scrollbar-thumb {
+      background: var(--border-default);
+      border-radius: 9999px;
+    }
+  </style>
+</head>
+<body class="select-none antialiased">
+  <!-- Interactive Neural Linguistic Background Canvas (Subtle Productivity Tone) -->
+  <canvas id="neuron-canvas" class="pointer-events-none fixed inset-0 z-0 h-full w-full opacity-60" aria-hidden="true"></canvas>
+
+  <div class="workspace-shell relative z-10 flex flex-col justify-between w-full overflow-hidden">
+    <!-- Top Workspace Navigation Bar -->
+    <header class="h-14 border-b border-zinc-200 dark:border-[#1e2230] bg-white/90 dark:bg-[#11131a]/90 backdrop-blur-md px-5 flex items-center justify-between shrink-0 z-20">
+      <!-- Left: Workspace Identity & Room Info -->
+      <div class="flex items-center gap-4">
+        <div class="flex items-center gap-2.5">
+          <div class="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center text-white shadow-sm font-black text-sm">
+            LM
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <h1 class="text-sm font-bold text-zinc-900 dark:text-zinc-100 tracking-tight leading-none">Sprint Architecture Review</h1>
+              <span class="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-mono text-[10px] font-semibold border border-emerald-500/20">
+                LIVE
+              </span>
+            </div>
+            <p class="text-[11px] text-zinc-500 dark:text-zinc-400 leading-none mt-1 flex items-center gap-2">
+              <span>Phòng: <b class="font-mono text-zinc-700 dark:text-zinc-300">HCM-DEV-2026</b></span>
+              <span>•</span>
+              <span class="text-blue-600 dark:text-blue-400">IT / Software Architecture</span>
+            </p>
+          </div>
+        </div>
+
+        <div class="h-6 w-px bg-zinc-200 dark:bg-zinc-800 hidden sm:block"></div>
+
+        <!-- Quick Meeting Invite Button -->
+        <button id="copy-btn" class="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-zinc-100 hover:bg-zinc-200 dark:bg-[#1c202d] dark:hover:bg-[#252b3d] text-zinc-700 dark:text-zinc-300 text-xs font-semibold border border-zinc-200 dark:border-zinc-700/60 transition-colors">
+          <svg class="w-3.5 h-3.5 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+          </svg>
+          <span id="copy-text">Sao chép link mời</span>
+        </button>
+      </div>
+
+      <!-- Right: Security Badge, Layout Switcher & Profile -->
+      <div class="flex items-center gap-2 sm:gap-3">
+        <!-- Security Spec -->
+        <div class="hidden md:flex items-center gap-1.5 text-xs text-zinc-600 dark:text-zinc-400 bg-zinc-100/80 dark:bg-[#181c28] px-3 py-1.5 rounded-lg border border-zinc-200 dark:border-[#262c3e]">
+          <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+          <span class="font-medium">E2EE RAM-Only</span>
+          <span class="text-zinc-400">|</span>
+          <span class="font-mono text-[11px] text-blue-600 dark:text-blue-400">&lt;350ms</span>
+        </div>
+
+        <!-- Theme Toggle -->
+        <button id="theme-toggle" class="p-2 rounded-lg border border-zinc-200 dark:border-zinc-700/60 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-600 dark:text-zinc-300 transition-colors">
+          <svg class="w-4 h-4 hidden dark:block" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path>
+          </svg>
+          <svg class="w-4 h-4 block dark:hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="4"></circle><path d="M12 2v2"></path><path d="M12 20v2"></path><path d="m4.93 4.93 1.41 1.41"></path><path d="m17.66 17.66 1.41 1.41"></path><path d="M2 12h2"></path><path d="M20 12h2"></path><path d="m6.34 17.66-1.41 1.41"></path><path d="m19.07 4.93-1.41 1.41"></path>
+          </svg>
+        </button>
+
+        <!-- User Profile Pill -->
+        <div class="flex items-center gap-2 pl-2 border-l border-zinc-200 dark:border-zinc-800">
+          <div class="w-8 h-8 rounded-full bg-gradient-to-tr from-blue-600 to-indigo-600 text-white flex items-center justify-center font-bold text-xs ring-2 ring-blue-500/30">
+            MN
+          </div>
+          <div class="hidden xl:block text-left">
+            <div class="text-xs font-bold leading-none text-zinc-900 dark:text-zinc-100">Minh Nguyen</div>
+            <div class="text-[10px] text-zinc-500 leading-none mt-1">Host • Tiếng Việt</div>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Workspace: Stage + Productivity Side Dock -->
+    <main class="flex-1 flex min-h-0 relative">
+      <!-- Left: Video Grid & Live Translation Band -->
+      <section class="flex-1 flex flex-col min-w-0 p-4 gap-3 overflow-hidden">
+        <!-- Presentation / Video Stage -->
+        <div class="flex-1 grid grid-cols-1 md:grid-cols-2 gap-3 min-h-0">
+          <!-- Active Speaker: Kenji Sato -->
+          <div class="relative rounded-2xl overflow-hidden bg-[#0d0f14] border-2 border-blue-500 shadow-lg flex flex-col justify-between p-4 group">
+            <div class="flex items-center justify-between z-10">
+              <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-black/60 backdrop-blur-md text-white text-xs font-semibold border border-white/10">
+                <span>🇯🇵</span>
+                <span>Kenji Sato</span>
+                <span class="text-[10px] font-mono text-blue-400">Speaker</span>
+              </span>
+              <span class="flex items-center gap-1 px-2.5 py-1 rounded-full bg-blue-600/20 text-blue-400 border border-blue-500/30 text-[11px] font-mono">
+                <span class="w-1.5 h-1.5 rounded-full bg-blue-400 animate-ping"></span>
+                <span>Speaking JA</span>
+              </span>
+            </div>
+
+            <!-- Avatar / Presentation visual center -->
+            <div class="self-center w-28 h-28 rounded-2xl bg-gradient-to-tr from-indigo-700 via-blue-600 to-purple-600 flex items-center justify-center text-white text-3xl font-extrabold shadow-xl ring-4 ring-blue-500/30">
+              KS
+            </div>
+
+            <!-- Bottom volume meter -->
+            <div class="flex items-center justify-between z-10">
+              <span class="text-[11px] text-zinc-400 font-mono">Tokyo R&D Lab</span>
+              <div class="flex items-end gap-1 h-3.5">
+                <span class="w-1 h-2 bg-emerald-400 rounded-full animate-bounce"></span>
+                <span class="w-1 h-3 bg-emerald-400 rounded-full animate-bounce delay-100"></span>
+                <span class="w-1 h-1.5 bg-emerald-400 rounded-full animate-bounce delay-75"></span>
+                <span class="w-1 h-3.5 bg-emerald-400 rounded-full animate-bounce delay-150"></span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Self Tile: Minh Nguyen -->
+          <div class="relative rounded-2xl overflow-hidden bg-[#0d0f14] border border-zinc-800 shadow-md flex flex-col justify-between p-4 group">
+            <div class="flex items-center justify-between z-10">
+              <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-black/60 backdrop-blur-md text-white text-xs font-semibold border border-white/10">
+                <span>🇻🇳</span>
+                <span>Minh Nguyen (Bạn)</span>
+              </span>
+              <span class="px-2 py-0.5 rounded bg-zinc-800 text-zinc-400 text-[10px] font-mono">
+                Mic Sẵn Sàng
+              </span>
+            </div>
+
+            <div class="self-center w-28 h-28 rounded-2xl bg-gradient-to-tr from-blue-700 to-cyan-600 flex items-center justify-center text-white text-3xl font-extrabold shadow-xl">
+              MN
+            </div>
+
+            <div class="flex items-center justify-between z-10">
+              <span class="text-[11px] text-zinc-400 font-mono">Đà Nẵng Team</span>
+              <span class="text-xs text-zinc-500">HD 720p</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Integrated Live Translation Dock (Clean Linear Style) -->
+        <div class="shrink-0 rounded-2xl border border-zinc-200 dark:border-[#222738] bg-white/95 dark:bg-[#131622]/95 backdrop-blur-md p-4 shadow-sm space-y-2">
+          <div class="flex items-center justify-between text-xs">
+            <div class="flex items-center gap-2">
+              <span class="font-bold text-blue-600 dark:text-blue-400 flex items-center gap-1.5">
+                <span>🇯🇵</span>
+                <span>Kenji Sato (Nhật Bản):</span>
+              </span>
+              <span class="text-zinc-400 dark:text-zinc-500">|</span>
+              <span class="font-mono text-[11px] text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">
+                Whisper AI STT: 298ms
+              </span>
+            </div>
+            <!-- Language Target Switcher -->
+            <div class="flex items-center gap-1 font-mono text-[11px]">
+              <span class="text-zinc-500">Đích:</span>
+              <span class="font-bold text-zinc-800 dark:text-zinc-200 bg-zinc-100 dark:bg-zinc-800 px-2 py-0.5 rounded border border-zinc-200 dark:border-zinc-700">
+                🇻🇳 Tiếng Việt
+              </span>
+            </div>
+          </div>
+
+          <!-- Bilingual Speech Pair -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1">
+            <div class="p-2.5 rounded-xl bg-zinc-50 dark:bg-[#181c2a] border border-zinc-200 dark:border-[#262c3e]">
+              <span class="text-[10px] font-mono uppercase tracking-wider text-zinc-400 block mb-0.5">Tiếng Nhật Gốc</span>
+              <p class="text-xs text-zinc-700 dark:text-zinc-300 font-medium">
+                来週のリリースに向けて、多言語リアルタイム翻訳の遅延を350ms以下に最適化しました。
+              </p>
+            </div>
+            <div class="p-2.5 rounded-xl bg-blue-50/60 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-900/50">
+              <span class="text-[10px] font-mono uppercase tracking-wider text-blue-600 dark:text-blue-400 block mb-0.5">Bản Dịch Tiếng Việt (Trực Tiếp)</span>
+              <p class="text-xs text-zinc-900 dark:text-zinc-100 font-semibold leading-relaxed">
+                Trước đợt phát hành tuần tới, chúng tôi đã tối ưu độ trễ dịch đa ngữ thời gian thực xuống dưới 350ms.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Right: Productivity Workspace Dock (Organized Tabs) -->
+      <aside class="w-96 border-l border-zinc-200 dark:border-[#1e2230] bg-white dark:bg-[#11131a] flex flex-col shrink-0 z-20">
+        <!-- Workspace Header Tabs -->
+        <div class="p-3 border-b border-zinc-200 dark:border-[#1e2230] flex items-center justify-between">
+          <div class="flex gap-1 bg-zinc-100 dark:bg-[#181c28] p-1 rounded-xl w-full border border-zinc-200 dark:border-[#262c3e]">
+            <button class="flex-1 py-1.5 rounded-lg bg-white dark:bg-blue-600 text-zinc-900 dark:text-white text-xs font-semibold shadow-xs text-center transition-all">
+              Action Items (2)
+            </button>
+            <button class="flex-1 py-1.5 rounded-lg text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200 text-xs font-semibold text-center transition-all">
+              Biên bản MoM
+            </button>
+            <button class="flex-1 py-1.5 rounded-lg text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200 text-xs font-semibold text-center transition-all">
+              Hội thoại
+            </button>
+          </div>
+        </div>
+
+        <!-- Action Items List with Decision Status -->
+        <div class="flex-1 overflow-y-auto p-4 space-y-3 scrollbar-thin">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold text-zinc-900 dark:text-zinc-100 uppercase tracking-wider font-mono">
+              Trích xuất tự động từ AI (Laya)
+            </span>
+            <span class="text-[10px] text-blue-600 dark:text-blue-400 font-semibold">Tự động gắn thẻ</span>
+          </div>
+
+          <!-- Task Card 1 -->
+          <div class="p-3.5 rounded-xl bg-zinc-50 dark:bg-[#161a26] border border-zinc-200 dark:border-[#252b3d] space-y-2">
+            <div class="flex items-start justify-between gap-2">
+              <div class="flex items-center gap-2">
+                <input type="checkbox" checked class="w-4 h-4 rounded text-blue-600 focus:ring-blue-500">
+                <span class="text-xs font-bold text-zinc-900 dark:text-zinc-100">Xác nhận benchmark STT đa ngữ &lt;350ms</span>
+              </div>
+              <span class="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[10px] font-semibold border border-emerald-500/20 shrink-0">
+                98% tin cậy
+              </span>
+            </div>
+            <p class="text-[11px] text-zinc-500 dark:text-zinc-400 pl-6">
+              Người phụ trách: <b>Kenji Sato</b> • Cụm Staging Tokyo
+            </p>
+          </div>
+
+          <!-- Task Card 2 -->
+          <div class="p-3.5 rounded-xl bg-zinc-50 dark:bg-[#161a26] border border-zinc-200 dark:border-[#252b3d] space-y-2">
+            <div class="flex items-start justify-between gap-2">
+              <div class="flex items-center gap-2">
+                <input type="checkbox" class="w-4 h-4 rounded text-blue-600 focus:ring-blue-500">
+                <span class="text-xs font-bold text-zinc-900 dark:text-zinc-100">Kiểm thử tải đồng thời 10 khu vực quốc gia</span>
+              </div>
+              <span class="px-2 py-0.5 rounded bg-amber-500/10 text-amber-600 dark:text-amber-400 text-[10px] font-semibold border border-amber-500/20 shrink-0">
+                96% tin cậy
+              </span>
+            </div>
+            <p class="text-[11px] text-zinc-500 dark:text-zinc-400 pl-6">
+              Người phụ trách: <b>David Miller</b> • Hạn chót: Thứ Năm
+            </p>
+          </div>
+
+          <!-- Decision Card -->
+          <div class="p-3.5 rounded-xl bg-purple-50/60 dark:bg-purple-950/20 border border-purple-200 dark:border-purple-900/50 space-y-1.5">
+            <div class="flex items-center gap-1.5 text-xs font-bold text-purple-700 dark:text-purple-300">
+              <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <span>Quyết định đã thống nhất (Consensus)</span>
+            </div>
+            <p class="text-xs text-zinc-800 dark:text-zinc-200 leading-snug">
+              Áp dụng kiến trúc tách Laya Sidecar hoàn toàn khỏi luồng hiển thị phụ đề trực tiếp để đảm bảo TTFS &lt;350ms.
+            </p>
+          </div>
+        </div>
+
+        <!-- Dock Actions -->
+        <div class="p-4 border-t border-zinc-200 dark:border-[#1e2230] space-y-2">
+          <button class="w-full py-2.5 px-4 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold flex items-center justify-center gap-2 shadow-sm transition-all">
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+            </svg>
+            <span>Xuất Biên Bản Họp (Markdown / PDF)</span>
+          </button>
+        </div>
+      </aside>
+    </main>
+
+    <!-- Bottom Productivity Meeting Bar (Clean Segmented Toolbar) -->
+    <footer class="h-16 border-t border-zinc-200 dark:border-[#1e2230] bg-white/95 dark:bg-[#11131a]/95 backdrop-blur-md px-6 flex items-center justify-between shrink-0 z-30">
+      <!-- Left: Device & Audio Tester -->
+      <div class="flex items-center gap-2">
+        <button class="flex items-center gap-2 px-3 py-2 rounded-xl bg-zinc-100 hover:bg-zinc-200 dark:bg-[#1a1e2c] dark:hover:bg-[#252b3d] text-zinc-700 dark:text-zinc-300 text-xs font-semibold border border-zinc-200 dark:border-zinc-700/60 transition-colors">
+          <svg class="w-4 h-4 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+          </svg>
+          <span class="hidden sm:inline">Loa &amp; Mic Chuẩn</span>
+        </button>
+      </div>
+
+      <!-- Center: Segmented Productivity Controls -->
+      <div class="flex items-center gap-3">
+        <!-- AV Group -->
+        <div class="flex items-center p-1 rounded-xl bg-zinc-100 dark:bg-[#1a1e2c] border border-zinc-200 dark:border-[#272e44]">
+          <button class="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-white dark:bg-[#252b3d] text-zinc-900 dark:text-white font-semibold text-xs shadow-xs">
+            <svg class="w-4 h-4 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+            </svg>
+            <span class="hidden sm:inline">Bật Mic</span>
+          </button>
+          <button class="flex items-center gap-1.5 px-3 py-2 rounded-lg text-zinc-600 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white font-semibold text-xs">
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+            </svg>
+            <span class="hidden sm:inline">Camera</span>
+          </button>
+        </div>
+
+        <!-- Sharing & Collab Group -->
+        <div class="flex items-center p-1 rounded-xl bg-zinc-100 dark:bg-[#1a1e2c] border border-zinc-200 dark:border-[#272e44]">
+          <button class="p-2 rounded-lg text-zinc-600 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white" title="Chia sẻ màn hình">
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+            </svg>
+          </button>
+          <button class="p-2 rounded-lg text-zinc-600 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white" title="Giơ tay">
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M7 11.5V14m0-2.5v-6a1.5 1.5 0 113 0m-3 6a1.5 1.5 0 00-3 0v2a7.5 7.5 0 0015 0v-5a1.5 1.5 0 00-3 0m-6-3V11m0-5.5v-1a1.5 1.5 0 013 0v1m0 0V11m0-5.5a1.5 1.5 0 013 0v3m0 0V11" />
+            </svg>
+          </button>
+          <button class="p-2 rounded-lg text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/40" title="Phụ đề AI">
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" />
+            </svg>
+          </button>
+        </div>
+
+        <!-- End Call Button -->
+        <button class="px-4 py-2 rounded-xl bg-red-600 hover:bg-red-500 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm transition-all">
+          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M16 8l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2M5 3a2 2 0 00-2 2v1c0 8.284 6.716 15 15 15h1a2 2 0 002-2v-3.28a1 1 0 00-.684-.948l-4.493-1.498a1 1 0 00-1.21.502l-1.13 2.257a11.042 11.042 0 01-5.516-5.517l2.257-1.128a1 1 0 00.502-1.21L9.228 3.683A1 1 0 008.279 3H5z" />
+          </svg>
+          <span>Rời họp</span>
+        </button>
+      </div>
+
+      <!-- Right: Participants count & Settings -->
+      <div class="flex items-center gap-2">
+        <button class="p-2 rounded-xl text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors">
+          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+            <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+          </svg>
+        </button>
+      </div>
+    </footer>
+  </div>
+
+  <!-- Neuron Link Animation Engine -->
+  <script>
+    (function initNeuronLink() {
+      const canvas = document.getElementById('neuron-canvas');
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
+      let width = (canvas.width = window.innerWidth);
+      let height = (canvas.height = window.innerHeight);
+      const mouse = { x: -1000, y: -1000, radius: 180 };
+
+      window.addEventListener('resize', () => {
+        width = canvas.width = window.innerWidth;
+        height = canvas.height = window.innerHeight;
+        initParticles();
+      });
+      window.addEventListener('mousemove', (e) => {
+        mouse.x = e.clientX;
+        mouse.y = e.clientY;
+      });
+
+      let particles = [];
+      const particleDensityFactor = 14000;
+
+      function initParticles() {
+        particles = [];
+        const count = Math.max(16, Math.min(50, Math.floor((width * height) / particleDensityFactor)));
+        for (let i = 0; i < count; i++) {
+          particles.push({
+            x: Math.random() * width,
+            y: Math.random() * height,
+            vx: (Math.random() - 0.5) * 0.4,
+            vy: (Math.random() - 0.5) * 0.4,
+            radius: Math.random() * 1.6 + 1.0,
+            baseAlpha: Math.random() * 0.3 + 0.2,
+            highlightAlpha: 0,
+          });
+        }
+      }
+      initParticles();
+
+      function isDarkMode() {
+        return document.documentElement.classList.contains('dark');
+      }
+
+      function render() {
+        ctx.clearRect(0, 0, width, height);
+        const dark = isDarkMode();
+        const primaryRgb = dark ? '59, 130, 246' : '37, 99, 235';
+        const accentRgb = dark ? '14, 165, 233' : '30, 64, 175';
+
+        for (let i = 0; i < particles.length; i++) {
+          const p = particles[i];
+          p.x += p.vx;
+          p.y += p.vy;
+          if (p.x < 0) p.x = width;
+          else if (p.x > width) p.x = 0;
+          if (p.y < 0) p.y = height;
+          else if (p.y > height) p.y = 0;
+
+          const dxMouse = p.x - mouse.x;
+          const dyMouse = p.y - mouse.y;
+          const distMouse = Math.sqrt(dxMouse * dxMouse + dyMouse * dyMouse);
+
+          if (distMouse < mouse.radius) {
+            const factor = 1 - distMouse / mouse.radius;
+            p.highlightAlpha = Math.min(1, p.highlightAlpha + factor * 0.1);
+          } else {
+            p.highlightAlpha = Math.max(0, p.highlightAlpha - 0.03);
+          }
+
+          for (let j = i + 1; j < particles.length; j++) {
+            const p2 = particles[j];
+            const dx = p.x - p2.x;
+            const dy = p.y - p2.y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            const maxConnectDist = 125;
+
+            if (dist < maxConnectDist) {
+              const baseConnectAlpha = (1 - dist / maxConnectDist) * (dark ? 0.14 : 0.10);
+              const boost = (p.highlightAlpha + p2.highlightAlpha) * 0.4;
+              const alpha = Math.min(0.8, baseConnectAlpha + boost);
+
+              ctx.beginPath();
+              ctx.moveTo(p.x, p.y);
+              ctx.lineTo(p2.x, p2.y);
+              ctx.strokeStyle = `rgba(${primaryRgb}, ${alpha})`;
+              ctx.lineWidth = boost > 0.1 ? 1.3 : 0.7;
+              ctx.stroke();
+            }
+          }
+
+          if (distMouse < mouse.radius) {
+            const connectAlpha = (1 - distMouse / mouse.radius) * (dark ? 0.7 : 0.55);
+            ctx.beginPath();
+            ctx.moveTo(p.x, p.y);
+            ctx.lineTo(mouse.x, mouse.y);
+            ctx.strokeStyle = `rgba(${accentRgb}, ${connectAlpha})`;
+            ctx.lineWidth = 1.1;
+            ctx.stroke();
+          }
+
+          const currentAlpha = Math.min(1, p.baseAlpha + p.highlightAlpha * 0.6);
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, p.radius + p.highlightAlpha * 1.4, 0, Math.PI * 2);
+          ctx.fillStyle = `rgba(${primaryRgb}, ${currentAlpha})`;
+          ctx.fill();
+        }
+
+        requestAnimationFrame(render);
+      }
+      render();
+    })();
+
+    // Copy link helper
+    document.getElementById('copy-btn')?.addEventListener('click', () => {
+      const copyText = document.getElementById('copy-text');
+      if (copyText) {
+        copyText.textContent = 'Đã sao chép!';
+        setTimeout(() => { copyText.textContent = 'Sao chép link mời'; }, 2000);
+      }
+    });
+
+    document.getElementById('theme-toggle')?.addEventListener('click', () => {
+      document.documentElement.classList.toggle('dark');
+    });
+  </script>
+</body>
+</html>

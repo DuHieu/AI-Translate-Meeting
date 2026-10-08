@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="vi" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>LayaMeet — Option 04: Premium Hybrid</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#f0f7ff',
+              100: '#e0effe',
+              500: '#0284c7',
+              600: '#2563eb',
+              700: '#1d4ed8',
+            }
+          },
+          fontFamily: {
+            sans: ['Inter', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
+            mono: ['JetBrains Mono', 'Menlo', 'monospace']
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    :root {
+      --bg-base: #f9fafb;
+      --bg-surface: #ffffff;
+      --border-subtle: #e4e4e7;
+      --border-default: #d4d4d8;
+      --text-primary: #09090b;
+      --text-secondary: #52525b;
+      --accent: #2563eb;
+    }
+    html.dark {
+      --bg-base: #0b0c10;
+      --bg-surface: #14161f;
+      --border-subtle: #1e2230;
+      --border-default: #2d3348;
+      --text-primary: #f4f4f5;
+      --text-secondary: #a1a1aa;
+      --accent: #3b82f6;
+    }
+    body {
+      background-color: var(--bg-base);
+      color: var(--text-primary);
+      font-family: 'Inter', -apple-system, sans-serif;
+      overflow: hidden;
+    }
+    .premium-shell {
+      height: 100dvh;
+    }
+    .glass-panel {
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+    }
+    .scrollbar-thin::-webkit-scrollbar {
+      width: 5px;
+    }
+    .scrollbar-thin::-webkit-scrollbar-thumb {
+      background: var(--border-default);
+      border-radius: 9999px;
+    }
+  </style>
+</head>
+<body class="select-none antialiased">
+  <!-- Interactive Neural Linguistic Background Canvas (Original Full Dynamic Synaptic Link) -->
+  <canvas id="neuron-canvas" class="pointer-events-none fixed inset-0 z-0 h-full w-full" aria-hidden="true"></canvas>
+
+  <div class="premium-shell relative z-10 flex flex-col justify-between w-full overflow-hidden">
+    <!-- Top Premium Glass Navigation Bar -->
+    <header class="h-14 border-b border-zinc-200/80 dark:border-[#1e2230]/80 bg-white/80 dark:bg-[#0f1118]/80 glass-panel px-4 sm:px-6 flex items-center justify-between shrink-0 z-20">
+      <!-- Brand & Room Status -->
+      <div class="flex items-center gap-3 sm:gap-5">
+        <div class="flex items-center gap-2.5">
+          <div class="w-8 h-8 rounded-xl bg-gradient-to-tr from-blue-600 via-blue-700 to-indigo-700 flex items-center justify-center text-white shadow-md shadow-blue-500/25 ring-1 ring-white/20">
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+              <path d="m16 13 5.223 3.482a.5.5 0 0 0 .777-.416V7.87a.5.5 0 0 0-.752-.432L16 10.5"/>
+              <rect x="2" y="6" width="14" height="12" rx="3"/>
+            </svg>
+          </div>
+          <div class="flex items-baseline">
+            <span class="font-black text-sm tracking-tight text-zinc-950 dark:text-zinc-50">Laya</span>
+            <span class="font-bold text-sm tracking-tight text-blue-600 dark:text-blue-400 ml-0.5">Meet</span>
+            <span class="ml-1.5 px-1.5 py-0.5 rounded text-[9px] font-mono font-bold bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20">
+              PRO
+            </span>
+          </div>
+        </div>
+
+        <div class="h-5 w-px bg-zinc-200 dark:bg-zinc-800"></div>
+
+        <!-- Room Meta -->
+        <div class="flex items-center gap-2">
+          <span class="font-mono text-xs font-semibold px-2 py-0.5 rounded-lg bg-zinc-100 dark:bg-[#1a1e2b] text-zinc-700 dark:text-zinc-300 border border-zinc-200 dark:border-[#272e42]">
+            GLOBAL-EXEC-2026
+          </span>
+          <div class="hidden md:flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[11px] font-medium border border-emerald-500/20">
+            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+            <span>LiveKit SFU Connected</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Center: 12-Language Multilingual Matrix Pill -->
+      <div class="hidden lg:flex items-center gap-2 px-3 py-1 rounded-full bg-zinc-100/90 dark:bg-[#161a26]/90 border border-zinc-200 dark:border-[#252c3f] shadow-2xs">
+        <span class="text-xs font-semibold text-zinc-500 dark:text-zinc-400">Song Ngữ Trực Tiếp:</span>
+        <div class="flex items-center gap-1">
+          <span class="text-xs">🇻🇳 VI</span>
+          <span class="text-zinc-400">⇄</span>
+          <span class="text-xs">🇯🇵 JA</span>
+          <span class="text-zinc-400">⇄</span>
+          <span class="text-xs">🇺🇸 EN</span>
+          <span class="text-[10px] font-mono font-bold text-blue-600 dark:text-blue-400 ml-1">+9 ngôn ngữ</span>
+        </div>
+      </div>
+
+      <!-- Right Header Actions -->
+      <div class="flex items-center gap-2 sm:gap-3">
+        <!-- RAM-Only Security Badge -->
+        <div class="hidden sm:flex items-center gap-1.5 text-xs text-zinc-600 dark:text-zinc-400 bg-zinc-100 dark:bg-[#161a26] px-2.5 py-1 rounded-lg border border-zinc-200 dark:border-[#252c3f]">
+          <svg class="w-3.5 h-3.5 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+          </svg>
+          <span class="font-mono text-[11px]">100% RAM-Only</span>
+        </div>
+
+        <!-- Theme Toggle -->
+        <button id="theme-toggle" class="p-2 rounded-xl border border-zinc-200 dark:border-zinc-700/60 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-600 dark:text-zinc-300 transition-colors">
+          <svg id="moon-icon" class="w-4 h-4 hidden dark:block" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path>
+          </svg>
+          <svg id="sun-icon" class="w-4 h-4 block dark:hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="4"></circle><path d="M12 2v2"></path><path d="M12 20v2"></path><path d="m4.93 4.93 1.41 1.41"></path><path d="m17.66 17.66 1.41 1.41"></path><path d="M2 12h2"></path><path d="M20 12h2"></path><path d="m6.34 17.66-1.41 1.41"></path><path d="m19.07 4.93-1.41 1.41"></path>
+          </svg>
+        </button>
+
+        <!-- User Profile Pill -->
+        <div class="flex items-center gap-2 pl-2 border-l border-zinc-200 dark:border-zinc-800">
+          <div class="w-8 h-8 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 text-white flex items-center justify-center font-bold text-xs ring-2 ring-blue-500/25">
+            MN
+          </div>
+          <span class="hidden md:inline text-xs font-bold text-zinc-800 dark:text-zinc-200">Minh N.</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Workspace Stage + Laya Copilot Sidecar -->
+    <main class="flex-1 flex min-h-0 relative">
+      <!-- Video Stage & Docked Dedicated Caption Band -->
+      <section class="flex-1 flex flex-col min-w-0 p-3 sm:p-4 gap-3 overflow-hidden">
+        <!-- Video Grid Stage (Responsive Aspect) -->
+        <div class="flex-1 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 min-h-0">
+          <!-- Active Speaker Card: Kenji Sato -->
+          <div class="relative rounded-2xl overflow-hidden bg-[#0c0d12] border-2 border-blue-500 shadow-xl flex items-center justify-center group">
+            <div class="absolute inset-0 bg-gradient-to-t from-black/85 via-transparent to-black/30 pointer-events-none z-10"></div>
+            <!-- Avatar Simulation with Sound Wave Ring -->
+            <div class="relative">
+              <div class="w-28 h-28 rounded-full bg-gradient-to-tr from-indigo-700 via-blue-600 to-purple-600 flex items-center justify-center text-white text-3xl font-extrabold shadow-2xl ring-4 ring-blue-500/40">
+                KS
+              </div>
+              <span class="absolute -bottom-1 -right-1 w-7 h-7 rounded-full bg-zinc-950 border border-white/20 flex items-center justify-center text-base shadow-sm">
+                🇯🇵
+              </span>
+            </div>
+
+            <!-- Speaker Identity Pill -->
+            <div class="absolute bottom-3 left-3 z-20 flex items-center gap-2">
+              <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-black/80 backdrop-blur-md text-white text-xs font-semibold border border-white/10 shadow-sm">
+                <span>Kenji Sato</span>
+                <span class="text-[10px] font-mono px-1 rounded bg-blue-500/20 text-blue-300">JA ➔ VI</span>
+              </span>
+              <!-- Audio indicator -->
+              <span class="flex items-center gap-0.5 px-2 py-1 rounded-lg bg-black/80 text-emerald-400">
+                <span class="w-1 h-3 bg-emerald-400 rounded-full animate-bounce"></span>
+                <span class="w-1 h-4 bg-emerald-400 rounded-full animate-bounce delay-75"></span>
+                <span class="w-1 h-2 bg-emerald-400 rounded-full animate-bounce delay-150"></span>
+              </span>
+            </div>
+          </div>
+
+          <!-- Secondary Speaker: Minh Nguyen -->
+          <div class="relative rounded-2xl overflow-hidden bg-[#0c0d12] border border-zinc-800/80 shadow-md flex items-center justify-center group">
+            <div class="absolute inset-0 bg-gradient-to-t from-black/85 via-transparent to-black/30 pointer-events-none z-10"></div>
+            <div class="relative">
+              <div class="w-28 h-28 rounded-full bg-gradient-to-tr from-blue-700 to-cyan-600 flex items-center justify-center text-white text-3xl font-extrabold shadow-xl">
+                MN
+              </div>
+              <span class="absolute -bottom-1 -right-1 w-7 h-7 rounded-full bg-zinc-950 border border-white/20 flex items-center justify-center text-base shadow-sm">
+                🇻🇳
+              </span>
+            </div>
+            <div class="absolute bottom-3 left-3 z-20 flex items-center gap-2">
+              <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-black/80 backdrop-blur-md text-white text-xs font-semibold border border-white/10 shadow-sm">
+                <span>Minh Nguyen (Bạn)</span>
+                <span class="text-[10px] font-mono text-zinc-400">VI</span>
+              </span>
+            </div>
+          </div>
+
+          <!-- Secondary Speaker: David Miller -->
+          <div class="relative rounded-2xl overflow-hidden bg-[#0c0d12] border border-zinc-800/80 shadow-md flex items-center justify-center group">
+            <div class="absolute inset-0 bg-gradient-to-t from-black/85 via-transparent to-black/30 pointer-events-none z-10"></div>
+            <div class="relative">
+              <div class="w-28 h-28 rounded-full bg-gradient-to-tr from-emerald-700 to-teal-700 flex items-center justify-center text-white text-3xl font-extrabold shadow-xl">
+                DM
+              </div>
+              <span class="absolute -bottom-1 -right-1 w-7 h-7 rounded-full bg-zinc-950 border border-white/20 flex items-center justify-center text-base shadow-sm">
+                🇺🇸
+              </span>
+            </div>
+            <div class="absolute bottom-3 left-3 z-20 flex items-center gap-2">
+              <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-black/80 backdrop-blur-md text-white text-xs font-semibold border border-white/10 shadow-sm">
+                <span>David Miller</span>
+                <span class="text-[10px] font-mono text-zinc-400">EN</span>
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Dedicated Caption Band (Google Meet / MS Teams Standard: 0% Slide Overlap) -->
+        <div class="shrink-0 w-full rounded-2xl border border-zinc-200/90 dark:border-[#222738] bg-white/95 dark:bg-[#131622]/95 backdrop-blur-md p-4 shadow-lg space-y-1.5">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2 text-xs">
+              <span class="font-bold text-blue-600 dark:text-blue-400 flex items-center gap-1">
+                <span>🇯🇵</span> Kenji Sato:
+              </span>
+              <span class="text-zinc-400">•</span>
+              <span class="text-zinc-500 dark:text-zinc-400 text-[11px] font-mono">
+                faster-whisper int8 + VAD &lt;350ms
+              </span>
+              <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[10px] font-mono font-bold">
+                ⚡ 312ms
+              </span>
+            </div>
+
+            <!-- Fast Action: Listen TTS + Toggle Bilingual View -->
+            <div class="flex items-center gap-2">
+              <button class="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-xs text-zinc-700 dark:text-zinc-300 font-medium transition-colors" title="Nghe đọc giọng AI">
+                <svg class="w-3.5 h-3.5 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+                </svg>
+                <span>Nghe TTS</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- High-Contrast Translated Text -->
+          <p class="text-base font-semibold text-zinc-950 dark:text-zinc-50 leading-snug">
+            "Trước đợt phát hành tuần tới, chúng tôi đã tối ưu độ trễ dịch đa ngữ thời gian thực xuống dưới 350ms."
+          </p>
+
+          <!-- Original Subtitle Text -->
+          <p class="text-xs text-zinc-500 dark:text-zinc-400 italic">
+            来週のリリースに向けて、多言語リアルタイム翻訳の遅延を350ms以下に最適化しました。
+          </p>
+        </div>
+      </section>
+
+      <!-- Right: Laya Intelligence Copilot Sidecar -->
+      <aside class="w-88 xl:w-96 border-l border-zinc-200 dark:border-[#1e2230] bg-white/95 dark:bg-[#12141c]/95 backdrop-blur-md flex flex-col shrink-0 z-20">
+        <!-- Copilot Tabs -->
+        <div class="p-3 border-b border-zinc-200 dark:border-[#1e2230] flex items-center justify-between">
+          <div class="flex gap-1 bg-zinc-100 dark:bg-[#191d29] p-1 rounded-xl w-full border border-zinc-200 dark:border-[#272e42]">
+            <button class="flex-1 py-1.5 rounded-lg bg-blue-600 text-white text-xs font-bold shadow-xs text-center">
+              Lịch sử phụ đề
+            </button>
+            <button class="flex-1 py-1.5 rounded-lg text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white text-xs font-bold text-center">
+              Action Items (2)
+            </button>
+            <button class="flex-1 py-1.5 rounded-lg text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white text-xs font-bold text-center">
+              Biên bản MoM
+            </button>
+          </div>
+        </div>
+
+        <!-- Feed List -->
+        <div class="flex-1 overflow-y-auto p-3.5 space-y-3.5 scrollbar-thin">
+          <!-- Turn 1 -->
+          <div class="p-3 rounded-xl bg-zinc-50 dark:bg-[#161924] border border-zinc-200 dark:border-[#24293a] space-y-1.5">
+            <div class="flex items-center justify-between text-xs">
+              <span class="font-bold text-blue-600 dark:text-blue-400 flex items-center gap-1">
+                <span>🇯🇵</span> Kenji Sato
+              </span>
+              <span class="text-[11px] font-mono text-zinc-400">10:43:10</span>
+            </div>
+            <p class="text-xs text-zinc-800 dark:text-zinc-200 font-medium">
+              Trước đợt phát hành tuần tới, chúng tôi đã tối ưu độ trễ dịch đa ngữ thời gian thực xuống dưới 350ms.
+            </p>
+            <div class="flex items-center gap-1.5 pt-1">
+              <span class="px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 text-[10px] font-mono font-semibold border border-amber-500/20">
+                ⚡ Action Item: Benchmark STT Staging
+              </span>
+            </div>
+          </div>
+
+          <!-- Turn 2 -->
+          <div class="p-3 rounded-xl bg-zinc-50 dark:bg-[#161924] border border-zinc-200 dark:border-[#24293a] space-y-1.5">
+            <div class="flex items-center justify-between text-xs">
+              <span class="font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+                <span>🇺🇸</span> David Miller
+              </span>
+              <span class="text-[11px] font-mono text-zinc-400">10:43:35</span>
+            </div>
+            <p class="text-xs text-zinc-800 dark:text-zinc-200 font-medium">
+              Tất cả thành viên toàn cầu đều nhận được phụ đề song ngữ theo ngôn ngữ riêng mà không bị gián đoạn.
+            </p>
+            <div class="flex items-center gap-1.5 pt-1">
+              <span class="px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-400 text-[10px] font-mono font-semibold border border-blue-500/20">
+                ⚡ Task: 10 quốc gia đồng thời
+              </span>
+            </div>
+          </div>
+
+          <!-- Turn 3 -->
+          <div class="p-3 rounded-xl bg-blue-50/50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-900/50 space-y-1.5">
+            <div class="flex items-center justify-between text-xs">
+              <span class="font-bold text-blue-600 dark:text-blue-400 flex items-center gap-1">
+                <span>🇻🇳</span> Minh Nguyen (Bạn)
+              </span>
+              <span class="text-[11px] font-mono text-zinc-400">10:43:58</span>
+            </div>
+            <p class="text-xs text-zinc-800 dark:text-zinc-200 font-medium">
+              Phía Việt Nam đã sẵn sàng. Hệ thống Laya AI đang trích xuất Action Items đồng thời cho mọi ngôn ngữ.
+            </p>
+          </div>
+        </div>
+
+        <!-- Copilot Footer Actions -->
+        <div class="p-3.5 border-t border-zinc-200 dark:border-[#1e2230] space-y-2">
+          <button class="w-full py-2 px-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold flex items-center justify-center gap-2 shadow-xs transition-colors">
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+            </svg>
+            <span>Xuất Biên Bản Laya MoM (PDF &amp; MD)</span>
+          </button>
+        </div>
+      </aside>
+    </main>
+
+    <!-- Bottom Floating Glassmorphic Toolbar -->
+    <footer class="h-18 border-t border-zinc-200/80 dark:border-[#1e2230]/80 bg-white/90 dark:bg-[#0f1118]/90 glass-panel px-6 flex items-center justify-between shrink-0 z-30">
+      <!-- Left: Audio Device Status & Ducking Indicator -->
+      <div class="flex items-center gap-3">
+        <div class="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-zinc-100 dark:bg-[#1a1e2b] border border-zinc-200 dark:border-[#272e42] text-xs font-medium text-zinc-700 dark:text-zinc-300">
+          <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+          <span>MacBook Pro Mic (Noise Filter On)</span>
+        </div>
+      </div>
+
+      <!-- Center: Floating Core Control Cluster -->
+      <div class="flex items-center gap-2.5">
+        <!-- Mic -->
+        <button class="w-12 h-12 rounded-2xl bg-zinc-100 hover:bg-zinc-200 dark:bg-[#202534] dark:hover:bg-[#2c3348] text-zinc-800 dark:text-zinc-200 flex items-center justify-center shadow-xs transition-all">
+          <svg class="w-5 h-5 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+          </svg>
+        </button>
+
+        <!-- Camera -->
+        <button class="w-12 h-12 rounded-2xl bg-zinc-100 hover:bg-zinc-200 dark:bg-[#202534] dark:hover:bg-[#2c3348] text-zinc-800 dark:text-zinc-200 flex items-center justify-center shadow-xs transition-all">
+          <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+          </svg>
+        </button>
+
+        <!-- Screen Share -->
+        <button class="w-12 h-12 rounded-2xl bg-zinc-100 hover:bg-zinc-200 dark:bg-[#202534] dark:hover:bg-[#2c3348] text-zinc-800 dark:text-zinc-200 flex items-center justify-center shadow-xs transition-all" title="Chia sẻ màn hình">
+          <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+          </svg>
+        </button>
+
+        <!-- Captions (Active) -->
+        <button class="w-12 h-12 rounded-2xl bg-blue-600 text-white flex items-center justify-center shadow-lg shadow-blue-500/25 transition-all">
+          <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" />
+          </svg>
+        </button>
+
+        <!-- Emoji Reaction Trigger -->
+        <div class="hidden sm:flex items-center gap-1 p-1 rounded-2xl bg-zinc-100 dark:bg-[#1a1e2b] border border-zinc-200 dark:border-[#272e42]">
+          <button class="w-10 h-10 rounded-xl hover:bg-zinc-200 dark:hover:bg-[#272e42] flex items-center justify-center text-lg transition-colors">👍</button>
+          <button class="w-10 h-10 rounded-xl hover:bg-zinc-200 dark:hover:bg-[#272e42] flex items-center justify-center text-lg transition-colors">👏</button>
+          <button class="w-10 h-10 rounded-xl hover:bg-zinc-200 dark:hover:bg-[#272e42] flex items-center justify-center text-lg transition-colors">❤️</button>
+        </div>
+
+        <!-- End Call -->
+        <button class="px-5 h-12 rounded-2xl bg-red-600 hover:bg-red-500 text-white font-bold text-xs flex items-center gap-2 shadow-md shadow-red-600/20 transition-all">
+          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M16 8l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2M5 3a2 2 0 00-2 2v1c0 8.284 6.716 15 15 15h1a2 2 0 002-2v-3.28a1 1 0 00-.684-.948l-4.493-1.498a1 1 0 00-1.21.502l-1.13 2.257a11.042 11.042 0 01-5.516-5.517l2.257-1.128a1 1 0 00.502-1.21L9.228 3.683A1 1 0 008.279 3H5z" />
+          </svg>
+          <span>Rời phòng</span>
+        </button>
+      </div>
+
+      <!-- Right: More Controls & Participants -->
+      <div class="flex items-center gap-2">
+        <button class="px-3.5 py-2 rounded-xl bg-zinc-100 hover:bg-zinc-200 dark:bg-[#1a1e2b] dark:hover:bg-[#252b3d] text-xs font-bold text-zinc-700 dark:text-zinc-200 border border-zinc-200 dark:border-[#272e42] flex items-center gap-2 transition-colors">
+          <svg class="w-4 h-4 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+          </svg>
+          <span>3 người</span>
+        </button>
+      </div>
+    </footer>
+  </div>
+
+  <!-- Neuron Link Animation Engine -->
+  <script>
+    (function initNeuronLink() {
+      const canvas = document.getElementById('neuron-canvas');
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
+      let width = (canvas.width = window.innerWidth);
+      let height = (canvas.height = window.innerHeight);
+      const mouse = { x: -1000, y: -1000, radius: 180 };
+
+      window.addEventListener('resize', () => {
+        width = canvas.width = window.innerWidth;
+        height = canvas.height = window.innerHeight;
+        initParticles();
+      });
+      window.addEventListener('mousemove', (e) => {
+        mouse.x = e.clientX;
+        mouse.y = e.clientY;
+      });
+
+      let particles = [];
+      const particleDensityFactor = 12000;
+
+      function initParticles() {
+        particles = [];
+        const count = Math.max(18, Math.min(60, Math.floor((width * height) / particleDensityFactor)));
+        for (let i = 0; i < count; i++) {
+          particles.push({
+            x: Math.random() * width,
+            y: Math.random() * height,
+            vx: (Math.random() - 0.5) * 0.45,
+            vy: (Math.random() - 0.5) * 0.45,
+            radius: Math.random() * 1.8 + 1.2,
+            baseAlpha: Math.random() * 0.35 + 0.25,
+            highlightAlpha: 0,
+          });
+        }
+      }
+      initParticles();
+
+      function isDarkMode() {
+        return document.documentElement.classList.contains('dark');
+      }
+
+      function render() {
+        ctx.clearRect(0, 0, width, height);
+        const dark = isDarkMode();
+        const primaryRgb = dark ? '59, 130, 246' : '37, 99, 235';
+        const accentRgb = dark ? '14, 165, 233' : '30, 64, 175';
+
+        for (let i = 0; i < particles.length; i++) {
+          const p = particles[i];
+          p.x += p.vx;
+          p.y += p.vy;
+          if (p.x < 0) p.x = width;
+          else if (p.x > width) p.x = 0;
+          if (p.y < 0) p.y = height;
+          else if (p.y > height) p.y = 0;
+
+          const dxMouse = p.x - mouse.x;
+          const dyMouse = p.y - mouse.y;
+          const distMouse = Math.sqrt(dxMouse * dxMouse + dyMouse * dyMouse);
+
+          if (distMouse < mouse.radius) {
+            const factor = 1 - distMouse / mouse.radius;
+            p.highlightAlpha = Math.min(1, p.highlightAlpha + factor * 0.1);
+          } else {
+            p.highlightAlpha = Math.max(0, p.highlightAlpha - 0.03);
+          }
+
+          for (let j = i + 1; j < particles.length; j++) {
+            const p2 = particles[j];
+            const dx = p.x - p2.x;
+            const dy = p.y - p2.y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            const maxConnectDist = 130;
+
+            if (dist < maxConnectDist) {
+              const baseConnectAlpha = (1 - dist / maxConnectDist) * (dark ? 0.16 : 0.12);
+              const boost = (p.highlightAlpha + p2.highlightAlpha) * 0.45;
+              const alpha = Math.min(0.85, baseConnectAlpha + boost);
+
+              ctx.beginPath();
+              ctx.moveTo(p.x, p.y);
+              ctx.lineTo(p2.x, p2.y);
+              ctx.strokeStyle = `rgba(${primaryRgb}, ${alpha})`;
+              ctx.lineWidth = boost > 0.1 ? 1.4 : 0.8;
+              ctx.stroke();
+            }
+          }
+
+          if (distMouse < mouse.radius) {
+            const connectAlpha = (1 - distMouse / mouse.radius) * (dark ? 0.75 : 0.6);
+            ctx.beginPath();
+            ctx.moveTo(p.x, p.y);
+            ctx.lineTo(mouse.x, mouse.y);
+            ctx.strokeStyle = `rgba(${accentRgb}, ${connectAlpha})`;
+            ctx.lineWidth = 1.2;
+            ctx.stroke();
+          }
+
+          const currentAlpha = Math.min(1, p.baseAlpha + p.highlightAlpha * 0.6);
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, p.radius + p.highlightAlpha * 1.5, 0, Math.PI * 2);
+          ctx.fillStyle = `rgba(${primaryRgb}, ${currentAlpha})`;
+          ctx.fill();
+
+          if (p.highlightAlpha > 0.1) {
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.radius * 3.5, 0, Math.PI * 2);
+            ctx.fillStyle = `rgba(${accentRgb}, ${p.highlightAlpha * 0.25})`;
+            ctx.fill();
+          }
+        }
+
+        if (mouse.x > 0 && mouse.y > 0) {
+          const gradient = ctx.createRadialGradient(mouse.x, mouse.y, 0, mouse.x, mouse.y, mouse.radius);
+          gradient.addColorStop(0, `rgba(${primaryRgb}, ${dark ? 0.15 : 0.08})`);
+          gradient.addColorStop(0.5, `rgba(${accentRgb}, ${dark ? 0.05 : 0.03})`);
+          gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
+          ctx.beginPath();
+          ctx.arc(mouse.x, mouse.y, mouse.radius, 0, Math.PI * 2);
+          ctx.fillStyle = gradient;
+          ctx.fill();
+        }
+
+        requestAnimationFrame(render);
+      }
+      render();
+    })();
+
+    document.getElementById('theme-toggle')?.addEventListener('click', () => {
+      document.documentElement.classList.toggle('dark');
+    });
+  </script>
+</body>
+</html>

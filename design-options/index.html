@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="vi" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LayaMeet — UI/UX Multi-Option Design Showcase</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              500: '#0284c7',
+              600: '#2563eb',
+              700: '#1d4ed8',
+            }
+          },
+          fontFamily: {
+            sans: ['Inter', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
+            mono: ['JetBrains Mono', 'Menlo', 'monospace']
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    :root {
+      --bg-base: #f8fafc;
+      --bg-surface: #ffffff;
+      --border-subtle: #e2e8f0;
+      --text-primary: #0f172a;
+    }
+    html.dark {
+      --bg-base: #0a0b0e;
+      --bg-surface: #12141c;
+      --border-subtle: #1e2230;
+      --text-primary: #f8fafc;
+    }
+    body {
+      background-color: var(--bg-base);
+      color: var(--text-primary);
+      font-family: 'Inter', -apple-system, sans-serif;
+    }
+    .preview-frame {
+      transition: width 0.3s cubic-bezier(0.16, 1, 0.3, 1), height 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col antialiased">
+  <!-- Hub Header Bar -->
+  <header class="h-16 border-b border-zinc-200 dark:border-[#1e2230] bg-white/90 dark:bg-[#12141c]/90 backdrop-blur-md px-4 sm:px-6 flex items-center justify-between shrink-0 z-30">
+    <div class="flex items-center gap-3 sm:gap-4">
+      <div class="flex items-center gap-2.5">
+        <div class="w-8 h-8 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white font-black text-sm shadow-md">
+          LM
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <span class="font-extrabold text-sm tracking-tight text-zinc-950 dark:text-zinc-50">LayaMeet Design System</span>
+            <span class="px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-400 font-mono text-[10px] font-bold border border-blue-500/20">
+              4 PRODUCTION OPTIONS
+            </span>
+          </div>
+          <p class="text-[11px] text-zinc-500 font-mono">Dựa trên source code thực tế • layameet.com</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Center: Option Tabs -->
+    <div class="hidden md:flex items-center gap-1.5 p-1 rounded-2xl bg-zinc-100 dark:bg-[#181c28] border border-zinc-200 dark:border-[#252b3d]">
+      <button onclick="switchOption('option-01')" id="tab-option-01" class="tab-btn px-3 py-1.5 rounded-xl text-xs font-bold transition-all bg-blue-600 text-white shadow-xs">
+        01. Current Refined
+      </button>
+      <button onclick="switchOption('option-02')" id="tab-option-02" class="tab-btn px-3 py-1.5 rounded-xl text-xs font-medium text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition-all">
+        02. Modern Workspace
+      </button>
+      <button onclick="switchOption('option-03')" id="tab-option-03" class="tab-btn px-3 py-1.5 rounded-xl text-xs font-medium text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition-all">
+        03. Translation-Focused
+      </button>
+      <button onclick="switchOption('option-04')" id="tab-option-04" class="tab-btn px-3 py-1.5 rounded-xl text-xs font-medium text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition-all">
+        04. Premium Hybrid
+      </button>
+    </div>
+
+    <!-- Right: Viewport Mode Switcher & Open Link -->
+    <div class="flex items-center gap-2">
+      <!-- Device Viewports -->
+      <div class="hidden lg:flex items-center gap-1 p-1 rounded-xl bg-zinc-100 dark:bg-[#181c28] border border-zinc-200 dark:border-[#252b3d]">
+        <button onclick="setViewport('full')" id="vp-full" class="vp-btn p-1.5 rounded-lg text-xs font-semibold bg-white dark:bg-[#252b3d] text-zinc-900 dark:text-white shadow-2xs" title="Toàn màn hình">
+          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"/></svg>
+        </button>
+        <button onclick="setViewport('tablet')" id="vp-tablet" class="vp-btn p-1.5 rounded-lg text-xs font-semibold text-zinc-500 hover:text-zinc-900 dark:hover:text-white" title="Tablet (768px)">
+          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><rect x="4" y="2" width="16" height="20" rx="2" stroke-width="2"/><circle cx="12" cy="18" r="1"/></svg>
+        </button>
+        <button onclick="setViewport('mobile')" id="vp-mobile" class="vp-btn p-1.5 rounded-lg text-xs font-semibold text-zinc-500 hover:text-zinc-900 dark:hover:text-white" title="Mobile (390px)">
+          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><rect x="6" y="2" width="12" height="20" rx="2" stroke-width="2"/><line x1="11" y1="18" x2="13" y2="18" stroke-width="2"/></svg>
+        </button>
+      </div>
+
+      <!-- Open in new tab -->
+      <a id="external-link" href="option-01-current-refined.html" target="_blank" class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-zinc-100 hover:bg-zinc-200 dark:bg-[#181c28] dark:hover:bg-[#252b3d] text-zinc-700 dark:text-zinc-300 text-xs font-semibold border border-zinc-200 dark:border-[#252b3d] transition-colors">
+        <span>Mở Full Tab</span>
+        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+      </a>
+
+      <!-- Theme Switcher -->
+      <button id="hub-theme-toggle" class="p-2 rounded-xl border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-600 dark:text-zinc-300 transition-colors">
+        <svg class="w-4 h-4 hidden dark:block" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path></svg>
+        <svg class="w-4 h-4 block dark:hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2"></path><path d="M12 20v2"></path><path d="m4.93 4.93 1.41 1.41"></path><path d="m17.66 17.66 1.41 1.41"></path><path d="M2 12h2"></path><path d="M20 12h2"></path><path d="m6.34 17.66-1.41 1.41"></path><path d="m19.07 4.93-1.41 1.41"></path></svg>
+      </button>
+    </div>
+  </header>
+
+  <!-- Mobile Option Selector Strip (< md) -->
+  <div class="md:hidden flex items-center justify-around p-2 bg-zinc-100 dark:bg-[#12141c] border-b border-zinc-200 dark:border-[#1e2230] text-xs">
+    <button onclick="switchOption('option-01')" class="font-bold text-blue-600">01. Refined</button>
+    <button onclick="switchOption('option-02')" class="text-zinc-500">02. Workspace</button>
+    <button onclick="switchOption('option-03')" class="text-zinc-500">03. Translation</button>
+    <button onclick="switchOption('option-04')" class="text-zinc-500">04. Hybrid</button>
+  </div>
+
+  <!-- Interactive Option Stage Container -->
+  <main class="flex-1 flex items-center justify-center p-0 lg:p-4 bg-zinc-100 dark:bg-[#07080b] min-h-0 overflow-hidden">
+    <div id="frame-container" class="preview-frame w-full h-full max-w-full rounded-none lg:rounded-2xl overflow-hidden shadow-2xl border-0 lg:border border-zinc-300 dark:border-[#202534] bg-black">
+      <iframe id="preview-iframe" src="option-01-current-refined.html" class="w-full h-full border-0" title="LayaMeet UI Design Preview"></iframe>
+    </div>
+  </main>
+
+  <script>
+    const options = {
+      'option-01': {
+        name: '01. Current UI Refined',
+        url: 'option-01-current-refined.html'
+      },
+      'option-02': {
+        name: '02. Modern Meeting Workspace',
+        url: 'option-02-modern-workspace.html'
+      },
+      'option-03': {
+        name: '03. Translation-Focused Meeting',
+        url: 'option-03-translation-focused.html'
+      },
+      'option-04': {
+        name: '04. Premium Hybrid',
+        url: 'option-04-premium-hybrid.html'
+      }
+    };
+
+    let currentOption = 'option-01';
+
+    function switchOption(optKey) {
+      currentOption = optKey;
+      const iframe = document.getElementById('preview-iframe');
+      const extLink = document.getElementById('external-link');
+      if (iframe && options[optKey]) {
+        iframe.src = options[optKey].url;
+        extLink.href = options[optKey].url;
+      }
+
+      document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.classList.remove('bg-blue-600', 'text-white', 'shadow-xs');
+        btn.classList.add('text-zinc-600', 'dark:text-zinc-400');
+      });
+
+      const activeBtn = document.getElementById(`tab-${optKey}`);
+      if (activeBtn) {
+        activeBtn.classList.remove('text-zinc-600', 'dark:text-zinc-400');
+        activeBtn.classList.add('bg-blue-600', 'text-white', 'shadow-xs');
+      }
+    }
+
+    function setViewport(mode) {
+      const container = document.getElementById('frame-container');
+      if (!container) return;
+
+      document.querySelectorAll('.vp-btn').forEach(btn => {
+        btn.classList.remove('bg-white', 'dark:bg-[#252b3d]', 'text-zinc-900', 'dark:text-white', 'shadow-2xs');
+        btn.classList.add('text-zinc-500');
+      });
+
+      const activeVpBtn = document.getElementById(`vp-${mode}`);
+      if (activeVpBtn) {
+        activeVpBtn.classList.remove('text-zinc-500');
+        activeVpBtn.classList.add('bg-white', 'dark:bg-[#252b3d]', 'text-zinc-900', 'dark:text-white', 'shadow-2xs');
+      }
+
+      if (mode === 'full') {
+        container.style.width = '100%';
+        container.style.height = '100%';
+      } else if (mode === 'tablet') {
+        container.style.width = '768px';
+        container.style.height = '100%';
+      } else if (mode === 'mobile') {
+        container.style.width = '390px';
+        container.style.height = '844px';
+      }
+    }
+
+    document.getElementById('hub-theme-toggle')?.addEventListener('click', () => {
+      document.documentElement.classList.toggle('dark');
+      const iframe = document.getElementById('preview-iframe');
+      if (iframe?.contentDocument?.documentElement) {
+        iframe.contentDocument.documentElement.classList.toggle('dark');
+      }
+    });
+  </script>
+</body>
+</html>

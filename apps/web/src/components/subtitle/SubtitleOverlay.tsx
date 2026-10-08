@@ -199,7 +199,6 @@ export const SubtitleOverlay: React.FC<SubtitleOverlayProps> = ({
                     )
                   )}
                 </div>
-
               </div>
 
               <button

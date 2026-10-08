@@ -100,6 +100,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
 
       {/* Messages stream */}
       <div className="flex-1 min-h-0 overflow-y-auto p-4 space-y-4">
+        <p id="chat-attachment-help" className="text-base text-zinc-400">Tệp đính kèm hiện chỉ gửi tên và kích thước. Hãy gửi liên kết tài liệu để chia sẻ nội dung.</p>
         {messages.length === 0 ? (
           <div className="py-16 text-center text-xs text-zinc-400">
             Chưa có tin nhắn nào trong cuộc gọi này.
@@ -178,6 +179,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
             onClick={() => fileInputRef.current?.click()}
             title="Đính kèm tệp tin"
             aria-label="Đính kèm tệp tin"
+            aria-describedby="chat-attachment-help"
             className="text-zinc-400 hover:text-zinc-200 p-1 rounded-lg transition cursor-pointer"
           >
             <Paperclip className="w-4 h-4" />

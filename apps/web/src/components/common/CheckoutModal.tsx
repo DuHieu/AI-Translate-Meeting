@@ -444,13 +444,13 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
         : copy.monthly;
 
   return createPortal(
-    <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/75 p-3 backdrop-blur-sm sm:p-6">
+    <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/75 p-3 backdrop-blur-sm sm:p-6" style={{ top: "var(--viewport-top)", height: "var(--app-height)", bottom: "auto", paddingBottom: "max(12px, env(safe-area-inset-bottom))" }}>
       <div
         ref={modalRef}
         role="dialog"
         aria-modal="true"
         aria-labelledby="checkout-title"
-        className="relative max-h-[calc(100dvh-1.5rem)] w-full max-w-2xl overflow-y-auto rounded-2xl border border-zinc-700 bg-zinc-950 shadow-2xl"
+        className="relative max-h-[calc(var(--app-height)-1.5rem)] w-full max-w-2xl overflow-y-auto rounded-2xl border border-zinc-700 bg-zinc-950 shadow-2xl"
       >
         <button
           ref={closeButtonRef}
@@ -481,7 +481,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
                       ? 'border-sky-500 bg-sky-500/15 text-sky-300'
                       : isComplete
                         ? 'border-emerald-500/40 bg-emerald-500/10 text-emerald-300'
-                        : 'border-zinc-800 bg-zinc-900 text-zinc-500'
+                        : 'border-zinc-800 bg-zinc-900 text-zinc-400'
                   }`}
                 >
                   {step}
@@ -507,12 +507,12 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
 
               <div className="mt-5 flex items-center justify-between gap-4 rounded-xl border border-zinc-700 bg-zinc-900/80 p-4">
                 <div>
-                  <p className="text-[11px] uppercase tracking-wide text-zinc-500">{copy.selectedPlan}</p>
+                  <p className="text-[11px] uppercase tracking-wide text-zinc-400">{copy.selectedPlan}</p>
                   <p className="mt-1 font-semibold text-white">{selectedPlanName}</p>
                 </div>
                 <div className="text-right">
                   <p className="font-mono text-sm font-bold text-emerald-300">{selectedPlan.price}</p>
-                  <p className="text-[11px] text-zinc-500">{selectedPlan.duration}</p>
+                  <p className="text-[11px] text-zinc-400">{selectedPlan.duration}</p>
                 </div>
               </div>
 
@@ -540,7 +540,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
               <button
                 type="button"
                 onClick={onClose}
-                className="mt-5 min-h-11 rounded-xl bg-emerald-600 px-6 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300"
+                className="mt-5 min-h-11 rounded-xl bg-emerald-700 px-6 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300"
               >
                 {copy.done}
               </button>
@@ -664,7 +664,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
                 <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-5">
                   <div className="flex flex-col gap-3 border-b border-zinc-800 pb-4 sm:flex-row sm:items-center sm:justify-between">
                     <div>
-                      <p className="text-[11px] uppercase tracking-wide text-zinc-500">{copy.selectedPlan}</p>
+                      <p className="text-[11px] uppercase tracking-wide text-zinc-400">{copy.selectedPlan}</p>
                       <h4 className="text-base font-bold text-white">{selectedPlanName}</h4>
                       <p className="mt-1 text-xs text-zinc-400">{copy.polarHint}</p>
                     </div>
@@ -672,7 +672,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
                       <p className="font-mono text-2xl font-bold text-sky-400">
                         ${order.amountUsd ?? selectedPlan.usdPrice} USD
                       </p>
-                      <p className="text-[10px] text-zinc-500">Polar MoR ? Zero VAT hassle</p>
+                      <p className="text-[10px] text-zinc-400">Polar MoR ? Zero VAT hassle</p>
                     </div>
                   </div>
 
@@ -746,9 +746,9 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
           )}
         </main>
 
-        <footer className="flex items-center justify-between gap-3 border-t border-zinc-800 px-5 py-3 text-[11px] text-zinc-500 sm:px-7">
+        <footer className="flex flex-wrap items-center justify-between gap-3 border-t border-zinc-800 px-5 py-3 text-[11px] text-zinc-400 sm:px-7">
           <span className="flex items-center gap-1.5 text-zinc-400"><ShieldCheck className="h-4 w-4 text-sky-400" /> {copy.security}</span>
-          <span className="hidden items-center gap-1 sm:flex"><Zap className="h-3.5 w-3.5" /> support@layameet.com</span>
+          <span className="flex items-center gap-1"><Zap className="h-3.5 w-3.5" /> support@layameet.com</span>
         </footer>
       </div>
     </div>,

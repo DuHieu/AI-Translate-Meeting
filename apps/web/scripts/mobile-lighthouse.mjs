@@ -1,5 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import { ownedRoomCleanup } from './qa-room-cleanup.mjs';
 import lighthouse, { snapshot, startTimespan, generateReport } from 'lighthouse';
 import * as chromeLauncher from 'chrome-launcher';
 import puppeteer from 'puppeteer-core';
@@ -7,8 +8,9 @@ const root = path.resolve('../..');
 process.env.PLAYWRIGHT_BROWSERS_PATH ||= path.join(root, 'output/playwright/browsers');
 const { chromium } = await import('playwright');
 const base = process.env.MOBILE_BASE_URL || 'http://localhost:4173';
-const out = path.join(root, 'output/playwright/mobile-20261008/lighthouse');
+const out = path.join(root, `output/playwright/mobile-20261008/${process.env.LIGHTHOUSE_RUN||'lighthouse'}`);
 fs.mkdirSync(out, { recursive: true });
+const roomCleanup=ownedRoomCleanup(base,out);
 const chrome = await chromeLauncher.launch({ chromePath: chromium.executablePath(), chromeFlags: ['--headless=new', '--use-fake-device-for-media-stream', '--use-fake-ui-for-media-stream', '--no-first-run'] });
 const pp = await puppeteer.connect({ browserURL: `http://localhost:${chrome.port}`, defaultViewport: null });
 const pw = await chromium.connectOverCDP(`http://localhost:${chrome.port}`);
@@ -28,7 +30,7 @@ function save(name, result, scope) {
 try {
   if (!process.env.LIGHTHOUSE_ROOM_ONLY) save('home-mobile', await lighthouse(base, flags), 'Production bundle, default mobile simulated throttling; fresh navigation');
   const context = await pw.newContext({hasTouch:true,isMobile:true,locale:'vi-VN',timezoneId:'Asia/Bangkok',viewport:{width:390,height:844},permissions:['microphone','camera']});
-  const actual = await context.newPage();
+  const actual = await context.newPage(); roomCleanup.track(actual);
   await actual.goto(base);
   await actual.getByRole('button',{name:'Tạo cuộc họp mới',exact:true}).tap();
   await actual.locator('#display-name').waitFor();
@@ -55,4 +57,4 @@ try {
   save('meeting-mobile-snapshot',await snapshot(target,{flags:{...flags,onlyCategories:['accessibility','best-practices']}}),'Real connected meeting; Accessibility/Best Practices snapshot. No fabricated navigation Performance score.');
   await actual.getByRole('button',{name:'Rời',exact:true}).tap();
   await actual.getByRole('button',{name:'Rời cuộc họp',exact:true}).tap();
-} finally { await pw.close(); await pp.disconnect(); await chrome.kill(); }
+} finally { await pw.close(); await pp.disconnect(); await chrome.kill(); await roomCleanup.cleanup(); }

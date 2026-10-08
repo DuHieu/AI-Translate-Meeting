@@ -111,14 +111,14 @@ export const FloatingSubtitleWidget: React.FC<FloatingSubtitleWidgetProps> = ({
         :root { color-scheme: dark; font-family: Inter, ui-sans-serif, system-ui, sans-serif; }
         * { box-sizing: border-box; }
         body { margin: 0; background: #09090b; color: #f4f4f5; }
-        header { position: sticky; top: 0; padding: 10px 14px; border-bottom: 1px solid #27272a; background: #09090bf2; color: #38bdf8; font-size: 12px; font-weight: 700; }
+        header { position: sticky; top: 0; padding: 10px 14px; border-bottom: 1px solid #27272a; background: #09090bf2; color: #38bdf8; font-size: 16px; font-weight: 700; }
         main { display: grid; gap: 8px; padding: 12px; }
         .subtitle-item { border: 1px solid #27272a; border-radius: 12px; background: #18181b; padding: 10px 12px; }
         p { margin: 0; }
-        .speaker { color: #38bdf8; font-size: 11px; font-weight: 600; }
+        .speaker { color: #38bdf8; font-size: 16px; font-weight: 600; }
         .translation { margin-top: 4px; font-size: 16px; line-height: 1.45; }
-        .original { margin-top: 4px; color: #a1a1aa; font-size: 12px; line-height: 1.4; }
-        .empty { padding: 32px 12px; color: #71717a; text-align: center; font-size: 13px; }
+        .original { margin-top: 4px; color: #a1a1aa; font-size: 16px; line-height: 1.4; }
+        .empty { padding: 32px 12px; color: #a1a1aa; text-align: center; font-size: 16px; }
       `;
       const header = pipWindow.document.createElement('header');
       header.textContent = 'LayaMeet · Phụ đề song ngữ trực tiếp';
@@ -182,25 +182,25 @@ export const FloatingSubtitleWidget: React.FC<FloatingSubtitleWidgetProps> = ({
       ref={widgetRef}
       role="region"
       aria-label="Cửa sổ phụ đề nổi"
-      className="fixed bottom-20 right-4 z-50 w-[calc(100vw-2rem)] max-w-sm overflow-hidden rounded-2xl border border-slate-700 bg-slate-950/95 shadow-2xl backdrop-blur-md"
-      style={position ? { left: position.x, top: position.y, right: 'auto', bottom: 'auto' } : undefined}
+      className="meeting-floating-subtitles fixed right-4 z-50 w-[calc(100vw-2rem)] max-w-sm overflow-hidden rounded-2xl border border-slate-700 bg-slate-950/95 shadow-2xl backdrop-blur-md"
+      style={position ? { left: position.x, top: position.y, right: 'auto', bottom: 'auto' } : { bottom: 'calc(var(--meeting-toolbar-height) + 8px)' }}
     >
       <div
-        className="flex touch-none cursor-grab items-center gap-2 border-b border-slate-800 px-3 py-2 active:cursor-grabbing"
+        className="flex flex-wrap touch-none cursor-grab items-center gap-2 border-b border-slate-800 px-3 py-2 active:cursor-grabbing"
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
         onPointerUp={endDrag}
         onPointerCancel={endDrag}
       >
-        <GripHorizontal className="h-4 w-4 text-slate-500" aria-hidden="true" />
+        <GripHorizontal className="h-4 w-4 text-slate-400" aria-hidden="true" />
         <Subtitles className="h-4 w-4 text-sky-400" aria-hidden="true" />
-        <span className="text-xs font-semibold text-slate-200">Phụ đề nổi</span>
+        <span className="text-base font-semibold text-slate-200">Phụ đề nổi</span>
         <button
           type="button"
           onClick={() => void handleDocumentPictureInPicture()}
           aria-pressed={isPipOpen}
           title={isPipOpen ? 'Đóng PiP ngoài màn hình' : 'Mở PiP ngoài màn hình'}
-          className="ml-auto flex min-h-8 items-center gap-1.5 rounded-lg border border-slate-700 px-2 text-[11px] text-sky-300 transition hover:bg-slate-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-500"
+          className="order-last flex min-h-11 w-full items-center justify-center gap-1.5 rounded-lg border border-slate-500 px-2 text-base text-sky-300 transition hover:bg-slate-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-500"
         >
           <PictureInPicture2 className="h-3.5 w-3.5" aria-hidden="true" />
           {isPipOpen ? 'Đóng PiP' : 'Mở PiP ngoài màn hình'}
@@ -210,7 +210,7 @@ export const FloatingSubtitleWidget: React.FC<FloatingSubtitleWidgetProps> = ({
           onClick={onClose}
           aria-label="Thu nhỏ cửa sổ phụ đề nổi"
           title="Thu nhỏ"
-          className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 transition hover:bg-slate-800 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-500"
+          className="ml-auto flex h-11 w-11 items-center justify-center rounded-lg text-slate-400 transition hover:bg-slate-800 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-500"
         >
           <Minus className="h-4 w-4" aria-hidden="true" />
         </button>
@@ -231,7 +231,7 @@ export const FloatingSubtitleWidget: React.FC<FloatingSubtitleWidgetProps> = ({
             </div>
           ))
         ) : (
-          <p className="py-3 text-center text-xs text-slate-500">
+          <p className="py-3 text-center text-xs text-slate-400">
             Phụ đề dịch sẽ xuất hiện tại đây.
           </p>
         )}

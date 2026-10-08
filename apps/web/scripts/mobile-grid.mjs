@@ -1,11 +1,13 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import assert from 'node:assert/strict';
+import { ownedRoomCleanup } from './qa-room-cleanup.mjs';
 process.env.PLAYWRIGHT_BROWSERS_PATH ||= path.resolve('../../output/playwright/browsers');
 const {chromium} = await import('playwright');
 const base=process.env.MOBILE_BASE_URL || 'http://localhost:5173';
-const out=path.resolve('../../output/playwright/mobile-20261008/grid');
+const out=path.resolve(`../../output/playwright/mobile-20261008/${process.env.GRID_RUN||'grid'}`);
 fs.mkdirSync(out,{recursive:true});
+const roomCleanup=ownedRoomCleanup(base,out);
 const browser=await chromium.launch({args:['--use-fake-device-for-media-stream','--use-fake-ui-for-media-stream']});
 const contexts=[];const results=[];
 async function participant(name,url) {
@@ -22,7 +24,7 @@ let host;
 try {
   const hostContext=await browser.newContext({viewport:{width:390,height:844},hasTouch:true,isMobile:true,locale:'vi-VN',permissions:['microphone','camera'],recordVideo:{dir:path.join(out,'video')}});
   contexts.push(hostContext);await hostContext.tracing.start({screenshots:true,snapshots:true,sources:true});
-  host=await hostContext.newPage();host.setDefaultTimeout(20000);
+  host=await hostContext.newPage();roomCleanup.track(host);host.setDefaultTimeout(20000);
   await host.goto(base);await host.getByRole('button',{name:'Tạo cuộc họp mới',exact:true}).tap();
   await host.locator('#display-name').fill('QA Grid Host');
   const roomUrl=host.url();await host.locator('button[type=submit]').tap();
@@ -55,6 +57,6 @@ try {
   await host?.screenshot({path:path.join(out,'failure.png')}).catch(()=>{});process.exitCode=1;
 } finally {
   for(let i=0;i<contexts.length;i++) {await contexts[i].tracing.stop({path:path.join(out,`trace-${i}.zip`)});await contexts[i].close();}
-  await browser.close();fs.writeFileSync(path.join(out,'results.json'),JSON.stringify(results,null,2));
+  await browser.close();await roomCleanup.cleanup();fs.writeFileSync(path.join(out,'results.json'),JSON.stringify(results,null,2));
   console.log('Grid evidence',out,'checks',results.length);
 }

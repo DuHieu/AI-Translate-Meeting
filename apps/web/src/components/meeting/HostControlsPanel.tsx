@@ -191,10 +191,11 @@ export const HostControlsPanel: React.FC<HostControlsPanelProps> = ({
                 type="button"
                 role="switch"
                 aria-checked={allowShareScreen}
+                aria-label="Cho phép chia sẻ màn hình"
                 disabled={!isHost}
                 onClick={() => setAllowShareScreen((v) => !v)}
                 className={`w-10 h-6 flex items-center rounded-full p-1 transition-colors cursor-pointer ${
-                  allowShareScreen ? 'bg-sky-500' : 'bg-zinc-700'
+                  allowShareScreen ? 'bg-sky-700' : 'bg-zinc-700'
                 }`}
               >
                 <div
@@ -215,10 +216,11 @@ export const HostControlsPanel: React.FC<HostControlsPanelProps> = ({
                 type="button"
                 role="switch"
                 aria-checked={allowSendChat}
+                aria-label="Cho phép gửi tin nhắn trò chuyện"
                 disabled={!isHost}
                 onClick={() => setAllowSendChat((v) => !v)}
                 className={`w-10 h-6 flex items-center rounded-full p-1 transition-colors cursor-pointer ${
-                  allowSendChat ? 'bg-sky-500' : 'bg-zinc-700'
+                  allowSendChat ? 'bg-sky-700' : 'bg-zinc-700'
                 }`}
               >
                 <div
@@ -239,10 +241,11 @@ export const HostControlsPanel: React.FC<HostControlsPanelProps> = ({
                 type="button"
                 role="switch"
                 aria-checked={allowTurnOnMic}
+                aria-label="Cho phép bật micrô"
                 disabled={!isHost}
                 onClick={() => setAllowTurnOnMic((v) => !v)}
                 className={`w-10 h-6 flex items-center rounded-full p-1 transition-colors cursor-pointer ${
-                  allowTurnOnMic ? 'bg-sky-500' : 'bg-zinc-700'
+                  allowTurnOnMic ? 'bg-sky-700' : 'bg-zinc-700'
                 }`}
               >
                 <div
@@ -263,10 +266,11 @@ export const HostControlsPanel: React.FC<HostControlsPanelProps> = ({
                 type="button"
                 role="switch"
                 aria-checked={allowTurnOnVideo}
+                aria-label="Cho phép bật video"
                 disabled={!isHost}
                 onClick={() => setAllowTurnOnVideo((v) => !v)}
                 className={`w-10 h-6 flex items-center rounded-full p-1 transition-colors cursor-pointer ${
-                  allowTurnOnVideo ? 'bg-sky-500' : 'bg-zinc-700'
+                  allowTurnOnVideo ? 'bg-sky-700' : 'bg-zinc-700'
                 }`}
               >
                 <div
@@ -290,10 +294,11 @@ export const HostControlsPanel: React.FC<HostControlsPanelProps> = ({
                 type="button"
                 role="switch"
                 aria-checked={allowActivities}
+                aria-label="Cho phép cộng tác viên chia sẻ hoạt động"
                 disabled={!isHost}
                 onClick={() => setAllowActivities((v) => !v)}
                 className={`w-10 h-6 flex items-center rounded-full p-1 transition-colors cursor-pointer shrink-0 ml-3 ${
-                  allowActivities ? 'bg-sky-500' : 'bg-zinc-700'
+                  allowActivities ? 'bg-sky-700' : 'bg-zinc-700'
                 }`}
               >
                 <div
@@ -317,10 +322,11 @@ export const HostControlsPanel: React.FC<HostControlsPanelProps> = ({
                 type="button"
                 role="switch"
                 aria-checked={allowThirdPartyAudio}
+                aria-label="Cho phép ứng dụng bên thứ ba thu thập âm thanh và video"
                 disabled={!isHost}
                 onClick={() => setAllowThirdPartyAudio((v) => !v)}
                 className={`w-10 h-6 flex items-center rounded-full p-1 transition-colors cursor-pointer shrink-0 ml-3 ${
-                  allowThirdPartyAudio ? 'bg-sky-500' : 'bg-zinc-700'
+                  allowThirdPartyAudio ? 'bg-sky-700' : 'bg-zinc-700'
                 }`}
               >
                 <div

@@ -76,73 +76,187 @@ export const MeetingBottomBar: React.FC<MeetingBottomBarProps> = (props) => {
     setMenu('none');
     props.onToggleScreenShare();
   };
-  const control = (label: string, icon: React.ReactNode, callback: () => void, active = false, disabled = false, danger = false) => (
-    <button type="button" aria-label={label} aria-pressed={active} disabled={disabled} onClick={callback} className={`meeting-primary-control ${active ? 'is-active' : ''} ${danger ? 'is-danger' : ''}`}>
-      {icon}<span>{label}</span>
+  const [copyCodeSuccess, setCopyCodeSuccess] = useState(false);
+  const handleCopyCode = async () => {
+    try {
+      await navigator.clipboard.writeText(props.meetingCode);
+      setCopyCodeSuccess(true);
+      setTimeout(() => setCopyCodeSuccess(false), 2000);
+    } catch {
+      // clipboard write failed
+    }
+  };
+
+  const control = (
+    label: string,
+    icon: React.ReactNode,
+    callback: () => void,
+    active = false,
+    disabled = false,
+    danger = false,
+    badge?: number | string | null,
+    titleHint?: string,
+  ) => (
+    <button
+      type="button"
+      aria-label={label}
+      aria-pressed={active}
+      disabled={disabled}
+      onClick={callback}
+      title={titleHint || label}
+      className={`meeting-primary-control ${active ? 'is-active' : ''} ${danger ? 'is-danger' : ''} relative group`}
+    >
+      <div className="relative inline-flex items-center justify-center">
+        {icon}
+        {badge !== undefined && badge !== null && Number(badge) > 0 && (
+          <span className="absolute -top-1.5 -right-2 px-1.5 py-0.2 text-[10px] font-bold rounded-full bg-blue-600 text-white border border-[#111319] leading-tight">
+            {badge}
+          </span>
+        )}
+      </div>
+      <span>{label}</span>
     </button>
   );
+
   const menuAction = (label: string, icon: React.ReactNode, callback: () => void, active?: boolean, disabled = false) => (
-    <button type="button" className="meeting-menu-action" aria-label={label} aria-pressed={active} disabled={disabled} onClick={callback}>{icon}<span>{label}</span>{active && <span className="ml-auto text-sky-300">Đang bật</span>}</button>
+    <button type="button" className="meeting-menu-action" aria-label={label} aria-pressed={active} disabled={disabled} onClick={callback}>{icon}<span>{label}</span>{active && <span className="ml-auto text-sky-300 font-medium">Đang bật</span>}</button>
   );
+
   return (
     <footer className="meeting-bottom-bar" aria-label="Điều khiển cuộc họp">
       <div className="meeting-toolbar">
-        <span className="meeting-code">{props.meetingCode}</span>
-        <div className="meeting-primary-controls">
-          {control(isMicOn ? 'Tắt mic' : 'Bật mic', isMicOn ? (
-            <span className="inline-flex items-center gap-1"><Mic /><span role="img" aria-label="Mức âm thanh microphone" className="flex items-end gap-0.5 h-4">{[1, 2, 3].map(index => <span key={index} className={`w-0.5 h-3 bg-emerald-400 rounded ${props.isSpeaking ? 'animate-bounce' : ''}`} />)}</span></span>
-          ) : <MicOff />, onToggleMic, isMicOn, !isConnected)}
-          {control(isCameraOn ? 'Tắt cam' : 'Bật cam', isCameraOn ? <Video /> : <VideoOff />, onToggleCamera, isCameraOn, !isConnected)}
-          {control('Phụ đề', <Subtitles />, onToggleSubtitlePanel, props.isCaptionsActive)}
-          {control('Ngôn ngữ', <Languages />, props.onOpenLanguage)}
-          {control('Thêm', <MoreHorizontal />, () => setMenu('more'), menu === 'more')}
-          {control('Rời', <PhoneOff />, props.onLeaveRoom, false, false, true)}
+        {/* Left: Meeting code badge (desktop) */}
+        <div className="meeting-code flex items-center gap-2">
+          <button
+            type="button"
+            onClick={handleCopyCode}
+            title={copyCodeSuccess ? 'Đã sao chép!' : 'Nhấp để sao chép mã phòng'}
+            className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-zinc-800/80 hover:bg-zinc-700/80 border border-zinc-700/80 text-xs font-mono font-semibold text-zinc-200 transition-colors cursor-pointer"
+          >
+            <span>{props.meetingCode}</span>
+            <span className="text-[10px] text-zinc-400 font-sans">
+              {copyCodeSuccess ? '✓ Đã sao chép' : 'Sao chép'}
+            </span>
+          </button>
+          {isRecording && (
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-rose-500/20 border border-rose-500/40 text-[10px] font-bold text-rose-300 animate-pulse">
+              <span className="w-1.5 h-1.5 rounded-full bg-rose-500" /> REC
+            </span>
+          )}
         </div>
+
+        {/* Center: Main call controls */}
+        <div className="meeting-primary-controls">
+          {control(
+            isMicOn ? 'Tắt mic' : 'Bật mic',
+            isMicOn ? (
+              <span className="inline-flex items-center gap-1"><Mic /><span role="img" aria-label="Mức âm thanh microphone" className="flex items-end gap-0.5 h-4">{[1, 2, 3].map(index => <span key={index} className={`w-0.5 h-3 bg-emerald-400 rounded ${props.isSpeaking ? 'animate-bounce' : ''}`} />)}</span></span>
+            ) : <MicOff />,
+            onToggleMic,
+            isMicOn,
+            !isConnected,
+            false,
+            null,
+            isMicOn ? 'Tắt microphone (Ctrl+D)' : 'Bật microphone (Ctrl+D)',
+          )}
+          {control(
+            isCameraOn ? 'Tắt cam' : 'Bật cam',
+            isCameraOn ? <Video /> : <VideoOff />,
+            onToggleCamera,
+            isCameraOn,
+            !isConnected,
+            false,
+            null,
+            isCameraOn ? 'Tắt camera (Ctrl+E)' : 'Bật camera (Ctrl+E)',
+          )}
+          {control('Phụ đề', <Subtitles />, onToggleSubtitlePanel, props.isCaptionsActive, false, false, null, 'Bật/Tắt phụ đề AI trực tiếp (C)')}
+          {control('Ngôn ngữ', <Languages />, props.onOpenLanguage, false, false, false, null, 'Đổi ngôn ngữ nhận phụ đề & dịch thuật')}
+          {control('Thêm', <MoreHorizontal />, () => setMenu('more'), menu === 'more', false, false, null, 'Tùy chọn khác')}
+          {control('Rời', <PhoneOff />, props.onLeaveRoom, false, false, true, null, 'Rời phòng họp')}
+        </div>
+
+        {/* Right: Collaboration controls (desktop) */}
         <div className="meeting-desktop-controls">
-          {control('Mọi người', <Users />, props.onOpenPeoplePanel, props.isPeoplePanelOpen)}
-          {props.onToggleChatPanel && control('Chat', <MessageSquare />, props.onToggleChatPanel, props.activeSidePanel === 'chat')}
-          {control('Action Items', <ListTodo />, props.onOpenActions)}
+          {control(
+            'Mọi người',
+            <Users />,
+            props.onOpenPeoplePanel,
+            props.isPeoplePanelOpen,
+            false,
+            false,
+            props.numParticipants,
+            `Danh sách người tham gia (${props.numParticipants})`,
+          )}
+          {props.onToggleChatPanel && control(
+            'Chat',
+            <MessageSquare />,
+            props.onToggleChatPanel,
+            props.activeSidePanel === 'chat',
+            false,
+            false,
+            props.unreadChatCount,
+            props.unreadChatCount ? `Tin nhắn cuộc họp (${props.unreadChatCount} chưa đọc)` : 'Tin nhắn cuộc họp',
+          )}
+          {control('Action Items', <ListTodo />, props.onOpenActions, false, false, false, null, 'Nhiệm vụ & Quyết định cuộc họp')}
         </div>
       </div>
       {!isConnected && <span className="sr-only" role="status">{isConnecting ? 'Đang kết nối phòng họp' : 'Phòng họp chưa kết nối'}</span>}
       {menu === 'more' && (
         <AdaptiveDialog label="Tùy chọn cuộc họp" onClose={() => setMenu('none')} className="meeting-more-dialog">
-          <header className="flex items-center justify-between px-3 pb-2">
-            <h2 className="text-lg font-semibold">Tùy chọn cuộc họp</h2>
-            <button type="button" aria-label="Đóng tùy chọn" className="icon-target" onClick={() => setMenu('none')}><X /></button>
+          <header className="flex items-center justify-between px-3 pb-2 border-b border-white/10">
+            <h2 className="text-base font-semibold text-white">Tùy chọn cuộc họp</h2>
+            <button type="button" aria-label="Đóng tùy chọn" className="icon-target text-zinc-400 hover:text-white" onClick={() => setMenu('none')}><X /></button>
           </header>
           {capabilityNotice && <p role="status" className="capability-notice">{capabilityNotice}</p>}
-          <div className="meeting-menu-grid">
-            {menuAction(`Mọi người (${props.numParticipants})`, <Users />, action(props.onOpenPeoplePanel))}
-            {menuAction(`Chat${props.unreadChatCount ? ` (${props.unreadChatCount} mới)` : ''}`, <MessageSquare />, action(props.onToggleChatPanel))}
-            {menuAction('Action Items', <ListTodo />, action(props.onOpenActions))}
-            {menuAction('Tóm tắt', <FileText />, action(props.onOpenRecap))}
-            {menuAction('Thông tin cuộc họp', <FileText />, action(props.onOpenMeetingInfo))}
-            {menuAction('Mời người', <UserPlus />, action(props.onOpenPeoplePanel))}
-            {menuAction('Lịch sử phụ đề & xuất', <Subtitles />, action(props.onOpenSubtitleHistory))}
+
+          <div className="px-2 pt-3">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-zinc-400 px-2 block mb-1">Cộng tác & Biên bản</span>
+            <div className="meeting-menu-grid">
+              {menuAction(`Mọi người (${props.numParticipants})`, <Users />, action(props.onOpenPeoplePanel))}
+              {menuAction(`Chat${props.unreadChatCount ? ` (${props.unreadChatCount} mới)` : ''}`, <MessageSquare />, action(props.onToggleChatPanel))}
+              {menuAction('Action Items', <ListTodo />, action(props.onOpenActions))}
+              {menuAction('Tóm tắt', <FileText />, action(props.onOpenRecap))}
+              {menuAction('Thông tin cuộc họp', <FileText />, action(props.onOpenMeetingInfo))}
+              {menuAction('Mời người', <UserPlus />, action(props.onOpenPeoplePanel))}
+              {menuAction('Lịch sử phụ đề & xuất', <Subtitles />, action(props.onOpenSubtitleHistory))}
+            </div>
           </div>
-          <div className="meeting-menu-list">
-            <ThemeToggle showLabel />
-            {menuAction(props.isScreenSharing ? 'Dừng chia sẻ màn hình' : 'Chia sẻ màn hình', <Monitor />, shareScreen, props.isScreenSharing, !isConnected)}
-            {menuAction('Microphone & loa', <Mic />, () => setMenu('audio'))}
-            {menuAction('Chọn camera', <Video />, () => setMenu('video'))}
-            {menuAction('Phiên dịch âm thanh (TTS)', <Headphones />, () => { const next = !isTtsEnabled; setIsTtsEnabled(next); ttsEngine.updateSettings({ enabled: next }); }, isTtsEnabled)}
-            {props.onToggleAudioBooth && menuAction('Cabin phiên dịch (Audio Booth — Ducking -18dB)', <Headphones />, action(props.onToggleAudioBooth), props.isAudioBoothActive)}
-            {menuAction(props.isHandRaised ? 'Hạ tay' : 'Giơ tay', <Hand />, action(onToggleRaiseHand), props.isHandRaised, !isConnected)}
-            {props.isRecordingEnabled && props.onToggleRecording && menuAction(props.isRecording ? 'Dừng ghi hình cuộc họp' : 'Ghi hình cuộc họp', <CircleDot />, () => {
-              if (!navigator.mediaDevices?.getDisplayMedia) setCapabilityNotice('Ghi hình cần quyền chia sẻ màn hình trên máy tính. Hãy mở cùng phòng trên PC; trên điện thoại bạn có thể xuất phụ đề và biên bản từ Trợ lý AI.');
-              else action(props.onToggleRecording)();
-            }, props.isRecording)}
-            {isRecording && <MeetingControlButton label="Dừng ghi" icon={<CircleDot />} onClick={action(props.onToggleRecording)} danger={isRecording} />}
-            {isFloatingSubtitleEnabled && props.onToggleFloatingSubtitle && menuAction('Phụ đề nổi (PiP)', <Tv2 />, action(props.onToggleFloatingSubtitle), props.isFloatingSubtitleActive)}
-            {menuAction('Đổi bố cục hiển thị', <Grid />, action(props.onOpenLayoutMenu))}
-            {menuAction('Cài đặt âm thanh & AI', <Settings />, action(props.onOpenSettings))}
-            {props.onToggleActivitiesPanel && menuAction('Hoạt động', <Shapes />, action(props.onToggleActivitiesPanel))}
-            {props.isHost && props.onToggleHostControlsPanel && menuAction(`Bộ điều khiển của người tổ chức${props.pendingAdmissionsCount ? ` (${props.pendingAdmissionsCount} chờ duyệt)` : ''}`, <Shield />, action(props.onToggleHostControlsPanel))}
+
+          <div className="px-2 pt-2">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-zinc-400 px-2 block mb-1">Thiết bị & Tính năng AI</span>
+            <div className="meeting-menu-list">
+              <ThemeToggle showLabel />
+              {menuAction(props.isScreenSharing ? 'Dừng chia sẻ màn hình' : 'Chia sẻ màn hình', <Monitor />, shareScreen, props.isScreenSharing, !isConnected)}
+              {menuAction('Microphone & loa', <Mic />, () => setMenu('audio'))}
+              {menuAction('Chọn camera', <Video />, () => setMenu('video'))}
+              {menuAction('Phiên dịch âm thanh (TTS)', <Headphones />, () => { const next = !isTtsEnabled; setIsTtsEnabled(next); ttsEngine.updateSettings({ enabled: next }); }, isTtsEnabled)}
+              {props.onToggleAudioBooth && menuAction('Cabin phiên dịch (Audio Booth — Ducking -18dB)', <Headphones />, action(props.onToggleAudioBooth), props.isAudioBoothActive)}
+              {menuAction(props.isHandRaised ? 'Hạ tay' : 'Giơ tay', <Hand />, action(onToggleRaiseHand), props.isHandRaised, !isConnected)}
+              {props.isRecordingEnabled && props.onToggleRecording && menuAction(props.isRecording ? 'Dừng ghi hình cuộc họp' : 'Ghi hình cuộc họp', <CircleDot />, () => {
+                if (!navigator.mediaDevices?.getDisplayMedia) setCapabilityNotice('Ghi hình cần quyền chia sẻ màn hình trên máy tính. Hãy mở cùng phòng trên PC; trên điện thoại bạn có thể xuất phụ đề và biên bản từ Trợ lý AI.');
+                else action(props.onToggleRecording)();
+              }, props.isRecording)}
+              {isRecording && <MeetingControlButton label="Dừng ghi" icon={<CircleDot />} onClick={action(props.onToggleRecording)} danger={isRecording} />}
+              {isFloatingSubtitleEnabled && props.onToggleFloatingSubtitle && menuAction('Phụ đề nổi (PiP)', <Tv2 />, action(props.onToggleFloatingSubtitle), props.isFloatingSubtitleActive)}
+              {menuAction('Đổi bố cục hiển thị', <Grid />, action(props.onOpenLayoutMenu))}
+              {menuAction('Cài đặt âm thanh & AI', <Settings />, action(props.onOpenSettings))}
+              {props.onToggleActivitiesPanel && menuAction('Hoạt động', <Shapes />, action(props.onToggleActivitiesPanel))}
+              {props.isHost && props.onToggleHostControlsPanel && menuAction(`Bộ điều khiển của người tổ chức${props.pendingAdmissionsCount ? ` (${props.pendingAdmissionsCount} chờ duyệt)` : ''}`, <Shield />, action(props.onToggleHostControlsPanel))}
+            </div>
           </div>
-          {props.onSendReaction && <div className="flex justify-around gap-1 px-3 pt-3" aria-label="Biểu cảm">
-            {['👍', '👏', '❤️', '🎉', '💡'].map(emoji => <button type="button" key={emoji} className="icon-target text-2xl" aria-label={`Gửi biểu cảm ${emoji}`} onClick={() => { props.onSendReaction?.(emoji); setMenu('none'); }}>{emoji}</button>)}
-          </div>}
+
+          {props.onSendReaction && (
+            <div className="px-3 pt-2 pb-1 border-t border-white/10 mt-2">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-zinc-400 block mb-1">Gửi biểu cảm</span>
+              <div className="flex justify-around gap-1" aria-label="Biểu cảm">
+                {['👍', '👏', '❤️', '🎉', '💡'].map(emoji => (
+                  <button type="button" key={emoji} className="icon-target text-2xl hover:scale-125 transition-transform cursor-pointer" aria-label={`Gửi biểu cảm ${emoji}`} onClick={() => { props.onSendReaction?.(emoji); setMenu('none'); }}>
+                    {emoji}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
         </AdaptiveDialog>
       )}
       <AudioDeviceMenu microphoneTrack={props.microphoneTrack} isOpen={menu === 'audio'} onClose={() => setMenu('none')} />

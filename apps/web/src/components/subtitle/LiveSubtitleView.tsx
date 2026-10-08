@@ -29,7 +29,7 @@ export const LiveSubtitleView: React.FC<LiveSubtitleViewProps> = ({ history, sho
 
   if (visibleSubtitles.length === 0) {
     return (
-      <div className="flex flex-1 items-center justify-center px-6 text-center text-sm text-zinc-500">
+      <div className="flex flex-1 items-center justify-center px-6 text-center text-sm text-zinc-400">
         Phụ đề mới sẽ tự động xuất hiện tại đây.
       </div>
     );
@@ -51,7 +51,7 @@ export const LiveSubtitleView: React.FC<LiveSubtitleViewProps> = ({ history, sho
                   </span>
                 </span>
                 <div className="flex shrink-0 items-center gap-1.5">
-                  <time className="text-zinc-600">{formatTimestamp(item.timestamp)}</time>
+                  <time className="text-zinc-400">{formatTimestamp(item.timestamp)}</time>
                   <button
                     type="button"
                     onClick={() => speakText(item.translatedText || item.originalText, item.targetLanguage)}
@@ -65,7 +65,7 @@ export const LiveSubtitleView: React.FC<LiveSubtitleViewProps> = ({ history, sho
               </div>
               <p className="text-[15px] leading-6 text-zinc-100">{item.translatedText}</p>
               {showOriginal && item.originalText && item.originalText !== item.translatedText && (
-                <p className="mt-1 text-xs italic leading-5 text-zinc-500">{item.originalText}</p>
+                <p className="mt-1 text-xs italic leading-5 text-zinc-400">{item.originalText}</p>
               )}
             </article>
           );

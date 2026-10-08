@@ -1,0 +1,13 @@
+// Standalone browser-engine diagnostic. This is not LayaMeet E2E evidence.
+import http from 'node:http';import fs from 'node:fs';import path from 'node:path';
+const {webkit,devices}=await import('playwright');const out=process.env.MOBILE_ARTIFACT_ROOT;fs.mkdirSync(out,{recursive:true});
+const html=`<!doctype html><html><meta name="viewport" content="width=device-width,initial-scale=1"><body style="margin:0;background:#181a20;color:white;font:16px system-ui"><button id="start" style="height:48px">Start camera</button><button id="chat" style="height:48px">Open dialog</button><video autoplay playsinline muted style="width:100%;height:45vh;object-fit:cover"></video><dialog style="max-width:100%;padding:16px"><p>Standalone dialog — no LayaMeet code</p><input style="font-size:16px;height:44px"><button onclick="this.closest('dialog').close()">Close</button></dialog><script>document.querySelector('#start').onclick=async()=>{document.querySelector('video').srcObject=await navigator.mediaDevices.getUserMedia({video:true,audio:true});};document.querySelector('#chat').onclick=()=>document.querySelector('dialog').showModal();</script></body></html>`;
+const server=http.createServer((req,res)=>{res.writeHead(200,{'Content-Type':'text/html'});res.end(html);});await new Promise(r=>server.listen(4899,'127.0.0.1',r));
+const browser=await webkit.launch();const context=await browser.newContext({...devices['iPhone 15'],permissions:['camera','microphone'],recordVideo:{dir:path.join(out,'video')}});await context.tracing.start({screenshots:true,snapshots:true});const page=await context.newPage();page.setDefaultTimeout(15000);const results=[];page.on('crash',()=>results.push({nativeCrash:true}));
+try{
+ await page.goto('http://localhost:4899');await page.locator('#start').tap();await page.waitForTimeout(1000);await page.screenshot({path:path.join(out,'camera.png')});results.push({camera:true});
+ await page.locator('#chat').tap();await page.screenshot({path:path.join(out,'dialog.png')});results.push({dialog:true});
+ await page.setViewportSize({width:659,height:393});await page.screenshot({path:path.join(out,'landscape.png')});results.push({landscape:true});
+ await page.setViewportSize({width:393,height:360});await page.screenshot({path:path.join(out,'short-viewport.png')});results.push({shortViewport:true});
+}catch(error){results.push({error:error.message});}
+finally{fs.writeFileSync(path.join(out,'results.json'),JSON.stringify(results,null,2));console.log(JSON.stringify(results));await context.tracing.stop({path:path.join(out,'trace.zip')}).catch(()=>{});await context.close().catch(()=>{});await browser.close();server.close();}

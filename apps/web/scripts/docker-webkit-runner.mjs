@@ -2,7 +2,7 @@ import net from 'node:net';
 import { spawn } from 'node:child_process';
 // Pure TCP forwarding makes the existing localhost URLs reachable in the Linux
 // browser container. No API response, token, media or business logic is mocked.
-const ports = [5173, 4173, 4183, 4184, 4185, 4186, 7880, 7881, 5000, 8000];
+const ports = [5173, 4173, 4183, 4184, 4185, 4186, 4187, 4188, 7880, 7881, 5000, 8000];
 for (const port of ports) {
   const server = net.createServer(socket => {
     const upstream = net.connect(port, 'host.docker.internal');
