@@ -17,6 +17,7 @@ from app.translation.premium_provider import (
     PremiumTranslationConfig,
     PremiumTranslationProvider,
 )
+from app.translation.quota_manager import TokenQuotaManager
 from app.websocket.transcribe_handler import TranscribeWebSocketHandler
 
 
@@ -146,6 +147,7 @@ async def test_contextual_pro_without_key_falls_back_without_calling_premium(mon
     provider = ContextualTranslationProvider(
         fallback_provider=fallback,
         premium_provider=premium,
+        quota_manager=TokenQuotaManager(quota=10000, enable_redis=False),
     )
 
     result = await provider.translate_contextual(
@@ -174,6 +176,7 @@ async def test_contextual_provider_falls_back_when_premium_api_fails():
     provider = ContextualTranslationProvider(
         fallback_provider=fallback,
         premium_provider=premium,
+        quota_manager=TokenQuotaManager(quota=10000, enable_redis=False),
     )
 
     result = await provider.translate_contextual(

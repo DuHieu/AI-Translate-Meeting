@@ -110,17 +110,21 @@ class TokenQuotaManager:
         if self._redis is not None:
             try:
                 key = self._key(meeting_id)
-                async with self._redis.pipeline(transaction=True) as pipeline:
-                    pipeline.hincrby(key, f"used:{normalized_tier}", tokens)
-                    pipeline.hset(
-                        key,
-                        mapping={
-                            "last_tier": normalized_tier,
-                            f"downgraded:{normalized_tier}": "0",
-                            f"reason:{normalized_tier}": "",
-                        },
-                    )
-                    results = await pipeline.execute()
+
+                async def _pipeline_op() -> list[Any]:
+                    async with self._redis.pipeline(transaction=True) as pipeline:
+                        pipeline.hincrby(key, f"used:{normalized_tier}", tokens)
+                        pipeline.hset(
+                            key,
+                            mapping={
+                                "last_tier": normalized_tier,
+                                f"downgraded:{normalized_tier}": "0",
+                                f"reason:{normalized_tier}": "",
+                            },
+                        )
+                        return await pipeline.execute()
+
+                results = await asyncio.wait_for(_pipeline_op(), timeout=0.25)
                 total = int(results[0])
                 memory_key = self._memory_key(meeting_id, normalized_tier)
                 async with self._lock:
@@ -159,7 +163,10 @@ class TokenQuotaManager:
         requested_tier = self._normalize_tier(tier) if tier is not None else None
         if self._redis is not None:
             try:
-                values = await self._redis.hgetall(self._key(meeting_id))
+                values = await asyncio.wait_for(
+                    self._redis.hgetall(self._key(meeting_id)),
+                    timeout=0.25,
+                )
                 effective_tier = requested_tier or self._normalize_tier(values.get("last_tier"))
                 state = self._empty_state(meeting_id, effective_tier)
                 state["total_tokens_used"] = int(values.get(f"used:{effective_tier}", 0))
@@ -196,13 +203,16 @@ class TokenQuotaManager:
 
         if self._redis is not None:
             try:
-                await self._redis.hset(
-                    self._key(meeting_id),
-                    mapping={
-                        "last_tier": normalized_tier,
-                        f"downgraded:{normalized_tier}": "1",
-                        f"reason:{normalized_tier}": reason,
-                    },
+                await asyncio.wait_for(
+                    self._redis.hset(
+                        self._key(meeting_id),
+                        mapping={
+                            "last_tier": normalized_tier,
+                            f"downgraded:{normalized_tier}": "1",
+                            f"reason:{normalized_tier}": reason,
+                        },
+                    ),
+                    timeout=0.25,
                 )
                 memory_key = self._memory_key(meeting_id, normalized_tier)
                 async with self._lock:
@@ -228,7 +238,10 @@ class TokenQuotaManager:
     async def reset_usage(self, meeting_id: str) -> None:
         if self._redis is not None:
             try:
-                await self._redis.delete(self._key(meeting_id))
+                await asyncio.wait_for(
+                    self._redis.delete(self._key(meeting_id)),
+                    timeout=0.25,
+                )
             except Exception as exc:
                 self._disable_redis("reset", exc)
 
