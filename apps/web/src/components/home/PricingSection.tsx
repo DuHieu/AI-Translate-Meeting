@@ -331,8 +331,8 @@ export const PricingSection: React.FC<PricingSectionProps> = ({ onSelectTier, on
           </p>
 
           {/* Billing Interval Switcher */}
-          <div className="pt-2 flex items-center justify-center gap-3">
-            <button type="button" className={`text-xs font-medium cursor-pointer transition-colors ${!isAnnual ? 'text-zinc-950 dark:text-white font-semibold' : 'text-zinc-600 dark:text-zinc-400'}`} onClick={() => setIsAnnual(false)}>
+          <div className="pt-2 flex items-center justify-center gap-2 sm:gap-3 flex-nowrap">
+            <button type="button" className={`text-xs font-medium cursor-pointer transition-colors whitespace-nowrap shrink-0 ${!isAnnual ? 'text-zinc-950 dark:text-white font-semibold' : 'text-zinc-600 dark:text-zinc-400'}`} onClick={() => setIsAnnual(false)}>
               {content.monthly}
             </button>
             <button
@@ -341,7 +341,7 @@ export const PricingSection: React.FC<PricingSectionProps> = ({ onSelectTier, on
               aria-label={`${content.monthly} / ${content.annual}`}
               aria-checked={isAnnual}
               onClick={() => setIsAnnual(!isAnnual)}
-              className={`w-11 h-6 flex items-center rounded-full p-1 transition-colors duration-200 ease-in-out cursor-pointer ${
+              className={`w-11 h-6 flex items-center rounded-full p-1 transition-colors duration-200 ease-in-out cursor-pointer shrink-0 ${
                 isAnnual ? 'bg-blue-600' : 'bg-zinc-300 dark:bg-zinc-700'
               }`}
             >
@@ -351,9 +351,9 @@ export const PricingSection: React.FC<PricingSectionProps> = ({ onSelectTier, on
                 }`}
               />
             </button>
-            <button type="button" className={`text-xs font-medium cursor-pointer transition-colors flex items-center gap-1.5 ${isAnnual ? 'text-zinc-950 dark:text-white font-semibold' : 'text-zinc-600 dark:text-zinc-400'}`} onClick={() => setIsAnnual(true)}>
+            <button type="button" className={`text-xs font-medium cursor-pointer transition-colors flex items-center gap-1.5 whitespace-nowrap shrink-0 ${isAnnual ? 'text-zinc-950 dark:text-white font-semibold' : 'text-zinc-600 dark:text-zinc-400'}`} onClick={() => setIsAnnual(true)}>
               <span>{content.annual}</span>
-              <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+              <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 whitespace-nowrap">
                 {content.save20}
               </span>
             </button>

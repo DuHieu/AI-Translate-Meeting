@@ -216,19 +216,19 @@ export const CalendarScheduleModal: React.FC<CalendarScheduleModalProps> = ({
   return (
     <AdaptiveDialog label="Lịch cuộc họp" onClose={onClose} className="calendar-dialog">
       <div
-        className="w-full max-w-4xl max-h-[calc(var(--app-height)-64px)] flex flex-col bg-white dark:bg-[#141519] border border-zinc-200 dark:border-[#2a2c36] rounded-3xl shadow-2xl overflow-hidden select-none"
+        className="w-full max-w-none max-h-[calc(var(--app-height)-52px)] flex flex-col bg-white dark:bg-[#141519] border border-zinc-200 dark:border-[#2a2c36] rounded-2xl sm:rounded-3xl shadow-2xl overflow-hidden select-none"
       >
         {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-4 py-4 border-b border-zinc-200 dark:border-[#262832] bg-zinc-50/80 dark:bg-[#181920]/80 backdrop-blur">
-          <div className="flex items-center gap-3 min-w-0">
-            <div className="w-10 h-10 rounded-2xl bg-blue-600/15 text-blue-600 dark:text-blue-400 border border-blue-500/30 flex items-center justify-center">
-              <CalendarIcon className="w-5 h-5" />
+        <div className="flex items-center justify-between gap-2 px-4 py-3 sm:py-4 border-b border-zinc-200 dark:border-[#262832] bg-zinc-50/80 dark:bg-[#181920]/80 backdrop-blur">
+          <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
+            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl sm:rounded-2xl bg-blue-600/15 text-blue-600 dark:text-blue-400 border border-blue-500/30 flex items-center justify-center shrink-0">
+              <CalendarIcon className="w-4 h-4 sm:w-5 sm:h-5" />
             </div>
-            <div>
-              <h2 id="calendar-modal-title" className="text-base sm:text-lg font-bold text-zinc-950 dark:text-white">
+            <div className="min-w-0">
+              <h2 id="calendar-modal-title" className="text-sm sm:text-lg font-bold text-zinc-950 dark:text-white truncate">
                 {copy.title}
               </h2>
-              <p className="text-xs text-zinc-500 dark:text-zinc-400">
+              <p className="hidden sm:block text-xs text-zinc-500 dark:text-zinc-400 truncate">
                 {copy.subtitle}
               </p>
             </div>
@@ -241,9 +241,9 @@ export const CalendarScheduleModal: React.FC<CalendarScheduleModalProps> = ({
                 onClose();
                 onOpenScheduleNew();
               }}
-              className="px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold flex items-center gap-1.5 transition-all shadow-md shadow-blue-600/25 cursor-pointer"
+              className="px-3 sm:px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold flex items-center gap-1.5 transition-all shadow-md shadow-blue-600/25 cursor-pointer whitespace-nowrap"
             >
-              <Plus className="w-4 h-4" />
+              <Plus className="w-4 h-4 shrink-0" />
               <span>{copy.scheduleNew}</span>
             </button>
             <button
@@ -260,7 +260,7 @@ export const CalendarScheduleModal: React.FC<CalendarScheduleModalProps> = ({
         {/* Modal Body: Two-column Calendar Grid (Left: Interactive Calendar, Right: Scheduled Meeting List) */}
         <div className="flex-1 overflow-y-auto grid grid-cols-1 md:grid-cols-12 gap-0 divide-y md:divide-y-0 md:divide-x divide-zinc-200 dark:divide-[#262832]">
           {/* Left Column: Interactive Month Grid */}
-          <div className="md:col-span-5 p-3 sm:p-5 space-y-4 bg-zinc-50/50 dark:bg-[#121317]">
+          <div className="md:col-span-5 p-3 sm:p-5 space-y-2.5 sm:space-y-4 bg-zinc-50/50 dark:bg-[#121317]">
             {/* Month Switcher */}
             <div className="flex items-center justify-between">
               <span className="text-sm font-bold text-zinc-900 dark:text-zinc-100 capitalize">
@@ -299,7 +299,7 @@ export const CalendarScheduleModal: React.FC<CalendarScheduleModalProps> = ({
             {/* Weekday Labels */}
             <div className="grid grid-cols-7 gap-0.5 text-center text-[11px] font-semibold text-zinc-600 dark:text-zinc-400">
               {['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'].map((d) => (
-                <div key={d} className="py-1">{d}</div>
+                <div key={d} className="py-0.5 sm:py-1">{d}</div>
               ))}
             </div>
 
@@ -307,7 +307,7 @@ export const CalendarScheduleModal: React.FC<CalendarScheduleModalProps> = ({
             <div className="grid grid-cols-7 gap-0.5">
               {calendarDays.map((date, idx) => {
                 if (!date) {
-                  return <div key={`empty-${idx}`} className="h-9" />;
+                  return <div key={`empty-${idx}`} className="h-8 sm:h-9" />;
                 }
                 const dateKey = `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
                 const hasMeetings = meetingDateSet.has(dateKey);
@@ -325,7 +325,7 @@ export const CalendarScheduleModal: React.FC<CalendarScheduleModalProps> = ({
                     key={dateKey}
                     type="button"
                     onClick={() => setSelectedDate(date)}
-                    className={`relative h-9 rounded-xl flex items-center justify-center text-xs font-semibold transition cursor-pointer ${
+                    className={`relative h-8 sm:h-9 rounded-xl flex items-center justify-center text-xs font-semibold transition cursor-pointer ${
                       isSelected
                         ? 'bg-blue-600 text-white shadow-sm'
                         : isToday
@@ -343,7 +343,7 @@ export const CalendarScheduleModal: React.FC<CalendarScheduleModalProps> = ({
             </div>
 
             {/* Filter Toggle */}
-            <div className="pt-2">
+            <div className="pt-1 sm:pt-2">
               <button
                 type="button"
                 onClick={() => setSelectedDate(null)}
@@ -359,8 +359,8 @@ export const CalendarScheduleModal: React.FC<CalendarScheduleModalProps> = ({
           </div>
 
           {/* Right Column: Scheduled Meetings List */}
-          <div className="md:col-span-7 p-4 sm:p-5 flex flex-col min-h-[300px]">
-            <div className="flex items-center justify-between mb-3">
+          <div className="md:col-span-7 p-3.5 sm:p-5 flex flex-col min-h-[210px] sm:min-h-[300px]">
+            <div className="flex items-center justify-between mb-2.5 sm:mb-3">
               <h3 className="text-xs font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 flex items-center gap-1.5">
                 <Clock className="w-3.5 h-3.5" />
                 <span>
@@ -378,18 +378,18 @@ export const CalendarScheduleModal: React.FC<CalendarScheduleModalProps> = ({
             </div>
 
             {loading ? (
-              <div className="flex-1 flex items-center justify-center py-12 text-zinc-400 text-xs">
+              <div className="flex-1 flex items-center justify-center py-8 sm:py-12 text-zinc-400 text-xs">
                 <span>Đang tải lịch cuộc họp...</span>
               </div>
             ) : filteredMeetings.length === 0 ? (
-              <div className="flex-1 flex flex-col items-center justify-center p-6 text-center border-2 border-dashed border-zinc-200 dark:border-[#282a35] rounded-2xl my-auto">
-                <div className="w-12 h-12 rounded-2xl bg-zinc-100 dark:bg-[#1d1f27] text-zinc-400 flex items-center justify-center mb-3">
-                  <CalendarIcon className="w-6 h-6 stroke-[1.5]" />
+              <div className="flex-1 flex flex-col items-center justify-center p-4 sm:p-6 text-center border-2 border-dashed border-zinc-200 dark:border-[#282a35] rounded-2xl my-auto">
+                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-zinc-100 dark:bg-[#1d1f27] text-zinc-400 flex items-center justify-center mb-2.5 sm:mb-3">
+                  <CalendarIcon className="w-5 h-5 sm:w-6 sm:h-6 stroke-[1.5]" />
                 </div>
                 <h4 className="text-sm font-bold text-zinc-800 dark:text-zinc-200 mb-1">
                   {copy.emptyTitle}
                 </h4>
-                <p className="text-xs text-zinc-500 dark:text-zinc-400 max-w-xs mb-4">
+                <p className="text-xs text-zinc-500 dark:text-zinc-400 max-w-xs mb-3.5 sm:mb-4">
                   {copy.emptyDesc}
                 </p>
                 <button
@@ -398,7 +398,7 @@ export const CalendarScheduleModal: React.FC<CalendarScheduleModalProps> = ({
                     onClose();
                     onOpenScheduleNew();
                   }}
-                  className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer"
+                  className="px-4 py-2 rounded-xl border border-blue-500/40 bg-blue-500/10 hover:bg-blue-500/20 text-blue-600 dark:text-blue-300 text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer"
                 >
                   <Plus className="w-4 h-4" />
                   <span>{copy.scheduleNew}</span>

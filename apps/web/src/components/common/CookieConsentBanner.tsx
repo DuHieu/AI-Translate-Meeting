@@ -149,7 +149,7 @@ export const CookieConsentBanner: React.FC = () => {
     <div
       role="region"
       aria-label={tCookie.title}
-      className={`cookie-consent fixed bottom-2.5 left-2.5 right-2.5 sm:left-auto sm:right-6 sm:bottom-6 sm:max-w-lg z-50 animate-in fade-in slide-in-from-bottom-5 duration-300`}
+      className={`cookie-consent fixed bottom-2.5 left-2.5 right-2.5 sm:left-auto sm:right-6 sm:bottom-6 sm:max-w-md z-30 animate-in fade-in slide-in-from-bottom-5 duration-300`}
     >
       <div className="bg-white/95 dark:bg-[#18181b]/95 border border-zinc-200 dark:border-[#2e2e32] rounded-2xl shadow-2xl p-3 sm:p-5 backdrop-blur-md text-zinc-900 dark:text-zinc-100 space-y-2.5 sm:space-y-4">
         {/* Header */}

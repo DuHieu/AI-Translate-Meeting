@@ -56,10 +56,10 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
     <aside
       role="complementary"
       aria-label="Tin nhắn trong cuộc gọi"
-      className="meeting-panel-content h-full min-h-0 w-full bg-[#18191a] text-zinc-100 md:border-l border-zinc-800 flex flex-col z-30 shrink-0 select-none overflow-hidden"
+      className="meeting-panel-content h-full min-h-0 w-full bg-[#13151f] text-zinc-100 md:border-l border-white/10 flex flex-col z-30 shrink-0 select-none overflow-hidden"
     >
       {/* Header */}
-      <div className="flex items-center justify-between px-5 py-4 border-b border-zinc-800/80">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-white/10">
         <h2 className="text-base font-medium text-zinc-100">Tin nhắn trong cuộc gọi</h2>
         <button
           type="button"
@@ -94,15 +94,15 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
       </div>
 
       {/* Info notice */}
-      <div className="px-5 py-3 bg-zinc-900/30 text-[11px] text-zinc-400 leading-relaxed border-b border-zinc-800/40">
-        Chỉ những người trong cuộc gọi mới có thể xem tin nhắn và tin nhắn sẽ bị xóa khi cuộc gọi kết thúc.
+      <div className="px-4 py-2 bg-zinc-900/30 text-[11px] text-zinc-400 leading-snug border-b border-zinc-800/40">
+        Tin nhắn chỉ hiển thị với người trong cuộc gọi và tự xóa khi kết thúc.
       </div>
 
       {/* Messages stream */}
-      <div className="flex-1 min-h-0 overflow-y-auto p-4 space-y-4">
-        <p id="chat-attachment-help" className="text-base text-zinc-400">Tệp đính kèm hiện chỉ gửi tên và kích thước. Hãy gửi liên kết tài liệu để chia sẻ nội dung.</p>
+      <div className="flex-1 min-h-0 overflow-y-auto p-4 space-y-3">
+        <p id="chat-attachment-help" className="text-[11px] text-zinc-500 leading-snug">Tệp đính kèm hiện chỉ gửi tên và kích thước. Hãy gửi liên kết tài liệu để chia sẻ nội dung.</p>
         {messages.length === 0 ? (
-          <div className="py-16 text-center text-xs text-zinc-400">
+          <div className="py-12 text-center text-xs text-zinc-400">
             Chưa có tin nhắn nào trong cuộc gọi này.
           </div>
         ) : (

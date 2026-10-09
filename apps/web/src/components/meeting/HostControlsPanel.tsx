@@ -39,10 +39,10 @@ export const HostControlsPanel: React.FC<HostControlsPanelProps> = ({
     <aside
       role="complementary"
       aria-label="Bộ điều khiển của người tổ chức"
-      className="meeting-panel-content h-full min-h-0 w-full bg-[#18191a] text-zinc-100 md:border-l border-zinc-800 flex flex-col z-30 shrink-0 select-none overflow-hidden"
+      className="meeting-panel-content h-full min-h-0 w-full bg-[#13151f] text-zinc-100 md:border-l border-white/10 flex flex-col z-30 shrink-0 select-none overflow-hidden"
     >
       {/* Header */}
-      <div className="flex items-center justify-between px-5 py-4 border-b border-zinc-800/80">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-white/10">
         <div className="flex items-center gap-2.5">
           <ShieldCheck className="w-5 h-5 text-sky-400" />
           <h2 className="text-base font-medium text-zinc-100">Bộ điều khiển của người tổ chức</h2>
@@ -102,8 +102,20 @@ export const HostControlsPanel: React.FC<HostControlsPanelProps> = ({
                 value="open"
                 checked={accessMode === 'open'}
                 onChange={() => setAccessMode('open')}
-                className="mt-1 accent-sky-400 cursor-pointer"
+                className="sr-only"
               />
+              <span
+                aria-hidden="true"
+                className={`mt-0.5 inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full border transition-colors ${
+                  accessMode === 'open'
+                    ? 'border-sky-400 bg-sky-500'
+                    : 'border-zinc-600 bg-zinc-800'
+                }`}
+              >
+                {accessMode === 'open' && (
+                  <span className="h-1.5 w-1.5 rounded-full bg-white" />
+                )}
+              </span>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-1.5 font-medium text-xs text-zinc-200">
                   <Globe className="w-3.5 h-3.5 text-emerald-400" />
@@ -129,8 +141,20 @@ export const HostControlsPanel: React.FC<HostControlsPanelProps> = ({
                 value="trusted"
                 checked={accessMode === 'trusted'}
                 onChange={() => setAccessMode('trusted')}
-                className="mt-1 accent-sky-400 cursor-pointer"
+                className="sr-only"
               />
+              <span
+                aria-hidden="true"
+                className={`mt-0.5 inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full border transition-colors ${
+                  accessMode === 'trusted'
+                    ? 'border-sky-400 bg-sky-500'
+                    : 'border-zinc-600 bg-zinc-800'
+                }`}
+              >
+                {accessMode === 'trusted' && (
+                  <span className="h-1.5 w-1.5 rounded-full bg-white" />
+                )}
+              </span>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-1.5 font-medium text-xs text-zinc-200">
                   <Shield className="w-3.5 h-3.5 text-sky-400" />
@@ -156,8 +180,20 @@ export const HostControlsPanel: React.FC<HostControlsPanelProps> = ({
                 value="restricted"
                 checked={accessMode === 'restricted'}
                 onChange={() => setAccessMode('restricted')}
-                className="mt-1 accent-sky-400 cursor-pointer"
+                className="sr-only"
               />
+              <span
+                aria-hidden="true"
+                className={`mt-0.5 inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full border transition-colors ${
+                  accessMode === 'restricted'
+                    ? 'border-sky-400 bg-sky-500'
+                    : 'border-zinc-600 bg-zinc-800'
+                }`}
+              >
+                {accessMode === 'restricted' && (
+                  <span className="h-1.5 w-1.5 rounded-full bg-white" />
+                )}
+              </span>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-1.5 font-medium text-xs text-zinc-200">
                   <Lock className="w-3.5 h-3.5 text-amber-400" />
@@ -194,15 +230,19 @@ export const HostControlsPanel: React.FC<HostControlsPanelProps> = ({
                 aria-label="Cho phép chia sẻ màn hình"
                 disabled={!isHost}
                 onClick={() => setAllowShareScreen((v) => !v)}
-                className={`w-10 h-6 flex items-center rounded-full p-1 transition-colors cursor-pointer ${
-                  allowShareScreen ? 'bg-sky-700' : 'bg-zinc-700'
-                }`}
+                className="min-w-[44px] min-h-[44px] flex items-center justify-end p-1 -mr-1 cursor-pointer disabled:cursor-not-allowed"
               >
                 <div
-                  className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform ${
-                    allowShareScreen ? 'translate-x-4' : 'translate-x-0'
+                  className={`w-10 h-6 flex items-center rounded-full p-1 transition-colors ${
+                    allowShareScreen ? 'bg-sky-700' : 'bg-zinc-700'
                   }`}
-                />
+                >
+                  <div
+                    className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform ${
+                      allowShareScreen ? 'translate-x-4' : 'translate-x-0'
+                    }`}
+                  />
+                </div>
               </button>
             </div>
 
@@ -219,15 +259,19 @@ export const HostControlsPanel: React.FC<HostControlsPanelProps> = ({
                 aria-label="Cho phép gửi tin nhắn trò chuyện"
                 disabled={!isHost}
                 onClick={() => setAllowSendChat((v) => !v)}
-                className={`w-10 h-6 flex items-center rounded-full p-1 transition-colors cursor-pointer ${
-                  allowSendChat ? 'bg-sky-700' : 'bg-zinc-700'
-                }`}
+                className="min-w-[44px] min-h-[44px] flex items-center justify-end p-1 -mr-1 cursor-pointer disabled:cursor-not-allowed"
               >
                 <div
-                  className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform ${
-                    allowSendChat ? 'translate-x-4' : 'translate-x-0'
+                  className={`w-10 h-6 flex items-center rounded-full p-1 transition-colors ${
+                    allowSendChat ? 'bg-sky-700' : 'bg-zinc-700'
                   }`}
-                />
+                >
+                  <div
+                    className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform ${
+                      allowSendChat ? 'translate-x-4' : 'translate-x-0'
+                    }`}
+                  />
+                </div>
               </button>
             </div>
 
@@ -244,15 +288,19 @@ export const HostControlsPanel: React.FC<HostControlsPanelProps> = ({
                 aria-label="Cho phép bật micrô"
                 disabled={!isHost}
                 onClick={() => setAllowTurnOnMic((v) => !v)}
-                className={`w-10 h-6 flex items-center rounded-full p-1 transition-colors cursor-pointer ${
-                  allowTurnOnMic ? 'bg-sky-700' : 'bg-zinc-700'
-                }`}
+                className="min-w-[44px] min-h-[44px] flex items-center justify-end p-1 -mr-1 cursor-pointer disabled:cursor-not-allowed"
               >
                 <div
-                  className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform ${
-                    allowTurnOnMic ? 'translate-x-4' : 'translate-x-0'
+                  className={`w-10 h-6 flex items-center rounded-full p-1 transition-colors ${
+                    allowTurnOnMic ? 'bg-sky-700' : 'bg-zinc-700'
                   }`}
-                />
+                >
+                  <div
+                    className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform ${
+                      allowTurnOnMic ? 'translate-x-4' : 'translate-x-0'
+                    }`}
+                  />
+                </div>
               </button>
             </div>
 
@@ -269,15 +317,19 @@ export const HostControlsPanel: React.FC<HostControlsPanelProps> = ({
                 aria-label="Cho phép bật video"
                 disabled={!isHost}
                 onClick={() => setAllowTurnOnVideo((v) => !v)}
-                className={`w-10 h-6 flex items-center rounded-full p-1 transition-colors cursor-pointer ${
-                  allowTurnOnVideo ? 'bg-sky-700' : 'bg-zinc-700'
-                }`}
+                className="min-w-[44px] min-h-[44px] flex items-center justify-end p-1 -mr-1 cursor-pointer disabled:cursor-not-allowed"
               >
                 <div
-                  className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform ${
-                    allowTurnOnVideo ? 'translate-x-4' : 'translate-x-0'
+                  className={`w-10 h-6 flex items-center rounded-full p-1 transition-colors ${
+                    allowTurnOnVideo ? 'bg-sky-700' : 'bg-zinc-700'
                   }`}
-                />
+                >
+                  <div
+                    className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform ${
+                      allowTurnOnVideo ? 'translate-x-4' : 'translate-x-0'
+                    }`}
+                  />
+                </div>
               </button>
             </div>
 
@@ -297,15 +349,19 @@ export const HostControlsPanel: React.FC<HostControlsPanelProps> = ({
                 aria-label="Cho phép cộng tác viên chia sẻ hoạt động"
                 disabled={!isHost}
                 onClick={() => setAllowActivities((v) => !v)}
-                className={`w-10 h-6 flex items-center rounded-full p-1 transition-colors cursor-pointer shrink-0 ml-3 ${
-                  allowActivities ? 'bg-sky-700' : 'bg-zinc-700'
-                }`}
+                className="min-w-[44px] min-h-[44px] flex items-center justify-end p-1 -mr-1 cursor-pointer shrink-0 ml-3 disabled:cursor-not-allowed"
               >
                 <div
-                  className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform ${
-                    allowActivities ? 'translate-x-4' : 'translate-x-0'
+                  className={`w-10 h-6 flex items-center rounded-full p-1 transition-colors ${
+                    allowActivities ? 'bg-sky-700' : 'bg-zinc-700'
                   }`}
-                />
+                >
+                  <div
+                    className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform ${
+                      allowActivities ? 'translate-x-4' : 'translate-x-0'
+                    }`}
+                  />
+                </div>
               </button>
             </div>
 
@@ -325,15 +381,19 @@ export const HostControlsPanel: React.FC<HostControlsPanelProps> = ({
                 aria-label="Cho phép ứng dụng bên thứ ba thu thập âm thanh và video"
                 disabled={!isHost}
                 onClick={() => setAllowThirdPartyAudio((v) => !v)}
-                className={`w-10 h-6 flex items-center rounded-full p-1 transition-colors cursor-pointer shrink-0 ml-3 ${
-                  allowThirdPartyAudio ? 'bg-sky-700' : 'bg-zinc-700'
-                }`}
+                className="min-w-[44px] min-h-[44px] flex items-center justify-end p-1 -mr-1 cursor-pointer shrink-0 ml-3 disabled:cursor-not-allowed"
               >
                 <div
-                  className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform ${
-                    allowThirdPartyAudio ? 'translate-x-4' : 'translate-x-0'
+                  className={`w-10 h-6 flex items-center rounded-full p-1 transition-colors ${
+                    allowThirdPartyAudio ? 'bg-sky-700' : 'bg-zinc-700'
                   }`}
-                />
+                >
+                  <div
+                    className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform ${
+                      allowThirdPartyAudio ? 'translate-x-4' : 'translate-x-0'
+                    }`}
+                  />
+                </div>
               </button>
             </div>
           </div>

@@ -424,6 +424,8 @@ export const LeftMeetingScreen: React.FC<LeftMeetingScreenProps> = ({
                       <button
                         key={star}
                         type="button"
+                        aria-label={`Đánh giá ${star} sao`}
+                        aria-pressed={rating === star}
                         onClick={() => setRating(star)}
                         onMouseEnter={() => setHoverRating(star)}
                         onMouseLeave={() => setHoverRating(0)}

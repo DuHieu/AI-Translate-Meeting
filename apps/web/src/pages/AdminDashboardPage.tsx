@@ -27,6 +27,8 @@ import {
   XCircle,
   Search,
   Languages,
+  Eye,
+  EyeOff,
 } from 'lucide-react';
 import {
   meetingApi,
@@ -45,6 +47,7 @@ export const AdminDashboardPage: React.FC = () => {
     return sessionStorage.getItem('layameet_admin_key') || '';
   });
   const [keyInput, setKeyInput] = useState<string>('');
+  const [showKeyInput, setShowKeyInput] = useState<boolean>(false);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [authError, setAuthError] = useState<string | null>(null);
 
@@ -255,14 +258,24 @@ export const AdminDashboardPage: React.FC = () => {
               <label className="block text-xs font-semibold text-zinc-300 mb-1.5">
                 Admin Secret Key (X-Admin-Key)
               </label>
-              <input
-                type="password"
-                required
-                placeholder="layameet-admin-secret-2026"
-                value={keyInput}
-                onChange={(e) => setKeyInput(e.target.value)}
-                className="w-full px-4 py-2.5 text-sm rounded-xl border border-zinc-700 bg-zinc-950 text-white placeholder-zinc-500 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-              />
+              <div className="relative">
+                <input
+                  type={showKeyInput ? 'text' : 'password'}
+                  required
+                  placeholder="layameet-admin-secret-2026"
+                  value={keyInput}
+                  onChange={(e) => setKeyInput(e.target.value)}
+                  className="w-full pl-4 pr-11 py-2.5 text-sm rounded-xl border border-zinc-700 bg-zinc-950 text-white placeholder-zinc-500 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowKeyInput((prev) => !prev)}
+                  aria-label={showKeyInput ? 'Ẩn mã khóa' : 'Hiện mã khóa'}
+                  className="absolute right-1.5 top-1/2 -translate-y-1/2 p-2 text-zinc-400 hover:text-zinc-200 transition-colors cursor-pointer"
+                >
+                  {showKeyInput ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
             </div>
 
             {authError && (
@@ -377,9 +390,18 @@ export const AdminDashboardPage: React.FC = () => {
 
           {/* Card 3: Active Rooms */}
           <div
+            role="button"
+            tabIndex={0}
             onClick={() => {
               setActiveTab('meetings');
               if (adminKey) loadMeetingsData(adminKey, meetingsStatusFilter, meetingsSearch);
+            }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                setActiveTab('meetings');
+                if (adminKey) loadMeetingsData(adminKey, meetingsStatusFilter, meetingsSearch);
+              }
             }}
             className="rounded-2xl border border-zinc-800 bg-zinc-900/40 p-5 shadow-sm space-y-2 cursor-pointer hover:border-violet-500/50 hover:bg-violet-950/20 transition group"
           >
@@ -759,7 +781,7 @@ export const AdminDashboardPage: React.FC = () => {
                               {m.isActive ? (
                                 <>
                                   <a
-                                    href={`/rooms/${m.meetingCode}`}
+                                    href={`/meeting/${m.meetingCode}`}
                                     target="_blank"
                                     rel="noreferrer"
                                     className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border border-blue-500/20 bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 text-xs font-semibold transition"
@@ -1453,7 +1475,12 @@ export const AdminDashboardPage: React.FC = () => {
 
         {/* Close Room Confirmation Modal */}
         {closeConfirmMeeting && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-xs p-4">
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-label="Xác nhận đóng phòng họp"
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-xs p-4"
+          >
             <div className="w-full max-w-md rounded-2xl border border-zinc-800 bg-zinc-900 p-6 space-y-4 shadow-xl">
               <div className="flex items-center gap-3">
                 <div className="p-2.5 rounded-xl bg-red-500/15 text-red-400 border border-red-500/20">

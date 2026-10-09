@@ -259,7 +259,7 @@ export const SystemStatusPage: React.FC = () => {
   const isAllHealthy = status?.databaseStatus === 'healthy' && status?.redisStatus === 'healthy';
 
   return (
-    <div className="min-h-screen bg-zinc-50 dark:bg-[#0d0e11] text-zinc-900 dark:text-zinc-100 flex flex-col font-sans transition-colors">
+    <div className="content-page min-h-screen bg-zinc-50 dark:bg-[#0d0e11] text-zinc-900 dark:text-zinc-100 flex flex-col font-sans transition-colors">
       {/* Top Navigation Bar */}
       <header className="sticky top-0 z-40 h-14 border-b border-zinc-200 dark:border-zinc-800/80 bg-white/90 dark:bg-[#0d0e11]/90 backdrop-blur-md">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 h-full flex items-center justify-between gap-4">

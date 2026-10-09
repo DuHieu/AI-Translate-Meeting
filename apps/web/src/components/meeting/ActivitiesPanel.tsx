@@ -36,10 +36,10 @@ export const ActivitiesPanel: React.FC<ActivitiesPanelProps> = ({
     <aside
       role="complementary"
       aria-label="Công cụ và hoạt động cuộc họp"
-      className="meeting-panel-content h-full min-h-0 w-full bg-[#18191a] text-zinc-100 md:border-l border-zinc-800 flex flex-col z-30 shrink-0 select-none overflow-hidden"
+      className="meeting-panel-content h-full min-h-0 w-full bg-[#13151f] text-zinc-100 md:border-l border-white/10 flex flex-col z-30 shrink-0 select-none overflow-hidden"
     >
       {/* Header */}
-      <div className="flex items-center justify-between px-5 py-4 border-b border-zinc-800/80">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-white/10">
         <h2 className="text-base font-medium text-zinc-100">Hoạt động</h2>
         <button
           type="button"
@@ -55,6 +55,7 @@ export const ActivitiesPanel: React.FC<ActivitiesPanelProps> = ({
       <div className="flex items-center border-b border-zinc-800 px-5 text-sm">
         <button
           type="button"
+          aria-pressed={activeTab === 'tools'}
           onClick={() => setActiveTab('tools')}
           className={`py-3 font-medium transition relative cursor-pointer mr-6 ${
             activeTab === 'tools'
@@ -69,6 +70,7 @@ export const ActivitiesPanel: React.FC<ActivitiesPanelProps> = ({
         </button>
         <button
           type="button"
+          aria-pressed={activeTab === 'addons'}
           onClick={() => setActiveTab('addons')}
           className={`py-3 font-medium transition relative cursor-pointer ${
             activeTab === 'addons'
@@ -99,7 +101,7 @@ export const ActivitiesPanel: React.FC<ActivitiesPanelProps> = ({
                 </div>
                 <div className="min-w-0">
                   <h3 className="text-sm font-medium text-zinc-100 group-hover:text-white transition">Bảng trắng</h3>
-                  <p className="text-xs text-zinc-400 truncate">Vẽ, phác thảo ý tưởng và ghi chú với mọi người</p>
+                  <p className="text-xs text-zinc-400 line-clamp-2 leading-snug">Vẽ, phác thảo ý tưởng và ghi chú với mọi người</p>
                 </div>
               </div>
               <ChevronRight className="w-4 h-4 text-zinc-500 group-hover:text-zinc-300 shrink-0 ml-2" />
@@ -123,7 +125,7 @@ export const ActivitiesPanel: React.FC<ActivitiesPanelProps> = ({
                         <span className="px-1.5 py-0.5 rounded-md bg-red-500/20 text-red-400 text-[10px] font-bold">REC</span>
                       )}
                     </div>
-                    <p className="text-xs text-zinc-400 truncate">
+                    <p className="text-xs text-zinc-400 line-clamp-2 leading-snug">
                       {isRecording ? 'Đang ghi video & phụ đề. Nhấp để dừng.' : 'Lưu trữ video và phụ đề cuộc họp'}
                     </p>
                   </div>
@@ -148,7 +150,7 @@ export const ActivitiesPanel: React.FC<ActivitiesPanelProps> = ({
                 </div>
                 <div className="min-w-0">
                   <h3 className="text-sm font-medium text-zinc-100 group-hover:text-white transition">Dịch lời nói &amp; Phụ đề AI</h3>
-                  <p className="text-xs text-zinc-400 truncate">Phụ đề song ngữ trực tiếp, nhận dạng giọng nói</p>
+                  <p className="text-xs text-zinc-400 line-clamp-2 leading-snug">Phụ đề song ngữ trực tiếp, nhận dạng giọng nói</p>
                 </div>
               </div>
               <ChevronRight className="w-4 h-4 text-zinc-500 group-hover:text-zinc-300 shrink-0 ml-2" />
@@ -166,7 +168,7 @@ export const ActivitiesPanel: React.FC<ActivitiesPanelProps> = ({
                 </div>
                 <div className="min-w-0">
                   <h3 className="text-sm font-medium text-zinc-100 group-hover:text-white transition">Biên bản họp &amp; Laya AI</h3>
-                  <p className="text-xs text-zinc-400 truncate">Trích xuất Quyết định, Việc làm và Tóm tắt cuộc họp</p>
+                  <p className="text-xs text-zinc-400 line-clamp-2 leading-snug">Trích xuất Quyết định, Việc làm và Tóm tắt cuộc họp</p>
                 </div>
               </div>
               <ChevronRight className="w-4 h-4 text-zinc-500 group-hover:text-zinc-300 shrink-0 ml-2" />
@@ -185,7 +187,7 @@ export const ActivitiesPanel: React.FC<ActivitiesPanelProps> = ({
                   </div>
                   <div className="min-w-0">
                     <h3 className="text-sm font-medium text-zinc-100 group-hover:text-white transition">Cabin phiên dịch tai nghe</h3>
-                    <p className="text-xs text-zinc-400 truncate">Đọc bản dịch trực tiếp (TTS) kèm ducking âm gốc</p>
+                    <p className="text-xs text-zinc-400 line-clamp-2 leading-snug">Đọc bản dịch trực tiếp (TTS) kèm ducking âm gốc</p>
                   </div>
                 </div>
                 <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${

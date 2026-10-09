@@ -1,7 +1,7 @@
 import { AdaptiveDialog } from '../common/AdaptiveDialog';
 import React from 'react';
 import { useMediaDeviceSelect } from '@livekit/components-react';
-import { Video, Check } from 'lucide-react';
+import { Video, Check, X } from 'lucide-react';
 
 interface VideoDeviceMenuProps {
   isOpen: boolean;
@@ -16,12 +16,20 @@ export const VideoDeviceMenu: React.FC<VideoDeviceMenuProps> = ({ isOpen, onClos
 
   return (
     <AdaptiveDialog label="Chọn camera" onClose={onClose} className="meeting-device-dialog">
-      <div className="p-4 space-y-4">
-        <div className="flex items-center justify-between text-xs font-semibold text-slate-400 mb-1 uppercase tracking-wider">
-          <span className="flex items-center gap-1.5">
-            <Video className="w-3.5 h-3.5 text-sky-400" /> Chọn Camera
+      <div className="p-4 space-y-3">
+        <header className="flex items-center justify-between border-b border-slate-800 pb-2.5">
+          <span className="flex items-center gap-1.5 text-sm font-semibold text-slate-100">
+            <Video className="w-4 h-4 text-sky-400" /> Chọn Camera
           </span>
-        </div>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Đóng chọn camera"
+            className="w-8 h-8 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-white flex items-center justify-center transition cursor-pointer"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </header>
 
         <div className="space-y-1 max-h-48 overflow-y-auto pr-1">
           {videoDevices.length > 0 ? (
@@ -32,7 +40,6 @@ export const VideoDeviceMenu: React.FC<VideoDeviceMenuProps> = ({ isOpen, onClos
                   key={d.deviceId}
                   type="button"
                   onClick={async () => {
-                    console.log('[Telemetry] Selected Camera:', { deviceId: d.deviceId, label: d.label });
                     await setActiveVideo(d.deviceId);
                   }}
                   className={`w-full text-left px-3 py-2 rounded-xl text-xs flex items-center justify-between transition cursor-pointer ${

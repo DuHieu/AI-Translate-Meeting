@@ -467,7 +467,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
             <h2 id="checkout-title" className="text-xl font-bold text-white">{copy.title}</h2>
             <p className="mt-1 text-xs text-zinc-400">{copy.subtitle}</p>
           </div>
-          <ol className="mt-5 grid grid-cols-3 gap-2" aria-label="Checkout progress">
+          <ol className="mt-4 sm:mt-5 grid grid-cols-3 gap-1.5 sm:gap-2" aria-label="Checkout progress">
             {copy.steps.map((step, index) => {
               const stepNumber = index + 1;
               const isActive = stepNumber === activeStep;
@@ -476,7 +476,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
                 <li
                   key={step}
                   aria-current={isActive ? 'step' : undefined}
-                  className={`rounded-lg border px-2 py-2 text-center text-[10px] font-semibold sm:text-xs ${
+                  className={`rounded-lg border px-1.5 sm:px-2 py-2 text-center text-[11px] font-semibold sm:text-xs whitespace-nowrap overflow-hidden text-ellipsis ${
                     isActive
                       ? 'border-sky-500 bg-sky-500/15 text-sky-300'
                       : isComplete
@@ -498,20 +498,20 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
               <p className="mt-3 text-sm">{copy.checkingAccount}</p>
             </div>
           ) : !user?.email ? (
-            <section className="rounded-xl border border-sky-500/30 bg-sky-950/20 p-5 sm:p-6">
+            <section className="rounded-xl border border-sky-500/30 bg-sky-950/20 p-4 sm:p-6">
               <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-sky-500/30 bg-sky-500/15 text-sky-300">
                 <UserCheck className="h-6 w-6" />
               </div>
               <h3 className="mt-4 text-lg font-bold text-white">{copy.gateTitle}</h3>
               <p className="mt-2 text-sm leading-6 text-zinc-300">{copy.gateBody}</p>
 
-              <div className="mt-5 flex items-center justify-between gap-4 rounded-xl border border-zinc-700 bg-zinc-900/80 p-4">
+              <div className="mt-5 flex items-center justify-between gap-4 rounded-xl border border-zinc-700 bg-zinc-900/80 p-3.5 sm:p-4">
                 <div>
                   <p className="text-[11px] uppercase tracking-wide text-zinc-400">{copy.selectedPlan}</p>
                   <p className="mt-1 font-semibold text-white">{selectedPlanName}</p>
                 </div>
-                <div className="text-right">
-                  <p className="font-mono text-sm font-bold text-emerald-300">{selectedPlan.price}</p>
+                <div className="text-right shrink-0">
+                  <p className="font-mono text-sm font-bold text-emerald-300 whitespace-nowrap">{selectedPlan.price}</p>
                   <p className="text-[11px] text-zinc-400">{selectedPlan.duration}</p>
                 </div>
               </div>
@@ -520,10 +520,10 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
               <button
                 type="button"
                 onClick={() => void handleSignIn()}
-                className="mt-5 flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-white px-4 py-3 text-sm font-bold text-zinc-950 transition hover:bg-zinc-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400"
+                className="mt-5 flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-white px-3 sm:px-4 py-3 text-xs sm:text-sm font-bold text-zinc-950 transition hover:bg-zinc-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400 whitespace-nowrap"
               >
-                <LogIn className="h-5 w-5" />
-                {copy.signIn}
+                <LogIn className="h-4 w-4 sm:h-5 sm:w-5 shrink-0" />
+                <span>{copy.signIn}</span>
               </button>
             </section>
           ) : isPaid && order ? (

@@ -210,16 +210,16 @@ export const SubtitleOverlay: React.FC<SubtitleOverlayProps> = ({
             </div>
           )}
 
-          {/* Unified Google Meet Floating Toolbar */}
+          {/* Unified Compact Pill Toolbar (No full-width duplicate bar) */}
           {isCaptionsOn && (
-            <div className="flex items-center justify-between pt-2 px-1 select-none pointer-events-auto">
-              {/* Left: Language selector + Song ngữ toggle */}
-              <div className="flex items-center gap-2">
+            <div className="flex items-center justify-center pt-1.5 px-1 select-none pointer-events-auto">
+              <div className="inline-flex items-center gap-1.5 rounded-full bg-slate-900/95 border border-slate-800 px-2 py-1 shadow-lg backdrop-blur-md">
+                {/* Language selector */}
                 <div className="relative">
                   <button
                     type="button"
                     onClick={() => setIsLangMenuOpen((v) => !v)}
-                    className="flex items-center gap-2 bg-slate-900 hover:bg-slate-800 border border-slate-700 rounded-full px-3.5 py-1.5 text-xs text-zinc-200 transition cursor-pointer shadow-lg"
+                    className="flex items-center gap-1.5 bg-slate-800/90 hover:bg-slate-800 border border-slate-700/80 rounded-full px-2.5 py-1 text-xs text-zinc-200 transition cursor-pointer"
                   >
                     <CountryFlag code={targetLangOption.code} size="xs" />
                     <span className="font-medium">{targetLangOption.nativeName}</span>
@@ -256,19 +256,18 @@ export const SubtitleOverlay: React.FC<SubtitleOverlayProps> = ({
                     const newMode = settings.subtitleDisplayMode === 'bilingual' ? 'translation_only' : 'bilingual';
                     saveUserSettings({ subtitleDisplayMode: newMode });
                   }}
-                  className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors cursor-pointer shadow-lg ${
+                  className={`px-2.5 py-1 rounded-full text-xs font-medium border transition-colors cursor-pointer ${
                     settings.subtitleDisplayMode === 'bilingual'
                       ? 'bg-sky-500/20 border-sky-500/50 text-sky-300'
-                      : 'bg-slate-900 border-slate-700 text-zinc-400 hover:text-zinc-200'
+                      : 'bg-slate-800/80 border-slate-700/80 text-zinc-400 hover:text-zinc-200'
                   }`}
                   title="Bật / tắt hiển thị song ngữ"
                 >
                   Song ngữ
                 </button>
-              </div>
 
-              {/* Right: TT font size switcher, Settings gear */}
-              <div className="flex items-center gap-2 text-zinc-300">
+                <span className="h-3.5 w-px bg-slate-800 mx-0.5" aria-hidden="true" />
+
                 <button
                   type="button"
                   onClick={() => {
@@ -277,7 +276,7 @@ export const SubtitleOverlay: React.FC<SubtitleOverlayProps> = ({
                     saveUserSettings({ subtitleFontSize: sizes[nextIdx] });
                   }}
                   title={`Cỡ chữ phụ đề (${settings.subtitleFontSize.toUpperCase()})`}
-                  className="p-1.5 rounded-full hover:bg-zinc-800 text-zinc-300 hover:text-white transition cursor-pointer font-bold text-xs"
+                  className="px-2 py-1 rounded-full hover:bg-zinc-800 text-zinc-300 hover:text-white transition cursor-pointer font-bold text-xs"
                 >
                   <span className="font-mono tracking-tighter">TT</span>
                 </button>
@@ -286,9 +285,9 @@ export const SubtitleOverlay: React.FC<SubtitleOverlayProps> = ({
                   type="button"
                   onClick={onOpenSettings}
                   title="Cài đặt phụ đề"
-                  className="p-1.5 rounded-full hover:bg-zinc-800 text-zinc-400 hover:text-white transition cursor-pointer"
+                  className="p-1 rounded-full hover:bg-zinc-800 text-zinc-400 hover:text-white transition cursor-pointer"
                 >
-                  <SettingsIcon className="w-4 h-4" />
+                  <SettingsIcon className="w-3.5 h-3.5" />
                 </button>
               </div>
             </div>

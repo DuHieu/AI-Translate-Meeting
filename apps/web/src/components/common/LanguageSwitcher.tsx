@@ -39,13 +39,13 @@ export const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({ className = 
         onClick={() => setIsOpen(!isOpen)}
         aria-label="Chọn ngôn ngữ hệ thống"
         aria-expanded={isOpen}
-        className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium text-zinc-700 hover:text-zinc-950 dark:text-zinc-300 dark:hover:text-white bg-white hover:bg-zinc-100 dark:bg-[#1a1a1b] dark:hover:bg-[#222224] border border-zinc-200 dark:border-[#3a3a3d] transition-colors cursor-pointer shadow-2xs"
+        className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium text-zinc-700 hover:text-zinc-950 dark:text-zinc-300 dark:hover:text-white bg-white hover:bg-zinc-100 dark:bg-[#1a1a1b] dark:hover:bg-[#222224] border border-zinc-200 dark:border-[#3a3a3d] transition-colors cursor-pointer shadow-2xs whitespace-nowrap shrink-0"
         title="Chuyển đổi ngôn ngữ hiển thị"
       >
         <Globe className="w-3.5 h-3.5 text-blue-500 shrink-0" />
         <span className="hidden sm:inline font-semibold">{currentOption.label}</span>
         <span className="sm:hidden font-mono uppercase">{currentOption.code}</span>
-        <ChevronDown className={`w-3 h-3 text-zinc-400 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+        <ChevronDown className={`w-3 h-3 text-zinc-400 shrink-0 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
       </button>
 
       {isOpen && (

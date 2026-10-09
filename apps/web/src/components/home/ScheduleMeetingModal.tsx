@@ -58,7 +58,7 @@ const COPY: Record<
     title: 'Đặt lịch cuộc họp',
     defaultMeetingName: 'Cuộc họp LayaMeet',
     titleLabel: 'Tiêu đề cuộc họp',
-    titlePlaceholder: 'Ví dụ: Họp tuần Vietnam – Japan (để trống sẽ lấy tên mặc định)',
+    titlePlaceholder: 'Ví dụ: Họp tuần Vietnam – Japan',
     startLabel: 'Thời gian bắt đầu',
     durationLabel: 'Thời lượng',
     minutesUnit: 'phút',
@@ -304,7 +304,7 @@ export const ScheduleMeetingModal: React.FC<ScheduleMeetingModalProps> = ({
   return (
     <AdaptiveDialog label="Đặt lịch cuộc họp" onClose={onClose} className="schedule-dialog">
       <div
-        className="max-h-[calc(var(--app-height)-64px)] w-full max-w-md overflow-y-auto rounded-2xl border border-zinc-200 bg-white shadow-2xl dark:border-zinc-800 dark:bg-[#15161a]"
+        className="max-h-[calc(var(--app-height)-52px)] w-full max-w-none overflow-y-auto rounded-2xl bg-white shadow-2xl dark:bg-[#15161a]"
       >
         <div className="sticky top-0 z-10 flex items-center justify-between gap-4 border-b border-zinc-200 bg-white/95 px-5 py-3.5 backdrop-blur dark:border-zinc-800 dark:bg-[#15161a]/95">
           <h2 id="schedule-meeting-title" className="text-base font-bold text-zinc-950 dark:text-white">
@@ -456,10 +456,10 @@ export const ScheduleMeetingModal: React.FC<ScheduleMeetingModalProps> = ({
                   onChange={(event) => setDefaultSpokenLanguage(event.target.value as SupportedLanguage | 'auto')}
                   className="mt-1.5 w-full rounded-lg border border-zinc-300 bg-white px-2.5 py-2 text-xs text-zinc-950 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 dark:border-zinc-700 dark:bg-zinc-900 dark:text-white cursor-pointer"
                 >
-                  <option value="auto">🌐 {copy.autoDetect}</option>
+                  <option value="auto">{copy.autoDetect}</option>
                   {SUPPORTED_LANGUAGES_LIST.map((lang) => (
                     <option key={lang.code} value={lang.code}>
-                      {lang.flag} {lang.nativeName} ({lang.code.toUpperCase()})
+                      {lang.nativeName} ({lang.code.toUpperCase()})
                     </option>
                   ))}
                 </select>
@@ -477,7 +477,7 @@ export const ScheduleMeetingModal: React.FC<ScheduleMeetingModalProps> = ({
                 >
                   {SUPPORTED_LANGUAGES_LIST.map((lang) => (
                     <option key={lang.code} value={lang.code}>
-                      {lang.flag} {lang.nativeName} ({lang.code.toUpperCase()})
+                      {lang.nativeName} ({lang.code.toUpperCase()})
                     </option>
                   ))}
                 </select>

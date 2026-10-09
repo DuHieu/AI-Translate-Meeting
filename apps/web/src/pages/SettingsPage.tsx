@@ -150,9 +150,9 @@ const COPY: Record<AppLanguage, SettingsCopy> = {
     resetConfirm: 'Khôi phục toàn bộ cài đặt về mặc định ban đầu?',
 
     tabSubtitles: 'Phụ đề & Ngôn ngữ',
-    tabAudioVad: 'Âm thanh & Giọng nói',
+    tabAudioVad: 'Âm thanh & Giọng đọc',
     tabAiByok: 'Động cơ AI & API Key',
-    tabPlan: 'Gói dịch vụ & Hạn mức',
+    tabPlan: 'Gói cước & Hạn mức',
 
     sectionLanguageTitle: 'Ngôn ngữ nhận phụ đề mặc định',
     sectionLanguageDesc: 'Phụ đề trong phòng họp sẽ tự động dịch sang ngôn ngữ này.',
@@ -173,7 +173,7 @@ const COPY: Record<AppLanguage, SettingsCopy> = {
     subOpacityTitle: 'Độ đậm nền phụ đề',
     subOpacityDesc: 'Độ tương phản của khung nền phía sau chữ.',
     opacityLight: 'Mờ (50%)',
-    opacityMedium: 'Tiêu chuẩn (80%)',
+    opacityMedium: 'Chuẩn (80%)',
     opacityHeavy: 'Đậm (95%)',
     glossaryTitle: 'Từ điển chuyên ngành',
     glossaryDesc: 'Tối ưu thuật ngữ dịch theo lĩnh vực cuộc họp.',
@@ -593,15 +593,15 @@ export const SettingsPage: React.FC = () => {
     <div className="content-page min-h-dvh bg-zinc-50 dark:bg-[#0d0e11] text-zinc-900 dark:text-zinc-100 flex flex-col font-sans transition-colors">
       {/* ── Top Header ────────────────────────────────────────────── */}
       <header className="sticky top-0 z-30 bg-white/90 dark:bg-[#0d0e11]/90 backdrop-blur-md border-b border-zinc-200 dark:border-zinc-800/80">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between gap-4">
-          <div className="flex items-center gap-3 min-w-0">
+        <div className="max-w-5xl mx-auto px-3 sm:px-6 h-14 flex items-center justify-between gap-2 sm:gap-4">
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0 shrink-0">
             <button
               type="button"
               onClick={() => navigate('/')}
               aria-label={copy.backToHome}
-              className="inline-flex items-center gap-1.5 px-2.5 py-1.5 -ml-2 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800/70 text-xs font-medium text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100 transition-colors cursor-pointer"
+              className="inline-flex items-center justify-center gap-1.5 px-2 py-1.5 -ml-1 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800/70 text-xs font-medium text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100 transition-colors cursor-pointer shrink-0"
             >
-              <ArrowLeft className="w-4 h-4" />
+              <ArrowLeft className="w-4 h-4 shrink-0" />
               <span className="hidden sm:inline">{copy.backToHome}</span>
             </button>
 
@@ -612,7 +612,7 @@ export const SettingsPage: React.FC = () => {
             </Link>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
             <div
               className={`hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium transition-opacity duration-200 ${
                 showSavedToast
@@ -627,16 +627,18 @@ export const SettingsPage: React.FC = () => {
             <button
               type="button"
               onClick={handleResetDefaults}
-              className="p-2 sm:px-2.5 sm:py-1.5 rounded-lg text-xs font-medium text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800/70 transition flex items-center gap-1.5 cursor-pointer"
+              className="p-2 sm:px-2.5 sm:py-1.5 rounded-lg text-xs font-medium text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800/70 transition flex items-center justify-center gap-1.5 cursor-pointer shrink-0"
               title={copy.resetDefault}
             >
-              <RotateCcw className="w-3.5 h-3.5" />
+              <RotateCcw className="w-3.5 h-3.5 shrink-0" />
               <span className="hidden md:inline">{copy.resetDefault}</span>
             </button>
 
-            <LanguageSwitcher />
+            <LanguageSwitcher className="hidden sm:block" />
             <ThemeToggle />
-            <GoogleAuthControl variant="navbar" />
+            <div className="shrink-0 whitespace-nowrap [&_button]:whitespace-nowrap">
+              <GoogleAuthControl variant="navbar" />
+            </div>
           </div>
         </div>
       </header>
@@ -656,7 +658,7 @@ export const SettingsPage: React.FC = () => {
           {/* ── Sidebar Navigation ── */}
           <nav
             aria-label={copy.pageTitle}
-            className="w-full md:w-56 shrink-0 flex md:flex-col gap-1 overflow-x-auto pb-2 md:pb-0 border-b md:border-b-0 border-zinc-200 dark:border-zinc-800 scrollbar-none"
+            className="w-full md:w-56 shrink-0 grid grid-cols-2 md:flex md:flex-col gap-1.5 pb-3 md:pb-0 border-b md:border-b-0 border-zinc-200 dark:border-zinc-800"
           >
             {navItems.map((item) => {
               const Icon = item.icon;
@@ -665,8 +667,9 @@ export const SettingsPage: React.FC = () => {
                 <button
                   key={item.id}
                   type="button"
+                  aria-pressed={isSelected}
                   onClick={() => handleSelectTab(item.id)}
-                  className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors cursor-pointer whitespace-nowrap text-left ${
+                  className={`flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-2.5 rounded-lg text-xs sm:text-sm font-medium transition-colors cursor-pointer min-w-0 overflow-hidden text-left ${
                     isSelected
                       ? 'bg-zinc-200/80 dark:bg-zinc-800/90 text-zinc-950 dark:text-white font-semibold'
                       : 'text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800/40 hover:text-zinc-900 dark:hover:text-zinc-200'
@@ -677,7 +680,7 @@ export const SettingsPage: React.FC = () => {
                       isSelected ? 'text-blue-600 dark:text-blue-400' : 'text-zinc-400 dark:text-zinc-500'
                     }`}
                   />
-                  <span>{item.label}</span>
+                  <span className="truncate">{item.label}</span>
                 </button>
               );
             })}
@@ -821,7 +824,7 @@ export const SettingsPage: React.FC = () => {
                               key={item.op}
                               type="button"
                               onClick={() => update('subtitleBgOpacity', item.op)}
-                              className={`px-2 py-2 rounded-lg border text-xs transition-colors cursor-pointer ${
+                              className={`px-2 py-2 rounded-lg border text-xs whitespace-nowrap transition-colors cursor-pointer ${
                                 isSelected
                                   ? 'border-blue-600 bg-blue-600 text-white font-semibold'
                                   : 'border-zinc-200 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-900/40 text-zinc-700 dark:text-zinc-300 hover:border-zinc-300'
@@ -849,7 +852,7 @@ export const SettingsPage: React.FC = () => {
                       aria-label={copy.glossaryTitle}
                       value={settings.glossaryDomain}
                       onChange={(e) => update('glossaryDomain', e.target.value as GlossaryDomain)}
-                      className="sm:w-72 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 text-zinc-900 dark:text-zinc-100 text-xs sm:text-sm rounded-lg px-3 py-2 outline-none focus:border-blue-500 cursor-pointer"
+                      className="sm:w-80 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 text-zinc-900 dark:text-zinc-100 text-xs sm:text-sm rounded-lg px-3 py-2 outline-none focus:border-blue-500 cursor-pointer"
                     >
                       <option value="general">{copy.glossaryGeneral}</option>
                       <option value="it">{copy.glossaryIt}</option>

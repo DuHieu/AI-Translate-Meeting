@@ -87,14 +87,14 @@ export const BlogListingPage: React.FC<BlogListingPageProps> = ({ forcedLanguage
     <div className="content-page min-h-dvh bg-zinc-50 dark:bg-[#0c0c0e] text-zinc-900 dark:text-zinc-100 flex flex-col font-sans transition-colors">
       {/* ── Top Navigation ────────────────────────────────────────── */}
       <header className="sticky top-0 z-40 w-full border-b border-zinc-200/80 dark:border-[#222329] bg-white/80 dark:bg-[#0c0c0e]/80 backdrop-blur-md">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
-          <Link to={contentMap.homePath} className="flex items-center gap-2.5">
-            <LayaMeetLogo size="md" />
+        <div className="max-w-6xl mx-auto px-3 sm:px-6 h-16 flex items-center justify-between gap-2">
+          <Link to={contentMap.homePath} className="flex items-center gap-2 shrink-0">
+            <LayaMeetLogo size="sm" />
           </Link>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
             <Link
               to="/developers"
-              className="text-xs sm:text-sm font-medium text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors inline-flex"
+              className="hidden md:inline-flex text-xs sm:text-sm font-medium text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors"
             >
               Developers API
             </Link>
@@ -102,9 +102,9 @@ export const BlogListingPage: React.FC<BlogListingPageProps> = ({ forcedLanguage
             <ThemeToggle />
             <Link
               to={contentMap.homePath}
-              className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-blue-600 hover:bg-blue-700 text-white text-xs sm:text-sm font-semibold shadow-sm transition-all"
+              className="inline-flex items-center gap-1.5 px-3 sm:px-3.5 py-1.5 rounded-full bg-blue-600 hover:bg-blue-700 text-white text-xs sm:text-sm font-semibold shadow-sm transition-all whitespace-nowrap shrink-0"
             >
-              <Video className="w-3.5 h-3.5" />
+              <Video className="w-3.5 h-3.5 shrink-0" />
               <span>{contentMap.createRoom}</span>
             </Link>
           </div>
@@ -188,10 +188,10 @@ export const BlogListingPage: React.FC<BlogListingPageProps> = ({ forcedLanguage
 
                 <Link
                   to={`${contentMap.articlePrefix}${post.slug}`}
-                  className="inline-flex items-center gap-1 text-xs sm:text-sm font-semibold text-blue-600 dark:text-blue-400 group-hover:translate-x-0.5 transition-transform"
+                  className="inline-flex items-center gap-1 text-xs sm:text-sm font-semibold text-blue-600 dark:text-blue-400 group-hover:translate-x-0.5 transition-transform whitespace-nowrap shrink-0"
                 >
                   <span>{contentMap.readArticle}</span>
-                  <ArrowRight className="w-4 h-4" />
+                  <ArrowRight className="w-4 h-4 shrink-0" />
                 </Link>
               </div>
             </article>

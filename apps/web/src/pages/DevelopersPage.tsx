@@ -123,7 +123,7 @@ export const DevelopersPage: React.FC = () => {
   return (
     <div className="relative content-page min-h-dvh bg-zinc-50 dark:bg-[#0f0f10] text-zinc-900 dark:text-zinc-100 flex flex-col font-sans transition-colors overflow-x-hidden">
       {/* ── Navbar ──────────────────────────────────────────────── */}
-      <header className="h-12 border-b border-[#2e2e30]/80 dark:border-[#2e2e30] border-zinc-200 bg-[#0f0f10]/85 dark:bg-[#0f0f10]/85 bg-white/85 backdrop-blur-md px-4 sm:px-6 flex items-center justify-between shrink-0 sticky top-0 z-30 transition-colors">
+      <header className="h-12 border-b border-zinc-200 dark:border-[#2e2e30] bg-white/85 dark:bg-[#0f0f10]/85 backdrop-blur-md px-4 sm:px-6 flex items-center justify-between shrink-0 sticky top-0 z-30 transition-colors">
         <div className="flex items-center gap-4 sm:gap-6">
           <Link to="/" aria-label="Về trang chủ LayaMeet" className="flex items-center gap-2 group text-xs text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition-colors">
             <ArrowLeft className="w-3.5 h-3.5 group-hover:-translate-x-0.5 transition-transform" />
@@ -131,7 +131,7 @@ export const DevelopersPage: React.FC = () => {
           </Link>
           <div className="h-4 w-px bg-zinc-300 dark:bg-zinc-800" />
           <LayaMeetLogo size="md" showBadge={true} />
-          <span className="px-2 py-0.5 rounded-md text-[11px] font-mono bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-700 font-semibold">
+          <span className="hidden sm:inline-flex px-2 py-0.5 rounded-md text-[11px] font-mono bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-700 font-semibold">
             DevHub
           </span>
         </div>

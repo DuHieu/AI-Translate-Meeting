@@ -3,6 +3,7 @@ import {
   AlertTriangle,
   Bell,
   BellOff,
+  BookMarked,
   CheckCircle2,
   Download,
   FileCheck,
@@ -32,6 +33,8 @@ import { MinutesQaPanel } from '../meeting/MinutesQaPanel';
 import { MeetingLinkPreviewCard } from '../meeting/MeetingLinkPreviewCard';
 import { extractLinksFromText } from '../../utils/linkUnfurl';
 import { toMeetingTranscript } from '../../utils/meetingMinutes';
+import { InlineGlossaryModal } from './InlineGlossaryModal';
+import { LiveMeetingCopilot } from '../meeting/LiveMeetingCopilot';
 
 type SidecarTab = 'all' | 'actions' | 'recap' | 'chat';
 
@@ -52,6 +55,8 @@ interface SubtitlePanelProps {
   isUpdatingLanguage?: boolean;
   languageError?: string | null;
   branding: BrandingConfigDto;
+  onOpenCopilot?: () => void;
+  onTeachGlossary?: (original: string, translated: string) => void;
 }
 
 function downloadFile(content: string, filename: string) {
@@ -94,6 +99,8 @@ export const SubtitlePanel: React.FC<SubtitlePanelProps> = ({
   isUpdatingLanguage = false,
   languageError,
   branding,
+  onOpenCopilot,
+  onTeachGlossary,
 }) => {
   const [activeTab, setActiveTab] = useState<SidecarTab>(initialTab);
   const [isExportMenuOpen, setIsExportMenuOpen] = useState(false);
@@ -105,6 +112,28 @@ export const SubtitlePanel: React.FC<SubtitlePanelProps> = ({
   const [chimeEnabled, setChimeEnabled] = useState(
     () => localStorage.getItem('ai-action-chime-enabled') !== 'false',
   );
+
+  // In-Meeting AI Copilot & Glossary internal states (used as fallback or direct modal handlers)
+  const [internalCopilotOpen, setInternalCopilotOpen] = useState(false);
+  const [internalGlossaryOpen, setInternalGlossaryOpen] = useState(false);
+  const [internalGlossaryTerms, setInternalGlossaryTerms] = useState({ source: '', target: '' });
+
+  const handleTriggerCopilot = () => {
+    if (onOpenCopilot) {
+      onOpenCopilot();
+    } else {
+      setInternalCopilotOpen(true);
+    }
+  };
+
+  const handleTriggerGlossary = (source: string = '', target: string = '') => {
+    if (onTeachGlossary) {
+      onTeachGlossary(source, target);
+    } else {
+      setInternalGlossaryTerms({ source, target });
+      setInternalGlossaryOpen(true);
+    }
+  };
 
   // Custom skills state: only non-builtin custom skills from company
   const [customSkills, setCustomSkills] = useState<MeetingRecapSkill[]>(() => getCustomSkills());
@@ -127,16 +156,33 @@ export const SubtitlePanel: React.FC<SubtitlePanelProps> = ({
   const tabs = useMemo(() => {
     const available: Array<{ id: SidecarTab; label: string; icon?: React.ReactNode }> = [
       { id: 'all', label: 'Phụ đề' },
+      {
+        id: 'actions',
+        label: taggedItems.length > 0 ? `Việc làm (${taggedItems.length})` : 'Việc làm',
+        icon: <Zap className="h-3 w-3" />,
+      },
+      { id: 'recap', label: 'Tóm tắt', icon: <Sparkles className="h-3 w-3" /> },
     ];
-    if (preferences.showActions) available.push({ id: 'actions', label: 'Việc làm', icon: <Zap className="h-3 w-3" /> });
-    if (preferences.showRecap) available.push({ id: 'recap', label: 'Tóm tắt', icon: <Sparkles className="h-3 w-3" /> });
     if (preferences.showChat) available.push({ id: 'chat', label: 'Tin nhắn', icon: <MessageCircle className="h-3 w-3" /> });
     return available;
-  }, [preferences.showActions, preferences.showChat, preferences.showRecap]);
+  }, [preferences.showChat, taggedItems.length]);
+
+  useEffect(() => {
+    setActiveTab(initialTab);
+  }, [initialTab]);
 
   useEffect(() => {
     if (!tabs.some((tab) => tab.id === activeTab)) setActiveTab('all');
   }, [activeTab, tabs]);
+
+  const handleSelectTab = (tabId: SidecarTab) => {
+    setActiveTab(tabId);
+    if (tabId === 'actions' && !preferences.showActions) {
+      onPreferencesChange({ ...preferences, showActions: true });
+    } else if (tabId === 'recap' && !preferences.showRecap) {
+      onPreferencesChange({ ...preferences, showRecap: true });
+    }
+  };
 
   useEffect(() => {
     if (activeTab === 'recap') {
@@ -329,74 +375,142 @@ export const SubtitlePanel: React.FC<SubtitlePanelProps> = ({
   if (!isOpen) return null;
 
   return (
-    <aside className="meeting-panel-content min-h-0 h-full flex w-full flex-col bg-slate-950" aria-label="Trợ lý cuộc họp AI">
-      <header className="border-b border-slate-800 px-3 pb-2 pt-3">
+    <aside className="meeting-panel-content min-h-0 h-full flex w-full flex-col bg-[#13151f] md:border-l border-white/10" aria-label="Trợ lý cuộc họp AI">
+      <header className="border-b border-white/10 px-3 pb-2.5 pt-3">
         <div className="flex items-center gap-2">
           <div className="min-w-0 flex-1">
-            <h2 className="truncate text-sm font-semibold text-zinc-100">Phụ đề trực tiếp</h2>
-            <p className="text-[11px] text-zinc-400">Tự động theo dõi nội dung mới nhất</p>
+            <h2 className="truncate text-sm font-semibold text-zinc-100">
+              {activeTab === 'actions'
+                ? 'Việc làm & Quyết định'
+                : activeTab === 'recap'
+                  ? 'Tóm tắt & Biên bản AI'
+                  : activeTab === 'chat'
+                    ? 'Tin nhắn cuộc họp'
+                    : 'Phụ đề trực tiếp'}
+            </h2>
+            <p className="text-[11px] text-zinc-400">
+              {activeTab === 'actions'
+                ? 'Tự động nhận diện việc cần làm & quyết định'
+                : activeTab === 'recap'
+                  ? 'Tổng hợp điểm chính, quyết định & phân công'
+                  : activeTab === 'chat'
+                    ? 'Trao đổi nhanh trong phòng họp'
+                    : 'Tự động theo dõi nội dung mới nhất'}
+            </p>
           </div>
+          {activeTab !== 'all' && (
+            <div className="relative">
+              <button type="button" aria-label="Tùy chọn tải xuống" aria-expanded={isExportMenuOpen} onClick={() => setIsExportMenuOpen((current) => !current)} className="rounded-lg border border-white/10 bg-[#181b26] p-2 text-zinc-400 transition hover:bg-slate-800 hover:text-zinc-100">
+                <MoreHorizontal className="h-4 w-4" />
+              </button>
+              {isExportMenuOpen && (
+                <div className="absolute right-0 top-10 z-10 w-52 rounded-xl border border-white/10 bg-[#181b26] p-1.5 shadow-xl">
+                  <button type="button" onClick={handleDownloadMinutesDirect} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-xs text-sky-300 hover:bg-slate-800"><FileCheck className="h-3.5 w-3.5 text-sky-400" /> Xuất biên bản họp (.md)</button>
+                  <button type="button" onClick={() => void handleExportMinutesPdf()} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-xs text-sky-300 hover:bg-slate-800"><FileDown className="h-3.5 w-3.5 text-sky-400" /> Xuất biên bản PDF (.pdf)</button>
+                  <button type="button" onClick={handleDownloadTranscript} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-xs text-zinc-300 hover:bg-slate-800"><Download className="h-3.5 w-3.5" /> Tải transcript (.txt)</button>
+                  <button type="button" onClick={handleExportSrt} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-xs text-zinc-300 hover:bg-slate-800"><FileText className="h-3.5 w-3.5" /> Tải phụ đề (.srt)</button>
+                </div>
+              )}
+            </div>
+          )}
           <button type="button" onClick={onClose} aria-label="Đóng bảng phụ đề" className="rounded-lg p-2 text-zinc-400 transition hover:bg-slate-800 hover:text-zinc-200">
             <X className="h-4 w-4" />
           </button>
         </div>
 
-        <div className="mt-3 flex items-center gap-2">
-          <label className="sr-only" htmlFor="sidecar-target-language">Ngôn ngữ phụ đề</label>
-          <div className="min-w-0 flex-1 flex items-center gap-1.5 rounded-lg border border-slate-700 bg-slate-900 px-2.5 py-1.5 focus-within:border-sky-500">
-            <CountryFlag code={targetLanguage} size="xs" />
-            <select
-              id="sidecar-target-language"
-              value={targetLanguage}
-              disabled={isUpdatingLanguage}
-              onChange={(event) => onTargetLanguageChange(event.target.value as SupportedLanguage)}
-              className="min-w-0 flex-1 bg-transparent text-xs text-zinc-200 outline-none disabled:opacity-60 cursor-pointer"
+        {activeTab === 'all' && (
+          <div className="mt-2.5 flex items-center gap-2">
+            <label className="sr-only" htmlFor="sidecar-target-language">Ngôn ngữ phụ đề</label>
+            <div className="min-w-0 flex-1 flex items-center gap-1.5 rounded-lg border border-white/10 bg-[#181b26] px-2.5 py-1.5 focus-within:border-sky-500">
+              <CountryFlag code={targetLanguage} size="xs" />
+              <select
+                id="sidecar-target-language"
+                value={targetLanguage}
+                disabled={isUpdatingLanguage}
+                onChange={(event) => onTargetLanguageChange(event.target.value as SupportedLanguage)}
+                className="min-w-0 flex-1 bg-transparent text-xs text-zinc-200 outline-none disabled:opacity-60 cursor-pointer"
+              >
+                {SUPPORTED_LANGUAGES_LIST.map((language) => (
+                  <option key={language.code} value={language.code} className="bg-slate-900 text-zinc-100">
+                    {language.nativeName} ({language.code.toUpperCase()})
+                  </option>
+                ))}
+              </select>
+            </div>
+            <button
+              type="button"
+              aria-pressed={preferences.showOriginal}
+              onClick={() => onPreferencesChange({ ...preferences, showOriginal: !preferences.showOriginal })}
+              className={`rounded-lg border px-2.5 py-2 text-xs transition ${preferences.showOriginal ? 'border-sky-500/60 bg-sky-500/15 text-sky-300' : 'border-white/10 bg-[#181b26] text-zinc-400 hover:text-zinc-200'}`}
             >
-              {SUPPORTED_LANGUAGES_LIST.map((language) => (
-                <option key={language.code} value={language.code} className="bg-slate-900 text-zinc-100">
-                  {language.nativeName} ({language.code.toUpperCase()})
-                </option>
-              ))}
-            </select>
-          </div>
-          <button
-            type="button"
-            aria-pressed={preferences.showOriginal}
-            onClick={() => onPreferencesChange({ ...preferences, showOriginal: !preferences.showOriginal })}
-            className={`rounded-lg border px-2.5 py-2 text-xs transition ${preferences.showOriginal ? 'border-sky-500/60 bg-sky-500/15 text-sky-300' : 'border-slate-700 bg-slate-900 text-zinc-400 hover:text-zinc-200'}`}
-          >
-            Gốc
-          </button>
-          <div className="relative">
-            <button type="button" aria-label="Tùy chọn tải xuống" aria-expanded={isExportMenuOpen} onClick={() => setIsExportMenuOpen((current) => !current)} className="rounded-lg border border-slate-700 bg-slate-900 p-2 text-zinc-400 transition hover:bg-slate-800 hover:text-zinc-100">
-              <MoreHorizontal className="h-4 w-4" />
+              Gốc
             </button>
-            {isExportMenuOpen && (
-              <div className="absolute right-0 top-10 z-10 w-52 rounded-xl border border-slate-800 bg-slate-900 p-1.5 shadow-xl">
-                <button type="button" onClick={handleDownloadMinutesDirect} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-xs text-sky-300 hover:bg-slate-800"><FileCheck className="h-3.5 w-3.5 text-sky-400" /> Xuất biên bản họp (.md)</button>
-                <button type="button" onClick={() => void handleExportMinutesPdf()} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-xs text-sky-300 hover:bg-slate-800"><FileDown className="h-3.5 w-3.5 text-sky-400" /> Xuất biên bản PDF (.pdf)</button>
-                <button type="button" onClick={handleDownloadTranscript} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-xs text-zinc-300 hover:bg-slate-800"><Download className="h-3.5 w-3.5" /> Tải transcript (.txt)</button>
-                <button type="button" onClick={handleExportSrt} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-xs text-zinc-300 hover:bg-slate-800"><FileText className="h-3.5 w-3.5" /> Tải phụ đề (.srt)</button>
-              </div>
-            )}
+            <button
+              type="button"
+              onClick={handleTriggerCopilot}
+              className="flex items-center gap-1.5 rounded-lg border border-sky-500/30 bg-sky-500/10 px-2.5 py-2 text-xs text-sky-300 hover:bg-sky-500/20 transition cursor-pointer"
+              title="Mở Trợ lý Copilot phòng họp (Ctrl+K)"
+              aria-label="Mở Trợ lý Copilot (Ctrl+K)"
+            >
+              <Sparkles className="h-3.5 w-3.5 text-sky-400" />
+              <span className="hidden sm:inline font-medium">Copilot</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => handleTriggerGlossary()}
+              className="rounded-lg border border-amber-500/30 bg-amber-500/10 p-2 text-amber-300 hover:bg-amber-500/20 transition cursor-pointer"
+              title="Dạy từ điển / Thuật ngữ riêng cho phòng họp"
+              aria-label="Dạy từ điển phòng họp"
+            >
+              <BookMarked className="h-4 w-4 text-amber-400" />
+            </button>
+            <div className="relative">
+              <button type="button" aria-label="Tùy chọn tải xuống" aria-expanded={isExportMenuOpen} onClick={() => setIsExportMenuOpen((current) => !current)} className="rounded-lg border border-white/10 bg-[#181b26] p-2 text-zinc-400 transition hover:bg-slate-800 hover:text-zinc-100">
+                <MoreHorizontal className="h-4 w-4" />
+              </button>
+              {isExportMenuOpen && (
+                <div className="absolute right-0 top-10 z-10 w-52 rounded-xl border border-white/10 bg-[#181b26] p-1.5 shadow-xl">
+                  <button type="button" onClick={handleDownloadMinutesDirect} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-xs text-sky-300 hover:bg-slate-800"><FileCheck className="h-3.5 w-3.5 text-sky-400" /> Xuất biên bản họp (.md)</button>
+                  <button type="button" onClick={() => void handleExportMinutesPdf()} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-xs text-sky-300 hover:bg-slate-800"><FileDown className="h-3.5 w-3.5 text-sky-400" /> Xuất biên bản PDF (.pdf)</button>
+                  <button type="button" onClick={handleDownloadTranscript} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-xs text-zinc-300 hover:bg-slate-800"><Download className="h-3.5 w-3.5" /> Tải transcript (.txt)</button>
+                  <button type="button" onClick={handleExportSrt} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-xs text-zinc-300 hover:bg-slate-800"><FileText className="h-3.5 w-3.5" /> Tải phụ đề (.srt)</button>
+                </div>
+              )}
+            </div>
           </div>
-        </div>
+        )}
         {languageError && <p role="alert" className="mt-2 text-xs text-red-400">{languageError}</p>}
       </header>
 
       {tabs.length > 1 && (
-        <nav className="flex gap-1 overflow-x-auto border-b border-slate-800 px-2 py-1.5" aria-label="Nội dung sidecar">
+        <nav className="flex gap-1 overflow-x-auto border-b border-white/10 bg-[#10121b] px-2 py-1.5" aria-label="Nội dung sidecar">
           {tabs.map((tab) => (
-            <button type="button" key={tab.id} onClick={() => setActiveTab(tab.id)} className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-lg px-3 py-1.5 text-xs transition ${activeTab === tab.id ? 'bg-sky-500/15 text-sky-300' : 'text-zinc-400 hover:bg-slate-800 hover:text-zinc-300'}`}>
+            <button
+              type="button"
+              key={tab.id}
+              aria-pressed={activeTab === tab.id}
+              onClick={() => handleSelectTab(tab.id)}
+              className={`inline-flex flex-1 justify-center items-center gap-1.5 whitespace-nowrap rounded-lg px-2.5 py-1.5 text-xs font-medium transition cursor-pointer ${
+                activeTab === tab.id
+                  ? 'bg-sky-500/20 text-sky-300 border border-sky-500/30'
+                  : 'text-zinc-400 hover:bg-white/5 hover:text-zinc-200 border border-transparent'
+              }`}
+            >
               {tab.icon}{tab.label}
             </button>
           ))}
         </nav>
       )}
 
-      {activeTab === 'all' && <LiveSubtitleView history={history} showOriginal={preferences.showOriginal} />}
+      {activeTab === 'all' && (
+        <LiveSubtitleView
+          history={history}
+          showOriginal={preferences.showOriginal}
+          onTeachGlossary={handleTriggerGlossary}
+        />
+      )}
 
-      {activeTab === 'actions' && preferences.showActions && (
+      {activeTab === 'actions' && (preferences.showActions || activeTab === 'actions') && (
         <div className="flex-1 overflow-y-auto p-3">
           <div className="mb-2 flex items-center justify-between">
             <span className="text-xs text-zinc-400">{taggedItems.length} mục đã nhận diện</span>
@@ -498,13 +612,23 @@ export const SubtitlePanel: React.FC<SubtitlePanelProps> = ({
               );
             })}
             {filteredTaggedItems.length === 0 && (
-              <p className="py-12 text-center text-sm text-zinc-400">Không có mục nào phù hợp bộ lọc.</p>
+              <div className="rounded-2xl border border-dashed border-white/10 bg-[#181b26]/60 p-5 text-center space-y-2 my-4">
+                <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-400">
+                  <Zap className="h-5 w-5" />
+                </div>
+                <p className="text-sm font-medium text-zinc-200">
+                  {taggedItems.length === 0 ? 'Chưa có việc cần làm hay quyết định nào' : 'Không có mục nào phù hợp bộ lọc.'}
+                </p>
+                <p className="text-xs text-zinc-400 leading-relaxed">
+                  Laya AI tự động lắng nghe và gắn thẻ <span className="text-emerald-400">Quyết định</span>, <span className="text-amber-400">Việc cần làm</span> và <span className="text-rose-400">Rủi ro</span> ngay khi bạn thảo luận.
+                </p>
+              </div>
             )}
           </div>
         </div>
       )}
 
-      {activeTab === 'recap' && preferences.showRecap && (
+      {activeTab === 'recap' && (preferences.showRecap || activeTab === 'recap') && (
         <div className="flex-1 overflow-y-auto p-3 space-y-3">
           {/* Custom Skills Selector (Hidden when only default standard skill exists) */}
           {customSkills.length > 0 && (
@@ -533,6 +657,20 @@ export const SubtitlePanel: React.FC<SubtitlePanelProps> = ({
           >
             {isGeneratingRecap ? 'Đang tạo tóm tắt…' : 'Tạo tóm tắt cuộc họp'}
           </button>
+
+          {!recapResult && (
+            <div className="rounded-2xl border border-dashed border-white/10 bg-[#181b26]/60 p-5 text-center space-y-2">
+              <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-xl bg-sky-500/15 border border-sky-500/30 text-sky-400">
+                <Sparkles className="h-5 w-5" />
+              </div>
+              <p className="text-sm font-medium text-zinc-200">
+                {history.length === 0 ? 'Cần có ít nhất 1 câu phụ đề để tạo tóm tắt' : 'Sẵn sàng tổng hợp biên bản cuộc họp'}
+              </p>
+              <p className="text-xs text-zinc-400 leading-relaxed">
+                AI sẽ tự động tổng hợp điểm chính điều hành, quyết định then chốt, phân công nhiệm vụ và xuất file Markdown/PDF.
+              </p>
+            </div>
+          )}
 
           {recapResult && (
             <div className="space-y-3 text-sm text-zinc-300">
@@ -754,6 +892,26 @@ export const SubtitlePanel: React.FC<SubtitlePanelProps> = ({
             </form>
           )}
         </div>
+      )}
+
+      {/* Fallback inline modals when not handled by parent MeetingShell */}
+      {!onTeachGlossary && (
+        <InlineGlossaryModal
+          isOpen={internalGlossaryOpen}
+          onClose={() => setInternalGlossaryOpen(false)}
+          meetingCode={meetingCode}
+          initialSourceTerm={internalGlossaryTerms.source}
+          initialTargetTerm={internalGlossaryTerms.target}
+        />
+      )}
+
+      {!onOpenCopilot && (
+        <LiveMeetingCopilot
+          isOpen={internalCopilotOpen}
+          onClose={() => setInternalCopilotOpen(false)}
+          history={history}
+          meetingCode={meetingCode}
+        />
       )}
     </aside>
   );

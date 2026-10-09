@@ -42,6 +42,8 @@ import { CheckoutModal } from '../common/CheckoutModal';
 import { WebRtcDiagnostics } from './WebRtcDiagnostics';
 import { SubtitleOverlay } from '../subtitle/SubtitleOverlay';
 import { SubtitlePanel } from '../subtitle/SubtitlePanel';
+import { InlineGlossaryModal } from '../subtitle/InlineGlossaryModal';
+import { LiveMeetingCopilot } from './LiveMeetingCopilot';
 import { FloatingReactionsOverlay } from './FloatingReactionsOverlay';
 import { FloatingSubtitleWidget } from './FloatingSubtitleWidget';
 import { ChatPanel } from './ChatPanel';
@@ -277,6 +279,34 @@ export const MeetingShell: React.FC<MeetingShellProps> = ({
   const [isEmptyCallTimeoutOpen, setIsEmptyCallTimeoutOpen] = useState(false);
   const [showHandLowerPrompt, setShowHandLowerPrompt] = useState(false);
   const aloneStartTimeRef = useRef<number | null>(null);
+
+  // ── In-Meeting Live Copilot & Inline Glossary ──────────────────────────
+  const [isCopilotOpen, setIsCopilotOpen] = useState(false);
+  const [isGlossaryModalOpen, setIsGlossaryModalOpen] = useState(false);
+  const [glossaryTerms, setGlossaryTerms] = useState<{ source: string; target: string }>({
+    source: '',
+    target: '',
+  });
+
+  const handleOpenGlossaryModal = useCallback((source: string = '', target: string = '') => {
+    setGlossaryTerms({ source, target });
+    setIsGlossaryModalOpen(true);
+  }, []);
+
+  const handleOpenCopilot = useCallback(() => {
+    setIsCopilotOpen(true);
+  }, []);
+
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') {
+        event.preventDefault();
+        setIsCopilotOpen((prev) => !prev);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   const activeSidePanelRef = useRef(activeSidePanel);
   useEffect(() => {
@@ -1535,6 +1565,7 @@ export const MeetingShell: React.FC<MeetingShellProps> = ({
         isProPlan={isProPlan}
         timeRemainingSeconds={timeRemainingSeconds}
         onOpenUpgradeModal={handleOpenUpgradeModal}
+        isOffline={!display.online}
       />
 
       {/* Connecting / Reconnecting Status Banner */}
@@ -1549,7 +1580,14 @@ export const MeetingShell: React.FC<MeetingShellProps> = ({
         </div>
       )}
 
-      <div className="meeting-display-status" role="status">
+      <div
+        className={`meeting-display-status ${
+          display.online
+            ? 'sr-only'
+            : 'bg-amber-950/90 text-amber-200 border-b border-amber-500/30 font-medium'
+        }`}
+        role="status"
+      >
         {!display.online ? 'Mất mạng — đang chờ kết nối lại' : display.wakeStatus === 'active' ? 'Giữ màn hình sáng' : 'Nếu màn hình tự khóa, hãy chạm để tiếp tục cuộc họp'}
       </div>
       <AiReadinessBanner state={aiReadiness.state} onRetry={aiReadiness.retry} />
@@ -1668,6 +1706,8 @@ export const MeetingShell: React.FC<MeetingShellProps> = ({
           isUpdatingLanguage={isUpdatingSubtitleLanguage}
           languageError={subtitleLanguageError}
           branding={branding}
+          onOpenCopilot={handleOpenCopilot}
+          onTeachGlossary={handleOpenGlossaryModal}
         />
             </div>
           </AdaptiveDialog>
@@ -1710,6 +1750,7 @@ export const MeetingShell: React.FC<MeetingShellProps> = ({
         }}
         onOpenSettings={() => setIsSettingsOpen(true)}
         onOpenLayoutMenu={() => setIsLayoutMenuOpen(true)}
+        onOpenCopilot={handleOpenCopilot}
         isSubtitlePanelOpen={isSubtitlePanelOpen}
         subtitleCount={subtitleHistory.length}
         numParticipants={participants.length}
@@ -1971,6 +2012,23 @@ export const MeetingShell: React.FC<MeetingShellProps> = ({
         recordingDownloadUrl={recordingDownloadUrl}
         onClose={() => setIsPostMeetingOpen(false)}
         onLeaveRoom={onLeaveRoom}
+      />
+
+      {/* In-Meeting Live Copilot (Ctrl+K) */}
+      <LiveMeetingCopilot
+        isOpen={isCopilotOpen}
+        onClose={() => setIsCopilotOpen(false)}
+        history={subtitleHistory}
+        meetingCode={session.meetingCode}
+      />
+
+      {/* Inline Glossary Live Correction Modal */}
+      <InlineGlossaryModal
+        isOpen={isGlossaryModalOpen}
+        onClose={() => setIsGlossaryModalOpen(false)}
+        meetingCode={session.meetingCode}
+        initialSourceTerm={glossaryTerms.source}
+        initialTargetTerm={glossaryTerms.target}
       />
     </div>
   );

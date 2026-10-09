@@ -16,6 +16,7 @@ import {
   ChevronUp,
   Link2,
   Search,
+  Hand,
 } from 'lucide-react';
 import { AdmissionRequest, getLanguageOption, SupportedLanguage } from '../../types/meeting';
 import { CountryFlag } from '../common/CountryFlag';
@@ -49,7 +50,7 @@ const ParticipantRow: React.FC<{
   const langOption = spokenLanguage ? getLanguageOption(spokenLanguage) : null;
 
   return (
-    <div className="flex items-center justify-between p-2.5 rounded-xl bg-[#1a1a1d] border border-[#2a2a2e] hover:border-[#3a3a3f] transition-colors">
+    <div className="flex items-center justify-between p-2.5 rounded-xl bg-[#181b26] border border-white/10 hover:border-white/20 transition-colors">
       <div className="flex items-center gap-3 min-w-0">
         <div className="relative w-8 h-8 rounded-full bg-blue-600/20 text-blue-400 border border-blue-500/30 flex items-center justify-center font-bold text-xs shrink-0">
           {name.charAt(0).toUpperCase()}
@@ -66,8 +67,8 @@ const ParticipantRow: React.FC<{
           <div className="text-xs font-medium text-zinc-100 flex items-center gap-1.5">
             <span className="truncate max-w-[155px] sm:max-w-[190px]">{name}</span>
             {isHandRaised && (
-              <span role="img" aria-label="Đã giơ tay" title="Đã giơ tay" className="text-base leading-none">
-                ✋
+              <span role="img" aria-label="Đã giơ tay" title="Đã giơ tay" className="inline-flex items-center text-amber-400">
+                <Hand className="w-3.5 h-3.5" aria-hidden="true" />
               </span>
             )}
             {participant.isLocal && (
@@ -191,9 +192,9 @@ export const ParticipantsPanel: React.FC<ParticipantsPanelProps> = ({
   });
 
   return (
-    <aside className="meeting-panel-content h-full min-h-0 w-full bg-[#111113] md:border-l border-[#2e2e30] p-4 flex flex-col z-30 shrink-0 select-none">
+    <aside className="meeting-panel-content h-full min-h-0 w-full bg-[#13151f] md:border-l border-white/10 p-4 flex flex-col z-30 shrink-0 select-none">
       {/* Header */}
-      <div className="flex items-center justify-between border-b border-[#2e2e30] pb-3 mb-3.5">
+      <div className="flex items-center justify-between border-b border-white/10 pb-3 mb-3.5">
         <div className="flex items-center gap-2 font-semibold text-zinc-100 text-sm">
           <Users className="w-4 h-4 text-blue-400" />
           <span>Mọi người</span>
@@ -207,7 +208,7 @@ export const ParticipantsPanel: React.FC<ParticipantsPanelProps> = ({
         <button
           type="button"
           onClick={onClose}
-          className="w-7 h-7 rounded-lg bg-[#1a1a1b] hover:bg-[#222224] text-zinc-400 hover:text-zinc-100 border border-[#3a3a3d] flex items-center justify-center transition-colors cursor-pointer"
+          className="w-7 h-7 rounded-lg bg-[#1b1e2b] hover:bg-[#25293a] text-zinc-400 hover:text-zinc-100 border border-white/10 flex items-center justify-center transition-colors cursor-pointer"
           aria-label="Đóng danh sách"
         >
           <X className="w-4 h-4" />
@@ -216,12 +217,12 @@ export const ParticipantsPanel: React.FC<ParticipantsPanelProps> = ({
 
       {/* Google Meet / Zoom Style Quick Invite Card (No Token Required) */}
       {meetingCode && (
-        <div className="mb-3.5 p-3 rounded-2xl bg-[#18191e] border border-[#2c2e38] space-y-2">
+        <div className="mb-3 p-2.5 rounded-2xl bg-[#181b26] border border-white/10 space-y-1.5">
           <div className="flex items-center justify-between gap-2">
             <button
               type="button"
               onClick={handleCopyInviteLink}
-              className="flex-1 py-2 px-3 rounded-xl bg-blue-600/15 hover:bg-blue-600/25 border border-blue-500/30 text-blue-300 text-xs font-semibold flex items-center justify-center gap-2 transition cursor-pointer"
+              className="flex-1 py-1.5 px-3 rounded-xl bg-blue-600/15 hover:bg-blue-600/25 border border-blue-500/30 text-blue-300 text-xs font-semibold flex items-center justify-center gap-2 transition cursor-pointer"
             >
               {copiedLink ? (
                 <>
@@ -237,8 +238,8 @@ export const ParticipantsPanel: React.FC<ParticipantsPanelProps> = ({
             </button>
           </div>
           <label htmlFor="meeting-invite-link" className="sr-only">Đường dẫn mời</label>
-          <input id="meeting-invite-link" readOnly value={`${window.location.origin}/meeting/${meetingCode.toUpperCase()}`} className="meeting-field" onFocus={event => event.currentTarget.select()} />
-          {copyNotice && <p role="status" className="text-sm text-amber-200">{copyNotice}</p>}
+          <input id="meeting-invite-link" readOnly value={`${window.location.origin}/meeting/${meetingCode.toUpperCase()}`} className="w-full rounded-lg border border-white/10 bg-[#12141d] px-2.5 py-1 text-[11px] font-mono text-zinc-300 outline-none" onFocus={event => event.currentTarget.select()} />
+          {copyNotice && <p role="status" className="text-xs text-amber-200">{copyNotice}</p>}
           <div className="flex items-center justify-between px-1 text-[11px] text-zinc-400">
             <span className="flex items-center gap-1.5 truncate">
               <Link2 className="w-3 h-3 text-zinc-500 shrink-0" />

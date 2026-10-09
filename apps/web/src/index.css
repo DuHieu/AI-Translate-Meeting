@@ -238,6 +238,7 @@ input:not([type="checkbox"]):not([type="radio"]), select, textarea { font-size: 
   transition: background 150ms ease, border-color 150ms ease;
 }
 .meeting-menu-action:hover { background: #272c3b; border-color: rgba(255, 255, 255, 0.18); }
+.meeting-menu-action[aria-pressed="true"] { background: rgba(14, 165, 233, 0.2); border-color: #38bdf8; color: #e0f2fe; font-weight: 600; }
 .meeting-menu-action svg { width: 20px; height: 20px; flex-shrink: 0; color: #7dd3fc; }
 .meeting-menu-action:disabled { opacity: .5; }
 .meeting-menu-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; padding: 8px; }
@@ -248,29 +249,36 @@ input:not([type="checkbox"]):not([type="radio"]), select, textarea { font-size: 
 .capability-notice { margin: 8px; padding: 12px; color: #fef3c7; background: #422006; border-radius: 8px; font-size: 16px; }
 .adaptive-dialog {
   border: 1px solid rgba(255, 255, 255, 0.12); padding: 0; color: #f1f5f9; background: #141722;
-  border-radius: 0;
+  border-radius: 20px 20px 0 0;
   width: calc(100% - env(safe-area-inset-left) - env(safe-area-inset-right));
-  max-width: 640px; height: var(--app-height); max-height: var(--app-height);
-  position: fixed; inset: auto 0 auto; top: var(--viewport-top);
+  max-width: 640px; height: auto; max-height: calc(var(--app-height) - 16px);
+  position: fixed; inset: auto 0 0 0;
   margin: 0 auto;
   padding-bottom: env(safe-area-inset-bottom, 0px);
   z-index: var(--layer-panel); overflow: hidden;
   box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5);
 }
+.adaptive-dialog:is(.meeting-panel, .calendar-dialog, .meeting-settings-dialog) {
+  border-radius: 0;
+  height: var(--app-height); max-height: var(--app-height);
+  inset: auto 0 auto; top: var(--viewport-top);
+}
 .adaptive-dialog[open] { display: flex; flex-direction: column; }
 .adaptive-dialog::backdrop { background: rgba(0, 0, 0, 0.65); backdrop-filter: blur(4px); }
 .adaptive-dialog__content { min-height: 0; flex: 1; overflow-y: auto; overscroll-behavior: contain; }
+.adaptive-dialog__content > :only-child { width: 100%; max-width: none; margin-inline: auto; }
 .sheet-handle { display: flex; align-items: center; justify-content: center; min-height: 44px; flex-shrink: 0; width: 100%; touch-action: none; }
 .sheet-handle span { width: 48px; height: 4px; border-radius: 4px; background: #64748b; }
 .meeting-language-dialog .adaptive-dialog__content { padding: 0 16px 24px; }
 .meeting-panel { height: var(--app-height); }
 .meeting-panel .adaptive-dialog__content { display: flex; flex-direction: column; flex: 1; overflow: hidden; }
-.meeting-panel-tabs { display: flex; gap: 4px; padding: 4px 8px 8px; flex-shrink: 0; overflow-x: auto; border-bottom: 1px solid rgba(255, 255, 255, 0.08); }
-.meeting-panel-tabs button { flex-shrink: 0; min-height: 44px; min-width: 64px; padding: 8px 12px; white-space: nowrap; font-size: 15px; font-weight: 500; border-radius: 10px; transition: background 150ms ease; }
+.meeting-panel-tabs { display: flex; align-items: center; justify-content: space-between; gap: 4px; padding: 6px; flex-shrink: 0; overflow-x: hidden; background: #10121b; border-bottom: 1px solid rgba(255, 255, 255, 0.08); }
+.meeting-panel-tabs button { flex: 1 1 auto; min-height: 44px; min-width: 0; padding: 6px 5px; white-space: nowrap; font-size: 12.5px; font-weight: 500; border-radius: 10px; color: #cbd5e1; text-align: center; overflow: hidden; text-overflow: ellipsis; transition: background 150ms ease, color 150ms ease; }
+.meeting-panel-tabs button:hover { background: rgba(255, 255, 255, 0.06); color: #f8fafc; }
 .meeting-panel-tabs button[aria-pressed="true"] { background: #c2e7ff; color: #001d35; font-weight: 600; }
 .meeting-panel-body { flex: 1; min-height: 0; overflow: hidden; }
 .meeting-panel-content { position: static; }
-:is(.meeting-panel, .meeting-device-dialog, .meeting-settings-dialog, .prejoin-settings-dialog) button:not(.sheet-handle) { min-height: 44px; min-width: 44px; }
+:is(.meeting-panel, .meeting-device-dialog, .meeting-settings-dialog, .prejoin-settings-dialog) button:not(.sheet-handle):not(.meeting-panel-tabs button) { min-height: 44px; min-width: 44px; }
 :is(.meeting-panel, .meeting-device-dialog, .meeting-settings-dialog, .prejoin-settings-dialog) :is(input:not([type="checkbox"]):not([type="radio"]), select) { min-height: 44px; }
 .meeting-caption-band { max-height: min(32dvh, 240px); overflow-y: auto; overscroll-behavior: contain; }
 .meeting-caption-band button, .meeting-shell > header button { min-height: 44px; min-width: 44px; }
@@ -284,7 +292,7 @@ input:not([type="checkbox"]):not([type="radio"]), select, textarea { font-size: 
 .prejoin-settings-dialog .adaptive-dialog__content { padding: 0 16px 16px; }
 .home-mobile-create { width: min(100%, 320px); min-height: 48px; margin-top: 24px; }
 .home-page :is(button, a) { min-height: 44px; }
-.home-page button:has(> svg:only-child) { min-width: 44px; }
+button:has(> svg:only-child) { display: inline-flex; align-items: center; justify-content: center; min-width: 44px; }
 .content-page { min-width: 0; overflow-wrap: anywhere; }
 :is(.content-page, [data-content-footer]) button { min-height: 44px; min-width: 44px; }
 :is(.content-page, [data-content-footer]) :is(header, nav, footer) a,
@@ -301,8 +309,10 @@ input:not([type="checkbox"]):not([type="radio"]), select, textarea { font-size: 
   .meeting-code { display: block; min-width: 80px; color: #e2e8f0; font-family: monospace; }
   .meeting-desktop-controls { display: flex; gap: 8px; margin-left: auto; }
   .meeting-desktop-controls .meeting-primary-control { min-width: 112px; }
-  .adaptive-dialog { border-radius: 16px; height: auto; max-height:calc(var(--app-height) - 16px); top: calc(var(--viewport-top) + var(--app-height) / 2); transform: translateY(-50%); }
-  .adaptive-dialog--docked { position: static; transform: none; width: 380px; height: 100%; max-height: 100%; margin: 0; border-radius: 0; border-left: 1px solid rgba(255, 255, 255, 0.08); border-top: none; border-bottom: none; border-right: none; background: #13151f; flex-shrink: 0; box-shadow: none; }
+  .adaptive-dialog,
+  .adaptive-dialog:is(.meeting-panel, .calendar-dialog, .meeting-settings-dialog) { border-radius: 16px; height: auto; max-height:calc(var(--app-height) - 16px); top: calc(var(--viewport-top) + var(--app-height) / 2); bottom: auto; transform: translateY(-50%); }
+  .adaptive-dialog--docked,
+  .adaptive-dialog--docked:is(.meeting-panel) { position: static; transform: none; width: 380px; height: 100%; max-height: 100%; margin: 0; border-radius: 0; border-left: 1px solid rgba(255, 255, 255, 0.08); border-top: none; border-bottom: none; border-right: none; background: #13151f; flex-shrink: 0; box-shadow: none; }
   .sheet-handle { display: none; }
   .meeting-more-dialog { max-width: 560px; }
   .meeting-more-dialog .adaptive-dialog__content, .meeting-language-dialog .adaptive-dialog__content { padding-top: 16px; }
@@ -317,40 +327,33 @@ input:not([type="checkbox"]):not([type="radio"]), select, textarea { font-size: 
 .left-meeting-screen button, .left-meeting-screen a, .post-meeting-dialog button { min-width:44px; min-height:44px; }
 
 .prejoin-page :is(button,a,input:not([type=checkbox]),select), .post-meeting-dialog :is(input,select) { min-height:44px; }
-.prejoin-page button:has(> svg:only-child) { min-width:44px; }
-.content-page a { min-height:44px; display:inline-flex; align-items:center; }
+.content-page a { min-height:44px; min-width:44px; display:inline-flex; align-items:center; }
 .home-nav-dialog { max-width:400px; }
 .home-nav-dialog aside { min-height:0; }
 
-.meeting-more-dialog button, .auth-account-dialog button, .meeting-shell button { min-width:44px; min-height:44px; }
+.meeting-more-dialog button, .auth-account-dialog button, .meeting-shell button:not(.meeting-panel-tabs button) { min-width:44px; min-height:44px; }
 
 @media (max-width: 639px) {
-  .content-page > header, .content-page > header > div { height:auto; min-height:64px; flex-wrap:wrap; gap:8px; padding-block:8px; }
-  .content-page > header > div > div { flex-wrap:wrap; gap:8px; }
-  .content-page > header a { flex-shrink:0; white-space:normal; }
+  .content-page > header, .content-page > header > div { height:auto; min-height:56px; flex-wrap:nowrap; gap:8px; padding-block:6px; }
+  .content-page > header > div > div { flex-wrap:nowrap; gap:6px; }
+  .content-page > header a { flex-shrink:0; white-space:nowrap; }
   .content-page > header > div > a { flex-shrink:0; }
 }
 .meeting-more-dialog button[title] span { display:inline; }
 
-.content-page a { min-width:44px; }
 .meeting-details-dialog button { min-width:44px; min-height:44px; }
 
 .home-page button, .cookie-consent button { min-width:44px; min-height:44px; }
 .cookie-consent { max-height:calc(var(--app-height)-16px); overflow-y:auto; bottom:max(10px,env(safe-area-inset-bottom)); }
+body:has(dialog[open], [role="dialog"]) .cookie-consent { display: none !important; }
 .cookie-consent label:has(input[type=checkbox]) { min-width:44px; min-height:44px; }
 
-.meeting-menu-action { border:1px solid #71717a; }
+.meeting-menu-action:not([aria-pressed="true"]) { border: 1px solid rgba(255, 255, 255, 0.14); }
 
 @media (max-width:1023px) {
-:where(.home-page, .prejoin-page, .meeting-shell, .content-page, .adaptive-dialog, .cookie-consent, [role="dialog"]) [class~="text-xs"],
-:where(.home-page, .prejoin-page, .meeting-shell, .content-page, .adaptive-dialog, .cookie-consent, [role="dialog"]) [class~="text-sm"],
-:where(.home-page, .prejoin-page, .meeting-shell, .content-page, .adaptive-dialog, .cookie-consent, [role="dialog"]) [class~="text-[9px]"],
-:where(.home-page, .prejoin-page, .meeting-shell, .content-page, .adaptive-dialog, .cookie-consent, [role="dialog"]) [class~="text-[10px]"],
-:where(.home-page, .prejoin-page, .meeting-shell, .content-page, .adaptive-dialog, .cookie-consent, [role="dialog"]) [class~="text-[11px]"],
-:where(.home-page, .prejoin-page, .meeting-shell, .content-page, .adaptive-dialog, .cookie-consent, [role="dialog"]) [class~="text-[12px]"],
-:where(.home-page, .prejoin-page, .meeting-shell, .content-page, .adaptive-dialog, .cookie-consent, [role="dialog"]) [class~="text-[13px]"],
-:where(.home-page, .prejoin-page, .meeting-shell, .content-page, .adaptive-dialog, .cookie-consent, [role="dialog"]) [class~="text-[14px]"],
-:where(.home-page, .prejoin-page, .meeting-shell, .content-page, .adaptive-dialog, .cookie-consent, [role="dialog"]) [class~="text-[15px]"] { font-size:16px; line-height:1.5; }
+:where(.home-page, .prejoin-page, .meeting-shell, .content-page, .adaptive-dialog, .cookie-consent, [role="dialog"]) :is([class~="text-[9px]"], [class~="text-[10px]"], [class~="text-[11px]"], [class~="text-xs"], [class~="text-[12px]"]) { font-size: 13px; line-height: 1.45; }
+:where(.home-page, .prejoin-page, .meeting-shell, .content-page, .adaptive-dialog, .cookie-consent, [role="dialog"]) :is([class~="text-[13px]"], [class~="text-[14px]"], [class~="text-[15px]"], [class~="text-sm"]) { font-size: 14.5px; line-height: 1.5; }
+:is(input:not([type="checkbox"]):not([type="radio"]), select, textarea) { font-size: 16px !important; line-height: 1.5; }
 }
 
 .home-page :is(a,input:not([type=checkbox]):not([type=radio]),select,textarea) { min-height:44px; }

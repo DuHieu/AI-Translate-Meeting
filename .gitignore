@@ -35,8 +35,12 @@ htmlcov/
 # IDE & OS Files
 .vscode/
 .idea/
+.cursor/
 .DS_Store
 Thumbs.db
+
+# UI Screenshots archive
+ui-screenshots.zip
 
 # Local agent coordination mailbox
 .agent-bridge/

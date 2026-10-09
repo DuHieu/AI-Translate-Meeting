@@ -291,7 +291,7 @@ export const MeetingStage: React.FC<MeetingStageProps> = ({
   const renderReadyCard = () => {
     if (!isReadyCardVisible) return null;
     return (
-      <div className="absolute bottom-4 left-3 right-3 sm:left-4 sm:right-auto sm:w-80 z-20 rounded-2xl bg-[#1e1f20] text-zinc-100 p-4 border border-zinc-700/60 shadow-2xl space-y-3">
+      <div className="absolute top-3 sm:top-auto sm:bottom-4 left-3 right-3 sm:left-4 sm:right-auto sm:w-80 z-20 rounded-2xl bg-[#1e1f20]/95 backdrop-blur-md text-zinc-100 p-3.5 sm:p-4 border border-zinc-700/60 shadow-2xl space-y-2.5 sm:space-y-3">
         <div className="flex items-center justify-between">
           <h3 className="text-sm font-medium text-zinc-100">Cuộc họp đã sẵn sàng</h3>
           <button

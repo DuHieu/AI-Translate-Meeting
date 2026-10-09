@@ -182,35 +182,42 @@ export const FloatingSubtitleWidget: React.FC<FloatingSubtitleWidgetProps> = ({
       ref={widgetRef}
       role="region"
       aria-label="Cửa sổ phụ đề nổi"
-      className="meeting-floating-subtitles fixed right-4 z-50 w-[calc(100vw-2rem)] max-w-sm overflow-hidden rounded-2xl border border-slate-700 bg-slate-950/95 shadow-2xl backdrop-blur-md"
-      style={position ? { left: position.x, top: position.y, right: 'auto', bottom: 'auto' } : { bottom: 'calc(var(--meeting-toolbar-height) + 8px)' }}
+      className="meeting-floating-subtitles fixed right-4 z-40 w-[calc(100vw-2rem)] max-w-sm overflow-hidden rounded-2xl border border-slate-700 bg-slate-950/95 shadow-2xl backdrop-blur-md"
+      style={position ? { left: position.x, top: position.y, right: 'auto', bottom: 'auto' } : { bottom: 'calc(var(--meeting-toolbar-height) + 64px)' }}
     >
       <div
-        className="flex flex-wrap touch-none cursor-grab items-center gap-2 border-b border-slate-800 px-3 py-2 active:cursor-grabbing"
+        className="flex touch-none cursor-grab items-center gap-2 border-b border-slate-800 px-3 py-2 active:cursor-grabbing"
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
         onPointerUp={endDrag}
         onPointerCancel={endDrag}
       >
-        <GripHorizontal className="h-4 w-4 text-slate-400" aria-hidden="true" />
-        <Subtitles className="h-4 w-4 text-sky-400" aria-hidden="true" />
-        <span className="text-base font-semibold text-slate-200">Phụ đề nổi</span>
+        <GripHorizontal className="h-4 w-4 text-slate-400 shrink-0" aria-hidden="true" />
+        <Subtitles className="h-4 w-4 text-sky-400 shrink-0" aria-hidden="true" />
+        <span className="text-xs font-semibold text-slate-200 truncate">Phụ đề nổi</span>
         <button
           type="button"
           onClick={() => void handleDocumentPictureInPicture()}
           aria-pressed={isPipOpen}
           title={isPipOpen ? 'Đóng PiP ngoài màn hình' : 'Mở PiP ngoài màn hình'}
-          className="order-last flex min-h-11 w-full items-center justify-center gap-1.5 rounded-lg border border-slate-500 px-2 text-base text-sky-300 transition hover:bg-slate-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-500"
+          className="ml-auto inline-flex min-h-8 items-center justify-center gap-1.5 rounded-lg border border-slate-600 bg-slate-900 px-2.5 py-1 text-xs font-medium text-sky-300 transition hover:bg-slate-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-500"
         >
-          <PictureInPicture2 className="h-3.5 w-3.5" aria-hidden="true" />
-          {isPipOpen ? 'Đóng PiP' : 'Mở PiP ngoài màn hình'}
+          <PictureInPicture2 className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+          <span className="whitespace-nowrap">
+            {isPipOpen ? 'Đóng PiP' : (
+              <>
+                <span className="sm:hidden">Mở PiP rời</span>
+                <span className="hidden sm:inline">Mở PiP ngoài màn hình</span>
+              </>
+            )}
+          </span>
         </button>
         <button
           type="button"
           onClick={onClose}
           aria-label="Thu nhỏ cửa sổ phụ đề nổi"
           title="Thu nhỏ"
-          className="ml-auto flex h-11 w-11 items-center justify-center rounded-lg text-slate-400 transition hover:bg-slate-800 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-500"
+          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-slate-400 transition hover:bg-slate-800 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-500"
         >
           <Minus className="h-4 w-4" aria-hidden="true" />
         </button>

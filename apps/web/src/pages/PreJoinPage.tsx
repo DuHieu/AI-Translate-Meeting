@@ -1,4 +1,3 @@
-import { AdaptiveDialog } from '../components/common/AdaptiveDialog';
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ApiError, meetingApi } from '../api/meetingApi';
@@ -14,17 +13,18 @@ import {
   SUPPORTED_LANGUAGES_LIST,
   getLanguageOption,
 } from '../types/meeting';
-import { Video, Mic, MicOff, VideoOff, LogIn, ArrowLeft, BookOpen, ChevronDown, ChevronUp, SlidersHorizontal, Settings, X, Volume2, Globe } from 'lucide-react';
+import { Mic, LogIn, ArrowLeft, ChevronDown, SlidersHorizontal, Settings, Volume2, Globe } from 'lucide-react';
 import { LayaMeetLogo } from '../components/common/LayaMeetLogo';
 import { ThemeToggle } from '../components/common/ThemeToggle';
 import { NeuralLinguisticBackground } from '../components/common/NeuralLinguisticBackground';
-import { CountryFlag } from '../components/common/CountryFlag';
 import { GoogleAuthControl } from '../components/auth/GoogleAuthControl';
 import { useAuth } from '../context/auth-context-def';
 import { useLanguage } from '../context/language-context-def';
 import { AppLanguage } from '../i18n';
 import { getUserSettings, saveUserSettings } from '../utils/userSettings';
 import { CountdownLobbyCard } from '../components/meeting/CountdownLobbyCard';
+import { PreJoinCameraPreview } from '../components/prejoin/PreJoinCameraPreview';
+import { PreJoinSettingsModal } from '../components/prejoin/PreJoinSettingsModal';
 
 interface GlossaryDomainOption {
   id: string;
@@ -685,13 +685,13 @@ export const PreJoinPage: React.FC<PreJoinPageProps> = ({ onJoined }) => {
       <div className="relative z-10 max-w-4xl w-full my-auto bg-white dark:bg-[#16161a] border border-zinc-200/90 dark:border-[#2e2e38] rounded-2xl shadow-[0_25px_60px_-15px_rgba(0,0,0,0.16)] dark:shadow-[0_25px_60px_-15px_rgba(0,0,0,0.8)] ring-1 ring-zinc-950/5 dark:ring-white/10 transition-colors overflow-hidden">
 
         {/* ── Header ──────────────────────────────────────────────── */}
-        <div className="flex items-center justify-between px-3.5 py-2.5 md:px-6 md:py-4 bg-zinc-50/90 dark:bg-[#1a1a1e]/90 border-b border-zinc-200 dark:border-[#2a2a30]">
-          <div className="flex items-center gap-2.5 md:gap-3">
+        <div className="flex items-center justify-between px-3 py-2 md:px-6 md:py-4 bg-zinc-50/90 dark:bg-[#1a1a1e]/90 border-b border-zinc-200 dark:border-[#2a2a30] gap-2">
+          <div className="flex items-center gap-2 md:gap-3 min-w-0">
             <LayaMeetLogo size="sm" showWordmark={false} />
-            <div>
-              <h1 className="text-xs sm:text-sm font-bold text-zinc-900 dark:text-white leading-none">Chuẩn bị tham gia</h1>
-              <p className="text-[11px] sm:text-xs text-zinc-500 dark:text-zinc-400 mt-1 flex items-center gap-1.5">
-                <span>Phòng họp:</span>
+            <div className="min-w-0 flex sm:block items-center gap-2">
+              <h1 className="hidden sm:block text-xs sm:text-sm font-bold text-zinc-900 dark:text-white leading-none">Chuẩn bị tham gia</h1>
+              <p className="text-[11px] sm:text-xs text-zinc-500 dark:text-zinc-400 sm:mt-1 flex items-center gap-1.5 whitespace-nowrap">
+                <span className="hidden sm:inline">Phòng họp:</span>
                 <span className="font-mono text-zinc-800 dark:text-zinc-200 bg-zinc-100 dark:bg-zinc-800/80 border border-zinc-200 dark:border-zinc-700/80 px-2 py-0.5 rounded-md text-xs font-semibold tracking-wide select-all">
                   {meetingCode?.toUpperCase()}
                 </span>
@@ -699,7 +699,7 @@ export const PreJoinPage: React.FC<PreJoinPageProps> = ({ onJoined }) => {
             </div>
           </div>
 
-          <div className="flex items-center gap-1.5 sm:gap-2">
+          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
             {/* Mobile Google Meet style Quick Settings Sheet trigger */}
             <button
               type="button"
@@ -714,10 +714,11 @@ export const PreJoinPage: React.FC<PreJoinPageProps> = ({ onJoined }) => {
             <button
               type="button"
               onClick={() => navigate('/')}
-              className="px-2.5 sm:px-3 py-1.5 rounded-lg border border-zinc-300 dark:border-[#3a3a40] bg-white hover:bg-zinc-100 dark:bg-[#202024] dark:hover:bg-[#28282e] text-zinc-700 hover:text-zinc-900 dark:text-zinc-300 dark:hover:text-white text-xs font-medium flex items-center gap-1.5 transition-colors cursor-pointer shadow-2xs"
+              aria-label="Quay lại"
+              className="min-w-[44px] min-h-[44px] px-2.5 sm:px-3 py-1.5 rounded-lg border border-zinc-300 dark:border-[#3a3a40] bg-white hover:bg-zinc-100 dark:bg-[#202024] dark:hover:bg-[#28282e] text-zinc-700 hover:text-zinc-900 dark:text-zinc-300 dark:hover:text-white text-xs font-medium flex items-center justify-center gap-1.5 transition-colors cursor-pointer shadow-2xs whitespace-nowrap"
             >
-              <ArrowLeft className="w-3.5 h-3.5" />
-              <span>Quay lại</span>
+              <ArrowLeft className="w-3.5 h-3.5 shrink-0" />
+              <span className="hidden sm:inline">Quay lại</span>
             </button>
           </div>
         </div>
@@ -758,71 +759,31 @@ export const PreJoinPage: React.FC<PreJoinPageProps> = ({ onJoined }) => {
         )}
 
         {/* ── Main Two-Column Layout ───────────────────────────────── */}
-        <div className="grid grid-cols-1 md:grid-cols-12 p-3.5 md:p-6 gap-3.5 md:gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-12 p-3 md:p-6 gap-2.5 md:gap-6">
 
           {/* Left col: Camera preview + device info */}
-          <div className="prejoin-preview md:col-span-7 space-y-2.5 md:space-y-3">
+          <div className="prejoin-preview md:col-span-7 space-y-2 md:space-y-3">
 
-            {/* Camera preview (compact height on mobile so form below is never cut off) */}
-            <div className="h-40 sm:h-48 md:h-auto md:aspect-video bg-[#111112] rounded-xl border border-[#2e2e30] overflow-hidden relative flex items-center justify-center">
-              {isCameraOn ? (
-                <video
-                  ref={videoRef}
-                  autoPlay
-                  playsInline
-                  muted
-                  className="w-full h-full object-cover scale-x-[-1]"
-                />
-              ) : (
-                <div className="flex flex-col items-center justify-center gap-1.5 text-zinc-600">
-                  <VideoOff className="w-8 h-8 md:w-10 md:h-10 stroke-[1.5]" />
-                  <span className="text-xs">{copy.cameraOff}</span>
-                </div>
-              )}
-
-              {/* Language Indicator Pill (Top Left on Camera Preview) */}
-              <div className="absolute top-2.5 left-2.5 z-10 inline-flex items-center gap-1.5 rounded-full bg-black/75 backdrop-blur-md border border-white/15 px-2.5 py-1 text-[11px] font-medium text-zinc-100 shadow-md">
-                <CountryFlag code={nativeLanguage} size="xs" />
-                <span>{copy.subtitleTargetBadge(getLanguageOption(nativeLanguage).nativeName)}</span>
-              </div>
-
-              {/* Mic / Camera toggle overlay */}
-              <div className="absolute bottom-2.5 md:bottom-3 left-1/2 -translate-x-1/2 flex items-center gap-2 bg-[#0f0f10]/90 px-2.5 py-1.5 md:px-3 md:py-2 rounded-full border border-[#2e2e30] shadow-lg">
-                <button
-                  type="button"
-                  onClick={() => setIsMicOn((prev) => !prev)}
-                  className={`w-11 h-11 rounded-full flex items-center justify-center transition-colors cursor-pointer ${
-                    isMicOn
-                      ? 'bg-[#222224] text-zinc-300 hover:bg-[#2a2a2c]'
-                      : 'bg-red-600 text-white hover:bg-red-500'
-                  }`}
-                  aria-label={isMicOn ? 'Tắt microphone' : 'Bật microphone'}
-                >
-                  {isMicOn ? <Mic className="w-4 h-4" /> : <MicOff className="w-4 h-4" />}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setIsCameraOn((prev) => !prev)}
-                  className={`w-11 h-11 rounded-full flex items-center justify-center transition-colors cursor-pointer ${
-                    isCameraOn
-                      ? 'bg-[#222224] text-zinc-300 hover:bg-[#2a2a2c]'
-                      : 'bg-red-600 text-white hover:bg-red-500'
-                  }`}
-                  aria-label={isCameraOn ? 'Tắt camera' : 'Bật camera'}
-                >
-                  {isCameraOn ? <Video className="w-4 h-4" /> : <VideoOff className="w-4 h-4" />}
-                </button>
-              </div>
-            </div>
+            {/* Camera preview */}
+            <PreJoinCameraPreview
+              videoRef={videoRef}
+              isCameraOn={isCameraOn}
+              isMicOn={isMicOn}
+              onToggleCamera={() => setIsCameraOn((prev) => !prev)}
+              onToggleMic={() => setIsMicOn((prev) => !prev)}
+              nativeLanguage={nativeLanguage}
+              cameraOffText={copy.cameraOff}
+              subtitleBadgeText={copy.subtitleTargetBadge(getLanguageOption(nativeLanguage).nativeName)}
+            />
 
             {/* Compact permission alert on mobile */}
             {permissionError && (
               <div className="md:hidden p-2 rounded-lg bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/50 text-amber-800 dark:text-amber-300 text-xs flex items-center justify-between gap-2">
-                <span>Chưa cấp quyền thiết bị. Vào Cài đặt trình duyệt → Quyền mic/camera để cho phép, hoặc tắt mic/cam và tham gia chỉ nghe. Mic/camera cần HTTPS hoặc localhost.</span>
+                <span className="line-clamp-2">Chưa cấp quyền mic/camera. Bạn có thể cấp quyền hoặc tham gia ở chế độ chỉ nghe.</span>
                 <button
                   type="button"
                   onClick={handleGrantPermission}
-                  className="shrink-0 px-2 py-1 bg-amber-800 hover:bg-amber-900 text-white rounded text-xs font-medium transition-colors cursor-pointer"
+                  className="shrink-0 px-2.5 py-1 bg-amber-800 hover:bg-amber-900 text-white rounded-lg text-xs font-medium transition-colors cursor-pointer"
                 >
                   Cấp quyền
                 </button>
@@ -923,7 +884,7 @@ export const PreJoinPage: React.FC<PreJoinPageProps> = ({ onJoined }) => {
           {/* Right col: Form */}
           <form
             onSubmit={handleJoinNow}
-            className="prejoin-form md:col-span-5 flex flex-col gap-3 md:gap-4 md:border-l md:border-zinc-200 md:dark:border-[#2a2a30] md:pl-6"
+            className="prejoin-form md:col-span-5 flex flex-col gap-2.5 md:gap-4 md:border-l md:border-zinc-200 md:dark:border-[#2a2a30] md:pl-6"
           >
             {/* Google Sign-In via Supabase Auth */}
             <GoogleAuthControl
@@ -976,7 +937,7 @@ export const PreJoinPage: React.FC<PreJoinPageProps> = ({ onJoined }) => {
                       value={lang.code}
                       className="bg-white dark:bg-[#18181c] text-zinc-900 dark:text-white py-1"
                     >
-                      {lang.flag} {lang.nativeName} {lang.name !== lang.nativeName ? `(${lang.name})` : ''}
+                      {lang.nativeName} {lang.name !== lang.nativeName ? `(${lang.name})` : ''}
                     </option>
                   ))}
                 </select>
@@ -989,11 +950,11 @@ export const PreJoinPage: React.FC<PreJoinPageProps> = ({ onJoined }) => {
               </p>
             </div>
 
-            {/* Mobile: Google Meet-style compact settings trigger pill; Desktop: Inline collapsible glossary */}
+            {/* Open Advanced Device & AI Glossary Dialog */}
             <div>
               <button
                 type="button"
-                aria-expanded={showAdvancedSettings}
+                aria-haspopup="dialog"
                 onClick={() => setShowAdvancedSettings(!showAdvancedSettings)}
                 className="w-full md:w-auto flex items-center justify-between md:justify-start gap-1.5 px-3 py-2 md:p-0 md:py-0.5 rounded-xl md:rounded-none bg-zinc-100/90 md:bg-transparent dark:bg-[#1c1d22] md:dark:bg-transparent border border-zinc-200/80 md:border-0 dark:border-[#2c2e36] text-xs text-zinc-600 hover:text-zinc-900 dark:text-zinc-300 dark:hover:text-zinc-100 transition-colors cursor-pointer select-none"
               >
@@ -1002,13 +963,8 @@ export const PreJoinPage: React.FC<PreJoinPageProps> = ({ onJoined }) => {
                   <span className="md:hidden font-medium">{copy.advancedOptionsMobile}</span>
                   <span className="hidden md:inline">{copy.advancedOptions}</span>
                 </span>
-                {showAdvancedSettings ? (
-                  <ChevronUp className="w-3.5 h-3.5 text-zinc-400" />
-                ) : (
-                  <ChevronDown className="w-3.5 h-3.5 text-zinc-400" />
-                )}
+                <ChevronDown className="w-3.5 h-3.5 text-zinc-400" />
               </button>
-
             </div>
 
             {/* CTA — grows to bottom */}
@@ -1028,147 +984,28 @@ export const PreJoinPage: React.FC<PreJoinPageProps> = ({ onJoined }) => {
         </div>
       </div>
 
-      {/* ── MOBILE: Google Meet Style Settings & Device Sheet (< md) ── */}
-      {showAdvancedSettings && (
-        <AdaptiveDialog label="Thiết lập thiết bị và từ điển cuộc họp" onClose={() => setShowAdvancedSettings(false)} className="prejoin-settings-dialog">
-          <div
-            className="w-full max-w-md max-h-[88dvh] overflow-y-auto bg-zinc-100 dark:bg-[#1e1f26] border border-zinc-200 dark:border-[#2e313d] rounded-3xl p-4 shadow-2xl space-y-3"
-          >
-            {/* Sheet Header */}
-            <div className="relative flex items-center justify-center py-1">
-              <span className="text-sm font-bold text-zinc-900 dark:text-zinc-100">
-                Thiết lập phòng họp &amp; AI
-              </span>
-              <button
-                type="button"
-                onClick={() => setShowAdvancedSettings(false)}
-                aria-label="Đóng thiết lập"
-                className="absolute right-1 p-1.5 rounded-full text-zinc-500 hover:bg-zinc-200 dark:hover:bg-white/10 cursor-pointer"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            {/* Card 1: Audio & Video Devices */}
-            <div className="bg-white dark:bg-[#14151a] rounded-2xl p-3.5 border border-zinc-200/70 dark:border-white/[0.06] space-y-3">
-              <div className="text-xs font-bold text-zinc-800 dark:text-zinc-200 flex items-center gap-2">
-                <Mic className="w-3.5 h-3.5 text-emerald-500" />
-                <span>Thiết bị Âm thanh &amp; Camera</span>
-              </div>
-
-              <div className="flex items-center justify-between gap-3">
-                <div className="flex items-center gap-2 flex-1 min-w-0">
-                  <span className="text-[11px] text-zinc-500 dark:text-zinc-400 shrink-0">Mic</span>
-                  <div className="flex-1 h-1.5 bg-zinc-200 dark:bg-[#252528] rounded-full overflow-hidden">
-                    <div
-                      className="h-full bg-emerald-500 transition-all duration-75 rounded-full"
-                      style={{ width: `${isMicOn ? audioVolume : 0}%` }}
-                    />
-                  </div>
-                  <span className="text-[10px] text-zinc-500 dark:text-zinc-400 font-mono w-6 text-right">
-                    {isMicOn ? `${audioVolume}%` : '—'}
-                  </span>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={handleTestSpeakerSound}
-                  disabled={isPlayingSpeakerTest}
-                  className={`px-2 py-1 rounded-lg border text-[11px] font-medium flex items-center gap-1.5 transition-colors cursor-pointer shrink-0 ${
-                    isPlayingSpeakerTest
-                      ? 'bg-blue-600 text-white border-blue-500 animate-pulse'
-                      : 'bg-zinc-100 dark:bg-[#1e2028] border-zinc-300 dark:border-[#323542] text-zinc-700 dark:text-zinc-300'
-                  }`}
-                >
-                  <Volume2 className={`w-3 h-3 ${isPlayingSpeakerTest ? 'text-white' : 'text-blue-500'}`} />
-                  <span>{isPlayingSpeakerTest ? 'Đang phát...' : 'Thử loa'}</span>
-                </button>
-              </div>
-
-              <div className="grid grid-cols-1 gap-2">
-                <div>
-                  <label className="block text-[11px] font-medium text-zinc-600 dark:text-zinc-400 mb-1">Microphone</label>
-                  <select aria-label="Microphone"
-                    value={selectedAudioId}
-                    onChange={(e) => setSelectedAudioId(e.target.value)}
-                    className="w-full bg-zinc-50 dark:bg-[#1c1e26] border border-zinc-300 dark:border-[#323238] text-zinc-900 dark:text-zinc-100 text-xs rounded-xl px-2.5 py-2 outline-none"
-                  >
-                    {audioDevices.length > 0 ? (
-                      audioDevices.map((d) => (
-                        <option key={d.deviceId} value={d.deviceId}>
-                          {d.label || `Microphone (${d.deviceId.slice(0, 5)})`}
-                        </option>
-                      ))
-                    ) : (
-                      <option value="">Microphone mặc định</option>
-                    )}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-[11px] font-medium text-zinc-600 dark:text-zinc-400 mb-1">Camera</label>
-                  <select aria-label="Camera"
-                    value={selectedVideoId}
-                    onChange={(e) => setSelectedVideoId(e.target.value)}
-                    className="w-full bg-zinc-50 dark:bg-[#1c1e26] border border-zinc-300 dark:border-[#323238] text-zinc-900 dark:text-zinc-100 text-xs rounded-xl px-2.5 py-2 outline-none"
-                  >
-                    {videoDevices.length > 0 ? (
-                      videoDevices.map((d) => (
-                        <option key={d.deviceId} value={d.deviceId}>
-                          {d.label || `Camera (${d.deviceId.slice(0, 5)})`}
-                        </option>
-                      ))
-                    ) : (
-                      <option value="">Camera mặc định</option>
-                    )}
-                  </select>
-                </div>
-              </div>
-            </div>
-
-            {/* Card 2: AI Domain Glossary & Keywords */}
-            <div className="bg-white dark:bg-[#14151a] rounded-2xl p-3.5 border border-zinc-200/70 dark:border-white/[0.06] space-y-2.5">
-              <div className="flex items-center gap-1.5 text-xs font-bold text-zinc-800 dark:text-zinc-200">
-                <BookOpen className="w-3.5 h-3.5 text-blue-500" />
-                <span>Từ điển chuyên ngành AI</span>
-              </div>
-              <select aria-label="Chuyên ngành cuộc họp"
-                value={meetingDomain}
-                onChange={(e) => {
-                  const newDomain = e.target.value;
-                  setMeetingDomain(newDomain);
-                  localStorage.setItem('ai-meeting-domain', newDomain);
-                }}
-                className="w-full bg-zinc-50 dark:bg-[#1c1e26] border border-zinc-300 dark:border-[#323238] text-zinc-900 dark:text-zinc-200 text-base sm:text-xs rounded-xl px-2.5 py-2 outline-none"
-              >
-                {GLOSSARY_DOMAINS.map((domain) => (
-                  <option key={domain.id} value={domain.id}>
-                    {domain.name}
-                  </option>
-                ))}
-              </select>
-              <input
-                type="text"
-                value={customKeywords}
-                onChange={(e) => {
-                  setCustomKeywords(e.target.value);
-                  localStorage.setItem('ai-meeting-initial-prompt', e.target.value);
-                }}
-                aria-label="Từ khóa bổ trợ"
-                placeholder="Từ khóa bổ trợ: SLA, KPI, Opex, Capex..."
-                className="w-full bg-zinc-50 dark:bg-[#1c1e26] border border-zinc-300 dark:border-[#323238] text-zinc-900 dark:text-zinc-200 text-base sm:text-xs rounded-xl px-2.5 py-2 outline-none placeholder-zinc-400"
-              />
-            </div>
-
-            <button
-              type="button"
-              onClick={() => setShowAdvancedSettings(false)}
-              className="w-full py-2.5 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold cursor-pointer"
-            >
-              Xong
-            </button>
-          </div>
-        </AdaptiveDialog>
-      )}
+      {/* ── Google Meet Style Settings & Device Sheet ── */}
+      <PreJoinSettingsModal
+        isOpen={showAdvancedSettings}
+        onClose={() => setShowAdvancedSettings(false)}
+        audioDevices={audioDevices}
+        videoDevices={videoDevices}
+        selectedAudioId={selectedAudioId}
+        setSelectedAudioId={setSelectedAudioId}
+        selectedVideoId={selectedVideoId}
+        setSelectedVideoId={setSelectedVideoId}
+        isMicOn={isMicOn}
+        audioVolume={audioVolume}
+        handleTestSpeakerSound={handleTestSpeakerSound}
+        isPlayingSpeakerTest={isPlayingSpeakerTest}
+        spokenLanguage={spokenLanguage}
+        setSpokenLanguage={setSpokenLanguage}
+        meetingDomain={meetingDomain}
+        setMeetingDomain={setMeetingDomain}
+        customKeywords={customKeywords}
+        setCustomKeywords={setCustomKeywords}
+        glossaryDomains={GLOSSARY_DOMAINS}
+      />
     </main>
   );
 };

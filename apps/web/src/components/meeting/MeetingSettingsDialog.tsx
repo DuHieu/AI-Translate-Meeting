@@ -261,13 +261,13 @@ export const MeetingSettingsDialog: React.FC<MeetingSettingsDialogProps> = ({
     <AdaptiveDialog label="Cài đặt cuộc họp" onClose={onClose} className="meeting-settings-dialog">
       <div className="bg-[#181a20] border border-[#2b2e36] rounded-2xl sm:rounded-3xl max-w-2xl w-full shadow-2xl overflow-hidden max-h-[92vh] sm:max-h-[85vh] flex flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-[#2b2e36] px-5 sm:px-6 py-4 shrink-0 bg-[#1e2027]">
+        <div className="flex items-center justify-between border-b border-[#2b2e36] px-5 sm:px-6 py-3.5 sm:py-4 shrink-0 bg-[#1e2027]">
           <h2 className="text-base sm:text-lg font-semibold text-zinc-100">Cài đặt cuộc họp</h2>
           <button
             type="button"
             onClick={onClose}
             aria-label="Đóng cài đặt"
-            className="w-11 h-11 rounded-full bg-[#2a2d36] hover:bg-[#343844] text-zinc-400 hover:text-white flex items-center justify-center transition cursor-pointer"
+            className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-[#2a2d36] hover:bg-[#343844] text-zinc-400 hover:text-white flex items-center justify-center transition cursor-pointer"
           >
             <X className="w-4 h-4" />
           </button>
@@ -276,65 +276,70 @@ export const MeetingSettingsDialog: React.FC<MeetingSettingsDialogProps> = ({
         {/* Responsive Layout: Mobile Horizontal Tabs | Desktop 2-Column Sidebar */}
         <div className="flex-1 flex flex-col md:flex-row overflow-hidden min-h-0 bg-[#181a20]">
           {/* Navigation */}
-          <nav className="w-full md:w-52 shrink-0 border-b md:border-b-0 md:border-r border-[#2b2e36] p-2 md:p-3 flex md:flex-col gap-1.5 md:space-y-1 overflow-x-auto md:overflow-x-visible no-scrollbar bg-[#14151a]">
+          <nav className="w-full md:w-52 shrink-0 border-b md:border-b-0 md:border-r border-[#2b2e36] p-1.5 sm:p-2 md:p-3 flex md:flex-col justify-between md:justify-start gap-1 md:space-y-1 overflow-x-auto md:overflow-x-visible no-scrollbar bg-[#14151a]">
             <button
               type="button"
+              aria-pressed={activeTab === 'audio'}
               onClick={() => setActiveTab('audio')}
-              className={`shrink-0 md:w-full flex items-center gap-2 md:gap-3 px-3.5 py-2.5 rounded-xl text-xs font-medium transition cursor-pointer whitespace-nowrap ${
+              className={`shrink-0 md:w-full flex items-center justify-center md:justify-start gap-1.5 md:gap-3 px-2.5 sm:px-3.5 py-2 md:py-2.5 rounded-xl text-[11px] sm:text-xs font-medium transition cursor-pointer whitespace-nowrap ${
                 activeTab === 'audio'
                   ? 'bg-sky-700 text-white font-semibold shadow-xs'
                   : 'text-zinc-400 hover:bg-[#20222a] hover:text-zinc-200'
               }`}
             >
-              <Mic className="w-4 h-4 shrink-0" />
+              <Mic className="hidden sm:inline-block w-4 h-4 shrink-0" />
               <span>Âm thanh</span>
             </button>
             <button
               type="button"
+              aria-pressed={activeTab === 'video'}
               onClick={() => setActiveTab('video')}
-              className={`shrink-0 md:w-full flex items-center gap-2 md:gap-3 px-3.5 py-2.5 rounded-xl text-xs font-medium transition cursor-pointer whitespace-nowrap ${
+              className={`shrink-0 md:w-full flex items-center justify-center md:justify-start gap-1.5 md:gap-3 px-2.5 sm:px-3.5 py-2 md:py-2.5 rounded-xl text-[11px] sm:text-xs font-medium transition cursor-pointer whitespace-nowrap ${
                 activeTab === 'video'
                   ? 'bg-sky-700 text-white font-semibold shadow-xs'
                   : 'text-zinc-400 hover:bg-[#20222a] hover:text-zinc-200'
               }`}
             >
-              <Video className="w-4 h-4 shrink-0" />
+              <Video className="hidden sm:inline-block w-4 h-4 shrink-0" />
               <span>Video</span>
             </button>
             <button
               type="button"
+              aria-pressed={activeTab === 'subtitles'}
               onClick={() => setActiveTab('subtitles')}
-              className={`shrink-0 md:w-full flex items-center gap-2 md:gap-3 px-3.5 py-2.5 rounded-xl text-xs font-medium transition cursor-pointer whitespace-nowrap ${
+              className={`shrink-0 md:w-full flex items-center justify-center md:justify-start gap-1.5 md:gap-3 px-2.5 sm:px-3.5 py-2 md:py-2.5 rounded-xl text-[11px] sm:text-xs font-medium transition cursor-pointer whitespace-nowrap ${
                 activeTab === 'subtitles'
                   ? 'bg-sky-700 text-white font-semibold shadow-xs'
                   : 'text-zinc-400 hover:bg-[#20222a] hover:text-zinc-200'
               }`}
             >
-              <Languages className="w-4 h-4 shrink-0" />
+              <Languages className="hidden sm:inline-block w-4 h-4 shrink-0" />
               <span>Phụ đề</span>
             </button>
             <button
               type="button"
+              aria-pressed={activeTab === 'sidecar'}
               onClick={() => setActiveTab('sidecar')}
-              className={`shrink-0 md:w-full flex items-center gap-2 md:gap-3 px-3.5 py-2.5 rounded-xl text-xs font-medium transition cursor-pointer whitespace-nowrap ${
+              className={`shrink-0 md:w-full flex items-center justify-center md:justify-start gap-1.5 md:gap-3 px-2.5 sm:px-3.5 py-2 md:py-2.5 rounded-xl text-[11px] sm:text-xs font-medium transition cursor-pointer whitespace-nowrap ${
                 activeTab === 'sidecar'
                   ? 'bg-sky-700 text-white font-semibold shadow-xs'
                   : 'text-zinc-400 hover:bg-[#20222a] hover:text-zinc-200'
               }`}
             >
-              <Sparkles className="w-4 h-4 shrink-0" />
+              <Sparkles className="hidden sm:inline-block w-4 h-4 shrink-0" />
               <span>Tiện ích</span>
             </button>
             <button
               type="button"
+              aria-pressed={activeTab === 'skills'}
               onClick={() => setActiveTab('skills')}
-              className={`shrink-0 md:w-full flex items-center gap-2 md:gap-3 px-3.5 py-2.5 rounded-xl text-xs font-medium transition cursor-pointer whitespace-nowrap ${
+              className={`shrink-0 md:w-full flex items-center justify-center md:justify-start gap-1.5 md:gap-3 px-2.5 sm:px-3.5 py-2 md:py-2.5 rounded-xl text-[11px] sm:text-xs font-medium transition cursor-pointer whitespace-nowrap ${
                 activeTab === 'skills'
                   ? 'bg-sky-700 text-white font-semibold shadow-xs'
                   : 'text-zinc-400 hover:bg-[#20222a] hover:text-zinc-200'
               }`}
             >
-              <BookOpen className="w-4 h-4 shrink-0" />
+              <BookOpen className="hidden sm:inline-block w-4 h-4 shrink-0" />
               <span>Kỹ năng AI</span>
             </button>
           </nav>
@@ -375,13 +380,13 @@ export const MeetingSettingsDialog: React.FC<MeetingSettingsDialogProps> = ({
                 </div>
                 <div className="grid grid-cols-3 gap-1.5 sm:gap-2 pt-1">
                   {(['low', 'medium', 'high'] as VadSensitivity[]).map((level) => {
-                    const label = level === 'low' ? 'Nhẹ (Nhạy)' : level === 'medium' ? 'Tiêu chuẩn' : 'Mạnh (Lọc cao)';
+                    const label = level === 'low' ? 'Nhẹ (Nhạy)' : level === 'medium' ? 'Tiêu chuẩn' : 'Mạnh (Lọc)';
                     return (
                       <button
                         key={level}
                         type="button"
                         onClick={() => handleUpdateSetting('vadSensitivity', level)}
-                        className={`py-2 px-1.5 sm:px-3 rounded-lg text-[11px] sm:text-xs font-medium transition cursor-pointer text-center truncate ${
+                        className={`py-2 px-1.5 sm:px-3 rounded-lg text-[11px] sm:text-xs font-medium transition cursor-pointer text-center whitespace-nowrap ${
                           userSettings.vadSensitivity === level
                             ? 'bg-sky-700 text-white font-semibold border border-sky-500 shadow-xs'
                             : 'bg-[#2a2d35] text-zinc-300 hover:bg-[#343842] border border-[#383b44]'
@@ -443,7 +448,7 @@ export const MeetingSettingsDialog: React.FC<MeetingSettingsDialogProps> = ({
                         key={id}
                         type="button"
                         onClick={() => handleUpdateSetting('audioBoothVoiceGender', id as AudioBoothVoiceGender)}
-                        className={`py-2 px-1.5 sm:px-3 rounded-lg text-[11px] sm:text-xs font-medium transition cursor-pointer text-center truncate ${
+                        className={`py-2 px-1.5 sm:px-3 rounded-lg text-[11px] sm:text-xs font-medium transition cursor-pointer text-center whitespace-nowrap ${
                           (userSettings.audioBoothVoiceGender || 'auto') === id
                             ? 'bg-sky-700 text-white font-semibold border border-sky-500 shadow-xs'
                             : 'bg-[#2a2d35] text-zinc-300 hover:bg-[#343842] border border-[#383b44]'
@@ -465,22 +470,23 @@ export const MeetingSettingsDialog: React.FC<MeetingSettingsDialogProps> = ({
                   </div>
                   <div className="grid grid-cols-4 gap-1.5 sm:gap-2">
                     {[
-                      { rate: 0.8, label: '0.8x' },
+                      { rate: 0.8, label: '0.8x (Chậm)' },
                       { rate: 1.0, label: '1.0x (Chuẩn)' },
-                      { rate: 1.2, label: '1.2x' },
+                      { rate: 1.2, label: '1.2x (Khá)' },
                       { rate: 1.4, label: '1.4x (Nhanh)' },
                     ].map(({ rate, label }) => (
                       <button
                         key={rate}
                         type="button"
                         onClick={() => handleUpdateSetting('audioBoothSpeedRate', rate)}
-                        className={`py-2 px-1 rounded-lg text-[10px] sm:text-[11px] font-medium transition cursor-pointer text-center truncate ${
+                        className={`py-2 px-1 rounded-lg text-[11px] font-medium transition cursor-pointer text-center whitespace-nowrap ${
                           (userSettings.audioBoothSpeedRate || 1.0) === rate
                             ? 'bg-sky-700 text-white font-semibold border border-sky-500 shadow-xs'
                             : 'bg-[#2a2d35] text-zinc-300 hover:bg-[#343842] border border-[#383b44]'
                         }`}
                       >
-                        {label}
+                        <span className="sm:hidden">{rate.toFixed(1)}x</span>
+                        <span className="hidden sm:inline">{label}</span>
                       </button>
                     ))}
                   </div>
@@ -507,7 +513,7 @@ export const MeetingSettingsDialog: React.FC<MeetingSettingsDialogProps> = ({
                       key={mode}
                       type="button"
                       onClick={() => handleUpdateSetting('subtitleDisplayMode', mode)}
-                      className={`py-2 px-1 sm:px-3 rounded-lg text-[11px] sm:text-xs font-medium transition cursor-pointer text-center truncate ${
+                      className={`py-2 px-1 sm:px-3 rounded-lg text-[11px] sm:text-xs font-medium transition cursor-pointer text-center whitespace-nowrap ${
                         userSettings.subtitleDisplayMode === mode
                           ? 'bg-sky-700 text-white font-semibold border border-sky-500 shadow-xs'
                           : 'bg-[#2a2d35] text-zinc-300 hover:bg-[#343842] border border-[#383b44]'
@@ -530,13 +536,13 @@ export const MeetingSettingsDialog: React.FC<MeetingSettingsDialogProps> = ({
                     ['sm', 'Nhỏ (14px)'],
                     ['md', 'Vừa (18px)'],
                     ['lg', 'Lớn (22px)'],
-                    ['xl', 'Cực lớn (26px)'],
+                    ['xl', 'Rất lớn (26px)'],
                   ] as [SubtitleFontSize, string][]).map(([size, label]) => (
                     <button
                       key={size}
                       type="button"
                       onClick={() => handleUpdateSetting('subtitleFontSize', size)}
-                      className={`py-2 px-1.5 sm:px-2 rounded-lg text-[11px] sm:text-xs font-medium transition cursor-pointer text-center truncate ${
+                      className={`py-2 px-1.5 sm:px-2 rounded-lg text-[11px] sm:text-xs font-medium transition cursor-pointer text-center whitespace-nowrap ${
                         userSettings.subtitleFontSize === size
                           ? 'bg-sky-700 text-white font-semibold border border-sky-500 shadow-xs'
                           : 'bg-[#2a2d35] text-zinc-300 hover:bg-[#343842] border border-[#383b44]'
@@ -554,17 +560,17 @@ export const MeetingSettingsDialog: React.FC<MeetingSettingsDialogProps> = ({
                   <p className="text-sm font-semibold text-zinc-200">Độ mờ nền phụ đề</p>
                   <p className="text-xs text-zinc-400">Đảm bảo độ tương phản rõ nét trên các nền video phức tạp</p>
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-1.5 sm:gap-2 pt-1">
+                <div className="grid grid-cols-3 gap-1.5 sm:gap-2 pt-1">
                   {([
-                    ['light', 'Trong suốt (50%)'],
-                    ['medium', 'Tiêu chuẩn (80%)'],
-                    ['heavy', 'Tối đậm (95%)'],
+                    ['light', 'Mờ (50%)'],
+                    ['medium', 'Chuẩn (80%)'],
+                    ['heavy', 'Đậm (95%)'],
                   ] as [SubtitleBgOpacity, string][]).map(([opacity, label]) => (
                     <button
                       key={opacity}
                       type="button"
                       onClick={() => handleUpdateSetting('subtitleBgOpacity', opacity)}
-                      className={`py-2 px-2 sm:px-3 rounded-lg text-[11px] sm:text-xs font-medium transition cursor-pointer text-center truncate ${
+                      className={`py-2 px-1.5 sm:px-3 rounded-lg text-[11px] sm:text-xs font-medium transition cursor-pointer text-center whitespace-nowrap ${
                         userSettings.subtitleBgOpacity === opacity
                           ? 'bg-sky-700 text-white font-semibold border border-sky-500 shadow-xs'
                           : 'bg-[#2a2d35] text-zinc-300 hover:bg-[#343842] border border-[#383b44]'
@@ -595,15 +601,27 @@ export const MeetingSettingsDialog: React.FC<MeetingSettingsDialogProps> = ({
                           : 'border-[#383b44] bg-[#252831] hover:border-[#4c515e]'
                       }`}
                     >
-                      <span className="flex items-start gap-2">
+                      <span className="flex items-start gap-2.5">
                         <input
                           type="radio"
                           name="translation-tier"
                           value={tier}
                           checked={userSettings.translationTier === tier}
                           onChange={() => handleUpdateSetting('translationTier', tier)}
-                          className="mt-0.5 accent-sky-500"
+                          className="sr-only"
                         />
+                        <span
+                          aria-hidden="true"
+                          className={`mt-0.5 inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full border transition-colors ${
+                            userSettings.translationTier === tier
+                              ? 'border-sky-400 bg-sky-500'
+                              : 'border-zinc-500 bg-[#1e2026]'
+                          }`}
+                        >
+                          {userSettings.translationTier === tier && (
+                            <span className="h-1.5 w-1.5 rounded-full bg-white" />
+                          )}
+                        </span>
                         <span>
                           <span className="block text-xs font-semibold text-zinc-200">{label}</span>
                           <span className="mt-1 block text-[11px] leading-4 text-zinc-400">{description}</span>
@@ -790,6 +808,9 @@ export const MeetingSettingsDialog: React.FC<MeetingSettingsDialogProps> = ({
                   </div>
                   <button
                     type="button"
+                    role="switch"
+                    aria-checked={userSettings.byokEnabled}
+                    aria-label="Bật tùy chọn API cá nhân (BYOK)"
                     onClick={() => handleUpdateSetting('byokEnabled', !userSettings.byokEnabled)}
                     className={`w-11 h-6 flex items-center rounded-full p-1 transition-colors cursor-pointer ${
                       userSettings.byokEnabled ? 'bg-amber-500' : 'bg-[#2a2d35]'
@@ -889,8 +910,8 @@ export const MeetingSettingsDialog: React.FC<MeetingSettingsDialogProps> = ({
                 ['floatingSubtitleWidget', 'Cửa sổ phụ đề nổi (PiP)', 'Cho phép mở phụ đề nổi để xem khi dùng Google Meet hoặc Zoom'],
                 ['audioBooth', 'Audio Booth', 'Đọc bản dịch bằng giọng máy'],
               ] as Array<[keyof SidecarPreferences, string, string]>).map(([key, label, description]) => (
-                <label key={key} className="flex cursor-pointer items-center justify-between rounded-xl border border-[#2c2f37] bg-[#1f2127] px-3.5 py-3 hover:bg-[#252831] transition">
-                  <span>
+                <label key={key} className="flex min-h-[52px] cursor-pointer items-center justify-between rounded-xl border border-[#2c2f37] bg-[#1f2127] px-3.5 py-3 hover:bg-[#252831] transition">
+                  <span className="pr-4">
                     <span className="block text-sm font-semibold text-zinc-200">{label}</span>
                     <span className="block text-xs text-zinc-400">{description}</span>
                   </span>
@@ -901,8 +922,20 @@ export const MeetingSettingsDialog: React.FC<MeetingSettingsDialogProps> = ({
                       ...sidecarPreferences,
                       [key]: event.target.checked,
                     })}
-                    className="h-4 w-4 rounded border-[#383b44] bg-[#2a2d35] text-sky-600 focus:ring-sky-500"
+                    className="sr-only"
                   />
+                  <div
+                    aria-hidden="true"
+                    className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors ${
+                      sidecarPreferences[key] ? 'bg-sky-700' : 'bg-[#2a2d35]'
+                    }`}
+                  >
+                    <span
+                      className={`inline-block h-4 w-4 transform rounded-full bg-white shadow-md transition-transform ${
+                        sidecarPreferences[key] ? 'translate-x-6' : 'translate-x-1'
+                      }`}
+                    />
+                  </div>
                 </label>
               ))}
             </div>
@@ -911,9 +944,9 @@ export const MeetingSettingsDialog: React.FC<MeetingSettingsDialogProps> = ({
           {activeTab === 'skills' && (
             <div className="space-y-4">
               <div className="rounded-xl border border-[#2c2f37] bg-[#1f2127] p-3.5">
-                <div className="flex items-center justify-between mb-1">
-                  <h3 className="text-sm font-semibold text-zinc-200">Kỹ năng Tóm tắt Doanh nghiệp</h3>
-                  <div className="flex items-center gap-1.5">
+                <div className="flex items-center justify-between gap-2 mb-1.5">
+                  <h3 className="text-sm font-semibold text-zinc-200 min-w-0 truncate">Kỹ năng Tóm tắt Doanh nghiệp</h3>
+                  <div className="flex items-center gap-1.5 shrink-0">
                     <button
                       type="button"
                       onClick={handleExportJson}
@@ -933,9 +966,9 @@ export const MeetingSettingsDialog: React.FC<MeetingSettingsDialogProps> = ({
                     <button
                       type="button"
                       onClick={() => setIsAddingSkill((v) => !v)}
-                      className="inline-flex items-center gap-1 rounded-lg bg-sky-700 px-3 py-1.5 text-xs font-semibold text-white hover:bg-sky-800 transition"
+                      className="inline-flex items-center gap-1 rounded-lg bg-sky-700 px-2.5 sm:px-3 py-1.5 text-xs font-semibold text-white hover:bg-sky-800 transition whitespace-nowrap shrink-0"
                     >
-                      <Plus className="h-3.5 w-3.5" /> Thêm kỹ năng
+                      <Plus className="h-3.5 w-3.5 shrink-0" /> Thêm kỹ năng
                     </button>
                   </div>
                 </div>

@@ -348,48 +348,52 @@ export const PostMeetingModal: React.FC<PostMeetingModalProps> = ({
               {status.message}
             </p>
           )}
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 sm:gap-3">
             {/* Left export tools */}
-            <div className="flex items-center gap-2 flex-wrap">
+            <div className="grid grid-cols-[1fr_1fr_auto] sm:flex items-center gap-1.5 sm:gap-2">
               <button
                 type="button"
                 onClick={handleCopy}
-                className="inline-flex items-center gap-1.5 rounded-full border border-[#5f6368] px-3.5 py-1.5 text-xs sm:text-sm font-medium text-zinc-200 hover:bg-[#303134] hover:text-white transition-colors"
+                className="inline-flex items-center justify-center gap-1.5 rounded-full border border-[#5f6368] px-2.5 sm:px-3.5 py-2 sm:py-1.5 text-xs sm:text-sm font-medium text-zinc-200 hover:bg-[#303134] hover:text-white transition-colors whitespace-nowrap"
               >
-                <Copy className="h-3.5 w-3.5 text-[#8ab4f8]" /> Sao chép tóm tắt
+                <Copy className="h-3.5 w-3.5 text-[#8ab4f8] shrink-0" />
+                <span className="sm:hidden">Sao chép</span>
+                <span className="hidden sm:inline">Sao chép tóm tắt</span>
               </button>
               <button
                 type="button"
                 onClick={() => void handlePdfExport()}
-                className="inline-flex items-center gap-1.5 rounded-full border border-[#5f6368] px-3.5 py-1.5 text-xs sm:text-sm font-medium text-zinc-200 hover:bg-[#303134] hover:text-white transition-colors"
+                className="inline-flex items-center justify-center gap-1.5 rounded-full border border-[#5f6368] px-2.5 sm:px-3.5 py-2 sm:py-1.5 text-xs sm:text-sm font-medium text-zinc-200 hover:bg-[#303134] hover:text-white transition-colors whitespace-nowrap"
               >
-                <FileDown className="h-3.5 w-3.5 text-[#8ab4f8]" /> Xuất biên bản PDF
+                <FileDown className="h-3.5 w-3.5 text-[#8ab4f8] shrink-0" />
+                <span className="sm:hidden">Xuất PDF</span>
+                <span className="hidden sm:inline">Xuất biên bản PDF</span>
               </button>
               <button
                 type="button"
                 onClick={handleDownload}
-                className="inline-flex items-center gap-1.5 rounded-full border border-[#3c4043] px-3 py-1.5 text-xs font-medium text-[#9aa0a6] hover:bg-[#303134] hover:text-zinc-200 transition-colors"
+                className="inline-flex items-center justify-center gap-1 rounded-full border border-[#3c4043] px-2.5 sm:px-3 py-2 sm:py-1.5 text-xs font-medium text-[#9aa0a6] hover:bg-[#303134] hover:text-zinc-200 transition-colors whitespace-nowrap"
                 title="Tải biên bản định dạng Markdown"
               >
-                <Download className="h-3.5 w-3.5" /> .MD
+                <Download className="h-3.5 w-3.5 shrink-0" /> .MD
               </button>
             </div>
 
             {/* Right actions */}
-            <div className="flex items-center justify-end gap-2 shrink-0">
+            <div className="grid grid-cols-2 sm:flex items-center justify-end gap-2 shrink-0">
               <button
                 type="button"
                 onClick={onClose}
-                className="rounded-full px-4 py-2 text-xs sm:text-sm font-medium text-[#9aa0a6] hover:bg-[#303134] hover:text-white transition-colors"
+                className="rounded-full border border-[#3c4043] sm:border-transparent px-4 py-2 text-xs sm:text-sm font-medium text-[#9aa0a6] hover:bg-[#303134] hover:text-white transition-colors text-center"
               >
                 Đóng
               </button>
               <button
                 type="button"
                 onClick={onLeaveRoom}
-                className="inline-flex items-center gap-1.5 rounded-full bg-[#b91c1c] px-4 py-2 text-xs sm:text-sm font-medium text-white hover:bg-[#991b1b] shadow-sm transition-colors"
+                className="inline-flex items-center justify-center gap-1.5 rounded-full bg-[#b91c1c] px-4 py-2 text-xs sm:text-sm font-medium text-white hover:bg-[#991b1b] shadow-sm transition-colors whitespace-nowrap"
               >
-                <LogOut className="h-3.5 w-3.5" /> Rời cuộc họp
+                <LogOut className="h-3.5 w-3.5 shrink-0" /> Rời cuộc họp
               </button>
             </div>
           </div>

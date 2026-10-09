@@ -1,6 +1,6 @@
 import React from 'react';
 import { ConnectionState } from 'livekit-client';
-import { ShieldCheck } from 'lucide-react';
+import { ShieldCheck, Clock, Zap } from 'lucide-react';
 import { NetworkQualityIndicator } from './NetworkQualityIndicator';
 import { LayaMeetLogo } from '../common/LayaMeetLogo';
 import { ThemeToggle } from '../common/ThemeToggle';
@@ -21,6 +21,7 @@ interface MeetingTopBarProps {
   onToggleInfo?: () => void;
   numParticipants?: number;
   userDisplayName?: string;
+  isOffline?: boolean;
 }
 
 const FREE_MEETING_WARNING_SECONDS = 5 * 60;
@@ -47,8 +48,12 @@ export const MeetingTopBar: React.FC<MeetingTopBarProps> = ({
   onToggleInfo: _onToggleInfo,
   numParticipants = 1,
   userDisplayName,
+  isOffline = false,
 }) => {
   const getStatusInfo = () => {
+    if (isOffline) {
+      return { text: 'Mất mạng', dot: 'bg-amber-500 animate-pulse' };
+    }
     switch (connectionState) {
       case ConnectionState.Connected:
         return { text: 'Đã kết nối', dot: 'bg-green-500' };
@@ -69,7 +74,7 @@ export const MeetingTopBar: React.FC<MeetingTopBarProps> = ({
     && timeRemainingSeconds <= FREE_MEETING_WARNING_SECONDS;
 
   return (
-    <header className="h-11 border-b border-[#2e2e30] dark:border-[#2e2e30] border-zinc-200 bg-[#0f0f10] dark:bg-[#0f0f10] bg-white px-3 sm:px-4 flex items-center justify-between z-20 shrink-0 select-none transition-colors">
+    <header className="h-11 border-b border-zinc-200 dark:border-[#2e2e30] bg-white dark:bg-[#0f0f10] px-3 sm:px-4 flex items-center justify-between z-20 shrink-0 select-none transition-colors">
       {/* Brand identity */}
       <div className="flex min-w-0 items-center gap-2.5" title={branding.slogan || 'LayaMeet'}>
         {branding.logoUrl ? (
@@ -104,8 +109,9 @@ export const MeetingTopBar: React.FC<MeetingTopBarProps> = ({
             aria-label="Gói LayaMeet Pro không giới hạn thời lượng"
             className="flex items-center gap-1 rounded-md border border-amber-500/30 bg-amber-500/10 px-2 sm:px-2.5 py-1 text-[11px] sm:text-xs font-semibold text-amber-700 dark:text-amber-300"
           >
+            <Zap className="h-3.5 w-3.5 text-amber-400 shrink-0" aria-hidden="true" />
             <span className="hidden sm:inline">Pro Unlimited ⚡</span>
-            <span className="sm:hidden">Pro ⚡</span>
+            <span className="sm:hidden">Pro</span>
           </div>
         ) : hasFreeCountdown ? (
           <button
@@ -114,14 +120,14 @@ export const MeetingTopBar: React.FC<MeetingTopBarProps> = ({
             disabled={!onOpenUpgradeModal}
             aria-label={`Gói miễn phí, còn ${formatRemainingTime(timeRemainingSeconds)}. Mở tùy chọn nâng cấp.`}
             title="Nâng cấp để họp không giới hạn"
-            className={`flex items-center rounded-md border px-2 sm:px-2.5 py-1 text-[11px] sm:text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-zinc-950 disabled:cursor-default ${
+            className={`flex items-center gap-1 rounded-md border px-2 sm:px-2.5 py-1 text-[11px] sm:text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-zinc-950 disabled:cursor-default ${
               isTimeWarning
                 ? 'border-amber-500/40 bg-amber-500/10 text-amber-300 hover:bg-amber-500/20 focus:ring-amber-400'
                 : 'border-zinc-700 bg-zinc-800/80 text-zinc-300 hover:border-zinc-500 hover:text-white focus:ring-zinc-400'
             }`}
           >
             <span className="hidden sm:inline">Free ·&nbsp;</span>
-            <span aria-hidden="true">⏳&nbsp;</span>
+            <Clock className="h-3.5 w-3.5 shrink-0 opacity-80" aria-hidden="true" />
             <span className="font-mono tabular-nums">
               {formatRemainingTime(timeRemainingSeconds)}
             </span>
@@ -159,7 +165,7 @@ export const MeetingTopBar: React.FC<MeetingTopBarProps> = ({
         </div>
 
         {/* Connection status */}
-        <div role="status" className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#1a1a1b] dark:bg-[#1a1a1b] bg-zinc-100 border border-[#2e2e30] dark:border-[#2e2e30] border-zinc-300 text-xs text-zinc-400 dark:text-zinc-400 text-zinc-600">
+        <div role="status" className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-zinc-100 dark:bg-[#1a1a1b] border border-zinc-300 dark:border-[#2e2e30] text-xs text-zinc-600 dark:text-zinc-400">
           <span className={`w-1.5 h-1.5 rounded-full ${status.dot}`} />
           <span>{status.text}</span>
         </div>

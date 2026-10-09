@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef } from 'react';
-import { Volume2 } from 'lucide-react';
+import { Volume2, BookMarked } from 'lucide-react';
 import { SubtitleMessage } from '../../types/subtitle';
 import { getLanguageOption } from '../../types/meeting';
 import { formatTimestamp } from '../../utils';
@@ -11,9 +11,10 @@ export const LIVE_SUBTITLE_LIMIT = 12;
 interface LiveSubtitleViewProps {
   history: SubtitleMessage[];
   showOriginal: boolean;
+  onTeachGlossary?: (original: string, translated: string) => void;
 }
 
-export const LiveSubtitleView: React.FC<LiveSubtitleViewProps> = ({ history, showOriginal }) => {
+export const LiveSubtitleView: React.FC<LiveSubtitleViewProps> = ({ history, showOriginal, onTeachGlossary }) => {
   const bottomRef = useRef<HTMLDivElement>(null);
   const visibleSubtitles = useMemo(
     () => history.filter((item) => item.isFinal).slice(-LIVE_SUBTITLE_LIMIT),
@@ -55,12 +56,23 @@ export const LiveSubtitleView: React.FC<LiveSubtitleViewProps> = ({ history, sho
                   <button
                     type="button"
                     onClick={() => speakText(item.translatedText || item.originalText, item.targetLanguage)}
-                    className="rounded p-1 text-zinc-500 transition-colors hover:bg-slate-800 hover:text-sky-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500"
+                    className="inline-flex items-center justify-center min-h-[32px] min-w-[32px] rounded-lg p-1.5 text-zinc-400 transition-colors hover:bg-slate-800 hover:text-sky-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 cursor-pointer"
                     aria-label={`Đọc phụ đề của ${item.participantName || 'người phát biểu'}`}
                     title="Nghe phụ đề"
                   >
                     <Volume2 className="h-3.5 w-3.5" aria-hidden="true" />
                   </button>
+                  {onTeachGlossary && (
+                    <button
+                      type="button"
+                      onClick={() => onTeachGlossary(item.originalText, item.translatedText)}
+                      className="inline-flex items-center justify-center min-h-[32px] min-w-[32px] rounded-lg p-1.5 text-zinc-400 transition-colors hover:bg-amber-950/40 hover:text-amber-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 cursor-pointer"
+                      aria-label={`Dạy AI thuật ngữ từ câu của ${item.participantName || 'người phát biểu'}`}
+                      title="Dạy AI thuật ngữ này"
+                    >
+                      <BookMarked className="h-3.5 w-3.5" aria-hidden="true" />
+                    </button>
+                  )}
                 </div>
               </div>
               <p className="text-[15px] leading-6 text-zinc-100">{item.translatedText}</p>

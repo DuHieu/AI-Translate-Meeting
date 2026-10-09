@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { meetingApi } from '../api/meetingApi';
 import {
   Plus,
@@ -8,14 +8,12 @@ import {
   Globe,
   Mic,
   FileText,
-  Building2,
   X,
   Settings,
   HelpCircle,
   Sparkles,
   Video,
   Keyboard,
-  SunMoon,
   Clock,
   Layers,
   Zap,
@@ -27,7 +25,6 @@ import {
   Menu,
   LogOut,
 } from 'lucide-react';
-import { useUserPlan } from '../hooks/useUserPlan';
 import { admissionStorage } from '../utils/admissionStorage';
 import { LayaMeetLogo } from '../components/common/LayaMeetLogo';
 import { ThemeToggle } from '../components/common/ThemeToggle';
@@ -36,7 +33,6 @@ import { PricingSection } from '../components/home/PricingSection';
 import { FAQSection } from '../components/home/FAQSection';
 import { ContactSection } from '../components/home/ContactSection';
 import { LegalModal } from '../components/common/LegalModal';
-import { EnterpriseSsoModal } from '../components/home/EnterpriseSsoModal';
 import { useLanguage } from '../context/language-context-def';
 import { useAuth } from '../context/auth-context-def';
 import { AppLanguage } from '../i18n';
@@ -47,12 +43,6 @@ import { ScheduleMeetingModal } from '../components/home/ScheduleMeetingModal';
 import { CalendarScheduleModal } from '../components/home/CalendarScheduleModal';
 import { UpcomingMeetingsStrip } from '../components/home/UpcomingMeetingsStrip';
 import { MeetingHistoryModal } from '../components/MeetingHistoryModal';
-
-const UI_LANGUAGE_CARDS: { code: AppLanguage; label: string; native: string; flag: string; pairHint: string }[] = [
-  { code: 'vi', label: 'Tiếng Việt', native: 'Tiếng Việt', flag: '🇻🇳', pairHint: '🇻🇳 VI ↔ 🇯🇵 JA / 🇺🇸 EN' },
-  { code: 'ja', label: 'Tiếng Nhật', native: '日本語', flag: '🇯🇵', pairHint: '🇯🇵 JA ↔ 🇻🇳 VI / 🇺🇸 EN' },
-  { code: 'en', label: 'Tiếng Anh', native: 'English', flag: '🇺🇸', pairHint: '🇺🇸 EN ↔ 🇻🇳 VI / 🇯🇵 JA' },
-];
 
 const HOME_UI = {
   vi: {
@@ -239,17 +229,15 @@ const DRAWER_MAIN_ITEMS: NavDrawerItem[] = [
 ];
 
 export const HomePage: React.FC<HomePageProps> = ({ forcedLanguage }) => {
-  const SHOW_ENTERPRISE_SSO = false;
   const navigate = useNavigate();
+  const location = useLocation();
   const { language, setLanguage, t } = useLanguage();
   const { user, loading: authLoading, signOut } = useAuth();
-  const userPlan = useUserPlan();
   const ui = HOME_UI[language] || HOME_UI.vi;
 
   const [meetingCodeInput, setMeetingCodeInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [isEnterpriseSsoOpen, setIsEnterpriseSsoOpen] = useState(false);
   const [isScheduleMeetingOpen, setIsScheduleMeetingOpen] = useState(false);
   const [isCalendarModalOpen, setIsCalendarModalOpen] = useState(false);
   const [isMeetingHistoryOpen, setIsMeetingHistoryOpen] = useState(false);
@@ -258,6 +246,20 @@ export const HomePage: React.FC<HomePageProps> = ({ forcedLanguage }) => {
 
   // Active section (inline rendering in main stage)
   const [activeSection, setActiveSection] = useState<ActiveSection>('home');
+
+  useEffect(() => {
+    const hashSection = location.hash.replace(/^#/, '');
+    if (
+      hashSection === 'home' ||
+      hashSection === 'features' ||
+      hashSection === 'pricing' ||
+      hashSection === 'faq' ||
+      hashSection === 'contact' ||
+      hashSection === 'developers'
+    ) {
+      setActiveSection(hashSection);
+    }
+  }, [location.hash]);
 
   useEffect(() => {
     if (authLoading || !user?.email) return;
@@ -291,7 +293,6 @@ export const HomePage: React.FC<HomePageProps> = ({ forcedLanguage }) => {
   useEffect(() => {
     const isAnyOverlayOpen =
       isNavDrawerOpen ||
-      isEnterpriseSsoOpen ||
       isScheduleMeetingOpen ||
       isCalendarModalOpen ||
       isMeetingHistoryOpen ||
@@ -306,7 +307,6 @@ export const HomePage: React.FC<HomePageProps> = ({ forcedLanguage }) => {
     }
   }, [
     isNavDrawerOpen,
-    isEnterpriseSsoOpen,
     isScheduleMeetingOpen,
     isCalendarModalOpen,
     isMeetingHistoryOpen,
@@ -795,17 +795,6 @@ export const HomePage: React.FC<HomePageProps> = ({ forcedLanguage }) => {
                     </span>
                   </button>
 
-                  {SHOW_ENTERPRISE_SSO && (
-                    <button
-                      type="button"
-                      onClick={() => setIsEnterpriseSsoOpen(true)}
-                      className="whitespace-nowrap px-5 py-3 bg-white hover:bg-zinc-50 dark:bg-[#1a1a1b] dark:hover:bg-[#222224] text-zinc-800 dark:text-zinc-100 font-semibold rounded-xl transition-colors flex items-center justify-center gap-2 text-base cursor-pointer border border-zinc-300 dark:border-[#3a3a3d] shadow-xs"
-                    >
-                      <Building2 className="w-5 h-5 shrink-0 text-blue-600 dark:text-blue-400" />
-                      <span>{t.hero.btnEnterpriseSso}</span>
-                    </button>
-                  )}
-
                   {/* Unified Room Code Input */}
                   <form onSubmit={handleJoinWithCode} className="relative flex items-center">
                     <div className="relative flex items-center rounded-xl bg-white dark:bg-[#18181c] border border-zinc-300 dark:border-zinc-800 focus-within:border-blue-500 transition-all">
@@ -1032,9 +1021,9 @@ export const HomePage: React.FC<HomePageProps> = ({ forcedLanguage }) => {
             role="dialog"
             aria-modal="true"
             aria-label={ui.navDrawerTitle}
-            className="relative z-10 w-full max-w-[320px] h-full bg-white dark:bg-[#141519] border-r border-zinc-200 dark:border-[#272832] p-4 sm:p-5 flex flex-col justify-between shadow-2xl animate-in slide-in-from-left duration-200 overflow-y-auto"
+            className="relative z-10 w-full max-w-[280px] h-full bg-white dark:bg-[#141519] border-r border-zinc-200 dark:border-[#272832] p-4 flex flex-col justify-between shadow-2xl animate-in slide-in-from-left duration-200 overflow-y-auto"
           >
-            <div className="space-y-4">
+            <div className="space-y-3">
               {/* Brand Header with Close (X) button */}
               <div className="flex items-center justify-between pb-3 border-b border-zinc-200/80 dark:border-[#272832]">
                 <LayaMeetLogo size="md" />
@@ -1049,237 +1038,92 @@ export const HomePage: React.FC<HomePageProps> = ({ forcedLanguage }) => {
                 </button>
               </div>
 
-              {/* User Account / Profile Card */}
-              {user?.email ? (
-                <div className="p-3 rounded-xl bg-zinc-50 dark:bg-[#181920] border border-zinc-200/80 dark:border-zinc-800 space-y-2">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2.5 min-w-0">
-                      {user.avatarUrl ? (
-                        <img
-                          src={user.avatarUrl}
-                          alt={user.fullName || user.email}
-                          className="w-9 h-9 rounded-full ring-1 ring-zinc-300 dark:ring-zinc-700 shrink-0 object-cover"
-                        />
-                      ) : (
-                        <div className="w-9 h-9 rounded-full bg-blue-600 text-white font-bold text-xs flex items-center justify-center shrink-0">
-                          {(user.fullName || user.email).slice(0, 2).toUpperCase()}
-                        </div>
-                      )}
-                      <div className="min-w-0">
-                        <p className="text-xs font-semibold text-zinc-900 dark:text-zinc-100 truncate">
-                          {user.fullName || user.email.split('@')[0]}
-                        </p>
-                        <p className="text-[11px] text-zinc-500 dark:text-zinc-400 truncate">
-                          {user.email}
-                        </p>
-                      </div>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={async () => {
-                        setIsNavDrawerOpen(false);
-                        await signOut();
-                      }}
-                      title={language === 'ja' ? 'ログアウト' : language === 'en' ? 'Sign out' : 'Đăng xuất'}
-                      aria-label="Sign out"
-                      className="p-1.5 rounded-lg text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-200/50 dark:hover:bg-zinc-700/50 transition-colors cursor-pointer shrink-0"
-                    >
-                      <LogOut className="w-4 h-4" />
-                    </button>
-                  </div>
+              {/* Essential Navigation Items Only */}
+              <nav className="space-y-1">
+                <button
+                  type="button"
+                  onClick={() => handleSelectDrawerItem('home')}
+                  data-testid="drawer-home"
+                  className={`w-full px-3 py-2.5 rounded-xl flex items-center gap-3 text-sm font-medium transition-colors cursor-pointer text-left ${
+                    activeSection === 'home'
+                      ? 'bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 font-semibold'
+                      : 'text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-white/[0.05]'
+                  }`}
+                >
+                  <Home className="w-4 h-4 text-blue-500 shrink-0" />
+                  <span>{ui.railHome}</span>
+                </button>
 
-                  {/* Plan Badge in User Card */}
-                  <div className="flex items-center justify-between pt-1.5 border-t border-zinc-200/60 dark:border-zinc-800/80 text-[11px]">
-                    <span className="font-semibold px-2 py-0.5 rounded bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20 font-mono">
-                      {userPlan.badge}
-                    </span>
-                    <span className="text-zinc-500 dark:text-zinc-400">
-                      {userPlan.roomsSummary}
-                    </span>
-                  </div>
-                </div>
-              ) : (
-                <div className="p-3 rounded-xl bg-zinc-50 dark:bg-[#181920] border border-zinc-200/80 dark:border-zinc-800">
-                  <GoogleAuthControl variant="card" />
-                </div>
-              )}
+                <button
+                  type="button"
+                  onClick={() => handleSelectDrawerItem('calendar')}
+                  data-testid="drawer-calendar"
+                  className="w-full px-3 py-2.5 rounded-xl flex items-center gap-3 text-sm font-medium text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-white/[0.05] transition-colors cursor-pointer text-left"
+                >
+                  <Calendar className="w-4 h-4 text-zinc-500 dark:text-zinc-400 shrink-0" />
+                  <span>{ui.calendarNav}</span>
+                </button>
 
-              {/* Core Navigation Items (High Priority) */}
-              <div className="space-y-1">
-                <nav className="space-y-0.5">
-                  <button
-                    type="button"
-                    onClick={() => handleSelectDrawerItem('home')}
-                    data-testid="drawer-home"
-                    className={`w-full px-3 py-2.5 rounded-xl flex items-center gap-3 text-sm font-medium transition-colors cursor-pointer text-left ${
-                      activeSection === 'home'
-                        ? 'bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 font-semibold'
-                        : 'text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-white/[0.05]'
-                    }`}
-                  >
-                    <Home className="w-4 h-4 text-blue-500 shrink-0" />
-                    <span>{ui.railHome}</span>
-                  </button>
+                <button
+                  type="button"
+                  onClick={() => handleSelectDrawerItem('history')}
+                  data-testid="drawer-history"
+                  className="w-full px-3 py-2.5 rounded-xl flex items-center gap-3 text-sm font-medium text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-white/[0.05] transition-colors cursor-pointer text-left"
+                >
+                  <Clock className="w-4 h-4 text-zinc-500 dark:text-zinc-400 shrink-0" />
+                  <span>{ui.historyNav}</span>
+                </button>
 
-                  <button
-                    type="button"
-                    onClick={() => handleSelectDrawerItem('calendar')}
-                    data-testid="drawer-calendar"
-                    className="w-full px-3 py-2.5 rounded-xl flex items-center gap-3 text-sm font-medium text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-white/[0.05] transition-colors cursor-pointer text-left"
-                  >
-                    <Calendar className="w-4 h-4 text-zinc-500 dark:text-zinc-400 shrink-0" />
-                    <span>{ui.calendarNav}</span>
-                  </button>
+                <button
+                  type="button"
+                  onClick={() => handleSelectDrawerItem('pricing')}
+                  data-testid="drawer-pricing"
+                  className={`w-full px-3 py-2.5 rounded-xl flex items-center gap-3 text-sm font-medium transition-colors cursor-pointer text-left ${
+                    activeSection === 'pricing'
+                      ? 'bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 font-semibold'
+                      : 'text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-white/[0.05]'
+                  }`}
+                >
+                  <CreditCard className="w-4 h-4 text-zinc-500 dark:text-zinc-400 shrink-0" />
+                  <span>{ui.railPricing}</span>
+                </button>
 
-                  <button
-                    type="button"
-                    onClick={() => handleSelectDrawerItem('history')}
-                    data-testid="drawer-history"
-                    className="w-full px-3 py-2.5 rounded-xl flex items-center gap-3 text-sm font-medium text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-white/[0.05] transition-colors cursor-pointer text-left"
-                  >
-                    <Clock className="w-4 h-4 text-zinc-500 dark:text-zinc-400 shrink-0" />
-                    <span>{ui.historyNav}</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => handleSelectDrawerItem('plan')}
-                    data-testid="drawer-plan"
-                    className="w-full px-3 py-2.5 rounded-xl flex items-center justify-between text-sm font-medium text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-white/[0.05] transition-colors cursor-pointer text-left"
-                  >
-                    <div className="flex items-center gap-3">
-                      <CreditCard className="w-4 h-4 text-zinc-500 dark:text-zinc-400 shrink-0" />
-                      <span>{ui.planNav}</span>
-                    </div>
-                    <span className="text-[10px] font-bold font-mono px-2 py-0.5 rounded bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20">
-                      {userPlan.badge}
-                    </span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => handleSelectDrawerItem('settings')}
-                    data-testid="drawer-settings"
-                    className="w-full px-3 py-2.5 rounded-xl flex items-center gap-3 text-sm font-medium text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-white/[0.05] transition-colors cursor-pointer text-left"
-                  >
-                    <Settings className="w-4 h-4 text-zinc-500 dark:text-zinc-400 shrink-0" />
-                    <span>{ui.settingsNav}</span>
-                  </button>
-                </nav>
-              </div>
-
-              {/* Preferences: Fast Language Toggle + Theme Switch */}
-              <div className="pt-2.5 pb-1 border-t border-zinc-200/80 dark:border-[#272832] space-y-2">
-                <div className="text-[11px] font-semibold text-zinc-500 dark:text-zinc-400 px-1">
-                  {ui.langDisplayHeader}
-                </div>
-                {/* 3-pill segmented language switcher */}
-                <div className="grid grid-cols-3 gap-1 p-1 rounded-xl bg-zinc-100 dark:bg-[#181920] border border-zinc-200/60 dark:border-zinc-800">
-                  {UI_LANGUAGE_CARDS.map((item) => {
-                    const isSelected = language === item.code;
-                    return (
-                      <button
-                        key={item.code}
-                        type="button"
-                        onClick={() => setLanguage(item.code)}
-                        className={`h-8 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
-                          isSelected
-                            ? 'bg-white dark:bg-zinc-800 text-blue-600 dark:text-blue-400 shadow-xs'
-                            : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200'
-                        }`}
-                      >
-                        <span>{item.flag}</span>
-                        <span>{item.code.toUpperCase()}</span>
-                      </button>
-                    );
-                  })}
-                </div>
-
-                {/* Theme Toggle row */}
-                <div className="flex items-center justify-between px-1 py-1">
-                  <span className="text-xs font-medium text-zinc-600 dark:text-zinc-400 flex items-center gap-2">
-                    <SunMoon className="w-4 h-4 text-zinc-500" />
-                    <span>{ui.themeToggleLabel}</span>
-                  </span>
-                  <ThemeToggle />
-                </div>
-              </div>
-
-              {/* Secondary links (clean & compact, preserving testids) */}
-              <div className="pt-2 border-t border-zinc-200/80 dark:border-[#272832]">
-                <div className="grid grid-cols-2 gap-1 text-xs">
-                  <button
-                    type="button"
-                    onClick={() => handleSelectDrawerItem('status')}
-                    data-testid="drawer-status"
-                    className="p-2 rounded-lg text-left text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-white/[0.05] transition-colors cursor-pointer"
-                  >
-                    {ui.systemStatusLabel}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleSelectDrawerItem('pricing')}
-                    data-testid="drawer-pricing"
-                    className="p-2 rounded-lg text-left text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-white/[0.05] transition-colors cursor-pointer"
-                  >
-                    {ui.railPricing}
-                  </button>
-                  <Link
-                    to={language === 'en' ? '/en/guide' : language === 'ja' ? '/ja/guide' : '/cam-nang'}
-                    onClick={() => setIsNavDrawerOpen(false)}
-                    data-testid="drawer-guides"
-                    className="p-2 rounded-lg text-left text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-white/[0.05] transition-colors"
-                  >
-                    {ui.blogNav}
-                  </Link>
-                  <button
-                    type="button"
-                    onClick={() => handleSelectDrawerItem('faq')}
-                    data-testid="drawer-faq"
-                    className="p-2 rounded-lg text-left text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-white/[0.05] transition-colors cursor-pointer"
-                  >
-                    {ui.railFaq}
-                  </button>
-                </div>
-
-                {/* Audit / test accessibility hooks */}
-                <div className="hidden" aria-hidden="true">
-                  <button type="button" onClick={() => handleSelectDrawerItem('new-meeting')} data-testid="drawer-new-meeting" />
-                  <button type="button" onClick={() => handleSelectDrawerItem('join-meeting')} data-testid="drawer-join-meeting" />
-                  <button type="button" onClick={() => handleSelectDrawerItem('features')} data-testid="drawer-features" />
-                  <button type="button" onClick={() => handleSelectDrawerItem('contact')} data-testid="drawer-contact" />
-                  <button type="button" onClick={() => handleSelectDrawerItem('developers')} data-testid="drawer-developers" />
-                  <button type="button" onClick={() => handleSelectDrawerItem('tools')} data-testid="drawer-tools" />
-                </div>
-              </div>
+                <button
+                  type="button"
+                  onClick={() => handleSelectDrawerItem('settings')}
+                  data-testid="drawer-settings"
+                  className="w-full px-3 py-2.5 rounded-xl flex items-center gap-3 text-sm font-medium text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-white/[0.05] transition-colors cursor-pointer text-left"
+                >
+                  <Settings className="w-4 h-4 text-zinc-500 dark:text-zinc-400 shrink-0" />
+                  <span>{ui.settingsNav}</span>
+                </button>
+              </nav>
             </div>
 
-            {/* Bottom Legal Info */}
-            <div className="pt-3 border-t border-zinc-200/80 dark:border-[#272832]">
-              <div className="flex items-center justify-between px-1 text-[11px] text-zinc-400 dark:text-zinc-500">
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => handleSelectDrawerItem('privacy')}
-                    className="hover:underline cursor-pointer"
-                  >
-                    {ui.privacyLink}
-                  </button>
-                  <span>•</span>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setIsNavDrawerOpen(false);
-                      setLegalModalType('terms');
-                    }}
-                    className="hover:underline cursor-pointer"
-                  >
-                    {ui.termsLink}
-                  </button>
+            {user?.email && (
+              <div className="pt-3 border-t border-zinc-200/80 dark:border-[#272832] flex items-center justify-between gap-2">
+                <div className="min-w-0">
+                  <p className="text-xs font-semibold text-zinc-900 dark:text-zinc-100 truncate">
+                    {user.fullName || user.email.split('@')[0]}
+                  </p>
+                  <p className="text-[11px] text-zinc-500 dark:text-zinc-400 truncate">
+                    {user.email}
+                  </p>
                 </div>
-                <span>© 2026</span>
+                <button
+                  type="button"
+                  onClick={async () => {
+                    setIsNavDrawerOpen(false);
+                    await signOut();
+                  }}
+                  title={language === 'ja' ? 'ログアウト' : language === 'en' ? 'Sign out' : 'Đăng xuất'}
+                  aria-label="Sign out"
+                  className="p-2 rounded-lg text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-200/50 dark:hover:bg-zinc-700/50 transition-colors cursor-pointer shrink-0"
+                >
+                  <LogOut className="w-4 h-4" />
+                </button>
               </div>
-            </div>
+            )}
           </aside>
         </div>
       )}
@@ -1302,13 +1146,6 @@ export const HomePage: React.FC<HomePageProps> = ({ forcedLanguage }) => {
         onClose={() => setIsScheduleMeetingOpen(false)}
         onCreated={() => setScheduleRefreshKey((value) => value + 1)}
       />
-
-      {SHOW_ENTERPRISE_SSO && (
-        <EnterpriseSsoModal
-          isOpen={isEnterpriseSsoOpen}
-          onClose={() => setIsEnterpriseSsoOpen(false)}
-        />
-      )}
 
       {/* Legal & Terms Modal */}
       <LegalModal

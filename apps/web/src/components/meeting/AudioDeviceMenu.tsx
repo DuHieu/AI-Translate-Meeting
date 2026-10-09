@@ -2,7 +2,7 @@ import { AdaptiveDialog } from '../common/AdaptiveDialog';
 import React, { useState } from 'react';
 import { useMediaDeviceSelect, useTrackVolume } from '@livekit/components-react';
 import { LocalAudioTrack } from 'livekit-client';
-import { Mic, Volume2, Check, BellRing } from 'lucide-react';
+import { Mic, Volume2, Check, BellRing, X } from 'lucide-react';
 
 interface AudioDeviceMenuProps {
   microphoneTrack?: LocalAudioTrack | null;
@@ -42,6 +42,7 @@ export const AudioDeviceMenu: React.FC<AudioDeviceMenuProps> = ({ microphoneTrac
       });
       setTimeout(() => {
         setIsPlayingTestSound(false);
+        void audioCtx.close().catch(() => {});
       }, 700);
     } catch (e) {
       console.warn('Audio test failed', e);
@@ -52,6 +53,17 @@ export const AudioDeviceMenu: React.FC<AudioDeviceMenuProps> = ({ microphoneTrac
   return (
     <AdaptiveDialog label="Microphone & loa" onClose={onClose} className="meeting-device-dialog">
       <div className="p-4 space-y-4">
+        <header className="flex items-center justify-between border-b border-slate-800 pb-2.5">
+          <h2 className="text-sm font-semibold text-slate-100">Cài đặt Microphone &amp; Loa</h2>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Đóng cài đặt âm thanh"
+            className="w-8 h-8 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-white flex items-center justify-center transition cursor-pointer"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </header>
         <div>
           <div className="flex items-center justify-between text-xs font-semibold text-slate-400 mb-2 uppercase tracking-wider">
             <span className="flex items-center gap-1.5">
@@ -79,7 +91,6 @@ export const AudioDeviceMenu: React.FC<AudioDeviceMenuProps> = ({ microphoneTrac
                     key={d.deviceId}
                     type="button"
                     onClick={async () => {
-                      console.log('[Telemetry] Selected Microphone:', { deviceId: d.deviceId, label: d.label });
                       await setActiveMic(d.deviceId);
                     }}
                     className={`w-full text-left px-3 py-2 rounded-xl text-xs flex items-center justify-between transition cursor-pointer ${
