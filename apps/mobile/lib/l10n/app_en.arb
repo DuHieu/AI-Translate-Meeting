@@ -1,0 +1,39 @@
+{
+  "@@locale": "en",
+  "appName": "ViMeet Mobile",
+  "@appName": {
+    "description": "Application name"
+  },
+  "joinMeeting": "Join Meeting",
+  "@joinMeeting": {
+    "description": "Button to join a meeting"
+  },
+  "meetingCode": "Meeting Code",
+  "@meetingCode": {
+    "description": "Label for meeting code input"
+  },
+  "enterMeetingCode": "Enter 6-character code",
+  "@enterMeetingCode": {
+    "description": "Hint text for meeting code input"
+  },
+  "displayName": "Display Name",
+  "@displayName": {
+    "description": "Label for display name input"
+  },
+  "spokenLanguage": "Spoken Language",
+  "@spokenLanguage": {
+    "description": "Label for spoken language selector"
+  },
+  "targetLanguage": "Target Language",
+  "@targetLanguage": {
+    "description": "Label for target language selector"
+  },
+  "vietnamese": "Vietnamese",
+  "japanese": "Japanese",
+  "english": "English",
+  "leaveMeeting": "Leave Meeting",
+  "invalidMeetingCode": "Invalid meeting code",
+  "meetingNotFound": "Meeting not found",
+  "networkError": "Network error. Please check your connection.",
+  "loading": "Loading..."
+}

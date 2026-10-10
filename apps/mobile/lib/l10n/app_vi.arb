@@ -1,0 +1,18 @@
+{
+  "@@locale": "vi",
+  "appName": "ViMeet Mobile",
+  "joinMeeting": "Tham Gia Cuộc Họp",
+  "meetingCode": "Mã Cuộc Họp",
+  "enterMeetingCode": "Nhập mã 6 ký tự",
+  "displayName": "Tên Hiển Thị",
+  "spokenLanguage": "Ngôn Ngữ Nói",
+  "targetLanguage": "Ngôn Ngữ Dịch",
+  "vietnamese": "Tiếng Việt",
+  "japanese": "Tiếng Nhật",
+  "english": "Tiếng Anh",
+  "leaveMeeting": "Rời Cuộc Họp",
+  "invalidMeetingCode": "Mã cuộc họp không hợp lệ",
+  "meetingNotFound": "Không tìm thấy cuộc họp",
+  "networkError": "Lỗi mạng. Vui lòng kiểm tra kết nối.",
+  "loading": "Đang tải..."
+}
