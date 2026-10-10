@@ -20,9 +20,6 @@ import { LanguageSwitcher } from './LanguageSwitcher';
 import { GoogleAuthControl } from '../auth/GoogleAuthControl';
 import { NeuralLinguisticBackground } from './NeuralLinguisticBackground';
 import { Breadcrumb, BreadcrumbItem } from './Breadcrumb';
-import { CalendarScheduleModal } from '../home/CalendarScheduleModal';
-import { ScheduleMeetingModal } from '../home/ScheduleMeetingModal';
-import { MeetingHistoryModal } from '../MeetingHistoryModal';
 import { LegalModal } from './LegalModal';
 import { useLanguage } from '../../context/language-context-def';
 import { useAuth } from '../../context/auth-context-def';
@@ -83,7 +80,7 @@ export interface PublicPageShellProps {
   breadcrumbs?: BreadcrumbItem[];
   children: React.ReactNode;
   forcedLanguage?: AppLanguage;
-  activeDrawerId?: 'home' | 'features' | 'pricing' | 'faq' | 'contact' | 'settings';
+  activeDrawerId?: 'home' | 'features' | 'pricing' | 'faq' | 'contact' | 'settings' | 'calendar' | 'history';
 }
 
 export const PublicPageShell: React.FC<PublicPageShellProps> = ({
@@ -98,9 +95,6 @@ export const PublicPageShell: React.FC<PublicPageShellProps> = ({
   const copy = SHELL_COPY[language] || SHELL_COPY.vi;
 
   const [isNavDrawerOpen, setIsNavDrawerOpen] = useState(false);
-  const [isCalendarModalOpen, setIsCalendarModalOpen] = useState(false);
-  const [isScheduleMeetingOpen, setIsScheduleMeetingOpen] = useState(false);
-  const [isMeetingHistoryOpen, setIsMeetingHistoryOpen] = useState(false);
   const [legalModalType, setLegalModalType] = useState<'privacy' | 'terms' | null>(null);
 
   // Sync forcedLanguage if provided
@@ -116,20 +110,11 @@ export const PublicPageShell: React.FC<PublicPageShellProps> = ({
       if (e.key === 'Escape') {
         if (isNavDrawerOpen) setIsNavDrawerOpen(false);
         if (legalModalType) setLegalModalType(null);
-        if (isCalendarModalOpen) setIsCalendarModalOpen(false);
-        if (isMeetingHistoryOpen) setIsMeetingHistoryOpen(false);
-        if (isScheduleMeetingOpen) setIsScheduleMeetingOpen(false);
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [
-    isNavDrawerOpen,
-    legalModalType,
-    isCalendarModalOpen,
-    isMeetingHistoryOpen,
-    isScheduleMeetingOpen,
-  ]);
+  }, [isNavDrawerOpen, legalModalType]);
 
   const handleSelectDrawerItem = (id: string) => {
     setIsNavDrawerOpen(false);
@@ -159,10 +144,10 @@ export const PublicPageShell: React.FC<PublicPageShellProps> = ({
         navigate('/settings?tab=ai_byok');
         break;
       case 'calendar':
-        setIsCalendarModalOpen(true);
+        navigate('/calendar');
         break;
       case 'history':
-        setIsMeetingHistoryOpen(true);
+        navigate('/history');
         break;
       case 'privacy':
         setLegalModalType('privacy');
@@ -175,6 +160,14 @@ export const PublicPageShell: React.FC<PublicPageShellProps> = ({
     }
   };
 
+  // Ensure document.body can always scroll naturally on dedicated pages
+  useEffect(() => {
+    document.body.style.overflow = 'auto';
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, []);
+
   return (
     <div className="content-page relative min-h-dvh bg-zinc-50 dark:bg-[#0f0f10] text-zinc-900 dark:text-zinc-100 flex flex-col font-sans transition-colors overflow-x-hidden">
       {/* ── Neural Linguistic Ambient Background ── */}
@@ -184,7 +177,6 @@ export const PublicPageShell: React.FC<PublicPageShellProps> = ({
         <div className="absolute top-0 left-0 right-0 w-full h-[600px] ambient-hero-glow" />
         <div className="absolute -top-32 left-1/4 w-[500px] h-[500px] bg-blue-500/10 dark:bg-blue-600/15 rounded-full blur-3xl" />
         <div className="absolute -top-20 right-1/4 w-[500px] h-[500px] bg-indigo-500/10 dark:bg-indigo-600/15 rounded-full blur-3xl" />
-        <div className="hidden md:block absolute top-14 left-0 right-0 h-px bg-gradient-to-r from-transparent via-blue-500/30 dark:via-blue-400/50 to-transparent" />
       </div>
 
       {/* ── Top Header Bar (Desktop & Mobile) ── */}
@@ -216,7 +208,7 @@ export const PublicPageShell: React.FC<PublicPageShellProps> = ({
             <div className="hidden lg:flex items-center gap-1 pr-1 border-r border-zinc-200/80 dark:border-[#2e2e30]/80">
               <button
                 type="button"
-                onClick={() => setIsCalendarModalOpen(true)}
+                onClick={() => navigate('/calendar')}
                 title={copy.calendarNav}
                 aria-label={copy.calendarNav}
                 className="w-9 h-9 rounded-xl flex items-center justify-center text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
@@ -225,7 +217,7 @@ export const PublicPageShell: React.FC<PublicPageShellProps> = ({
               </button>
               <button
                 type="button"
-                onClick={() => setIsMeetingHistoryOpen(true)}
+                onClick={() => navigate('/history')}
                 title={copy.historyNav}
                 aria-label={copy.historyNav}
                 className="w-9 h-9 rounded-xl flex items-center justify-center text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
@@ -347,7 +339,11 @@ export const PublicPageShell: React.FC<PublicPageShellProps> = ({
                   type="button"
                   onClick={() => handleSelectDrawerItem('calendar')}
                   data-testid="drawer-calendar"
-                  className="w-full px-3 py-2.5 rounded-xl flex items-center gap-3 text-sm font-medium text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-white/[0.05] transition-colors cursor-pointer text-left"
+                  className={`w-full px-3 py-2.5 rounded-xl flex items-center gap-3 text-sm font-medium transition-colors cursor-pointer text-left ${
+                    activeDrawerId === 'calendar'
+                      ? 'bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 font-semibold'
+                      : 'text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-white/[0.05]'
+                  }`}
                 >
                   <Calendar className="w-4 h-4 text-zinc-500 dark:text-zinc-400 shrink-0" />
                   <span>{copy.calendarNav}</span>
@@ -357,7 +353,11 @@ export const PublicPageShell: React.FC<PublicPageShellProps> = ({
                   type="button"
                   onClick={() => handleSelectDrawerItem('history')}
                   data-testid="drawer-history"
-                  className="w-full px-3 py-2.5 rounded-xl flex items-center gap-3 text-sm font-medium text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-white/[0.05] transition-colors cursor-pointer text-left"
+                  className={`w-full px-3 py-2.5 rounded-xl flex items-center gap-3 text-sm font-medium transition-colors cursor-pointer text-left ${
+                    activeDrawerId === 'history'
+                      ? 'bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 font-semibold'
+                      : 'text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-white/[0.05]'
+                  }`}
                 >
                   <Clock className="w-4 h-4 text-zinc-500 dark:text-zinc-400 shrink-0" />
                   <span>{copy.historyNav}</span>
@@ -470,33 +470,6 @@ export const PublicPageShell: React.FC<PublicPageShellProps> = ({
       )}
 
       {/* ── Modals ── */}
-      {isCalendarModalOpen && (
-        <CalendarScheduleModal
-          isOpen={isCalendarModalOpen}
-          onClose={() => setIsCalendarModalOpen(false)}
-          onOpenScheduleNew={() => {
-            setIsCalendarModalOpen(false);
-            setIsScheduleMeetingOpen(true);
-          }}
-        />
-      )}
-
-      {isScheduleMeetingOpen && (
-        <ScheduleMeetingModal
-          isOpen={isScheduleMeetingOpen}
-          language={language}
-          onClose={() => setIsScheduleMeetingOpen(false)}
-        />
-      )}
-
-      {isMeetingHistoryOpen && (
-        <MeetingHistoryModal
-          isOpen={isMeetingHistoryOpen}
-          onClose={() => setIsMeetingHistoryOpen(false)}
-          email={user?.email || undefined}
-        />
-      )}
-
       {legalModalType && (
         <LegalModal
           isOpen={Boolean(legalModalType)}

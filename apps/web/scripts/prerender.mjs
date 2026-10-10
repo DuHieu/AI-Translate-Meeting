@@ -56,6 +56,22 @@ const ROUTES = [
     ogDescription: 'Hướng dẫn kết nối WebSocket Audio Streaming, tạo phòng họp và trích xuất phụ đề dịch song ngữ thời gian thực.',
   },
   {
+    route: 'calendar',
+    title: 'Lịch Cuộc Họp Trực Tuyến & Lên Lịch AI | Laya Meet',
+    description: 'Quản lý toàn bộ lịch họp trực tuyến, phòng thảo luận song ngữ và đồng bộ hóa với Google Calendar hoặc .ics với Laya Meet.',
+    canonical: 'https://layameet.com/calendar',
+    ogTitle: 'Lịch Cuộc Họp Trực Tuyến & Lên Lịch AI - Laya Meet',
+    ogDescription: 'Lên lịch họp trước, quản lý phòng thảo luận song ngữ và đồng bộ nhanh chóng với Google Calendar.',
+  },
+  {
+    route: 'history',
+    title: 'Lịch Sử Cuộc Họp & Biên Bản AI | Laya Meet',
+    description: 'Xem lại danh sách cuộc họp đã tham gia, truy cập phụ đề song ngữ và biên bản họp trích xuất bằng AI với Laya Meet.',
+    canonical: 'https://layameet.com/history',
+    ogTitle: 'Lịch Sử Cuộc Họp & Biên Bản AI - Laya Meet',
+    ogDescription: 'Tra cứu lịch sử cuộc họp trực tuyến song ngữ và tải biên bản họp AI với Laya Meet.',
+  },
+  {
     route: 'hop-song-ngu-tieng-nhat',
     title: 'Họp Song Ngữ Tiếng Nhật AI - Dịch Trực Tiếp Việt - Nhật <350ms | Laya Meet',
     description: 'Phần mềm họp trực tuyến song ngữ Việt - Nhật thời gian thực. Tự do nói tiếng mẹ đẻ, phụ đề AI dịch hai chiều <350ms, tự động ghi biên bản họp cho kỹ sư BrSE và IT Comtor.',

@@ -416,7 +416,7 @@ export const PricingSection: React.FC<PricingSectionProps> = ({ onSelectTier, on
   };
 
   return (
-    <section id="pricing" className="border-t border-zinc-200 dark:border-[#2e2e30] py-16 md:py-24 relative overflow-hidden bg-white/40 dark:bg-[#0f0f10]/40 transition-colors">
+    <section id="pricing" className="py-8 sm:py-12 md:py-16 relative overflow-hidden transition-colors">
       <div className="max-w-[1536px] 2xl:max-w-[1720px] mx-auto px-4 sm:px-8 lg:px-12 2xl:px-16">
         {/* Section Header */}
         <div className="text-center max-w-3xl mx-auto space-y-3 mb-10">

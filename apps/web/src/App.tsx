@@ -5,6 +5,7 @@ import { ThemeProvider } from './context/ThemeContext';
 import { LanguageProvider } from './context/LanguageContext';
 import { AuthProvider } from './context/AuthContext';
 import { CookieConsentBanner } from './components/common/CookieConsentBanner';
+import { ScrollToTop } from './components/common/ScrollToTop';
 
 const HomePage = lazy(() => import('./pages/HomePage').then((module) => ({ default: module.HomePage })));
 export const PreJoinPage = lazy(() => import('./pages/PreJoinPage').then((module) => ({ default: module.PreJoinPage })));
@@ -23,6 +24,8 @@ const PricingPage = lazy(() => import('./pages/PricingPage').then((module) => ({
 const FeaturesPage = lazy(() => import('./pages/FeaturesPage').then((module) => ({ default: module.FeaturesPage })));
 const FaqPage = lazy(() => import('./pages/FaqPage').then((module) => ({ default: module.FaqPage })));
 const ContactPage = lazy(() => import('./pages/ContactPage').then((module) => ({ default: module.ContactPage })));
+const CalendarPage = lazy(() => import('./pages/CalendarPage').then((module) => ({ default: module.CalendarPage })));
+const HistoryPage = lazy(() => import('./pages/HistoryPage').then((module) => ({ default: module.HistoryPage })));
 
 const LegacyMeetingRedirect: React.FC = () => {
   const { meetingCode } = useParams<{ meetingCode: string }>();
@@ -46,6 +49,7 @@ export const App: React.FC = () => {
       <LanguageProvider>
         <AuthProvider>
           <BrowserRouter>
+            <ScrollToTop />
             <Suspense fallback={<PageFallback />}>
               <Routes>
                 <Route path="/" element={<HomePage />} />
@@ -72,6 +76,14 @@ export const App: React.FC = () => {
                 <Route path="/vi/contact" element={<ContactPage forcedLanguage="vi" />} />
                 <Route path="/en/contact" element={<ContactPage forcedLanguage="en" />} />
                 <Route path="/ja/contact" element={<ContactPage forcedLanguage="ja" />} />
+                <Route path="/calendar" element={<CalendarPage />} />
+                <Route path="/vi/calendar" element={<CalendarPage forcedLanguage="vi" />} />
+                <Route path="/en/calendar" element={<CalendarPage forcedLanguage="en" />} />
+                <Route path="/ja/calendar" element={<CalendarPage forcedLanguage="ja" />} />
+                <Route path="/history" element={<HistoryPage />} />
+                <Route path="/vi/history" element={<HistoryPage forcedLanguage="vi" />} />
+                <Route path="/en/history" element={<HistoryPage forcedLanguage="en" />} />
+                <Route path="/ja/history" element={<HistoryPage forcedLanguage="ja" />} />
                 <Route path="/cai-dat" element={<Navigate to="/settings" replace />} />
                 <Route path="/cam-nang" element={<BlogListingPage forcedLanguage="vi" />} />
                 <Route path="/cam-nang/:slug" element={<BlogPostPage />} />

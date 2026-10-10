@@ -32,9 +32,7 @@ import { LanguageSwitcher } from '../components/common/LanguageSwitcher';
 import { NeuralLinguisticBackground } from '../components/common/NeuralLinguisticBackground';
 import { GoogleAuthControl } from '../components/auth/GoogleAuthControl';
 import { ScheduleMeetingModal } from '../components/home/ScheduleMeetingModal';
-import { CalendarScheduleModal } from '../components/home/CalendarScheduleModal';
 import { UpcomingMeetingsStrip } from '../components/home/UpcomingMeetingsStrip';
-import { MeetingHistoryModal } from '../components/MeetingHistoryModal';
 
 const HOME_UI = {
   vi: {
@@ -212,8 +210,6 @@ export const HomePage: React.FC<HomePageProps> = ({ forcedLanguage }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isScheduleMeetingOpen, setIsScheduleMeetingOpen] = useState(false);
-  const [isCalendarModalOpen, setIsCalendarModalOpen] = useState(false);
-  const [isMeetingHistoryOpen, setIsMeetingHistoryOpen] = useState(false);
   const [scheduleRefreshKey, setScheduleRefreshKey] = useState(0);
   const [legalModalType, setLegalModalType] = useState<'privacy' | 'terms' | null>(null);
 
@@ -258,8 +254,6 @@ export const HomePage: React.FC<HomePageProps> = ({ forcedLanguage }) => {
     const isAnyOverlayOpen =
       isNavDrawerOpen ||
       isScheduleMeetingOpen ||
-      isCalendarModalOpen ||
-      isMeetingHistoryOpen ||
       Boolean(legalModalType);
 
     if (isAnyOverlayOpen) {
@@ -272,8 +266,6 @@ export const HomePage: React.FC<HomePageProps> = ({ forcedLanguage }) => {
   }, [
     isNavDrawerOpen,
     isScheduleMeetingOpen,
-    isCalendarModalOpen,
-    isMeetingHistoryOpen,
     legalModalType,
   ]);
 
@@ -285,10 +277,6 @@ export const HomePage: React.FC<HomePageProps> = ({ forcedLanguage }) => {
           setIsNavDrawerOpen(false);
         } else if (legalModalType) {
           setLegalModalType(null);
-        } else if (isCalendarModalOpen) {
-          setIsCalendarModalOpen(false);
-        } else if (isMeetingHistoryOpen) {
-          setIsMeetingHistoryOpen(false);
         } else if (isScheduleMeetingOpen) {
           setIsScheduleMeetingOpen(false);
         } else if (activeSection !== 'home') {
@@ -301,8 +289,6 @@ export const HomePage: React.FC<HomePageProps> = ({ forcedLanguage }) => {
   }, [
     isNavDrawerOpen,
     legalModalType,
-    isCalendarModalOpen,
-    isMeetingHistoryOpen,
     isScheduleMeetingOpen,
     activeSection,
   ]);
@@ -435,9 +421,9 @@ export const HomePage: React.FC<HomePageProps> = ({ forcedLanguage }) => {
     } else if (id === 'plan') {
       navigate('/pricing');
     } else if (id === 'calendar') {
-      setIsCalendarModalOpen(true);
+      navigate('/calendar');
     } else if (id === 'history') {
-      setIsMeetingHistoryOpen(true);
+      navigate('/history');
     } else if (id === 'tools') {
       navigate('/settings?tab=ai_byok');
     } else if (id === 'new-meeting') {
@@ -519,7 +505,7 @@ export const HomePage: React.FC<HomePageProps> = ({ forcedLanguage }) => {
           <div className="hidden lg:flex items-center gap-1 pr-1 border-r border-zinc-200/80 dark:border-[#2e2e30]/80">
             <button
               type="button"
-              onClick={() => setIsCalendarModalOpen(true)}
+              onClick={() => navigate('/calendar')}
               title={ui.calendarNav}
               aria-label={ui.calendarNav}
               className="w-9 h-9 rounded-xl flex items-center justify-center text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
@@ -528,7 +514,7 @@ export const HomePage: React.FC<HomePageProps> = ({ forcedLanguage }) => {
             </button>
             <button
               type="button"
-              onClick={() => setIsMeetingHistoryOpen(true)}
+              onClick={() => navigate('/history')}
               title={ui.historyNav}
               aria-label={ui.historyNav}
               className="w-9 h-9 rounded-xl flex items-center justify-center text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
@@ -636,7 +622,7 @@ export const HomePage: React.FC<HomePageProps> = ({ forcedLanguage }) => {
               <div className="grid grid-cols-2 gap-2 pt-1">
                 <button
                   type="button"
-                  onClick={() => setIsScheduleMeetingOpen(true)}
+                  onClick={() => navigate('/calendar')}
                   className="h-10 px-3 rounded-xl bg-white dark:bg-[#18181c] border border-zinc-200 dark:border-zinc-800 text-xs font-medium text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800 flex items-center justify-center gap-2 transition-colors cursor-pointer"
                 >
                   <Calendar className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
@@ -644,7 +630,7 @@ export const HomePage: React.FC<HomePageProps> = ({ forcedLanguage }) => {
                 </button>
                 <button
                   type="button"
-                  onClick={() => setIsMeetingHistoryOpen(true)}
+                  onClick={() => navigate('/history')}
                   className="h-10 px-3 rounded-xl bg-white dark:bg-[#18181c] border border-zinc-200 dark:border-zinc-800 text-xs font-medium text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800 flex items-center justify-center gap-2 transition-colors cursor-pointer"
                 >
                   <Clock className="w-3.5 h-3.5 text-zinc-500" />
@@ -657,7 +643,7 @@ export const HomePage: React.FC<HomePageProps> = ({ forcedLanguage }) => {
             <div className="pt-2">
               <UpcomingMeetingsStrip
                 refreshKey={scheduleRefreshKey}
-                onOpenCalendar={() => setIsCalendarModalOpen(true)}
+                onOpenCalendar={() => navigate('/calendar')}
               />
             </div>
           </section>
@@ -755,7 +741,7 @@ export const HomePage: React.FC<HomePageProps> = ({ forcedLanguage }) => {
 
                 <UpcomingMeetingsStrip
                   refreshKey={scheduleRefreshKey}
-                  onOpenCalendar={() => setIsCalendarModalOpen(true)}
+                  onOpenCalendar={() => navigate('/calendar')}
                 />
               </div>
 
@@ -1014,17 +1000,6 @@ export const HomePage: React.FC<HomePageProps> = ({ forcedLanguage }) => {
         </div>
       )}
 
-      {/* Calendar Schedule Modal */}
-      <CalendarScheduleModal
-        isOpen={isCalendarModalOpen}
-        onClose={() => setIsCalendarModalOpen(false)}
-        onOpenScheduleNew={() => {
-          setIsCalendarModalOpen(false);
-          setIsScheduleMeetingOpen(true);
-        }}
-        refreshKey={scheduleRefreshKey}
-      />
-
       {/* Schedule Meeting Modal */}
       <ScheduleMeetingModal
         isOpen={isScheduleMeetingOpen}
@@ -1038,12 +1013,6 @@ export const HomePage: React.FC<HomePageProps> = ({ forcedLanguage }) => {
         isOpen={legalModalType !== null}
         type={legalModalType}
         onClose={() => setLegalModalType(null)}
-      />
-
-      <MeetingHistoryModal
-        isOpen={isMeetingHistoryOpen}
-        onClose={() => setIsMeetingHistoryOpen(false)}
-        email={user?.email || undefined}
       />
     </div>
   );
