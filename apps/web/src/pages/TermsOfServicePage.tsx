@@ -10,13 +10,13 @@ export const TermsOfServicePage: React.FC = () => {
 
   const breadcrumbs = [
     { label: language === 'ja' ? 'ホーム' : language === 'en' ? 'Home' : 'Trang chủ', path: '/' },
-    { label: language === 'ja' ? '利用規約' : language === 'en' ? 'Terms of Service' : 'Điều khoản dịch vụ', path: '/dieu-khoan-dich-vu' },
+    { label: language === 'ja' ? '利用規約' : language === 'en' ? 'Terms of Service' : 'Điều khoản dịch vụ', path: '/terms-of-service' },
   ];
 
   return (
     <PublicPageShell
       breadcrumbs={breadcrumbs}
-      pageTitle="Điều Khoản Dịch Vụ & Thỏa Thuận Sử Dụng | LayaMeet"
+      pageTitle="Terms of Service & User Agreement | LayaMeet"
       pageHeading="Điều Khoản Dịch Vụ"
       pageSubtitle="Quy định quyền và nghĩa vụ của bên cung cấp dịch vụ và người sử dụng nền tảng họp trực tuyến song ngữ AI LayaMeet."
     >

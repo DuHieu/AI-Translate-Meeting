@@ -106,14 +106,19 @@ export const App: React.FC = () => {
                 <Route path="/so-sanh/layameet-vs-google-meet" element={<ComparisonLandingPage competitor="google-meet" />} />
                 <Route path="/chinh-sach-thanh-toan" element={<PaymentPolicyPage />} />
                 <Route path="/payment-policy" element={<PaymentPolicyPage />} />
+                <Route path="/payment" element={<PaymentPolicyPage />} />
                 <Route path="/chinh-sach-bao-mat" element={<PrivacyPolicyPage />} />
                 <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
+                <Route path="/privacy" element={<PrivacyPolicyPage />} />
                 <Route path="/dieu-khoan-dich-vu" element={<TermsOfServicePage />} />
                 <Route path="/terms-of-service" element={<TermsOfServicePage />} />
+                <Route path="/terms" element={<TermsOfServicePage />} />
                 <Route path="/chinh-sach-khieu-nai-hoan-tien" element={<RefundPolicyPage />} />
                 <Route path="/refund-policy" element={<RefundPolicyPage />} />
+                <Route path="/refund" element={<RefundPolicyPage />} />
                 <Route path="/chinh-sach-giao-nhan-cung-cap-dich-vu" element={<DeliveryPolicyPage />} />
                 <Route path="/delivery-policy" element={<DeliveryPolicyPage />} />
+                <Route path="/delivery" element={<DeliveryPolicyPage />} />
                 <Route path="/prejoin/:meetingCode" element={<LegacyMeetingRedirect />} />
                 <Route path="/join/:meetingCode" element={<LegacyMeetingRedirect />} />
                 <Route path="/meeting/:meetingCode" element={<MeetingPage />} />

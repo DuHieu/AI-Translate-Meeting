@@ -21,10 +21,11 @@ export function HomeFooter({ onNavigate, onLegal: _onLegal, onStatus }: HomeFoot
         <nav aria-label={copy.resources}><h2>{copy.resources}</h2><button type="button" onClick={() => onNavigate('faq')}>{t.nav.faq}</button><Link to={language === 'en' ? '/en/guide' : language === 'ja' ? '/ja/guide' : '/cam-nang'}>{t.footer.guides}</Link><Link to="/developers">{t.nav.developers}</Link></nav>
         <nav aria-label={t.footer.legalCol}>
           <h2>{t.footer.legalCol}</h2>
-          <Link to="/chinh-sach-thanh-toan">Chính sách thanh toán</Link>
-          <Link to="/chinh-sach-bao-mat">{t.footer.privacyPolicy}</Link>
-          <Link to="/dieu-khoan-dich-vu">{t.footer.termsOfService}</Link>
-          <Link to="/chinh-sach-khieu-nai-hoan-tien">Khiếu nại & hoàn tiền</Link>
+          <Link to="/payment-policy">Chính sách thanh toán</Link>
+          <Link to="/privacy-policy">{t.footer.privacyPolicy}</Link>
+          <Link to="/terms-of-service">{t.footer.termsOfService}</Link>
+          <Link to="/refund-policy">Khiếu nại & hoàn tiền</Link>
+          <Link to="/delivery-policy">Giao nhận & kích hoạt</Link>
           <button type="button" onClick={onStatus}>{t.nav.systemShort}</button>
         </nav>
       </div>

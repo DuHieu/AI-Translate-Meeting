@@ -10,13 +10,13 @@ export const DeliveryPolicyPage: React.FC = () => {
 
   const breadcrumbs = [
     { label: language === 'ja' ? 'ホーム' : language === 'en' ? 'Home' : 'Trang chủ', path: '/' },
-    { label: language === 'ja' ? 'サービス提供ポリシー' : language === 'en' ? 'Service Delivery' : 'Giao nhận & Kích hoạt', path: '/chinh-sach-giao-nhan-cung-cap-dich-vu' },
+    { label: language === 'ja' ? 'サービス提供ポリシー' : language === 'en' ? 'Service Delivery' : 'Giao nhận & Kích hoạt', path: '/delivery-policy' },
   ];
 
   return (
     <PublicPageShell
       breadcrumbs={breadcrumbs}
-      pageTitle="Chính Sách Giao Nhận & Cung Cấp Dịch Vụ Số | LayaMeet"
+      pageTitle="Digital Service Delivery Policy | LayaMeet"
       pageHeading="Chính Sách Cung Cấp & Kích Hoạt Dịch Vụ Số"
       pageSubtitle="Quy định về phương thức chuyển giao bản quyền phần mềm và kích hoạt dịch vụ họp trực tuyến song ngữ AI trực tuyến."
     >

@@ -10,13 +10,13 @@ export const RefundPolicyPage: React.FC = () => {
 
   const breadcrumbs = [
     { label: language === 'ja' ? 'ホーム' : language === 'en' ? 'Home' : 'Trang chủ', path: '/' },
-    { label: language === 'ja' ? '返金・苦情解決ポリシー' : language === 'en' ? 'Refund Policy' : 'Khiếu nại & Hoàn tiền', path: '/chinh-sach-khieu-nai-hoan-tien' },
+    { label: language === 'ja' ? '返金・苦情解決ポリシー' : language === 'en' ? 'Refund Policy' : 'Khiếu nại & Hoàn tiền', path: '/refund-policy' },
   ];
 
   return (
     <PublicPageShell
       breadcrumbs={breadcrumbs}
-      pageTitle="Chính Sách Khiếu Nại & Hoàn Tiền 100% | LayaMeet"
+      pageTitle="Dispute & Refund Policy | LayaMeet"
       pageHeading="Chính Sách Tiếp Nhận Khiếu Nại & Hoàn Tiền"
       pageSubtitle="Cam kết bảo vệ quyền lợi người tiêu dùng theo quy định của Luật Bảo vệ quyền lợi người tiêu dùng và Bộ Công Thương."
     >

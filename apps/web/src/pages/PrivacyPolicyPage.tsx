@@ -10,13 +10,13 @@ export const PrivacyPolicyPage: React.FC = () => {
 
   const breadcrumbs = [
     { label: language === 'ja' ? 'ホーム' : language === 'en' ? 'Home' : 'Trang chủ', path: '/' },
-    { label: language === 'ja' ? 'プライバシーポリシー' : language === 'en' ? 'Privacy Policy' : 'Chính sách bảo mật', path: '/chinh-sach-bao-mat' },
+    { label: language === 'ja' ? 'プライバシーポリシー' : language === 'en' ? 'Privacy Policy' : 'Chính sách bảo mật', path: '/privacy-policy' },
   ];
 
   return (
     <PublicPageShell
       breadcrumbs={breadcrumbs}
-      pageTitle="Chính Sách Bảo Mật Thông Tin Khách Hàng | LayaMeet"
+      pageTitle="Privacy Policy & Data Protection | LayaMeet"
       pageHeading="Chính Sách Bảo Mật Thông Tin Khách Hàng"
       pageSubtitle="Cam kết bảo vệ dữ liệu cá nhân theo Điều 68-73 Nghị định 52/2013/NĐ-CP, Nghị định 85/2021/NĐ-CP và Nghị định 13/2023/NĐ-CP về Bảo vệ Dữ liệu Cá nhân."
     >

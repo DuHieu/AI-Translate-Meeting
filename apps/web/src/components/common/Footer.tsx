@@ -179,7 +179,7 @@ export const Footer: React.FC<FooterProps> = ({
             <ul className="space-y-2 text-zinc-500 dark:text-zinc-400">
               <li>
                 <Link
-                  to="/chinh-sach-thanh-toan"
+                  to="/payment-policy"
                   className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors font-medium block"
                 >
                   {language === 'ja' ? '決済ポリシー & 請求書' : language === 'en' ? 'Payment Policy & Invoicing' : 'Chính sách thanh toán'}
@@ -187,7 +187,7 @@ export const Footer: React.FC<FooterProps> = ({
               </li>
               <li>
                 <Link
-                  to="/chinh-sach-bao-mat"
+                  to="/privacy-policy"
                   className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors font-medium block"
                 >
                   {language === 'ja' ? '個人情報保護方針' : language === 'en' ? 'Privacy Policy' : 'Chính sách bảo mật'}
@@ -195,7 +195,7 @@ export const Footer: React.FC<FooterProps> = ({
               </li>
               <li>
                 <Link
-                  to="/dieu-khoan-dich-vu"
+                  to="/terms-of-service"
                   className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors font-medium block"
                 >
                   {language === 'ja' ? '利用規約' : language === 'en' ? 'Terms of Service' : 'Điều khoản dịch vụ'}
@@ -203,7 +203,7 @@ export const Footer: React.FC<FooterProps> = ({
               </li>
               <li>
                 <Link
-                  to="/chinh-sach-khieu-nai-hoan-tien"
+                  to="/refund-policy"
                   className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors font-medium block"
                 >
                   {language === 'ja' ? '返金・苦情解決ポリシー' : language === 'en' ? 'Dispute & Refund Policy' : 'Khiếu nại & Hoàn tiền'}
@@ -211,7 +211,7 @@ export const Footer: React.FC<FooterProps> = ({
               </li>
               <li>
                 <Link
-                  to="/chinh-sach-giao-nhan-cung-cap-dich-vu"
+                  to="/delivery-policy"
                   className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors font-medium block"
                 >
                   {language === 'ja' ? 'サービス提供・有効化' : language === 'en' ? 'Digital Service Delivery' : 'Cung cấp & Giao nhận dịch vụ'}
@@ -257,10 +257,10 @@ export const Footer: React.FC<FooterProps> = ({
               {BUSINESS_INFO.companyName}
             </div>
             <div>
-              <strong>Chủ sở hữu / Người đại diện:</strong> {BUSINESS_INFO.ownerName} · <strong>MST:</strong> {BUSINESS_INFO.taxId} ({BUSINESS_INFO.taxIssuedPlace} cấp ngày {BUSINESS_INFO.taxIssuedDate})
+              <strong>Người đại diện theo pháp luật:</strong> {BUSINESS_INFO.legalRepresentative} · <strong>Mã số doanh nghiệp:</strong> {BUSINESS_INFO.taxId} ({BUSINESS_INFO.taxIssuedPlace} cấp ngày {BUSINESS_INFO.taxIssuedDate})
             </div>
             <div>
-              <strong>Địa chỉ đăng ký:</strong> {BUSINESS_INFO.address}
+              <strong>Trụ sở chính:</strong> {BUSINESS_INFO.address}
             </div>
             <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
               <span>
