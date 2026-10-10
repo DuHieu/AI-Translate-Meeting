@@ -71,6 +71,7 @@ import { meetingService } from '../../services/meetingService';
 import { generateMeetingRecap } from '../../utils/aiRecapEngine';
 import { DEFAULT_BRANDING_CONFIG, meetingApi } from '../../api/meetingApi';
 import type { BrandingConfigDto } from '../../api/meetingApi';
+import { saveRecording } from '../../utils/recordingStorage';
 import { BellRing, Mic } from 'lucide-react';
 import { CountryFlag } from '../common/CountryFlag';
 import { getUserSettings, subscribeUserSettings } from '../../utils/userSettings';
@@ -632,6 +633,7 @@ export const MeetingShell: React.FC<MeetingShellProps> = ({
         }
         recordingDownloadUrlRef.current = nextUrl;
         setRecordingDownloadUrl(nextUrl);
+        void saveRecording(session.meetingCode, recording);
       };
 
       displayStream.getVideoTracks()[0]?.addEventListener('ended', () => {
@@ -650,7 +652,7 @@ export const MeetingShell: React.FC<MeetingShellProps> = ({
           : 'Không thể bắt đầu ghi hình cuộc họp.',
       );
     }
-  }, [sidecarPreferences.meetingRecording, stopMeetingRecording]);
+  }, [session.meetingCode, sidecarPreferences.meetingRecording, stopMeetingRecording]);
 
   useEffect(() => {
     if (!sidecarPreferences.meetingRecording) stopMeetingRecording();

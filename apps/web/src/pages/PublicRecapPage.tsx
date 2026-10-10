@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { ArrowLeft, CheckCircle2, Copy, FileDown, ListTodo, Share2 } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, Copy, FileDown, FileText, ListTodo, Play, Share2 } from 'lucide-react';
 import { Link, useParams } from 'react-router-dom';
 import {
   DEFAULT_BRANDING_CONFIG,
@@ -10,6 +10,7 @@ import type { MeetingMinutesResponse } from '../types/meeting';
 import { parseTranscriptFromMarkdown } from '../utils/meetingMinutes';
 import { exportBrandedMeetingPdf } from '../utils/brandedPdfExport';
 import { MinutesQaPanel } from '../components/meeting/MinutesQaPanel';
+import { InteractiveMeetingReplay } from '../components/meeting/InteractiveMeetingReplay';
 
 export const PublicRecapPage: React.FC = () => {
   const { meetingCode = '' } = useParams<{ meetingCode: string }>();
@@ -19,6 +20,7 @@ export const PublicRecapPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [copyStatus, setCopyStatus] = useState('');
+  const [activeTab, setActiveTab] = useState<'minutes' | 'replay'>('minutes');
 
   useEffect(() => {
     let cancelled = false;
@@ -132,54 +134,98 @@ export const PublicRecapPage: React.FC = () => {
           {copyStatus && <p role="status" className="mt-2 break-words text-sm text-emerald-400">{copyStatus}</p>}
         </section>
 
-        <section className="rounded-xl border border-zinc-800 bg-zinc-900/70 p-5">
-          <h2 className="text-sm font-semibold uppercase tracking-wider text-sky-300">Executive highlights</h2>
-          <div className="mt-3 whitespace-pre-line text-sm leading-7 text-zinc-300">{minutes.summary}</div>
-        </section>
-
-        <div className="grid gap-5 md:grid-cols-2">
-          <section className="rounded-xl border border-emerald-500/25 bg-emerald-500/10 p-5">
-            <h2 className="flex items-center gap-2 text-sm font-semibold text-emerald-300"><CheckCircle2 className="h-4 w-4" /> Decisions</h2>
-            {minutes.decisions.length ? (
-              <ul className="mt-3 space-y-2 text-sm leading-6 text-zinc-300">{minutes.decisions.map((decision) => <li key={decision}>• {decision}</li>)}</ul>
-            ) : <p className="mt-3 text-sm text-zinc-400">Chưa có quyết định được ghi nhận.</p>}
-          </section>
-
-          <section className="rounded-xl border border-amber-500/25 bg-amber-500/10 p-5">
-            <h2 className="flex items-center gap-2 text-sm font-semibold text-amber-300"><ListTodo className="h-4 w-4" /> Action items</h2>
-            {minutes.actionItems.length ? (
-              <ul className="mt-3 space-y-3">{minutes.actionItems.map((item, index) => (
-                <li key={`${item.task}-${index}`} className="rounded-lg bg-black/20 p-3 text-sm">
-                  <p className="font-medium text-zinc-100">{item.task}</p>
-                  <p className="mt-1 text-xs text-zinc-400">Owner: {item.owner || 'Chưa gán'} · Deadline: {item.deadline || 'Chưa đặt'} · Priority: {item.priority || 'Medium'}</p>
-                </li>
-              ))}</ul>
-            ) : <p className="mt-3 text-sm text-zinc-400">Chưa có action item được ghi nhận.</p>}
-          </section>
+        {/* Tab Switcher */}
+        <div className="flex items-center gap-2 border-b border-zinc-800 pb-2">
+          <button
+            type="button"
+            onClick={() => setActiveTab('minutes')}
+            className={`inline-flex min-h-[44px] items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold transition-all cursor-pointer ${
+              activeTab === 'minutes'
+                ? 'bg-sky-600 text-white shadow-md shadow-sky-500/20'
+                : 'text-zinc-400 hover:text-white hover:bg-zinc-900 border border-transparent hover:border-zinc-800'
+            }`}
+          >
+            <FileText className="h-4 w-4" />
+            <span>Biên bản & Quyết định</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('replay')}
+            className={`inline-flex min-h-[44px] items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold transition-all cursor-pointer ${
+              activeTab === 'replay'
+                ? 'bg-sky-600 text-white shadow-md shadow-sky-500/20'
+                : 'text-zinc-400 hover:text-white hover:bg-zinc-900 border border-transparent hover:border-zinc-800'
+            }`}
+          >
+            <Play className="h-4 w-4" />
+            <span>Xem lại tương tác (Replay)</span>
+          </button>
         </div>
 
-        <section className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-5">
-          <h2 className="text-sm font-semibold text-zinc-100">Nội dung chi tiết</h2>
-          {transcript.length ? (
-            <ol className="mt-3 space-y-3">{transcript.map((entry) => (
-              <li key={entry.id} className="border-l-2 border-sky-500/40 pl-3 text-sm">
-                <p className="text-xs text-zinc-400">[{new Date(entry.timestamp).toLocaleTimeString('vi-VN')}] {entry.participantName}</p>
-                <p className="mt-1 leading-6 text-zinc-300">{entry.translatedText || entry.originalText}</p>
-              </li>
-            ))}</ol>
-          ) : (
-            <pre className="mt-3 whitespace-pre-wrap font-sans text-sm leading-6 text-zinc-400">{minutes.markdownContent}</pre>
-          )}
-        </section>
+        {activeTab === 'replay' ? (
+          <div className="space-y-6">
+            <InteractiveMeetingReplay meetingCode={normalizedCode} transcript={transcript} />
+            <MinutesQaPanel
+              transcript={transcript}
+              recap={{
+                executiveHighlights: minutes.summary.split('\n').filter(Boolean),
+                decisions: minutes.decisions,
+                actionItems: minutes.actionItems,
+              }}
+            />
+          </div>
+        ) : (
+          <div className="space-y-5">
+            <section className="rounded-xl border border-zinc-800 bg-zinc-900/70 p-5">
+              <h2 className="text-sm font-semibold uppercase tracking-wider text-sky-300">Executive highlights</h2>
+              <div className="mt-3 whitespace-pre-line text-sm leading-7 text-zinc-300">{minutes.summary}</div>
+            </section>
 
-        <MinutesQaPanel
-          transcript={transcript}
-          recap={{
-            executiveHighlights: minutes.summary.split('\n').filter(Boolean),
-            decisions: minutes.decisions,
-            actionItems: minutes.actionItems,
-          }}
-        />
+            <div className="grid gap-5 md:grid-cols-2">
+              <section className="rounded-xl border border-emerald-500/25 bg-emerald-500/10 p-5">
+                <h2 className="flex items-center gap-2 text-sm font-semibold text-emerald-300"><CheckCircle2 className="h-4 w-4" /> Decisions</h2>
+                {minutes.decisions.length ? (
+                  <ul className="mt-3 space-y-2 text-sm leading-6 text-zinc-300">{minutes.decisions.map((decision) => <li key={decision}>• {decision}</li>)}</ul>
+                ) : <p className="mt-3 text-sm text-zinc-400">Chưa có quyết định được ghi nhận.</p>}
+              </section>
+
+              <section className="rounded-xl border border-amber-500/25 bg-amber-500/10 p-5">
+                <h2 className="flex items-center gap-2 text-sm font-semibold text-amber-300"><ListTodo className="h-4 w-4" /> Action items</h2>
+                {minutes.actionItems.length ? (
+                  <ul className="mt-3 space-y-3">{minutes.actionItems.map((item, index) => (
+                    <li key={`${item.task}-${index}`} className="rounded-lg bg-black/20 p-3 text-sm">
+                      <p className="font-medium text-zinc-100">{item.task}</p>
+                      <p className="mt-1 text-xs text-zinc-400">Owner: {item.owner || 'Chưa gán'} · Deadline: {item.deadline || 'Chưa đặt'} · Priority: {item.priority || 'Medium'}</p>
+                    </li>
+                  ))}</ul>
+                ) : <p className="mt-3 text-sm text-zinc-400">Chưa có action item được ghi nhận.</p>}
+              </section>
+            </div>
+
+            <section className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-5">
+              <h2 className="text-sm font-semibold text-zinc-100">Nội dung chi tiết</h2>
+              {transcript.length ? (
+                <ol className="mt-3 space-y-3">{transcript.map((entry) => (
+                  <li key={entry.id} className="border-l-2 border-sky-500/40 pl-3 text-sm">
+                    <p className="text-xs text-zinc-400">[{new Date(entry.timestamp).toLocaleTimeString('vi-VN')}] {entry.participantName}</p>
+                    <p className="mt-1 leading-6 text-zinc-300">{entry.translatedText || entry.originalText}</p>
+                  </li>
+                ))}</ol>
+              ) : (
+                <pre className="mt-3 whitespace-pre-wrap font-sans text-sm leading-6 text-zinc-400">{minutes.markdownContent}</pre>
+              )}
+            </section>
+
+            <MinutesQaPanel
+              transcript={transcript}
+              recap={{
+                executiveHighlights: minutes.summary.split('\n').filter(Boolean),
+                decisions: minutes.decisions,
+                actionItems: minutes.actionItems,
+              }}
+            />
+          </div>
+        )}
 
         <section className="rounded-2xl border border-sky-500/30 bg-sky-950/20 p-6 text-center">
           <Share2 className="mx-auto h-6 w-6 text-sky-400" />

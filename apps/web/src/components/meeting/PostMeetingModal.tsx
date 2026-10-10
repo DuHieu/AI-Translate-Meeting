@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { CheckCircle2, Copy, Download, FileDown, ListTodo, LogOut, Sparkles, Video, X } from 'lucide-react';
+import { CheckCircle2, Copy, Download, FileDown, ListTodo, LogOut, Play, Sparkles, Video, X } from 'lucide-react';
 import { meetingApi, setCachedMeetingMinutes } from '../../api/meetingApi';
 import type { BrandingConfigDto } from '../../api/meetingApi';
 import type { SaveMeetingMinutesRequest } from '../../types/meeting';
@@ -240,13 +240,23 @@ export const PostMeetingModal: React.FC<PostMeetingModalProps> = ({
                   <p className="text-[11px] text-[#9aa0a6] truncate">Video định dạng WebM có thể tải về thiết bị</p>
                 </div>
               </div>
-              <a
-                href={recordingDownloadUrl}
-                download={`meeting-recording-${meetingCode.toLowerCase()}.webm`}
-                className="shrink-0 inline-flex items-center gap-1.5 rounded-full bg-[#3c4043] hover:bg-[#5f6368] text-xs font-medium text-white px-3.5 py-1.5 transition-colors"
-              >
-                <Download className="h-3.5 w-3.5" /> Tải video
-              </a>
+              <div className="flex items-center gap-2 shrink-0">
+                <a
+                  href={`/recap/${encodeURIComponent(meetingCode)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 rounded-full bg-blue-600 hover:bg-blue-700 text-xs font-medium text-white px-3.5 py-1.5 transition-colors"
+                >
+                  <Play className="h-3.5 w-3.5" /> Xem lại tương tác
+                </a>
+                <a
+                  href={recordingDownloadUrl}
+                  download={`meeting-recording-${meetingCode.toLowerCase()}.webm`}
+                  className="inline-flex items-center gap-1.5 rounded-full bg-[#3c4043] hover:bg-[#5f6368] text-xs font-medium text-white px-3.5 py-1.5 transition-colors"
+                >
+                  <Download className="h-3.5 w-3.5" /> Tải video
+                </a>
+              </div>
             </div>
           )}
 

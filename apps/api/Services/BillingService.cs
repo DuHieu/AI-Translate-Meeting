@@ -46,6 +46,15 @@ public sealed class BillingService : IBillingService
                 "Xóa watermark thương hiệu & Hỗ trợ ưu tiên 24/7"
             ],
             PriceUsd: 4.99m),
+        new("pro_quarterly", "Gói LayaMeet Pro 1 Quý (Tiết kiệm 10%)", 269_000, "3 tháng không giới hạn",
+            [
+                "Không giới hạn thời lượng mọi cuộc họp",
+                "Không giới hạn số phút dịch thuật AI đa chiều (TTFS <350ms)",
+                "Laya AI tự động trích xuất Action Items & Decisions",
+                "Xuất biên bản họp tự động (Markdown / Word / PDF)",
+                "Xóa watermark thương hiệu & Hỗ trợ ưu tiên 24/7"
+            ],
+            PriceUsd: 13.49m),
         new("pro_annual", "Gói LayaMeet Pro 1 Năm (Tiết kiệm 20%)", 948_000, "12 tháng không giới hạn",
             [
                 "Không giới hạn thời lượng mọi cuộc họp",
@@ -243,7 +252,8 @@ public sealed class BillingService : IBillingService
             PaidAt = paidAt,
             SubscriptionExpiresAt = paidAt.AddDays(
                 (order.PlanId == "pro_2year" || order.PlanId == "pro_biennial" || order.PlanId == "2year") ? 730 :
-                (order.PlanId == "pro_annual" ? 365 : 30))
+                (order.PlanId == "pro_annual" ? 365 :
+                (order.PlanId == "pro_quarterly" || order.PlanId == "quarterly" ? 90 : 30)))
         };
         Orders[order.OrderCode] = paidOrder;
 
@@ -310,6 +320,7 @@ public sealed class BillingService : IBillingService
         var found = Plans.FirstOrDefault(p =>
             string.Equals(p.PlanId, normalized, StringComparison.OrdinalIgnoreCase) ||
             ((normalized == "pro_monthly" || normalized == "monthly") && p.PlanId == "pro") ||
+            ((normalized == "pro_quarterly" || normalized == "quarterly" || normalized == "3month" || normalized == "pro_3month") && p.PlanId == "pro_quarterly") ||
             (normalized == "annual" && p.PlanId == "pro_annual") ||
             ((normalized == "2year" || normalized == "pro_biennial" || normalized == "biennial") && p.PlanId == "pro_2year"));
 

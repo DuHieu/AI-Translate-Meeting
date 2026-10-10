@@ -22,7 +22,7 @@ import { useLanguage } from '../../context/language-context-def';
 const PENDING_CHECKOUT_PLAN_KEY = 'layameet:pending-checkout-plan';
 const PAYMENT_ORDER_ERROR = '__PAYMENT_ORDER_FAILED__';
 
-type BillingPlanId = 'pro' | 'pro_annual' | 'pro_2year';
+type BillingPlanId = 'pro' | 'pro_quarterly' | 'pro_annual' | 'pro_2year';
 
 interface CheckoutCopy {
   close: string;
@@ -34,12 +34,14 @@ interface CheckoutCopy {
   gateBody: string;
   selectedPlan: string;
   monthly: string;
+  quarterly: string;
   annual: string;
   biennial: string;
   signIn: string;
   signInError: string;
   boundBadge: string;
   choosePlan: string;
+  save10: string;
   save20: string;
   save35: string;
   creatingQr: string;
@@ -76,6 +78,7 @@ const PLAN_OPTIONS: Array<{
   savings?: string;
 }> = [
   { id: 'pro', price: '99.000đ · $4.99', vndPrice: '99.000đ', usdPrice: '$4.99', duration: '1 month' },
+  { id: 'pro_quarterly', price: '269.000đ · $13.49', vndPrice: '269.000đ', usdPrice: '$13.49', duration: '3 months', savings: '10%' },
   { id: 'pro_annual', price: '948.000đ · $47.88', vndPrice: '948.000đ', usdPrice: '$47.88', duration: '12 months', savings: '20%' },
   { id: 'pro_2year', price: '1.544.000đ · $78.00', vndPrice: '1.544.000đ', usdPrice: '$78.00', duration: '24 months', savings: '35%' },
 ];
@@ -92,12 +95,14 @@ const CHECKOUT_COPY: Record<'vi' | 'en' | 'ja', CheckoutCopy> = {
       'LayaMeet Pro Unlimited được gắn trực tiếp với email tài khoản Google để quyền Host, thời lượng không giới hạn và hạn mức token đồng bộ trên mọi thiết bị.',
     selectedPlan: 'Gói đã chọn',
     monthly: 'Gói LayaMeet Pro 1 Tháng (99.000đ / tháng)',
+    quarterly: 'Gói LayaMeet Pro 1 Quý (Tiết kiệm 10%)',
     annual: 'Gói LayaMeet Pro 1 Năm (Tiết kiệm 20%)',
     biennial: 'Gói LayaMeet Pro 2 Năm (Tiết kiệm 35%)',
     signIn: 'Đăng nhập bằng Google để tiếp tục',
     signInError: 'Không thể bắt đầu đăng nhập Google.',
     boundBadge: 'Bản quyền Pro sẽ gắn với tài khoản này',
     choosePlan: 'Chọn chu kỳ thanh toán',
+    save10: 'Tiết kiệm 10%',
     save20: 'Tiết kiệm 20%',
     save35: 'Tiết kiệm 35%',
     creatingQr: 'Đang khởi tạo phiên thanh toán cho tài khoản của bạn…',
@@ -135,12 +140,14 @@ const CHECKOUT_COPY: Record<'vi' | 'en' | 'ja', CheckoutCopy> = {
       'LayaMeet Pro Unlimited is bound directly to your Google account email, so host privileges, unlimited duration, and token quota stay synced across every device.',
     selectedPlan: 'Selected plan',
     monthly: 'Pro Monthly',
-    annual: 'Pro Annual',
-    biennial: 'Pro 2 Years',
+    quarterly: 'Pro Quarterly (Save 10%)',
+    annual: 'Pro Annual (Save 20%)',
+    biennial: 'Pro 2 Years (Save 35%)',
     signIn: 'Sign in with Google to Continue',
     signInError: 'Could not start Google sign-in.',
     boundBadge: 'Pro license will be bound to this account',
     choosePlan: 'Choose billing cycle',
+    save10: 'Save 10%',
     save20: 'Save 20%',
     save35: 'Save 35%',
     creatingQr: 'Initializing payment session for your account…',
@@ -178,12 +185,14 @@ const CHECKOUT_COPY: Record<'vi' | 'en' | 'ja', CheckoutCopy> = {
       'LayaMeet Pro UnlimitedはGoogleアカウントのメールに直接紐づき、ホスト権限、無制限の会議時間、トークン枠をすべての端末で同期します。',
     selectedPlan: '選択中のプラン',
     monthly: 'Pro 月額プラン',
-    annual: 'Pro 年額プラン',
-    biennial: 'Pro 2年プラン',
+    quarterly: 'Pro 四半期プラン (10%お得)',
+    annual: 'Pro 年額プラン (20%お得)',
+    biennial: 'Pro 2年プラン (35%お得)',
     signIn: 'Googleでログインして続行',
     signInError: 'Googleログインを開始できませんでした。',
     boundBadge: 'Proライセンスはこのアカウントに紐づきます',
     choosePlan: '請求サイクルを選択',
+    save10: '10%お得',
     save20: '20%お得',
     save35: '35%お得',
     creatingQr: 'アカウント用の決済セッションを初期化しています…',
@@ -223,6 +232,9 @@ export interface CheckoutModalProps {
 function normalizePlanId(planId?: string): BillingPlanId {
   if (planId === 'pro_2year' || planId === '2year' || planId === 'pro_biennial' || planId === 'biennial') {
     return 'pro_2year';
+  }
+  if (planId === 'pro_quarterly' || planId === 'quarterly' || planId === '3month' || planId === 'pro_3month') {
+    return 'pro_quarterly';
   }
   return planId === 'pro_annual' || planId === 'annual' ? 'pro_annual' : 'pro';
 }
@@ -441,7 +453,9 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
       ? copy.annual
       : selectedPlanId === 'pro_2year'
         ? copy.biennial
-        : copy.monthly;
+        : selectedPlanId === 'pro_quarterly'
+          ? copy.quarterly
+          : copy.monthly;
 
   return createPortal(
     <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/75 p-3 backdrop-blur-sm sm:p-6" style={{ top: "var(--viewport-top)", height: "var(--app-height)", bottom: "auto", paddingBottom: "max(12px, env(safe-area-inset-bottom))" }}>
@@ -604,16 +618,23 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
               </div>
 
               <p className="mb-2 text-xs font-semibold text-zinc-300">{copy.choosePlan}</p>
-              <div className="mb-5 grid grid-cols-1 gap-2 sm:grid-cols-3">
+              <div className="mb-5 grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-4">
                 {PLAN_OPTIONS.map((plan) => {
                   const selected = plan.id === selectedPlanId;
                   const planLabel =
                     plan.id === 'pro'
                       ? copy.monthly
-                      : plan.id === 'pro_2year'
-                        ? copy.biennial
-                        : copy.annual;
-                  const savingsLabel = plan.id === 'pro_2year' ? copy.save35 : copy.save20;
+                      : plan.id === 'pro_quarterly'
+                        ? copy.quarterly
+                        : plan.id === 'pro_2year'
+                          ? copy.biennial
+                          : copy.annual;
+                  const savingsLabel =
+                    plan.id === 'pro_2year'
+                      ? copy.save35
+                      : plan.id === 'pro_quarterly'
+                        ? copy.save10
+                        : copy.save20;
                   const displayPrice = paymentMethod === 'polar' ? plan.usdPrice : plan.vndPrice;
 
                   return (
@@ -631,7 +652,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
                       <span className="flex items-center justify-between gap-1">
                         <span className="text-xs font-bold text-white sm:text-sm">{planLabel}</span>
                         {plan.savings && (
-                          <span className="rounded-full bg-emerald-500/15 px-2 py-0.5 text-[10px] font-bold text-emerald-300">
+                          <span className="rounded-full bg-emerald-500/15 px-2 py-0.5 text-[10px] font-bold text-emerald-300 whitespace-nowrap">
                             {savingsLabel}
                           </span>
                         )}

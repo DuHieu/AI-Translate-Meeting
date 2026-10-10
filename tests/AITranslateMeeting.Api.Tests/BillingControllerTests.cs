@@ -72,6 +72,26 @@ public sealed class BillingControllerTests
     }
 
     [Fact]
+    public void CreateOrder_WithCustomerEmailAndQuarterlyPlan_ReturnsQuarterlyOrder()
+    {
+        var controller = CreateController();
+
+        var result = controller.CreateOrder(new CreatePaymentOrderRequest(
+            "pro_quarterly",
+            "MEET01",
+            "  quarterly@example.com  ",
+            " Quarterly Customer "));
+
+        var ok = Assert.IsType<OkObjectResult>(result.Result);
+        var order = Assert.IsType<PaymentOrderResponse>(ok.Value);
+        Assert.Equal(269_000, order.Amount);
+        Assert.Equal("pro_quarterly", order.PlanId);
+        Assert.Equal("quarterly@example.com", order.CustomerEmail);
+        Assert.Equal("Quarterly Customer", order.CustomerName);
+        Assert.Equal("Gói LayaMeet Pro 1 Quý (Tiết kiệm 10%)", order.PlanName);
+    }
+
+    [Fact]
     public void CreateOrder_WithCustomerEmailAnd2YearPlan_Returns2YearOrder()
     {
         var controller = CreateController();
