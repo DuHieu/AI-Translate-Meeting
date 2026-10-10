@@ -1,13 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useLocation, Link } from 'react-router-dom';
+import { useNavigate, useLocation, Link, Navigate } from 'react-router-dom';
 import { meetingApi } from '../api/meetingApi';
 import {
   Plus,
   ArrowRight,
-  ShieldCheck,
   Globe,
-  Mic,
-  FileText,
   X,
   Settings,
   HelpCircle,
@@ -15,12 +12,10 @@ import {
   Video,
   Keyboard,
   Clock,
-  Layers,
   Zap,
   Home,
   CreditCard,
   Phone,
-  ChevronLeft,
   Calendar,
   Menu,
   LogOut,
@@ -29,9 +24,6 @@ import { admissionStorage } from '../utils/admissionStorage';
 import { LayaMeetLogo } from '../components/common/LayaMeetLogo';
 import { ThemeToggle } from '../components/common/ThemeToggle';
 import { InteractiveMeetingPreview } from '../components/home/InteractiveMeetingPreview';
-import { PricingSection } from '../components/home/PricingSection';
-import { FAQSection } from '../components/home/FAQSection';
-import { ContactSection } from '../components/home/ContactSection';
 import { LegalModal } from '../components/common/LegalModal';
 import { useLanguage } from '../context/language-context-def';
 import { useAuth } from '../context/auth-context-def';
@@ -209,25 +201,6 @@ export interface HomePageProps {
 
 export type ActiveSection = 'home' | 'features' | 'pricing' | 'faq' | 'contact' | 'developers';
 
-// Nav item definition for Google Meet style Menu Drawer
-interface NavDrawerItem {
-  id: ActiveSection | 'privacy' | 'settings' | 'status' | 'calendar' | 'tools' | 'history';
-  icon: React.ElementType;
-  labelKey: keyof (typeof HOME_UI)['vi'];
-  subtitle?: string;
-  badge?: string;
-}
-
-const DRAWER_MAIN_ITEMS: NavDrawerItem[] = [
-  { id: 'home', icon: Home, labelKey: 'railHome' },
-  { id: 'history', icon: Clock, labelKey: 'historyNav' },
-  { id: 'calendar', icon: Calendar, labelKey: 'calendarNav' },
-  { id: 'features', icon: Sparkles, labelKey: 'railFeatures' },
-  { id: 'pricing', icon: CreditCard, labelKey: 'railPricing' },
-  { id: 'faq', icon: HelpCircle, labelKey: 'railFaq' },
-  { id: 'contact', icon: Phone, labelKey: 'railContact' },
-];
-
 export const HomePage: React.FC<HomePageProps> = ({ forcedLanguage }) => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -249,45 +222,36 @@ export const HomePage: React.FC<HomePageProps> = ({ forcedLanguage }) => {
 
   useEffect(() => {
     const hashSection = location.hash.replace(/^#/, '');
-    if (
-      hashSection === 'home' ||
-      hashSection === 'features' ||
-      hashSection === 'pricing' ||
-      hashSection === 'faq' ||
-      hashSection === 'contact' ||
-      hashSection === 'developers'
-    ) {
-      setActiveSection(hashSection);
+    if (hashSection === 'pricing') {
+      navigate('/pricing', { replace: true });
+    } else if (hashSection === 'features') {
+      navigate('/features', { replace: true });
+    } else if (hashSection === 'faq') {
+      navigate('/faq', { replace: true });
+    } else if (hashSection === 'contact') {
+      navigate('/contact', { replace: true });
+    } else if (hashSection === 'developers') {
+      navigate('/developers', { replace: true });
     }
-  }, [location.hash]);
+  }, [location.hash, navigate]);
 
   useEffect(() => {
     if (authLoading || !user?.email) return;
 
     try {
       if (window.sessionStorage.getItem('layameet:pending-checkout-plan')) {
-        setActiveSection('pricing');
+        navigate('/pricing');
       }
     } catch {
       // Checkout can still be opened manually when sessionStorage is unavailable.
     }
-  }, [authLoading, user?.email]);
+  }, [authLoading, user?.email, navigate]);
 
   // Unified Google Meet style Left Menu Drawer (opens on logo / menu click)
   const [isNavDrawerOpen, setIsNavDrawerOpen] = useState(false);
 
   // Interactive Meeting Preview visibility (in-memory state, resets on page reload)
   const [isPreviewVisible, setIsPreviewVisible] = useState(true);
-
-  // Real-time Clock for Google Meet ergonomic header
-  const [currentClockTime, setCurrentClockTime] = useState(() => new Date());
-
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setCurrentClockTime(new Date());
-    }, 1000);
-    return () => clearInterval(timer);
-  }, []);
 
   // Body scroll lock when any drawer or modal is open
   useEffect(() => {
@@ -342,25 +306,6 @@ export const HomePage: React.FC<HomePageProps> = ({ forcedLanguage }) => {
     isScheduleMeetingOpen,
     activeSection,
   ]);
-
-  const formatMeetingClock = (date: Date, lang: AppLanguage) => {
-    try {
-      const locale = lang === 'ja' ? 'ja-JP' : lang === 'en' ? 'en-US' : 'vi-VN';
-      const timeStr = date.toLocaleTimeString(locale, {
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: lang === 'en',
-      });
-      const dateStr = date.toLocaleDateString(locale, {
-        weekday: 'short',
-        month: 'short',
-        day: 'numeric',
-      });
-      return `${timeStr} • ${dateStr}`;
-    } catch {
-      return date.toLocaleTimeString();
-    }
-  };
 
   // Sync forcedLanguage if navigating via /ja or /en
   useEffect(() => {
@@ -473,6 +418,14 @@ export const HomePage: React.FC<HomePageProps> = ({ forcedLanguage }) => {
     setIsNavDrawerOpen(false);
     if (id === 'developers') {
       navigate('/developers');
+    } else if (id === 'pricing') {
+      navigate('/pricing');
+    } else if (id === 'features') {
+      navigate('/features');
+    } else if (id === 'faq') {
+      navigate('/faq');
+    } else if (id === 'contact') {
+      navigate('/contact');
     } else if (id === 'status') {
       navigate('/system-status');
     } else if (id === 'privacy') {
@@ -480,7 +433,7 @@ export const HomePage: React.FC<HomePageProps> = ({ forcedLanguage }) => {
     } else if (id === 'settings') {
       navigate('/settings?tab=subtitles');
     } else if (id === 'plan') {
-      navigate('/settings?tab=plan');
+      navigate('/pricing');
     } else if (id === 'calendar') {
       setIsCalendarModalOpen(true);
     } else if (id === 'history') {
@@ -558,33 +511,6 @@ export const HomePage: React.FC<HomePageProps> = ({ forcedLanguage }) => {
           >
             <LayaMeetLogo size="md" />
           </Link>
-
-          {/* Real-time Meeting Clock */}
-          <div className="hidden xl:flex items-center gap-2 pl-4 border-l border-zinc-200 dark:border-[#2e2e30] text-xs font-medium text-zinc-500 dark:text-zinc-400 select-none">
-            <Clock className="w-3.5 h-3.5 text-zinc-400 dark:text-zinc-400" />
-            <span className="font-mono">{formatMeetingClock(currentClockTime, language)}</span>
-          </div>
-
-          {/* Breadcrumb: current section name when not on home */}
-          {activeSection !== 'home' && (
-            <div className="hidden lg:flex items-center gap-2 text-xs text-zinc-500 dark:text-zinc-400 pl-3 border-l border-zinc-200 dark:border-[#2e2e30]">
-              <span className="font-medium text-zinc-800 dark:text-zinc-200 capitalize">
-                {ui[
-                  DRAWER_MAIN_ITEMS.find((r) => r.id === activeSection)?.labelKey ??
-                    'railHome'
-                ]}
-              </span>
-              <button
-                type="button"
-                onClick={() => setActiveSection('home')}
-                data-testid="rail-back-home"
-                className="ml-2 flex items-center gap-1 text-blue-600 dark:text-blue-400 hover:underline cursor-pointer"
-              >
-                <ChevronLeft className="w-3.5 h-3.5" />
-                <span>{ui.backToHome}</span>
-              </button>
-            </div>
-          )}
         </div>
 
         {/* Desktop Quick Nav Actions & User Profile */}
@@ -867,103 +793,11 @@ export const HomePage: React.FC<HomePageProps> = ({ forcedLanguage }) => {
           )}
 
           {/* ── FEATURES section (inline) ── */}
-          {activeSection === 'features' && (
-            <section className="flex-1 overflow-y-auto animate-in fade-in duration-200">
-              <div className="w-full max-w-4xl mx-auto px-6 md:px-8 py-10 space-y-8">
-                {/* Header */}
-                <div className="space-y-2">
-                  <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-zinc-100 dark:bg-zinc-800/80 border border-zinc-200 dark:border-zinc-700 text-zinc-800 dark:text-zinc-200 text-xs font-medium">
-                    <Sparkles className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
-                    <span>{t.nav.polyglotMatrix}</span>
-                  </div>
-                  <h2 className="text-3xl font-bold text-zinc-950 dark:text-white tracking-tight">
-                    {t.features.sectionTitle}
-                  </h2>
-                  <p className="text-sm text-zinc-600 dark:text-zinc-400 leading-relaxed max-w-2xl">
-                    {t.features.sectionSubtitle}
-                  </p>
-                </div>
-
-                {/* 4 Feature Cards */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {t.features.items.map((item, idx) => {
-                    const icons = [Mic, Globe, FileText, ShieldCheck];
-                    const Icon = icons[idx] || Sparkles;
-                    return (
-                      <div
-                        key={item.title}
-                        className="bg-white dark:bg-[#17181f] border border-zinc-200 dark:border-[#2a2c36] rounded-xl p-5 space-y-2.5 shadow-xs"
-                      >
-                        <div className="w-9 h-9 rounded-lg bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 flex items-center justify-center text-zinc-700 dark:text-zinc-300">
-                          <Icon className="w-4 h-4" />
-                        </div>
-                        <h3 className="text-sm font-bold text-zinc-950 dark:text-white">{item.title}</h3>
-                        <p className="text-xs text-zinc-600 dark:text-zinc-400 leading-relaxed">{item.desc}</p>
-                      </div>
-                    );
-                  })}
-                </div>
-
-                {/* Architecture Highlights Pill Box */}
-                <div className="p-5 rounded-xl bg-zinc-50 dark:bg-[#14151a] border border-zinc-200 dark:border-zinc-800 space-y-3">
-                  <div className="flex items-center gap-2 text-xs font-semibold text-zinc-900 dark:text-zinc-100">
-                    <Layers className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-                    <span>Enterprise Multi-Tier Architecture</span>
-                  </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs text-zinc-700 dark:text-zinc-300">
-                    <div className="p-3 rounded-xl bg-white/80 dark:bg-[#1a1c24] border border-zinc-200/80 dark:border-[#2e313e]">
-                      <div className="font-bold text-zinc-950 dark:text-white flex items-center gap-1.5">
-                        <Zap className="w-3.5 h-3.5 text-amber-500" />
-                        <span>WebRTC SFU</span>
-                      </div>
-                      <p className="text-[11px] text-zinc-500 dark:text-zinc-400 mt-1">LiveKit Engine with dynamic renegotiation locks</p>
-                    </div>
-                    <div className="p-3 rounded-xl bg-white/80 dark:bg-[#1a1c24] border border-zinc-200/80 dark:border-[#2e313e]">
-                      <div className="font-bold text-zinc-950 dark:text-white flex items-center gap-1.5">
-                        <Mic className="w-3.5 h-3.5 text-blue-500" />
-                        <span>Whisper int8</span>
-                      </div>
-                      <p className="text-[11px] text-zinc-500 dark:text-zinc-400 mt-1">350ms chunking with VAD energy threshold</p>
-                    </div>
-                    <div className="p-3 rounded-xl bg-white/80 dark:bg-[#1a1c24] border border-zinc-200/80 dark:border-[#2e313e]">
-                      <div className="font-bold text-zinc-950 dark:text-white flex items-center gap-1.5">
-                        <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
-                        <span>RAM-Only</span>
-                      </div>
-                      <p className="text-[11px] text-zinc-500 dark:text-zinc-400 mt-1">Zero raw audio files written to persistent storage</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </section>
-          )}
-
-          {/* ── PRICING section (inline) ── */}
-          {activeSection === 'pricing' && (
-            <section className="flex-1 overflow-y-auto animate-in fade-in duration-200">
-              <div className="w-full max-w-5xl mx-auto px-4 py-8">
-                <PricingSection />
-              </div>
-            </section>
-          )}
-
-          {/* ── FAQ section (inline) ── */}
-          {activeSection === 'faq' && (
-            <section className="flex-1 overflow-y-auto animate-in fade-in duration-200">
-              <div className="w-full max-w-3xl mx-auto px-6 py-8">
-                <FAQSection />
-              </div>
-            </section>
-          )}
-
-          {/* ── CONTACT section (inline) ── */}
-          {activeSection === 'contact' && (
-            <section className="flex-1 overflow-y-auto animate-in fade-in duration-200">
-              <div className="w-full max-w-4xl mx-auto px-6 py-8">
-                <ContactSection />
-              </div>
-            </section>
-          )}
+          {/* ── Redirect inline section requests to dedicated full-page routes ── */}
+          {activeSection === 'features' && <Navigate to="/features" replace />}
+          {activeSection === 'pricing' && <Navigate to="/pricing" replace />}
+          {activeSection === 'faq' && <Navigate to="/faq" replace />}
+          {activeSection === 'contact' && <Navigate to="/contact" replace />}
         </div>
 
         {/* ── MINIMAL BOTTOM DOCK (Desktop / Laptop / Tablet) ── */}
@@ -1076,6 +910,20 @@ export const HomePage: React.FC<HomePageProps> = ({ forcedLanguage }) => {
 
                 <button
                   type="button"
+                  onClick={() => handleSelectDrawerItem('features')}
+                  data-testid="drawer-features"
+                  className={`w-full px-3 py-2.5 rounded-xl flex items-center gap-3 text-sm font-medium transition-colors cursor-pointer text-left ${
+                    activeSection === 'features'
+                      ? 'bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 font-semibold'
+                      : 'text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-white/[0.05]'
+                  }`}
+                >
+                  <Sparkles className="w-4 h-4 text-zinc-500 dark:text-zinc-400 shrink-0" />
+                  <span>{ui.railFeatures}</span>
+                </button>
+
+                <button
+                  type="button"
                   onClick={() => handleSelectDrawerItem('pricing')}
                   data-testid="drawer-pricing"
                   className={`w-full px-3 py-2.5 rounded-xl flex items-center gap-3 text-sm font-medium transition-colors cursor-pointer text-left ${
@@ -1090,12 +938,50 @@ export const HomePage: React.FC<HomePageProps> = ({ forcedLanguage }) => {
 
                 <button
                   type="button"
+                  onClick={() => handleSelectDrawerItem('faq')}
+                  data-testid="drawer-faq"
+                  className={`w-full px-3 py-2.5 rounded-xl flex items-center gap-3 text-sm font-medium transition-colors cursor-pointer text-left ${
+                    activeSection === 'faq'
+                      ? 'bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 font-semibold'
+                      : 'text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-white/[0.05]'
+                  }`}
+                >
+                  <HelpCircle className="w-4 h-4 text-zinc-500 dark:text-zinc-400 shrink-0" />
+                  <span>{ui.railFaq}</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => handleSelectDrawerItem('contact')}
+                  data-testid="drawer-contact"
+                  className={`w-full px-3 py-2.5 rounded-xl flex items-center gap-3 text-sm font-medium transition-colors cursor-pointer text-left ${
+                    activeSection === 'contact'
+                      ? 'bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 font-semibold'
+                      : 'text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-white/[0.05]'
+                  }`}
+                >
+                  <Phone className="w-4 h-4 text-zinc-500 dark:text-zinc-400 shrink-0" />
+                  <span>{ui.railContact}</span>
+                </button>
+
+                <button
+                  type="button"
                   onClick={() => handleSelectDrawerItem('settings')}
                   data-testid="drawer-settings"
                   className="w-full px-3 py-2.5 rounded-xl flex items-center gap-3 text-sm font-medium text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-white/[0.05] transition-colors cursor-pointer text-left"
                 >
                   <Settings className="w-4 h-4 text-zinc-500 dark:text-zinc-400 shrink-0" />
                   <span>{ui.settingsNav}</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => handleSelectDrawerItem('tools')}
+                  data-testid="drawer-tools"
+                  className="w-full px-3 py-2.5 rounded-xl flex items-center gap-3 text-sm font-medium text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-white/[0.05] transition-colors cursor-pointer text-left"
+                >
+                  <Zap className="w-4 h-4 text-zinc-500 dark:text-zinc-400 shrink-0" />
+                  <span>{ui.toolsNav}</span>
                 </button>
               </nav>
             </div>

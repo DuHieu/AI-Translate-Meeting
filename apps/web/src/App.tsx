@@ -19,6 +19,10 @@ const BlogPostPage = lazy(() => import('./pages/BlogPostPage').then((module) => 
 const AuthCallbackPage = lazy(() => import('./pages/AuthCallbackPage').then((module) => ({ default: module.AuthCallbackPage })));
 const SettingsPage = lazy(() => import('./pages/SettingsPage').then((module) => ({ default: module.SettingsPage })));
 const SystemStatusPage = lazy(() => import('./pages/SystemStatusPage').then((module) => ({ default: module.SystemStatusPage })));
+const PricingPage = lazy(() => import('./pages/PricingPage').then((module) => ({ default: module.PricingPage })));
+const FeaturesPage = lazy(() => import('./pages/FeaturesPage').then((module) => ({ default: module.FeaturesPage })));
+const FaqPage = lazy(() => import('./pages/FaqPage').then((module) => ({ default: module.FaqPage })));
+const ContactPage = lazy(() => import('./pages/ContactPage').then((module) => ({ default: module.ContactPage })));
 
 const LegacyMeetingRedirect: React.FC = () => {
   const { meetingCode } = useParams<{ meetingCode: string }>();
@@ -52,6 +56,22 @@ export const App: React.FC = () => {
                 <Route path="/developers" element={<DevelopersPage />} />
                 <Route path="/settings" element={<SettingsPage />} />
                 <Route path="/system-status" element={<SystemStatusPage />} />
+                <Route path="/pricing" element={<PricingPage />} />
+                <Route path="/vi/pricing" element={<PricingPage forcedLanguage="vi" />} />
+                <Route path="/en/pricing" element={<PricingPage forcedLanguage="en" />} />
+                <Route path="/ja/pricing" element={<PricingPage forcedLanguage="ja" />} />
+                <Route path="/features" element={<FeaturesPage />} />
+                <Route path="/vi/features" element={<FeaturesPage forcedLanguage="vi" />} />
+                <Route path="/en/features" element={<FeaturesPage forcedLanguage="en" />} />
+                <Route path="/ja/features" element={<FeaturesPage forcedLanguage="ja" />} />
+                <Route path="/faq" element={<FaqPage />} />
+                <Route path="/vi/faq" element={<FaqPage forcedLanguage="vi" />} />
+                <Route path="/en/faq" element={<FaqPage forcedLanguage="en" />} />
+                <Route path="/ja/faq" element={<FaqPage forcedLanguage="ja" />} />
+                <Route path="/contact" element={<ContactPage />} />
+                <Route path="/vi/contact" element={<ContactPage forcedLanguage="vi" />} />
+                <Route path="/en/contact" element={<ContactPage forcedLanguage="en" />} />
+                <Route path="/ja/contact" element={<ContactPage forcedLanguage="ja" />} />
                 <Route path="/cai-dat" element={<Navigate to="/settings" replace />} />
                 <Route path="/cam-nang" element={<BlogListingPage forcedLanguage="vi" />} />
                 <Route path="/cam-nang/:slug" element={<BlogPostPage />} />

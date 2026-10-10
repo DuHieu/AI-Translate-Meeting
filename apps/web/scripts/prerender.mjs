@@ -8,6 +8,38 @@ const templatePath = path.join(distDir, 'index.html');
 
 const ROUTES = [
   {
+    route: 'pricing',
+    title: 'Bảng Giá & Gói Dịch Vụ AI | Laya Meet',
+    description: 'Bảng giá dịch vụ họp trực tuyến song ngữ AI Laya Meet. Đăng ký gói Cá nhân hoặc Doanh nghiệp với nhận dạng giọng nói <350ms và bảo mật RAM-Only.',
+    canonical: 'https://layameet.com/pricing',
+    ogTitle: 'Bảng Giá & Gói Dịch Vụ AI - Laya Meet',
+    ogDescription: 'Lựa chọn gói dịch vụ họp trực tuyến song ngữ AI linh hoạt với Faster-Whisper và bảo mật RAM-only.',
+  },
+  {
+    route: 'features',
+    title: 'Tính Năng & Kiến Trúc Họp Song Ngữ AI | Laya Meet',
+    description: 'Khám phá kiến trúc công nghệ họp trực tuyến song ngữ AI: Faster-Whisper int8 <350ms, WebRTC SFU LiveKit, bảo mật 100% RAM-Only và trích xuất Action Items.',
+    canonical: 'https://layameet.com/features',
+    ogTitle: 'Tính Năng & Kiến Trúc Họp Song Ngữ AI - Laya Meet',
+    ogDescription: 'Đột phá giao tiếp với AI nhận dạng giọng nói <350ms, WebRTC SFU và bảo mật 100% RAM-only.',
+  },
+  {
+    route: 'faq',
+    title: 'Câu Hỏi Thường Gặp & Giải Đáp Kỹ Thuật | Laya Meet',
+    description: 'Giải đáp các thắc mắc thường gặp về nền tảng họp trực tuyến song ngữ AI Laya Meet: ma trận Any-to-Any, độ trễ dịch thuật <350ms, và bảo mật RAM-Only.',
+    canonical: 'https://layameet.com/faq',
+    ogTitle: 'Hỏi Đáp & Kỹ Thuật Laya Meet - FAQ',
+    ogDescription: 'Mọi điều bạn cần biết về kiến trúc Any-to-Any đa ngôn ngữ, cam kết bảo mật On-Premise và hiệu năng thời gian thực.',
+  },
+  {
+    route: 'contact',
+    title: 'Tư Vấn Triển Khai On-Premise & Doanh Nghiệp | Laya Meet',
+    description: 'Liên hệ tư vấn kiến trúc họp trực tuyến song ngữ AI On-Premise, đăng ký Demo 1-1 và giải pháp bảo mật dữ liệu RAM-Only cho doanh nghiệp.',
+    canonical: 'https://layameet.com/contact',
+    ogTitle: 'Tư Vấn Doanh Nghiệp & On-Premise - Laya Meet',
+    ogDescription: 'Đặt lịch Demo 1-1 trực tiếp hoặc nhận tư vấn kiến trúc On-Premise tối ưu cho hạ tầng riêng của công ty bạn.',
+  },
+  {
     route: 'settings',
     title: 'Cài Đặt Hệ Thống & Thông Số AI (BYOK) | Laya Meet',
     description: 'Tùy chỉnh động cơ dịch thuật AI, kết nối khóa API cá nhân (BYOK), độ trễ âm thanh VAD và cấu hình phụ đề hiển thị.',
