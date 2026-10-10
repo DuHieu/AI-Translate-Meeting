@@ -155,12 +155,17 @@ export const PaymentPolicyPage: React.FC = () => {
             Mọi thắc mắc về giao dịch thanh toán, tra cứu trạng thái đơn hàng hoặc yêu cầu hỗ trợ kỹ thuật, quý khách vui lòng liên hệ với bộ phận phụ trách:
           </p>
           <div className="p-4 rounded-xl bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 space-y-1.5 text-xs">
-            <div><strong>Doanh nghiệp chủ quản:</strong> {info.companyName}</div>
-            <div><strong>Người đại diện theo pháp luật:</strong> {info.legalRepresentative}</div>
-            <div><strong>Mã số doanh nghiệp:</strong> {info.taxId} ({info.taxIssuedPlace} cấp ngày {info.taxIssuedDate})</div>
+            <div><strong>Chủ sở hữu / Đơn vị quản lý:</strong> {info.companyName}</div>
+            <div><strong>Người đại diện:</strong> {info.ownerName}</div>
+            {info.taxId ? (
+              <div><strong>Mã số doanh nghiệp / MST:</strong> {info.taxId} ({info.taxIssuedPlace} cấp ngày {info.taxIssuedDate})</div>
+            ) : null}
             <div><strong>Hotline kỹ thuật &amp; Kế toán:</strong> <a href={`tel:${info.hotline.replace(/\s+/g, '')}`} className="text-blue-600 hover:underline font-bold">{info.hotline}</a></div>
             <div><strong>Email hỗ trợ:</strong> <a href={`mailto:${info.email}`} className="text-blue-600 hover:underline font-bold">{info.email}</a></div>
-            <div><strong>Trụ sở chính:</strong> {info.address}</div>
+            {info.linkedinUrl && (
+              <div><strong>Hồ sơ LinkedIn:</strong> <a href={info.linkedinUrl} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">{info.linkedinUrl}</a></div>
+            )}
+            <div><strong>Địa chỉ liên hệ:</strong> {info.address}</div>
             <div><strong>Thời gian hỗ trợ:</strong> {info.workingHours}</div>
           </div>
         </section>

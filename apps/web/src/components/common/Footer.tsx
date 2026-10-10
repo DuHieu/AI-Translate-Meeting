@@ -257,18 +257,29 @@ export const Footer: React.FC<FooterProps> = ({
               {BUSINESS_INFO.companyName}
             </div>
             <div>
-              <strong>Người đại diện theo pháp luật:</strong> {BUSINESS_INFO.legalRepresentative} · <strong>Mã số doanh nghiệp:</strong> {BUSINESS_INFO.taxId} ({BUSINESS_INFO.taxIssuedPlace} cấp ngày {BUSINESS_INFO.taxIssuedDate})
+              <strong>Chủ sở hữu / Người đại diện:</strong> {BUSINESS_INFO.ownerName}
+              {BUSINESS_INFO.taxId ? (
+                <span>
+                  {' '}· <strong>Mã số thuế / MST:</strong> {BUSINESS_INFO.taxId}
+                  {BUSINESS_INFO.taxIssuedPlace && ` (${BUSINESS_INFO.taxIssuedPlace} cấp ngày ${BUSINESS_INFO.taxIssuedDate})`}
+                </span>
+              ) : null}
             </div>
             <div>
-              <strong>Trụ sở chính:</strong> {BUSINESS_INFO.address}
+              <strong>Địa chỉ liên hệ:</strong> {BUSINESS_INFO.address}
             </div>
             <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
               <span>
-                <strong>Hotline / Zalo:</strong> <a href={`tel:${BUSINESS_INFO.hotline.replace(/\s+/g, '')}`} className="text-blue-600 dark:text-blue-400 hover:underline">{BUSINESS_INFO.hotline}</a>
+                <strong>Hotline / Zalo:</strong> <a href={`tel:${BUSINESS_INFO.hotline.replace(/\s+/g, '')}`} className="text-blue-600 dark:text-blue-400 hover:underline font-semibold">{BUSINESS_INFO.hotline}</a>
               </span>
               <span>
-                <strong>Email:</strong> <a href={`mailto:${BUSINESS_INFO.email}`} className="text-blue-600 dark:text-blue-400 hover:underline">{BUSINESS_INFO.email}</a>
+                <strong>Email:</strong> <a href={`mailto:${BUSINESS_INFO.email}`} className="text-blue-600 dark:text-blue-400 hover:underline font-semibold">{BUSINESS_INFO.email}</a>
               </span>
+              {BUSINESS_INFO.linkedinUrl && (
+                <span>
+                  <strong>LinkedIn:</strong> <a href={BUSINESS_INFO.linkedinUrl} target="_blank" rel="noopener noreferrer" className="text-blue-600 dark:text-blue-400 hover:underline font-semibold">hieudu</a>
+                </span>
+              )}
               <span>
                 <strong>Giờ làm việc:</strong> {BUSINESS_INFO.workingHours}
               </span>
