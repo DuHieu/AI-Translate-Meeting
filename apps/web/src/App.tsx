@@ -26,6 +26,11 @@ const FaqPage = lazy(() => import('./pages/FaqPage').then((module) => ({ default
 const ContactPage = lazy(() => import('./pages/ContactPage').then((module) => ({ default: module.ContactPage })));
 const CalendarPage = lazy(() => import('./pages/CalendarPage').then((module) => ({ default: module.CalendarPage })));
 const HistoryPage = lazy(() => import('./pages/HistoryPage').then((module) => ({ default: module.HistoryPage })));
+const PaymentPolicyPage = lazy(() => import('./pages/PaymentPolicyPage').then((module) => ({ default: module.PaymentPolicyPage })));
+const PrivacyPolicyPage = lazy(() => import('./pages/PrivacyPolicyPage').then((module) => ({ default: module.PrivacyPolicyPage })));
+const TermsOfServicePage = lazy(() => import('./pages/TermsOfServicePage').then((module) => ({ default: module.TermsOfServicePage })));
+const RefundPolicyPage = lazy(() => import('./pages/RefundPolicyPage').then((module) => ({ default: module.RefundPolicyPage })));
+const DeliveryPolicyPage = lazy(() => import('./pages/DeliveryPolicyPage').then((module) => ({ default: module.DeliveryPolicyPage })));
 
 const LegacyMeetingRedirect: React.FC = () => {
   const { meetingCode } = useParams<{ meetingCode: string }>();
@@ -99,6 +104,16 @@ export const App: React.FC = () => {
                 <Route path="/hop-song-ngu-tieng-han" element={<LanguagePairLandingPage variant="korean" />} />
                 <Route path="/so-sanh/layameet-vs-zoom" element={<ComparisonLandingPage competitor="zoom" />} />
                 <Route path="/so-sanh/layameet-vs-google-meet" element={<ComparisonLandingPage competitor="google-meet" />} />
+                <Route path="/chinh-sach-thanh-toan" element={<PaymentPolicyPage />} />
+                <Route path="/payment-policy" element={<PaymentPolicyPage />} />
+                <Route path="/chinh-sach-bao-mat" element={<PrivacyPolicyPage />} />
+                <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
+                <Route path="/dieu-khoan-dich-vu" element={<TermsOfServicePage />} />
+                <Route path="/terms-of-service" element={<TermsOfServicePage />} />
+                <Route path="/chinh-sach-khieu-nai-hoan-tien" element={<RefundPolicyPage />} />
+                <Route path="/refund-policy" element={<RefundPolicyPage />} />
+                <Route path="/chinh-sach-giao-nhan-cung-cap-dich-vu" element={<DeliveryPolicyPage />} />
+                <Route path="/delivery-policy" element={<DeliveryPolicyPage />} />
                 <Route path="/prejoin/:meetingCode" element={<LegacyMeetingRedirect />} />
                 <Route path="/join/:meetingCode" element={<LegacyMeetingRedirect />} />
                 <Route path="/meeting/:meetingCode" element={<MeetingPage />} />

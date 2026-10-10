@@ -21,6 +21,7 @@ import { GoogleAuthControl } from '../auth/GoogleAuthControl';
 import { NeuralLinguisticBackground } from './NeuralLinguisticBackground';
 import { BreadcrumbItem } from './Breadcrumb';
 import { LegalModal } from './LegalModal';
+import { Footer } from './Footer';
 import { useLanguage } from '../../context/language-context-def';
 import { useAuth } from '../../context/auth-context-def';
 import { AppLanguage } from '../../i18n';
@@ -82,6 +83,9 @@ export interface PublicPageShellProps {
   children: React.ReactNode;
   forcedLanguage?: AppLanguage;
   activeDrawerId?: 'home' | 'features' | 'pricing' | 'faq' | 'contact' | 'settings' | 'calendar' | 'history';
+  pageTitle?: string;
+  pageHeading?: string;
+  pageSubtitle?: string;
 }
 
 export const PublicPageShell: React.FC<PublicPageShellProps> = ({
@@ -89,9 +93,12 @@ export const PublicPageShell: React.FC<PublicPageShellProps> = ({
   children,
   forcedLanguage,
   activeDrawerId,
+  pageTitle,
+  pageHeading,
+  pageSubtitle,
 }) => {
   const navigate = useNavigate();
-  const { language, setLanguage, t } = useLanguage();
+  const { language, setLanguage } = useLanguage();
   const { user, signOut } = useAuth();
   const copy = SHELL_COPY[language] || SHELL_COPY.vi;
 
@@ -104,6 +111,12 @@ export const PublicPageShell: React.FC<PublicPageShellProps> = ({
       setLanguage(forcedLanguage);
     }
   }, [forcedLanguage, language, setLanguage]);
+
+  useEffect(() => {
+    if (pageTitle) {
+      document.title = pageTitle;
+    }
+  }, [pageTitle]);
 
   // Keyboard navigation & drawer dismissal
   useEffect(() => {
@@ -264,45 +277,25 @@ export const PublicPageShell: React.FC<PublicPageShellProps> = ({
 
       {/* ── Main Content Area (Natural Window Scroll) ── */}
       <main className="relative z-10 flex-1 w-full">
+        {pageHeading && (
+          <div className="border-b border-zinc-200/80 dark:border-zinc-800/80 bg-zinc-50/50 dark:bg-zinc-900/40">
+            <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10">
+              <h1 className="text-2xl sm:text-3xl font-extrabold text-zinc-950 dark:text-white tracking-tight">
+                {pageHeading}
+              </h1>
+              {pageSubtitle && (
+                <p className="mt-2 text-sm sm:text-base text-zinc-600 dark:text-zinc-400 max-w-2xl leading-relaxed">
+                  {pageSubtitle}
+                </p>
+              )}
+            </div>
+          </div>
+        )}
         {children}
       </main>
 
-      {/* ── Footer ── */}
-      <footer className="relative z-10 border-t border-zinc-200/80 dark:border-[#222327] bg-white/75 dark:bg-[#0c0c0e]/75 backdrop-blur-md px-4 sm:px-6 lg:px-12 py-4 flex flex-wrap gap-4 items-center justify-between text-xs text-zinc-500 dark:text-zinc-400 shrink-0">
-        <div className="flex items-center gap-3">
-          <span>{t.footer.copyright}</span>
-          <span className="text-zinc-300 dark:text-zinc-700">•</span>
-          <div className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400 font-mono text-[11px]">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-            <span>{copy.minimalFooterBadge}</span>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-4 text-xs">
-          <button
-            type="button"
-            onClick={() => setLegalModalType('privacy')}
-            className="hover:text-zinc-900 dark:hover:text-zinc-200 transition-colors cursor-pointer"
-          >
-            {copy.privacyLink}
-          </button>
-          <span>•</span>
-          <button
-            type="button"
-            onClick={() => setLegalModalType('terms')}
-            className="hover:text-zinc-900 dark:hover:text-zinc-200 transition-colors cursor-pointer"
-          >
-            {copy.termsLink}
-          </button>
-          <span>•</span>
-          <Link
-            to="/cam-nang"
-            className="hover:text-zinc-900 dark:hover:text-zinc-200 transition-colors"
-          >
-            {t.footer.guides}
-          </Link>
-        </div>
-      </footer>
+      {/* ── Official Compliance Footer ── */}
+      <Footer />
 
       {/* ── Navigation Drawer Modal ── */}
       {isNavDrawerOpen && (

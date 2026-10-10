@@ -173,6 +173,46 @@ const ROUTES = [
     ogTitle: 'Laya Meet ガイド - AI多言語オンライン会議＆リアルタイム字幕翻訳',
     ogDescription: '日越オフショア開発の言葉の壁を解消するリアルタイム字幕翻訳（350ms未満）の実践ガイド。',
   },
+  {
+    route: 'chinh-sach-thanh-toan',
+    title: 'Chính Sách Thanh Toán & Hóa Đơn VAT | LayaMeet',
+    description: 'Quy định phương thức thanh toán VietQR Napas 24/7, thẻ quốc tế và xuất hóa đơn điện tử giá trị gia tăng theo quy định Bộ Công Thương.',
+    canonical: 'https://layameet.com/chinh-sach-thanh-toan',
+    ogTitle: 'Chính Sách Thanh Toán & Hóa Đơn VAT - LayaMeet',
+    ogDescription: 'Minh bạch phương thức thanh toán chuyển khoản VietQR, thẻ tín dụng và xuất hóa đơn điện tử hợp pháp.',
+  },
+  {
+    route: 'chinh-sach-bao-mat',
+    title: 'Chính Sách Bảo Mật Thông Tin Khách Hàng | LayaMeet',
+    description: 'Cam kết bảo vệ dữ liệu cá nhân theo Điều 68-73 Nghị định 52/2013/NĐ-CP và Nghị định 13/2023/NĐ-CP. Kiến trúc 100% RAM-Only, Zero Raw Audio.',
+    canonical: 'https://layameet.com/chinh-sach-bao-mat',
+    ogTitle: 'Chính Sách Bảo Mật Thông Tin Khách Hàng - LayaMeet',
+    ogDescription: 'Cam kết bảo mật dữ liệu cá nhân theo quy định Bộ Công Thương và kiến trúc Zero Raw Audio Storage.',
+  },
+  {
+    route: 'dieu-khoan-dich-vu',
+    title: 'Điều Khoản Dịch Vụ & Thỏa Thuận Sử Dụng | LayaMeet',
+    description: 'Quy định quyền và nghĩa vụ của bên cung cấp dịch vụ và người sử dụng nền tảng họp trực tuyến song ngữ AI LayaMeet.',
+    canonical: 'https://layameet.com/dieu-khoan-dich-vu',
+    ogTitle: 'Điều Khoản Dịch Vụ & Thỏa Thuận Sử Dụng - LayaMeet',
+    ogDescription: 'Thỏa thuận sử dụng dịch vụ họp trực tuyến song ngữ AI LayaMeet theo quy định pháp luật Việt Nam.',
+  },
+  {
+    route: 'chinh-sach-khieu-nai-hoan-tien',
+    title: 'Chính Sách Khiếu Nại & Hoàn Tiền 100% | LayaMeet',
+    description: 'Quy trình tiếp nhận khiếu nại và cam kết hoàn tiền 100% trong vòng 24 giờ nếu phát sinh sự cố kỹ thuật hoặc không hài lòng.',
+    canonical: 'https://layameet.com/chinh-sach-khieu-nai-hoan-tien',
+    ogTitle: 'Chính Sách Khiếu Nại & Hoàn Tiền 100% - LayaMeet',
+    ogDescription: 'Cam kết bảo vệ quyền lợi người tiêu dùng theo quy định Bộ Công Thương và cam kết hoàn tiền 100% trong 24 giờ.',
+  },
+  {
+    route: 'chinh-sach-giao-nhan-cung-cap-dich-vu',
+    title: 'Chính Sách Giao Nhận & Cung Cấp Dịch Vụ Số | LayaMeet',
+    description: 'Quy định phương thức chuyển giao và kích hoạt bản quyền phần mềm dịch vụ họp trực tuyến song ngữ AI trực tuyến tức thì.',
+    canonical: 'https://layameet.com/chinh-sach-giao-nhan-cung-cap-dich-vu',
+    ogTitle: 'Chính Sách Giao Nhận & Cung Cấp Dịch Vụ Số - LayaMeet',
+    ogDescription: 'Chuyển giao và kích hoạt dịch vụ phần mềm trực tuyến tức thì qua email và nền tảng web LayaMeet.',
+  },
 ];
 
 // Rich Blog Articles for Static SEO Pre-rendering & Crawler Ingestion

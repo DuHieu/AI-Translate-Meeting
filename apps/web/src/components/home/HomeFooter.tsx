@@ -10,7 +10,7 @@ interface HomeFooterProps {
   onStatus: () => void;
 }
 
-export function HomeFooter({ onNavigate, onLegal, onStatus }: HomeFooterProps) {
+export function HomeFooter({ onNavigate, onLegal: _onLegal, onStatus }: HomeFooterProps) {
   const { language, t } = useLanguage();
   const copy = HOME_COPY[language];
   return (
@@ -19,9 +19,19 @@ export function HomeFooter({ onNavigate, onLegal, onStatus }: HomeFooterProps) {
         <div className="lm-footer-brand"><button type="button" className="lm-brand" onClick={() => onNavigate('home')} aria-label={copy.home}><LayaMeetLogo size="md" /></button><p>{copy.footerDescription}</p></div>
         <nav aria-label={copy.product}><h2>{copy.product}</h2><button type="button" onClick={() => onNavigate('features')}>{t.nav.features}</button><button type="button" onClick={() => onNavigate('pricing')}>{t.nav.pricing}</button><button type="button" onClick={() => onNavigate('contact')}>{t.nav.onPrem}</button></nav>
         <nav aria-label={copy.resources}><h2>{copy.resources}</h2><button type="button" onClick={() => onNavigate('faq')}>{t.nav.faq}</button><Link to={language === 'en' ? '/en/guide' : language === 'ja' ? '/ja/guide' : '/cam-nang'}>{t.footer.guides}</Link><Link to="/developers">{t.nav.developers}</Link></nav>
-        <nav aria-label={t.footer.legalCol}><h2>{t.footer.legalCol}</h2><button type="button" onClick={() => onLegal('privacy')}>{t.footer.privacyPolicy}</button><button type="button" onClick={() => onLegal('terms')}>{t.footer.termsOfService}</button><button type="button" onClick={onStatus}>{t.nav.systemShort}</button></nav>
+        <nav aria-label={t.footer.legalCol}>
+          <h2>{t.footer.legalCol}</h2>
+          <Link to="/chinh-sach-thanh-toan">Chính sách thanh toán</Link>
+          <Link to="/chinh-sach-bao-mat">{t.footer.privacyPolicy}</Link>
+          <Link to="/dieu-khoan-dich-vu">{t.footer.termsOfService}</Link>
+          <Link to="/chinh-sach-khieu-nai-hoan-tien">Khiếu nại & hoàn tiền</Link>
+          <button type="button" onClick={onStatus}>{t.nav.systemShort}</button>
+        </nav>
       </div>
-      <div className="lm-container lm-footer-bottom"><span>{t.footer.copyright}</span><button type="button" className="lm-text-button" onClick={onStatus}><ShieldCheck size={16} />{t.footer.ramOnlyBadge}</button></div>
+      <div className="lm-container lm-footer-bottom">
+        <span>{t.footer.copyright}</span>
+        <button type="button" className="lm-text-button" onClick={onStatus}><ShieldCheck size={16} />{t.footer.ramOnlyBadge}</button>
+      </div>
     </footer>
   );
 }

@@ -3,6 +3,8 @@ import { Link } from 'react-router-dom';
 import { LayaMeetLogo } from './LayaMeetLogo';
 import { ShieldCheck, Activity, Heart } from 'lucide-react';
 import { useLanguage } from '../../context/language-context-def';
+import { BUSINESS_INFO } from '../../config/businessInfo';
+import { MoitBadge } from './MoitBadge';
 
 interface FooterProps {
   onOpenStatusModal?: () => void;
@@ -12,8 +14,8 @@ interface FooterProps {
 
 export const Footer: React.FC<FooterProps> = ({
   onOpenStatusModal,
-  onOpenPrivacyModal,
-  onOpenTermsModal,
+  onOpenPrivacyModal: _onOpenPrivacyModal,
+  onOpenTermsModal: _onOpenTermsModal,
 }) => {
   const { t, language } = useLanguage();
   const f = t.footer;
@@ -169,38 +171,51 @@ export const Footer: React.FC<FooterProps> = ({
             </ul>
           </div>
 
-          {/* Col 4: Pháp lý & Hỗ trợ */}
+          {/* Col 4: Pháp lý & Chính Sách Bắt Buộc (Bộ Công Thương) */}
           <div className="space-y-3 text-xs">
             <div className="font-bold text-zinc-950 dark:text-white uppercase tracking-wider text-[11px]">
-              {f.legalCol}
+              {language === 'ja' ? '法的情報・ポリシー' : language === 'en' ? 'Legal & Policies' : 'Chính Sách & Pháp Lý'}
             </div>
             <ul className="space-y-2 text-zinc-500 dark:text-zinc-400">
               <li>
-                <button
-                  type="button"
-                  onClick={onOpenPrivacyModal}
-                  className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors text-left cursor-pointer"
+                <Link
+                  to="/chinh-sach-thanh-toan"
+                  className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors font-medium block"
                 >
-                  {f.privacyPolicy}
-                </button>
+                  {language === 'ja' ? '決済ポリシー & 請求書' : language === 'en' ? 'Payment Policy & Invoicing' : 'Chính sách thanh toán'}
+                </Link>
               </li>
               <li>
-                <button
-                  type="button"
-                  onClick={onOpenTermsModal}
-                  className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors text-left cursor-pointer"
+                <Link
+                  to="/chinh-sach-bao-mat"
+                  className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors font-medium block"
                 >
-                  {f.termsOfService}
-                </button>
+                  {language === 'ja' ? '個人情報保護方針' : language === 'en' ? 'Privacy Policy' : 'Chính sách bảo mật'}
+                </Link>
               </li>
               <li>
-                <button
-                  type="button"
-                  onClick={onOpenTermsModal}
-                  className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors text-left cursor-pointer"
+                <Link
+                  to="/dieu-khoan-dich-vu"
+                  className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors font-medium block"
                 >
-                  {f.refundPolicy}
-                </button>
+                  {language === 'ja' ? '利用規約' : language === 'en' ? 'Terms of Service' : 'Điều khoản dịch vụ'}
+                </Link>
+              </li>
+              <li>
+                <Link
+                  to="/chinh-sach-khieu-nai-hoan-tien"
+                  className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors font-medium block"
+                >
+                  {language === 'ja' ? '返金・苦情解決ポリシー' : language === 'en' ? 'Dispute & Refund Policy' : 'Khiếu nại & Hoàn tiền'}
+                </Link>
+              </li>
+              <li>
+                <Link
+                  to="/chinh-sach-giao-nhan-cung-cap-dich-vu"
+                  className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors font-medium block"
+                >
+                  {language === 'ja' ? 'サービス提供・有効化' : language === 'en' ? 'Digital Service Delivery' : 'Cung cấp & Giao nhận dịch vụ'}
+                </Link>
               </li>
               <li>
                 <button
@@ -222,31 +237,56 @@ export const Footer: React.FC<FooterProps> = ({
                 </button>
               </li>
               <li>
-                <a href="#contact" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+                <Link to="/contact" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
                   {f.contactSales}
-                </a>
+                </Link>
               </li>
               <li>
                 <Link to="/admin" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors flex items-center gap-1">
                   <span>{f.adminDashboard}</span>
                 </Link>
               </li>
-              <li>
-                <span className="font-mono text-[10px] text-zinc-400">{f.complianceBadge}</span>
-              </li>
             </ul>
+          </div>
+        </div>
+
+        {/* ── Official Business Owner Information & MOIT Seal ── */}
+        <div className="mt-10 pt-6 border-t border-zinc-200/80 dark:border-zinc-800/80 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6 text-xs text-zinc-600 dark:text-zinc-400">
+          <div className="space-y-1.5 max-w-3xl leading-relaxed">
+            <div className="font-bold text-zinc-900 dark:text-zinc-100 text-sm">
+              {BUSINESS_INFO.companyName}
+            </div>
+            <div>
+              <strong>Chủ sở hữu / Người đại diện:</strong> {BUSINESS_INFO.ownerName} · <strong>MST:</strong> {BUSINESS_INFO.taxId} ({BUSINESS_INFO.taxIssuedPlace} cấp ngày {BUSINESS_INFO.taxIssuedDate})
+            </div>
+            <div>
+              <strong>Địa chỉ đăng ký:</strong> {BUSINESS_INFO.address}
+            </div>
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+              <span>
+                <strong>Hotline / Zalo:</strong> <a href={`tel:${BUSINESS_INFO.hotline.replace(/\s+/g, '')}`} className="text-blue-600 dark:text-blue-400 hover:underline">{BUSINESS_INFO.hotline}</a>
+              </span>
+              <span>
+                <strong>Email:</strong> <a href={`mailto:${BUSINESS_INFO.email}`} className="text-blue-600 dark:text-blue-400 hover:underline">{BUSINESS_INFO.email}</a>
+              </span>
+              <span>
+                <strong>Giờ làm việc:</strong> {BUSINESS_INFO.workingHours}
+              </span>
+            </div>
+          </div>
+          <div className="shrink-0">
+            <MoitBadge />
           </div>
         </div>
       </div>
 
-      {/* ── Sub-footer Copyright & Regulatory Compliance Bar ─────────────────── */}
+      {/* ── Sub-footer Copyright & Language Bar ─────────────────── */}
       <div className="border-t border-zinc-200/80 dark:border-zinc-800/80 py-4 sm:py-5 px-4 sm:px-6 bg-zinc-100/50 dark:bg-[#080809]">
-        <div className="max-w-5xl mx-auto space-y-2.5">
+        <div className="max-w-7xl mx-auto space-y-2.5">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-2 sm:gap-3 text-xs text-zinc-500 dark:text-zinc-400 text-center sm:text-left">
             <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3">
               <div>
-                <span className="sm:hidden">{f.copyright}</span>
-                <span className="hidden sm:inline">{f.copyright}</span>
+                <span>{f.copyright}</span>
               </div>
               <div className="flex items-center justify-center gap-2 text-[11px] text-zinc-600 dark:text-zinc-400">
                 <Link to="/" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors font-medium">Tiếng Việt</Link>
@@ -271,15 +311,6 @@ export const Footer: React.FC<FooterProps> = ({
               <span className="font-mono">v2.4.0</span>
               <span className="hidden sm:inline font-mono text-[10px] text-zinc-400">(Stable)</span>
             </div>
-          </div>
-
-          <div className="pt-2 border-t border-zinc-200/50 dark:border-zinc-800/50 text-[11px] text-zinc-400 dark:text-zinc-400 text-center sm:text-left flex flex-col sm:flex-row sm:items-center justify-between gap-1">
-            <span>
-              {f.operatorInfo}
-            </span>
-            <span>
-              {f.paymentNote}
-            </span>
           </div>
         </div>
       </div>

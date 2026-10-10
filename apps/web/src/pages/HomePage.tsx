@@ -25,6 +25,7 @@ import { LayaMeetLogo } from '../components/common/LayaMeetLogo';
 import { ThemeToggle } from '../components/common/ThemeToggle';
 import { InteractiveMeetingPreview } from '../components/home/InteractiveMeetingPreview';
 import { LegalModal } from '../components/common/LegalModal';
+import { Footer } from '../components/common/Footer';
 import { useLanguage } from '../context/language-context-def';
 import { useAuth } from '../context/auth-context-def';
 import { AppLanguage } from '../i18n';
@@ -786,44 +787,10 @@ export const HomePage: React.FC<HomePageProps> = ({ forcedLanguage }) => {
           {activeSection === 'contact' && <Navigate to="/contact" replace />}
         </div>
 
-        {/* ── MINIMAL BOTTOM DOCK (Desktop / Laptop / Tablet) ── */}
-        <footer className="flex flex-wrap gap-4 border-t border-zinc-200/80 dark:border-[#222327] bg-white/75 dark:bg-[#0c0c0e]/75 backdrop-blur-md px-6 lg:px-12 py-3 items-center justify-between text-xs text-zinc-500 dark:text-zinc-400 shrink-0 z-20">
-          <div className="flex items-center gap-3">
-            <span>{t.footer.copyright}</span>
-            <span className="text-zinc-300 dark:text-zinc-700">•</span>
-            <div className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400 font-mono text-[11px]">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-              <span>{ui.minimalFooterBadge}</span>
-            </div>
-          </div>
-
-          {/* Legal links */}
-          <div className="flex flex-wrap items-center gap-4 text-xs font-medium">
-            <button
-              type="button"
-              onClick={() => setLegalModalType('privacy')}
-              className="hover:text-zinc-800 dark:hover:text-zinc-200 transition-colors cursor-pointer"
-            >
-              {ui.privacyLink}
-            </button>
-            <button
-              type="button"
-              onClick={() => setLegalModalType('terms')}
-              className="hover:text-zinc-800 dark:hover:text-zinc-200 transition-colors cursor-pointer"
-            >
-              {ui.termsLink}
-            </button>
-            <Link
-              to={language === 'en' ? '/en/guide' : language === 'ja' ? '/ja/guide' : '/cam-nang'}
-              className="hover:text-zinc-800 dark:hover:text-zinc-200 transition-colors"
-            >
-              {ui.blogNav}
-            </Link>
-            <Link to="/developers" className="hover:text-zinc-800 dark:hover:text-zinc-200 transition-colors">
-              {t.nav.developers}
-            </Link>
-          </div>
-        </footer>
+        {/* ── FOOTER COMPLIANCE SECTION ── */}
+        <Footer
+          onOpenStatusModal={() => navigate('/system-status')}
+        />
       </main>
 
       {/* ── UNIFIED STREAMLINED NAVIGATION DRAWER ── */}
