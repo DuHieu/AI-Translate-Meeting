@@ -1,0 +1,166 @@
+name: Mobile CI
+
+on:
+  push:
+    branches: [mobile-dev, main]
+    paths:
+      - 'apps/mobile/**'
+      - '.github/workflows/mobile-ci.yml'
+  pull_request:
+    branches: [mobile-dev, main]
+    paths:
+      - 'apps/mobile/**'
+      - '.github/workflows/mobile-ci.yml'
+
+jobs:
+  analyze:
+    name: Analyze & Lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.24.0'
+          channel: 'stable'
+      
+      - name: Get dependencies
+        working-directory: apps/mobile
+        run: flutter pub get
+      
+      - name: Verify formatting
+        working-directory: apps/mobile
+        run: dart format --output=none --set-exit-if-changed lib/
+      
+      - name: Analyze code
+        working-directory: apps/mobile
+        run: flutter analyze
+  
+  test:
+    name: Run Tests
+    runs-on: ubuntu-latest
+    needs: analyze
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.24.0'
+          channel: 'stable'
+      
+      - name: Get dependencies
+        working-directory: apps/mobile
+        run: flutter pub get
+      
+      - name: Run unit & widget tests
+        working-directory: apps/mobile
+        run: flutter test --coverage
+      
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          files: apps/mobile/coverage/lcov.info
+          flags: mobile
+          name: mobile-coverage
+          fail_ci_if_error: false
+  
+  build-android:
+    name: Build Android APK
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.24.0'
+          channel: 'stable'
+      
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+      
+      - name: Get dependencies
+        working-directory: apps/mobile
+        run: flutter pub get
+      
+      - name: Build APK (Debug)
+        working-directory: apps/mobile
+        run: flutter build apk --debug
+      
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-debug-apk
+          path: apps/mobile/build/app/outputs/flutter-apk/app-debug.apk
+          retention-days: 7
+  
+  build-ios:
+    name: Build iOS (No Codesign)
+    runs-on: macos-latest
+    needs: test
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.24.0'
+          channel: 'stable'
+      
+      - name: Get dependencies
+        working-directory: apps/mobile
+        run: flutter pub get
+      
+      - name: Build iOS (No Codesign)
+        working-directory: apps/mobile
+        run: flutter build ios --release --no-codesign
+      
+      - name: Archive iOS build
+        working-directory: apps/mobile
+        run: |
+          cd build/ios/iphoneos
+          tar -czf Runner.app.tar.gz Runner.app
+      
+      - name: Upload iOS artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-build-no-codesign
+          path: apps/mobile/build/ios/iphoneos/Runner.app.tar.gz
+          retention-days: 7
+
+  # Integration tests (optional, requires emulator)
+  # integration-test:
+  #   name: Integration Tests
+  #   runs-on: macos-latest
+  #   needs: test
+  #   steps:
+  #     - name: Checkout code
+  #       uses: actions/checkout@v4
+  #     
+  #     - name: Setup Flutter
+  #       uses: subosito/flutter-action@v2
+  #       with:
+  #         flutter-version: '3.24.0'
+  #     
+  #     - name: Setup Simulator
+  #       run: |
+  #         xcrun simctl create iphone15pro com.apple.CoreSimulator.SimDeviceType.iPhone-15-Pro
+  #         xcrun simctl boot iphone15pro
+  #     
+  #     - name: Get dependencies
+  #       working-directory: apps/mobile
+  #       run: flutter pub get
+  #     
+  #     - name: Run integration tests
+  #       working-directory: apps/mobile
+  #       run: flutter test integration_test/
