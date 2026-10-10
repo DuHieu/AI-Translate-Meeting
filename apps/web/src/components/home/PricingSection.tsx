@@ -175,9 +175,9 @@ const PRICING_CONTENT: Record<string, PricingLanguageContent> = {
         name: 'Enterprise Dedicated',
         badge: 'Doanh Nghiệp & On-Premise',
         desc: 'Dành cho tập đoàn, tổ chức tài chính và doanh nghiệp cần bảo mật tuyệt đối on-premise.',
-        priceDisplay: 'Tùy Biến',
-        priceNote: 'Hợp đồng SLA 99.9% · Dùng thử PoC 14 ngày',
-        ctaText: 'Đăng Ký PoC & Demo',
+        priceDisplay: 'Từ 1.990.000đ',
+        priceNote: 'Máy chủ Cloud riêng biệt 100% · Dùng thử PoC 14 ngày',
+        ctaText: 'Đăng Ký PoC & Báo Giá',
         features: [
           'Cụm LiveKit Media Server riêng biệt (Dedicated / On-Premise)',
           'Cụm GPU Whisper & Laya riêng, không giới hạn băng thông',
@@ -240,9 +240,9 @@ const PRICING_CONTENT: Record<string, PricingLanguageContent> = {
         name: 'Enterprise Dedicated',
         badge: 'Enterprise & On-Premise',
         desc: 'For enterprises, financial institutions, and organizations requiring private cloud or on-premise deployment.',
-        priceDisplay: 'Custom',
-        priceNote: 'Perpetual or Annual license · 99.9% SLA',
-        ctaText: 'Request 14-Day PoC',
+        priceDisplay: 'From $89',
+        priceNote: '100% Dedicated Private Cloud server · 14-day free PoC',
+        ctaText: 'Request 14-Day PoC & Quote',
         features: [
           'Dedicated LiveKit Media Server (Private Cloud or On-Premise)',
           'Isolated GPU Whisper & Laya cluster with zero rate limits',
@@ -305,9 +305,9 @@ const PRICING_CONTENT: Record<string, PricingLanguageContent> = {
         name: 'エンタープライズ',
         badge: '専用サーバー & オンプレミス',
         desc: '金融機関、大企業、最高水準のセキュリティと社内閉域網を必要とする組織向け。',
-        priceDisplay: '個別見積',
-        priceNote: '永久ライセンスまたは年間契約 · SLA 99.9%',
-        ctaText: '14日間無料PoCを申し込む',
+        priceDisplay: '月額 ¥12,800〜',
+        priceNote: '100% 専用プライベートクラウド・14日間無料PoC付き',
+        ctaText: '14日間PoC・お見積り申込',
         features: [
           '専用LiveKitメディアサーバー（自社クラウド / オンプレミス）',
           '専用Whisper & Laya GPUクラスター（帯域無制限）',
@@ -543,7 +543,7 @@ export const PricingSection: React.FC<PricingSectionProps> = ({ onSelectTier, on
                       <span className="text-3xl font-black text-zinc-950 dark:text-white font-mono">
                         {isPro ? getProPriceDisplay() : tier.priceDisplay}
                       </span>
-                      {isPro && (
+                      {(isPro || (isEnterprise && tier.priceDisplay && !tier.priceDisplay.includes('¥'))) && (
                         <span className="text-xs text-zinc-500 dark:text-zinc-400">
                           {content.monthSuffix}
                         </span>
