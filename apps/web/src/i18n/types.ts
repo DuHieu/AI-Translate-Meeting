@@ -1,4 +1,4 @@
-export type AppLanguage = 'vi' | 'en' | 'ja';
+export type AppLanguage = 'vi' | 'en' | 'ja' | 'ko' | 'zh' | 'fr' | 'de' | 'es';
 
 export interface TranslationDictionary {
   nav: {

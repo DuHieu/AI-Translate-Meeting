@@ -19,7 +19,6 @@ import {
   ExternalLink,
 } from 'lucide-react';
 import { useLanguage } from '../../context/language-context-def';
-import { AppLanguage } from '../../i18n';
 import {
   getUserSettings,
   saveUserSettings,
@@ -47,48 +46,47 @@ interface SystemToolSettingsModalProps {
 
 type TabType = 'ai_byok' | 'audio_vad' | 'meeting_limits' | 'subtitles';
 
-const COPY: Record<
-  AppLanguage,
-  {
-    title: string;
-    subtitle: string;
-    tabAiByok: string;
-    tabAudioVad: string;
-    tabLimits: string;
-    tabSubtitles: string;
-    savedToast: string;
-    resetDefault: string;
-    close: string;
-    freeAiTitle: string;
-    freeAiBadge: string;
-    freeAiDesc: string;
-    byokTitle: string;
-    byokDesc: string;
-    byokKeyInput: string;
-    byokKeyHint: string;
-    byokSecurityNotice: string;
-    audioChunkTitle: string;
-    audioChunkDesc: string;
-    vadTitle: string;
-    vadDesc: string;
-    duckingTitle: string;
-    duckingDesc: string;
-    unlimitedTitle: string;
-    unlimitedDesc: string;
-    autoExportTitle: string;
-    autoExportDesc: string;
-    subModeTitle: string;
-    subSizeTitle: string;
-    subOpacityTitle: string;
-    glossaryTitle: string;
-    tierTitle: string;
-    tierStandard: string;
-    tierPro: string;
-    nativeLanguageTitle: string;
-    nativeLanguageDesc: string;
-    otherLanguages: string;
-  }
-> = {
+interface SystemToolSettingsCopy {
+  title: string;
+  subtitle: string;
+  tabAiByok: string;
+  tabAudioVad: string;
+  tabLimits: string;
+  tabSubtitles: string;
+  savedToast: string;
+  resetDefault: string;
+  close: string;
+  freeAiTitle: string;
+  freeAiBadge: string;
+  freeAiDesc: string;
+  byokTitle: string;
+  byokDesc: string;
+  byokKeyInput: string;
+  byokKeyHint: string;
+  byokSecurityNotice: string;
+  audioChunkTitle: string;
+  audioChunkDesc: string;
+  vadTitle: string;
+  vadDesc: string;
+  duckingTitle: string;
+  duckingDesc: string;
+  unlimitedTitle: string;
+  unlimitedDesc: string;
+  autoExportTitle: string;
+  autoExportDesc: string;
+  subModeTitle: string;
+  subSizeTitle: string;
+  subOpacityTitle: string;
+  glossaryTitle: string;
+  tierTitle: string;
+  tierStandard: string;
+  tierPro: string;
+  nativeLanguageTitle: string;
+  nativeLanguageDesc: string;
+  otherLanguages: string;
+}
+
+const COPY: Record<string, SystemToolSettingsCopy> = {
   vi: {
     title: 'Cài đặt thông số AI & API Key',
     subtitle: 'Tùy chỉnh động cơ dịch thuật, khóa API riêng (BYOK), độ trễ âm thanh và chế độ họp.',

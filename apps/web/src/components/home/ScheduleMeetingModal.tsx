@@ -18,12 +18,14 @@ import { useAuth } from '../../context/auth-context-def';
 import { AppLanguage } from '../../i18n';
 import { CreateMeetingResponse, SupportedLanguage, SUPPORTED_LANGUAGES_LIST } from '../../types/meeting';
 import { admissionStorage } from '../../utils/admissionStorage';
+import { calendarScheduleStorage } from '../../utils/calendarScheduleStorage';
 
 interface ScheduleMeetingModalProps {
   isOpen: boolean;
   language: AppLanguage;
   onClose: () => void;
   onCreated?: () => void;
+  initialDate?: Date | null;
 }
 
 const DURATION_OPTIONS = [15, 30, 45, 60, 90];
@@ -123,6 +125,121 @@ const COPY: Record<
     icsBtn: '.icsをダウンロード',
     openRoom: '準備画面を開く',
   },
+  ko: {
+    title: '회의 예약',
+    defaultMeetingName: 'LayaMeet 회의',
+    titleLabel: '회의 제목',
+    titlePlaceholder: '예: 주간 스프린트 싱크 (선택 사항)',
+    startLabel: '시작 일시',
+    durationLabel: '소요 시간',
+    minutesUnit: '분',
+    agendaLabel: '의제 및 메모 (선택 사항)',
+    agendaPlaceholder: '참석자를 위한 안내 사항...',
+    spokenLangLabel: '주 발언 언어',
+    targetLangLabel: '기본 자막 언어',
+    autoDetect: '자동 감지 (AI Auto)',
+    submit: '회의 예약하기',
+    creating: '예약 중...',
+    success: '회의 예약 완료',
+    close: '닫기',
+    linkLabel: '회의 초대 링크',
+    copyBtn: '복사',
+    copiedBtn: '복사됨',
+    icsBtn: '.ics 다운로드',
+    openRoom: '대기실 입장',
+  },
+  zh: {
+    title: '安排新会议',
+    defaultMeetingName: 'LayaMeet 会议',
+    titleLabel: '会议标题',
+    titlePlaceholder: '例如：中越双语技术同步周会（选填）',
+    startLabel: '开始时间',
+    durationLabel: '会议时长',
+    minutesUnit: '分钟',
+    agendaLabel: '议程与备注（选填）',
+    agendaPlaceholder: '输入给参会人员的简要说明...',
+    spokenLangLabel: '主要发言语言',
+    targetLangLabel: '默认接收字幕语言',
+    autoDetect: '自动识别 (AI Auto)',
+    submit: '立即预约',
+    creating: '正在安排...',
+    success: '会议预约成功',
+    close: '关闭',
+    linkLabel: '会议邀请链接',
+    copyBtn: '复制链接',
+    copiedBtn: '已复制',
+    icsBtn: '下载 .ics',
+    openRoom: '进入预备大厅',
+  },
+  fr: {
+    title: 'Planifier une réunion',
+    defaultMeetingName: 'Réunion LayaMeet',
+    titleLabel: 'Titre de la réunion',
+    titlePlaceholder: 'ex. Point hebdomadaire d’équipe (optionnel)',
+    startLabel: 'Date et heure de début',
+    durationLabel: 'Durée',
+    minutesUnit: 'min',
+    agendaLabel: 'Ordre du jour / Notes (optionnel)',
+    agendaPlaceholder: 'Note courte pour les participants...',
+    spokenLangLabel: 'Langue principale parlée',
+    targetLangLabel: 'Langue des sous-titres par défaut',
+    autoDetect: 'Détection automatique (AI Auto)',
+    submit: 'Planifier la réunion',
+    creating: 'Planification...',
+    success: 'Réunion planifiée avec succès',
+    close: 'Fermer',
+    linkLabel: 'Lien d’invitation',
+    copyBtn: 'Copier',
+    copiedBtn: 'Copié',
+    icsBtn: 'Télécharger .ics',
+    openRoom: 'Ouvrir le salon',
+  },
+  de: {
+    title: 'Meeting planen',
+    defaultMeetingName: 'LayaMeet Meeting',
+    titleLabel: 'Meeting-Titel',
+    titlePlaceholder: 'z.B. Wöchentlicher Team-Sync (optional)',
+    startLabel: 'Startdatum & -uhrzeit',
+    durationLabel: 'Dauer',
+    minutesUnit: 'Min.',
+    agendaLabel: 'Agenda / Notizen (optional)',
+    agendaPlaceholder: 'Kurze Notiz für die Teilnehmer...',
+    spokenLangLabel: 'Hauptsprache',
+    targetLangLabel: 'Standard-Untertitelsprache',
+    autoDetect: 'Automatisch erkennen (AI Auto)',
+    submit: 'Meeting ansetzen',
+    creating: 'Plane...',
+    success: 'Meeting erfolgreich geplant',
+    close: 'Schließen',
+    linkLabel: 'Einladungslink',
+    copyBtn: 'Kopieren',
+    copiedBtn: 'Kopiert',
+    icsBtn: '.ics herunterladen',
+    openRoom: 'Meeting-Vorschau öffnen',
+  },
+  es: {
+    title: 'Programar una reunión',
+    defaultMeetingName: 'Reunión LayaMeet',
+    titleLabel: 'Título de la reunión',
+    titlePlaceholder: 'Ej. Sincronización semanal de equipo (opcional)',
+    startLabel: 'Fecha y hora de inicio',
+    durationLabel: 'Duración',
+    minutesUnit: 'min',
+    agendaLabel: 'Agenda / Notas (opcional)',
+    agendaPlaceholder: 'Nota breve para los asistentes...',
+    spokenLangLabel: 'Idioma principal hablado',
+    targetLangLabel: 'Idioma de subtítulos predeterminado',
+    autoDetect: 'Detección automática (AI Auto)',
+    submit: 'Programar reunión',
+    creating: 'Programando...',
+    success: 'Reunión programada con éxito',
+    close: 'Cerrar',
+    linkLabel: 'Enlace de invitación',
+    copyBtn: 'Copiar',
+    copiedBtn: 'Copiado',
+    icsBtn: 'Descargar .ics',
+    openRoom: 'Abrir sala de espera',
+  },
 };
 
 function getNextHourValue(): string {
@@ -188,6 +305,7 @@ export const ScheduleMeetingModal: React.FC<ScheduleMeetingModalProps> = ({
   language,
   onClose,
   onCreated,
+  initialDate,
 }) => {
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -199,7 +317,14 @@ export const ScheduleMeetingModal: React.FC<ScheduleMeetingModalProps> = ({
   const copy = COPY[language] || COPY.vi;
 
   const [name, setName] = useState('');
-  const [scheduledStartAt, setScheduledStartAt] = useState(getNextHourValue);
+  const [scheduledStartAt, setScheduledStartAt] = useState(() => {
+    if (initialDate) {
+      const d = new Date(initialDate);
+      d.setHours(9, 0, 0, 0);
+      return toDateTimeLocal(d);
+    }
+    return getNextHourValue();
+  });
   const [durationMinutes, setDurationMinutes] = useState(45);
   const [defaultSpokenLanguage, setDefaultSpokenLanguage] = useState<SupportedLanguage | 'auto'>('auto');
   const [defaultTargetLanguage, setDefaultTargetLanguage] = useState<SupportedLanguage>('vi');
@@ -212,7 +337,13 @@ export const ScheduleMeetingModal: React.FC<ScheduleMeetingModalProps> = ({
   useEffect(() => {
     if (!isOpen) return undefined;
     setName('');
-    setScheduledStartAt(getNextHourValue());
+    if (initialDate) {
+      const d = new Date(initialDate);
+      d.setHours(9, 0, 0, 0);
+      setScheduledStartAt(toDateTimeLocal(d));
+    } else {
+      setScheduledStartAt(getNextHourValue());
+    }
     setDurationMinutes(45);
     setDefaultSpokenLanguage('auto');
     setDefaultTargetLanguage('vi');
@@ -222,7 +353,7 @@ export const ScheduleMeetingModal: React.FC<ScheduleMeetingModalProps> = ({
     setCopied(false);
     const focusTimer = window.setTimeout(() => titleRef.current?.focus(), 50);
     return () => window.clearTimeout(focusTimer);
-  }, [isOpen]);
+  }, [isOpen, initialDate]);
 
   useEffect(() => {
     if (!isOpen) return undefined;
@@ -261,6 +392,23 @@ export const ScheduleMeetingModal: React.FC<ScheduleMeetingModalProps> = ({
         hostEmail: effectiveEmail,
       });
       admissionStorage.saveHostToken(res.meetingCode, res.hostToken);
+      calendarScheduleStorage.saveCustomMeeting({
+        meetingId: res.meetingId,
+        meetingCode: res.meetingCode,
+        name: res.name || finalName,
+        createdAt: new Date().toISOString(),
+        scheduledStartAt: res.scheduledStartAt || zonedDateTimeToIso(scheduledStartAt, browserTimezone),
+        scheduledEndAt: res.scheduledEndAt || new Date(Date.parse(zonedDateTimeToIso(scheduledStartAt, browserTimezone)) + durationMinutes * 60_000).toISOString(),
+        timezone: browserTimezone,
+        agenda: agenda.trim() || null,
+        defaultSpokenLanguage,
+        defaultTargetLanguage,
+        domainGlossary: 'general',
+        goingCount: 1,
+        maybeCount: 0,
+        declinedCount: 0,
+        attendees: [],
+      });
       setCreated(res);
       onCreated?.();
     } catch (err: unknown) {

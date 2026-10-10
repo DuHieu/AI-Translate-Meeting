@@ -20,7 +20,6 @@ import { NeuralLinguisticBackground } from '../components/common/NeuralLinguisti
 import { GoogleAuthControl } from '../components/auth/GoogleAuthControl';
 import { useAuth } from '../context/auth-context-def';
 import { useLanguage } from '../context/language-context-def';
-import { AppLanguage } from '../i18n';
 import { getUserSettings, saveUserSettings } from '../utils/userSettings';
 import { CountdownLobbyCard } from '../components/meeting/CountdownLobbyCard';
 import { PreJoinCameraPreview } from '../components/prejoin/PreJoinCameraPreview';
@@ -44,7 +43,7 @@ const GLOSSARY_DOMAINS: GlossaryDomainOption[] = [
 ];
 
 const PREJOIN_COPY: Record<
-  AppLanguage,
+  string,
   {
     back: string;
     cameraOff: string;

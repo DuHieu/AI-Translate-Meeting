@@ -8,7 +8,7 @@ interface ContactPageProps {
   forcedLanguage?: AppLanguage;
 }
 
-const CONTACT_PAGE_COPY = {
+const CONTACT_PAGE_COPY: Record<string, { breadcrumb: string; pageTitle: string; metaDesc: string }> = {
   vi: {
     breadcrumb: 'Tư vấn Doanh nghiệp & On-Premise',
     pageTitle: 'Tư Vấn Triển Khai On-Premise & Doanh Nghiệp | Laya Meet',

@@ -3,7 +3,50 @@ import { Mail, Phone, MapPin, Send, CheckCircle2, Clock, ShieldCheck, MessageSqu
 import { meetingApi } from '../../api/meetingApi';
 import { useLanguage } from '../../context/language-context-def';
 
-const CONTACT_DATA = {
+interface ContactSelectOption {
+  value: string;
+  label: string;
+}
+
+interface ContactDataLocale {
+  badge: string;
+  title: string;
+  subtitle: string;
+  channelsTitle: string;
+  emailLabel: string;
+  hotlineLabel: string;
+  officesLabel: string;
+  officeHanoi: string;
+  officeDanang: string;
+  officeTokyo: string;
+  responseCommitment: string;
+  responseHours: string;
+  ndaBadge: string;
+  ndaDesc: string;
+  formTitle: string;
+  nameLabel: string;
+  namePlaceholder: string;
+  emailFieldLabel: string;
+  emailFieldPlaceholder?: string;
+  companyLabel: string;
+  companyPlaceholder: string;
+  teamSizeLabel: string;
+  teamSizeOptions: ContactSelectOption[];
+  langNeedLabel: string;
+  langOptions: ContactSelectOption[];
+  deployModelLabel: string;
+  deployOptions: ContactSelectOption[];
+  notesLabel: string;
+  notesPlaceholder: string;
+  btnSubmitting: string;
+  btnSubmit: string;
+  successTitle: string;
+  successDesc: string;
+  btnAnother: string;
+  errorDefault: string;
+}
+
+const CONTACT_DATA: Record<string, ContactDataLocale> = {
   vi: {
     badge: 'Liên Hệ & Tư Vấn Triển Khai',
     title: 'Sẵn sàng nâng tầm cuộc họp đa quốc gia của bạn?',
@@ -367,7 +410,7 @@ export const ContactSection: React.FC = () => {
                       onChange={(e) => setFormData({ ...formData, teamSize: e.target.value })}
                       className="w-full px-3 py-2 text-xs rounded-lg border border-zinc-200 dark:border-[#333336] bg-zinc-50/50 dark:bg-[#121214] text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-blue-500 transition-colors"
                     >
-                      {c.teamSizeOptions.map((opt) => (
+                      {c.teamSizeOptions.map((opt: { value: string; label: string }) => (
                         <option key={opt.value} value={opt.value}>{opt.label}</option>
                       ))}
                     </select>
@@ -385,7 +428,7 @@ export const ContactSection: React.FC = () => {
                       onChange={(e) => setFormData({ ...formData, languagePair: e.target.value })}
                       className="w-full px-3 py-2 text-xs rounded-lg border border-zinc-200 dark:border-[#333336] bg-zinc-50/50 dark:bg-[#121214] text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-blue-500 transition-colors"
                     >
-                      {c.langOptions.map((opt) => (
+                      {c.langOptions.map((opt: { value: string; label: string }) => (
                         <option key={opt.value} value={opt.value}>{opt.label}</option>
                       ))}
                     </select>
@@ -401,7 +444,7 @@ export const ContactSection: React.FC = () => {
                       onChange={(e) => setFormData({ ...formData, deploymentModel: e.target.value })}
                       className="w-full px-3 py-2 text-xs rounded-lg border border-zinc-200 dark:border-[#333336] bg-zinc-50/50 dark:bg-[#121214] text-zinc-900 dark:text-zinc-100 focus:outline-none focus:border-blue-500 transition-colors"
                     >
-                      {c.deployOptions.map((opt) => (
+                      {c.deployOptions.map((opt: { value: string; label: string }) => (
                         <option key={opt.value} value={opt.value}>{opt.label}</option>
                       ))}
                     </select>

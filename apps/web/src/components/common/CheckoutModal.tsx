@@ -83,7 +83,7 @@ const PLAN_OPTIONS: Array<{
   { id: 'pro_2year', price: '1.544.000đ · $78.00', vndPrice: '1.544.000đ', usdPrice: '$78.00', duration: '24 months', savings: '35%' },
 ];
 
-const CHECKOUT_COPY: Record<'vi' | 'en' | 'ja', CheckoutCopy> = {
+const CHECKOUT_COPY: Record<string, CheckoutCopy> = {
   vi: {
     close: 'Đóng thanh toán',
     title: 'Nâng cấp LayaMeet Pro Unlimited',
@@ -482,7 +482,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
             <p className="mt-1 text-xs text-zinc-400">{copy.subtitle}</p>
           </div>
           <ol className="mt-4 sm:mt-5 grid grid-cols-3 gap-1.5 sm:gap-2" aria-label="Checkout progress">
-            {copy.steps.map((step, index) => {
+            {copy.steps.map((step: string, index: number) => {
               const stepNumber = index + 1;
               const isActive = stepNumber === activeStep;
               const isComplete = stepNumber < activeStep;

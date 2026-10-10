@@ -158,7 +158,18 @@ export const InteractiveMeetingPreview: React.FC<InteractiveMeetingPreviewProps>
   const otherParticipants = DIALOGUE_SCRIPT.filter((_, idx) => idx !== currentTurnIndex);
   const translatedText = currentTurn.translations[selectedLang] || currentTurn.translations.VI;
 
-  const tLabels = {
+  const PREVIEW_COPY: Record<
+    string,
+    {
+      title: string;
+      speaking: string;
+      subLive: string;
+      actionTitle: string;
+      closeTip: string;
+      playTip: string;
+      pauseTip: string;
+    }
+  > = {
     vi: {
       title: 'Mô Phỏng Họp Song Ngữ AI',
       speaking: 'Nói',
@@ -186,15 +197,9 @@ export const InteractiveMeetingPreview: React.FC<InteractiveMeetingPreviewProps>
       playTip: '再生',
       pauseTip: '一時停止',
     },
-  }[language] || {
-    title: 'Live Bilingual Meeting Demo',
-    speaking: 'Speaking',
-    subLive: 'Live AI Subtitles',
-    actionTitle: 'Action Item',
-    closeTip: 'Close preview (Reload page to restore)',
-    playTip: 'Play',
-    pauseTip: 'Pause',
   };
+
+  const tLabels = PREVIEW_COPY[language] || PREVIEW_COPY.en;
 
   return (
     <div className="w-full sm:w-[500px] lg:w-[540px] xl:w-[580px] bg-zinc-900 border border-zinc-700/60 dark:border-[#33353e] rounded-2xl overflow-hidden shrink-0 shadow-2xl transition-all">

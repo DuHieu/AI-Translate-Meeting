@@ -20,7 +20,6 @@ import { ThemeToggle } from '../components/common/ThemeToggle';
 import { LanguageSwitcher } from '../components/common/LanguageSwitcher';
 import { GoogleAuthControl } from '../components/auth/GoogleAuthControl';
 import { useLanguage } from '../context/language-context-def';
-import { AppLanguage } from '../i18n';
 import { useUserPlan } from '../hooks/useUserPlan';
 import {
   getUserSettings,
@@ -140,7 +139,7 @@ interface SettingsCopy {
   planSystemStatusDesc: string;
 }
 
-const COPY: Record<AppLanguage, SettingsCopy> = {
+const COPY: Record<string, SettingsCopy> = {
   vi: {
     pageTitle: 'Cài đặt',
     pageSubtitle: 'Quản lý ngôn ngữ phụ đề, âm thanh, kết nối API và thông tin gói dịch vụ.',

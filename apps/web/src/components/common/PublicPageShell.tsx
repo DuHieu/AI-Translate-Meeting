@@ -19,13 +19,13 @@ import { ThemeToggle } from './ThemeToggle';
 import { LanguageSwitcher } from './LanguageSwitcher';
 import { GoogleAuthControl } from '../auth/GoogleAuthControl';
 import { NeuralLinguisticBackground } from './NeuralLinguisticBackground';
-import { Breadcrumb, BreadcrumbItem } from './Breadcrumb';
+import { BreadcrumbItem } from './Breadcrumb';
 import { LegalModal } from './LegalModal';
 import { useLanguage } from '../../context/language-context-def';
 import { useAuth } from '../../context/auth-context-def';
 import { AppLanguage } from '../../i18n';
 
-const SHELL_COPY = {
+const SHELL_COPY: Record<string, Record<string, string>> = {
   vi: {
     home: 'Trang chủ',
     pricing: 'Bảng giá',
@@ -182,25 +182,37 @@ export const PublicPageShell: React.FC<PublicPageShellProps> = ({
       {/* ── Top Header Bar (Desktop & Mobile) ── */}
       <header className="sticky top-0 z-40 h-14 w-full bg-white/90 dark:bg-[#0f0f10]/90 backdrop-blur-md border-b border-zinc-200/80 dark:border-[#272832]/80 shadow-2xs">
         <div className="max-w-[1536px] 2xl:max-w-[1720px] mx-auto px-4 sm:px-6 lg:px-8 h-full flex items-center justify-between gap-3">
-          {/* Left: Hamburger & Brand Logo */}
-          <div className="flex items-center gap-2 sm:gap-3">
+          {/* Left: Hamburger & Brand Logo & Header Inline Breadcrumbs (Vercel / GitHub style) */}
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0">
             <button
               type="button"
               onClick={() => setIsNavDrawerOpen(true)}
               data-testid="header-logo-menu-btn"
               aria-label={copy.navDrawerTitle}
               title={copy.navDrawerTitle}
-              className="w-9 h-9 -ml-1 rounded-xl flex items-center justify-center text-zinc-600 dark:text-zinc-400 hover:text-zinc-950 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
+              className="w-9 h-9 -ml-1 rounded-xl flex items-center justify-center text-zinc-600 dark:text-zinc-400 hover:text-zinc-950 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer shrink-0"
             >
               <Menu className="w-5 h-5" />
             </button>
 
             <Link
               to="/"
-              className="flex items-center hover:opacity-90 transition-opacity"
+              className="flex items-center hover:opacity-90 transition-opacity shrink-0"
             >
               <LayaMeetLogo size="md" />
             </Link>
+
+            {/* Inline Header Breadcrumb: 0 vertical space wasted */}
+            {breadcrumbs && breadcrumbs.length > 0 && (
+              <div className="flex items-center gap-1.5 sm:gap-2 text-xs min-w-0 animate-in fade-in duration-200">
+                <span className="text-zinc-300 dark:text-zinc-700 font-light select-none text-sm shrink-0" aria-hidden="true">
+                  /
+                </span>
+                <span className="font-semibold text-zinc-900 dark:text-zinc-100 truncate max-w-[140px] sm:max-w-[240px] md:max-w-[360px] text-xs sm:text-[13px] tracking-tight">
+                  {breadcrumbs[breadcrumbs.length - 1].label}
+                </span>
+              </div>
+            )}
           </div>
 
           {/* Right: Shortcuts + Language + Theme + Auth */}
@@ -241,13 +253,6 @@ export const PublicPageShell: React.FC<PublicPageShellProps> = ({
           </div>
         </div>
       </header>
-
-      {/* ── Breadcrumb Bar (Below Header, Above Content) ── */}
-      {breadcrumbs && breadcrumbs.length > 0 && (
-        <div className="relative z-10 w-full max-w-[1536px] 2xl:max-w-[1720px] mx-auto px-4 sm:px-6 lg:px-8 pt-4 pb-1">
-          <Breadcrumb items={breadcrumbs} homeLabel={copy.home} />
-        </div>
-      )}
 
       {/* ── Main Content Area (Natural Window Scroll) ── */}
       <main className="relative z-10 flex-1 w-full">

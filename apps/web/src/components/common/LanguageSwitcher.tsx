@@ -7,6 +7,11 @@ const LANGUAGE_OPTIONS: Array<{ code: AppLanguage; label: string; flag: string }
   { code: 'vi', label: 'Tiếng Việt', flag: '🇻🇳' },
   { code: 'en', label: 'English', flag: '🇬🇧' },
   { code: 'ja', label: '日本語', flag: '🇯🇵' },
+  { code: 'ko', label: '한국어', flag: '🇰🇷' },
+  { code: 'zh', label: '中文', flag: '🇨🇳' },
+  { code: 'fr', label: 'Français', flag: '🇫🇷' },
+  { code: 'de', label: 'Deutsch', flag: '🇩🇪' },
+  { code: 'es', label: 'Español', flag: '🇪🇸' },
 ];
 
 export interface LanguageSwitcherProps {
@@ -49,7 +54,7 @@ export const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({ className = 
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 mt-1.5 w-36 rounded-xl bg-white dark:bg-[#18181b] border border-zinc-200 dark:border-[#333336] shadow-xl py-1 z-50 text-xs animate-in fade-in zoom-in-95 duration-100">
+        <div className="absolute right-0 mt-1.5 w-44 max-h-80 overflow-y-auto rounded-xl bg-white dark:bg-[#18181b] border border-zinc-200 dark:border-[#333336] shadow-xl py-1 z-50 text-xs animate-in fade-in zoom-in-95 duration-100">
           <div className="px-2.5 py-1 text-[10px] font-semibold text-zinc-400 uppercase tracking-wider border-b border-zinc-100 dark:border-zinc-800">
             Language
           </div>

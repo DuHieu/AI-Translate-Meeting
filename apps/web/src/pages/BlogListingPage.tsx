@@ -16,6 +16,7 @@ import { ThemeToggle } from '../components/common/ThemeToggle';
 import { LanguageSwitcher } from '../components/common/LanguageSwitcher';
 import { Footer } from '../components/common/Footer';
 import { BLOG_POSTS } from '../data/blogPosts';
+import { AppLanguage } from '../i18n';
 
 export interface BlogListingPageProps {
   forcedLanguage?: 'vi' | 'en' | 'ja';
@@ -25,7 +26,7 @@ export const BlogListingPage: React.FC<BlogListingPageProps> = ({ forcedLanguage
   const navigate = useNavigate();
   const lang = forcedLanguage;
 
-  const handleLanguageChange = (newLang: 'vi' | 'en' | 'ja') => {
+  const handleLanguageChange = (newLang: AppLanguage) => {
     if (newLang === 'en') {
       navigate('/en/guide');
     } else if (newLang === 'ja') {

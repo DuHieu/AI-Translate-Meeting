@@ -8,7 +8,7 @@ interface PricingPageProps {
   forcedLanguage?: AppLanguage;
 }
 
-const PRICING_PAGE_COPY = {
+const PRICING_PAGE_COPY: Record<string, { breadcrumb: string; pageTitle: string; metaDesc: string }> = {
   vi: {
     breadcrumb: 'Bảng giá & Gói dịch vụ',
     pageTitle: 'Bảng Giá & Gói Dịch Vụ AI | Laya Meet',

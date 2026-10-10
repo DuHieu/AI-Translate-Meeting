@@ -21,7 +21,20 @@ interface FeaturesPageProps {
   forcedLanguage?: AppLanguage;
 }
 
-const FEATURES_PAGE_COPY = {
+interface FeaturesPageCopy {
+  breadcrumb: string;
+  pageTitle: string;
+  metaDesc: string;
+  heroBadge: string;
+  heroTitle: string;
+  heroSubtitle: string;
+  ctaMeet: string;
+  ctaPricing: string;
+  specsTitle: string;
+  specsDesc: string;
+}
+
+const FEATURES_PAGE_COPY: Record<string, FeaturesPageCopy> = {
   vi: {
     breadcrumb: 'Tính năng & Công nghệ',
     pageTitle: 'Tính Năng & Kiến Trúc Họp Song Ngữ AI | Laya Meet',

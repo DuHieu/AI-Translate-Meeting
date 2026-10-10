@@ -24,6 +24,7 @@ import { ThemeToggle } from '../components/common/ThemeToggle';
 import { LanguageSwitcher } from '../components/common/LanguageSwitcher';
 import { Footer } from '../components/common/Footer';
 import { BLOG_POSTS, BlogPost } from '../data/blogPosts';
+import { AppLanguage } from '../i18n';
 
 export const BlogPostPage: React.FC = () => {
   const navigate = useNavigate();
@@ -31,16 +32,18 @@ export const BlogPostPage: React.FC = () => {
   const post = BLOG_POSTS.find((p) => p.slug === slug);
   const lang = post?.lang || 'vi';
 
-  const handleLanguageChange = (newLang: 'vi' | 'en' | 'ja') => {
+  const handleLanguageChange = (newLang: AppLanguage) => {
     // Check if current post has an alternate translation
-    if (post?.alternateUrls?.[newLang]) {
-      const targetUrl = post.alternateUrls[newLang];
-      try {
-        const urlObj = new URL(targetUrl);
-        navigate(urlObj.pathname);
-        return;
-      } catch {
-        // fallback to standard listing
+    if (post?.alternateUrls?.[newLang as 'vi' | 'en' | 'ja']) {
+      const targetUrl = post.alternateUrls[newLang as 'vi' | 'en' | 'ja'];
+      if (targetUrl) {
+        try {
+          const urlObj = new URL(targetUrl);
+          navigate(urlObj.pathname);
+          return;
+        } catch {
+          // fallback to standard listing
+        }
       }
     }
     // Fallback to guide listing of target language

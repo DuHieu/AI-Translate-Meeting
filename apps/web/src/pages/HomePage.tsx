@@ -34,7 +34,7 @@ import { GoogleAuthControl } from '../components/auth/GoogleAuthControl';
 import { ScheduleMeetingModal } from '../components/home/ScheduleMeetingModal';
 import { UpcomingMeetingsStrip } from '../components/home/UpcomingMeetingsStrip';
 
-const HOME_UI = {
+const HOME_UI: Record<string, Record<string, string>> = {
   vi: {
     joinShort: 'Vào',
     newMeetingFab: 'Mới',

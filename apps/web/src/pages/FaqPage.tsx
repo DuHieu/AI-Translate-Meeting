@@ -8,7 +8,7 @@ interface FaqPageProps {
   forcedLanguage?: AppLanguage;
 }
 
-const FAQ_PAGE_COPY = {
+const FAQ_PAGE_COPY: Record<string, { breadcrumb: string; pageTitle: string; metaDesc: string }> = {
   vi: {
     breadcrumb: 'Hỏi đáp (FAQ)',
     pageTitle: 'Câu Hỏi Thường Gặp & Giải Đáp Kỹ Thuật | Laya Meet',

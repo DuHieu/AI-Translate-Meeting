@@ -9,7 +9,24 @@ interface LegalModalProps {
   onClose: () => void;
 }
 
-const LEGAL_TEXTS = {
+interface LegalSectionItem {
+  title: string;
+  desc: string;
+}
+
+interface LegalCopyItem {
+  privacyTitle: string;
+  privacySub: string;
+  termsTitle: string;
+  termsSub: string;
+  corePrincipleBadge: string;
+  corePrincipleText: string;
+  privacySections: LegalSectionItem[];
+  termsSections: LegalSectionItem[];
+  btnClose: string;
+}
+
+const LEGAL_TEXTS: Record<string, LegalCopyItem> = {
   vi: {
     privacyTitle: 'Chính Sách Quyền Riêng Tư & Bảo Mật Dữ Liệu',
     privacySub: 'Bảo vệ dữ liệu theo chuẩn Zero Raw Audio & Nghị định 13/2023/NĐ-CP',
@@ -199,7 +216,7 @@ export const LegalModal: React.FC<LegalModalProps> = ({ isOpen, type, onClose })
                 </p>
               </div>
 
-              {t.privacySections.map((sec, idx) => (
+              {t.privacySections.map((sec: LegalSectionItem, idx: number) => (
                 <div key={idx}>
                   <h4 className="font-bold text-zinc-950 dark:text-white text-sm mb-1.5">{sec.title}</h4>
                   <p>{sec.desc}</p>
@@ -208,7 +225,7 @@ export const LegalModal: React.FC<LegalModalProps> = ({ isOpen, type, onClose })
             </>
           ) : (
             <>
-              {t.termsSections.map((sec, idx) => (
+              {t.termsSections.map((sec: LegalSectionItem, idx: number) => (
                 <div key={idx}>
                   <h4 className="font-bold text-zinc-950 dark:text-white text-sm mb-1.5">{sec.title}</h4>
                   <p>{sec.desc}</p>

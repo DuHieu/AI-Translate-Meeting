@@ -25,7 +25,30 @@ interface HistoryPageProps {
   forcedLanguage?: AppLanguage;
 }
 
-const HISTORY_COPY = {
+interface HistoryCopy {
+  breadcrumb: string;
+  pageTitle: string;
+  pageHeading: string;
+  pageSubtitle: string;
+  searchInput: string;
+  totalMeetings: string;
+  withMinutes: string;
+  viewMinutes: string;
+  rejoinRoom: string;
+  copyCode: string;
+  copied: string;
+  emptyTitle: string;
+  emptyDesc: string;
+  startMeeting: string;
+  loadingText: string;
+  filterAll: string;
+  filterWithMinutes: string;
+  metaDesc: string;
+  badgeHistory: string;
+  participants: string;
+}
+
+const HISTORY_COPY: Record<string, HistoryCopy> = {
   vi: {
     breadcrumb: 'Lịch sử cuộc họp',
     pageTitle: 'Lịch Sử Cuộc Họp & Biên Bản AI | Laya Meet',

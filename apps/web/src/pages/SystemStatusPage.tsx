@@ -14,7 +14,6 @@ import { LanguageSwitcher } from '../components/common/LanguageSwitcher';
 import { ThemeToggle } from '../components/common/ThemeToggle';
 import { GoogleAuthControl } from '../components/auth/GoogleAuthControl';
 import { useLanguage } from '../context/language-context-def';
-import { AppLanguage } from '../i18n';
 import {
   fetchSystemStatus,
   triggerSystemCleanup,
@@ -66,7 +65,7 @@ interface StatusCopy {
   errGlossary: string;
 }
 
-const COPY: Record<AppLanguage, StatusCopy> = {
+const COPY: Record<string, StatusCopy> = {
   vi: {
     backToHome: 'Trang chủ',
     pageTitle: 'Trạng thái hệ thống',

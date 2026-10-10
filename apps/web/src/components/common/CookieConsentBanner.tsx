@@ -65,7 +65,28 @@ export const CookieConsentBanner: React.FC = () => {
 
   const { language } = useLanguage();
 
-  const tCookie = {
+  const COOKIE_COPY: Record<
+    string,
+    {
+      title: string;
+      ramBadge: string;
+      descDesktop: string;
+      descMobile: string;
+      essential: string;
+      required: string;
+      essentialDesc: string;
+      alwaysOn: string;
+      analytics: string;
+      analyticsDesc: string;
+      collapse: string;
+      customize: string;
+      policy: string;
+      save: string;
+      decline: string;
+      acceptAll: string;
+      acceptShort: string;
+    }
+  > = {
     vi: {
       title: 'Quyền Riêng Tư & Cookie',
       ramBadge: 'RAM-only',
@@ -123,25 +144,9 @@ export const CookieConsentBanner: React.FC = () => {
       acceptAll: 'すべて同意',
       acceptShort: '同意',
     },
-  }[language] || {
-    title: 'Privacy & Cookies',
-    ramBadge: 'RAM-only',
-    descDesktop: 'LayaMeet uses essential cookies for real-time meetings and privacy-preserving analytics (Google Analytics 4) to monitor translation latency. We never store raw meeting audio on disk.',
-    descMobile: 'Essential meeting cookies · Zero raw audio on disk.',
-    essential: 'Essential Cookies',
-    required: '(Required)',
-    essentialDesc: 'Maintains WebRTC room connections, JWT security tokens, and theme settings.',
-    alwaysOn: 'Always on',
-    analytics: 'Performance & Analytics (GA4)',
-    analyticsDesc: 'Anonymous measurement of page speed and Core Web Vitals to optimize UX.',
-    collapse: 'Collapse',
-    customize: 'Customize',
-    policy: 'Privacy Policy',
-    save: 'Save preferences',
-    decline: 'Decline',
-    acceptAll: 'Accept all',
-    acceptShort: 'Accept',
   };
+
+  const tCookie = COOKIE_COPY[language] || COOKIE_COPY.en;
 
   if (!isVisible || (isMeetingFlowRoute && !manualOpen)) return null;
 

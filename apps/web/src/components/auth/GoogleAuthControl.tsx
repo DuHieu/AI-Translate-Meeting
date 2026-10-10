@@ -13,7 +13,7 @@ import { useAuth } from '../../context/auth-context-def';
 import { useLanguage } from '../../context/language-context-def';
 import { useUserPlan } from '../../hooks/useUserPlan';
 
-const AUTH_LABELS = {
+const AUTH_LABELS: Record<string, Record<string, string>> = {
   vi: {
     signInGoogle: 'Đăng nhập',
     signInFull: 'Tiếp tục với Google',
