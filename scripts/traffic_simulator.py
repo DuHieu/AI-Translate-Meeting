@@ -315,10 +315,19 @@ async def simulate_organic_search(keyword: str, headless: bool = False):
 async def main():
     headless = "--headless" in sys.argv
     count = 3
-    for arg in sys.argv:
+    if "--help" in sys.argv or "-h" in sys.argv:
+        print("Usage: python scripts/traffic_simulator.py [--headless] [--count=<N> | <N>]")
+        return
+
+    for idx, arg in enumerate(sys.argv):
         if arg.startswith("--count="):
             try:
                 count = int(arg.split("=")[1])
+            except Exception:
+                pass
+        elif arg == "--count" and idx + 1 < len(sys.argv):
+            try:
+                count = int(sys.argv[idx + 1])
             except Exception:
                 pass
         elif arg.isdigit():
