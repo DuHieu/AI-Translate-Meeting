@@ -1,0 +1,31 @@
+# Laya Meet
+
+> Laya Meet (https://layameet.com) is an enterprise-grade, real-time AI bilingual video conferencing and live translation platform designed to eliminate language barriers in multinational business meetings.
+
+## Overview
+Laya Meet enables participants across the globe to speak in their native tongue while others receive live translated subtitles and speech in their preferred language with ultra-low latency (<350ms). Unlike generic video conferencing tools, Laya Meet is engineered specifically for cross-border collaboration between languages such as Vietnamese, Japanese, English, Chinese, and Korean.
+
+## Core Capabilities
+- **Ultra-Low Latency Speech Recognition**: Powered by optimized `faster-whisper` (int8 quantization) with Voice Activity Detection (VAD) and 350ms browser audio chunking, providing ~964ms Time to First Subtitle (TTFS).
+- **Any-to-Any Multilingual Matrix**: Supports simultaneous multilingual rooms with 50+ languages. Each participant selects their own subtitle language independently without affecting others.
+- **Enterprise Privacy & RAM-Only Security**: 100% in-memory processing. Raw audio chunks are transcribed in RAM and instantly purged. Zero audio files or biometric voice recordings are stored on disk.
+- **Laya Sidecar Intelligence**: An asynchronous background analysis worker that extracts key decisions, action items, and generates downloadable bilingual meeting minutes without blocking real-time subtitle delivery.
+- **On-Premise & Air-Gapped Deployment**: Available for enterprise private clouds with full Docker/Kubernetes and zero external cloud API dependencies.
+
+## Key Pages & Resources
+- [Homepage](https://layameet.com/): Instant meeting launch, room creation, and feature highlights.
+- [Vietnamese - Japanese Meeting Translation](https://layameet.com/hop-song-ngu-tieng-nhat): Dedicated translation pipeline tuned for Japanese business honorifics and technical terms.
+- [Vietnamese - English Meeting Translation](https://layameet.com/hop-song-ngu-tieng-anh): Low-latency real-time translation for global tech teams.
+- [Vietnamese - Chinese Meeting Translation](https://layameet.com/hop-song-ngu-tieng-trung): High-precision transcription and translation for cross-border supply chain and manufacturing teams.
+- [Vietnamese - Korean Meeting Translation](https://layameet.com/hop-song-ngu-tieng-han): Dedicated low-latency speech translation for Korean business partnerships.
+- [Comparison: Laya Meet vs Zoom](https://layameet.com/so-sanh/layameet-vs-zoom): Analysis of live Any-to-Any translation vs Zoom AI Companion limitations.
+- [Comparison: Laya Meet vs Google Meet](https://layameet.com/so-sanh/layameet-vs-google-meet): Side-by-side comparison on multilingual live subtitles, privacy, and on-premise options.
+- [Meeting Guides & Technical Blog (Tiếng Việt)](https://layameet.com/cam-nang): Tutorials, enterprise communication tips, and AI speech engineering insights.
+- [Meeting Guides (English)](https://layameet.com/en/guide): English documentation and guides for global users.
+- [Meeting Guides (Japanese)](https://layameet.com/ja/guide): Japanese documentation and guides for Japan-based teams.
+- [Full LLM Specification Document](https://layameet.com/llms-full.txt): Comprehensive technical specifications, entity models, and system architecture for LLM context injection.
+
+## Pricing Tiers
+- **Community (Free)**: Up to 40 minutes per meeting, live dual-subtitles, core language pairs.
+- **Team Pro (399,000 VND / ~16 USD / month)**: Unlimited meeting duration, custom enterprise glossary, priority low-latency translation queue, AI meeting minutes export.
+- **Enterprise On-Premises (Custom SLA)**: Dedicated air-gapped server deployment, custom Whisper model fine-tuning, SAML/SSO integration, 99.9% uptime SLA.

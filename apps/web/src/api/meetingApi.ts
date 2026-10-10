@@ -861,6 +861,9 @@ export interface AdminMetricsResponse {
   totalLeads: number;
   telegramConfigured: boolean;
   webhookConfigured: boolean;
+  zaloConfigured?: boolean;
+  totalTokensUsed?: number;
+  proTokensUsed?: number;
   generatedAtUtc: string;
 }
 

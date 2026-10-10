@@ -6,6 +6,8 @@ import { LanguageProvider } from './context/LanguageContext';
 import { AuthProvider } from './context/AuthContext';
 import { CookieConsentBanner } from './components/common/CookieConsentBanner';
 import { ScrollToTop } from './components/common/ScrollToTop';
+import { AdminRouteGuard } from './components/admin/AdminRouteGuard';
+import { isOpsSubdomain } from './utils/subdomain';
 
 const HomePage = lazy(() => import('./pages/HomePage').then((module) => ({ default: module.HomePage })));
 export const PreJoinPage = lazy(() => import('./pages/PreJoinPage').then((module) => ({ default: module.PreJoinPage })));
@@ -57,11 +59,29 @@ export const App: React.FC = () => {
             <ScrollToTop />
             <Suspense fallback={<PageFallback />}>
               <Routes>
-                <Route path="/" element={<HomePage />} />
+                <Route
+                  path="/"
+                  element={
+                    isOpsSubdomain() ? (
+                      <AdminRouteGuard>
+                        <AdminDashboardPage />
+                      </AdminRouteGuard>
+                    ) : (
+                      <HomePage />
+                    )
+                  }
+                />
                 <Route path="/ja" element={<HomePage forcedLanguage="ja" />} />
                 <Route path="/en" element={<HomePage forcedLanguage="en" />} />
                 <Route path="/auth/callback" element={<AuthCallbackPage />} />
-                <Route path="/admin" element={<AdminDashboardPage />} />
+                <Route
+                  path="/admin"
+                  element={
+                    <AdminRouteGuard>
+                      <AdminDashboardPage />
+                    </AdminRouteGuard>
+                  }
+                />
                 <Route path="/developers" element={<DevelopersPage />} />
                 <Route path="/settings" element={<SettingsPage />} />
                 <Route path="/system-status" element={<SystemStatusPage />} />

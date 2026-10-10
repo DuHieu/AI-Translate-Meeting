@@ -11,6 +11,7 @@ _AMOUNT_RE = re.compile(
 _PHONE_RE = re.compile(
     r"(?<!\w)(?:\+\d{1,3}[\s.-]?(?:\d{2,4}[\s.-]?){2,4}\d{3,4}|0(?:[\s.-]?\d){8,10})(?!\w)"
 )
+_SECRET_KEY_RE = re.compile(r"(?<!\w)(?:sk-[a-zA-Z0-9_-]{8,}|(?:key|secret|token)[-_][a-zA-Z0-9_-]{6,})(?!\w)", re.IGNORECASE)
 _LONG_NUMBER_RE = re.compile(r"(?<!\d)\d{8,}(?!\d)")
 
 
@@ -37,6 +38,7 @@ class TwoWayPiiFirewall:
             _EMAIL_RE.search(text)
             or _AMOUNT_RE.search(text)
             or _PHONE_RE.search(text)
+            or _SECRET_KEY_RE.search(text)
             or _LONG_NUMBER_RE.search(text)
         )
 
@@ -47,7 +49,7 @@ class TwoWayPiiFirewall:
 
         masked = str(text)
         restore_map: dict[str, str] = {}
-        counter = {"EMAIL": 0, "PHONE": 0, "AMOUNT": 0, "NUMBER": 0}
+        counter = {"EMAIL": 0, "PHONE": 0, "AMOUNT": 0, "KEY": 0, "NUMBER": 0}
 
         # 1. Mask Emails
         def _replace_email(match: re.Match) -> str:
@@ -58,6 +60,16 @@ class TwoWayPiiFirewall:
             return token
 
         masked = _EMAIL_RE.sub(_replace_email, masked)
+
+        # 2. Mask Secret / API Keys
+        def _replace_secret(match: re.Match) -> str:
+            val = match.group(0)
+            counter["KEY"] += 1
+            token = f"__PII_KEY_{counter['KEY']}__"
+            restore_map[token] = val
+            return token
+
+        masked = _SECRET_KEY_RE.sub(_replace_secret, masked)
 
         # 2. Mask Phone numbers
         def _replace_phone(match: re.Match) -> str:

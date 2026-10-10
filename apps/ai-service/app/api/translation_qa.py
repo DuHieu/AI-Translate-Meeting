@@ -57,15 +57,23 @@ router = APIRouter(
 
 
 def _accepted_admin_keys() -> tuple[str, ...]:
-    configured = os.getenv("ADMIN_SECRET_KEY", "vimeet-admin-secret-2026")
-    return tuple(dict.fromkeys((configured, "vimeet-admin-secret-2026", "layameet-admin-secret-2026")))
+    configured = (os.getenv("ADMIN_SECRET_KEY") or "").strip()
+    is_production = os.getenv("ENVIRONMENT", "").lower() in ("production", "prod")
+    if is_production:
+        if not configured:
+            return ()
+        return (configured,)
+    fallback = configured or "vimeet-admin-secret-2026"
+    return tuple(dict.fromkeys((fallback, "vimeet-admin-secret-2026", "layameet-admin-secret-2026")))
 
 
 async def require_admin_key(
     x_admin_key: str | None = Header(default=None, alias="X-Admin-Key"),
     key: str | None = Query(default=None),
 ) -> None:
-    candidate = (x_admin_key or key or "").strip()
+    is_production = os.getenv("ENVIRONMENT", "").lower() in ("production", "prod")
+    # In production, query parameter key is forbidden to avoid leaking secrets in access logs
+    candidate = (x_admin_key or ("" if is_production else key) or "").strip()
     if not candidate or not any(
         secrets.compare_digest(candidate, accepted) for accepted in _accepted_admin_keys()
     ):

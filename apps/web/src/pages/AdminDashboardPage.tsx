@@ -83,6 +83,9 @@ export const AdminDashboardPage: React.FC = () => {
     message?: string;
   }>({ status: 'idle' });
 
+  const [notificationGuideTab, setNotificationGuideTab] = useState<'telegram' | 'zalo' | 'webhook'>('telegram');
+  const [guideCopied, setGuideCopied] = useState<string | null>(null);
+
   const loadMeetingsData = useCallback(async (key: string, status?: 'all' | 'active' | 'ended', search?: string) => {
     if (!key) return;
     setIsMeetingsLoading(true);
@@ -355,7 +358,7 @@ export const AdminDashboardPage: React.FC = () => {
       {/* Main Container */}
       <main className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-8 space-y-6">
         {/* Metric Cards Row */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
           {/* Card 1: Revenue */}
           <div className="rounded-2xl border border-zinc-800 bg-zinc-900/40 p-5 shadow-sm space-y-2">
             <div className="flex items-center justify-between text-zinc-400">
@@ -436,6 +439,36 @@ export const AdminDashboardPage: React.FC = () => {
             </div>
             <div className="text-[11px] text-zinc-500">
               {leads.length} liên hệ chờ tư vấn giải pháp
+            </div>
+          </div>
+
+          {/* Card 5: AI Token Usage */}
+          <div
+            role="button"
+            tabIndex={0}
+            onClick={() => {
+              setActiveTab('translation-qa');
+            }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                setActiveTab('translation-qa');
+              }
+            }}
+            className="rounded-2xl border border-zinc-800 bg-zinc-900/40 p-5 shadow-sm space-y-2 cursor-pointer hover:border-cyan-500/50 hover:bg-cyan-950/20 transition group"
+          >
+            <div className="flex items-center justify-between text-zinc-400">
+              <span className="text-xs font-semibold group-hover:text-cyan-300 transition">Token AI Tiêu Thụ</span>
+              <div className="p-2 rounded-xl bg-cyan-500/10 text-cyan-400 group-hover:bg-cyan-500/20 transition">
+                <Zap className="h-4 w-4" />
+              </div>
+            </div>
+            <div className="text-2xl font-black text-white font-mono">
+              {new Intl.NumberFormat('vi-VN').format(metrics?.totalTokensUsed ?? 0)}
+            </div>
+            <div className="text-[11px] text-zinc-500 flex items-center justify-between">
+              <span>Pro: {new Intl.NumberFormat('vi-VN').format(metrics?.proTokensUsed ?? 0)}</span>
+              <span className="text-cyan-400 font-medium group-hover:underline">Chi tiết &rarr;</span>
             </div>
           </div>
         </div>
@@ -960,87 +993,272 @@ export const AdminDashboardPage: React.FC = () => {
 
         {/* Tab 3: Notifications Configuration */}
         {activeTab === 'notifications' && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="rounded-2xl border border-zinc-800 bg-zinc-900/40 p-6 space-y-4">
-              <h3 className="text-base font-bold text-white flex items-center gap-2">
-                <Bell className="h-5 w-5 text-blue-400" />
-                <span>Trạng Thái Cấu Hình Dispatcher</span>
-              </h3>
-              <p className="text-xs text-zinc-400 leading-relaxed">
-                Hệ thống tự động thông báo ngay lập tức vào Telegram hoặc hệ thống CRM Webhook khi có khách hàng hoàn tất thanh toán VietQR hoặc gửi form tư vấn Enterprise.
-              </p>
+          <div className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="rounded-2xl border border-zinc-800 bg-zinc-900/40 p-6 space-y-4">
+                <h3 className="text-base font-bold text-white flex items-center gap-2">
+                  <Bell className="h-5 w-5 text-blue-400" />
+                  <span>Trạng Thái Cấu Hình Dispatcher</span>
+                </h3>
+                <p className="text-xs text-zinc-400 leading-relaxed">
+                  Hệ thống tự động thông báo ngay lập tức vào Telegram, Zalo hoặc hệ thống CRM Webhook khi có khách hàng hoàn tất thanh toán VietQR hoặc gửi form tư vấn Enterprise.
+                </p>
 
-              <div className="space-y-3 pt-2">
-                <div className="flex items-center justify-between p-3 rounded-xl border border-zinc-800 bg-zinc-950">
-                  <div>
-                    <div className="text-xs font-semibold text-white">Telegram Sales Bot</div>
-                    <div className="text-[11px] text-zinc-500">TELEGRAM_BOT_TOKEN &amp; TELEGRAM_CHAT_ID</div>
+                <div className="space-y-3 pt-2">
+                  <div className="flex items-center justify-between p-3 rounded-xl border border-zinc-800 bg-zinc-950">
+                    <div>
+                      <div className="text-xs font-semibold text-white">Telegram Sales Bot</div>
+                      <div className="text-[11px] text-zinc-500">TELEGRAM_BOT_TOKEN &amp; TELEGRAM_CHAT_ID</div>
+                    </div>
+                    {metrics?.telegramConfigured ? (
+                      <span className="rounded-full bg-emerald-500/15 text-emerald-400 text-xs font-semibold px-2.5 py-0.5 border border-emerald-500/20">
+                        Đã kết nối
+                      </span>
+                    ) : (
+                      <span className="rounded-full bg-zinc-800 text-zinc-400 text-xs font-semibold px-2.5 py-0.5">
+                        Chưa cấu hình
+                      </span>
+                    )}
                   </div>
-                  {metrics?.telegramConfigured ? (
-                    <span className="rounded-full bg-emerald-500/15 text-emerald-400 text-xs font-semibold px-2.5 py-0.5 border border-emerald-500/20">
-                      Đã kết nối
+
+                  <div className="flex items-center justify-between p-3 rounded-xl border border-zinc-800 bg-zinc-950">
+                    <div>
+                      <div className="text-xs font-semibold text-white">Zalo Official Account &amp; Webhook</div>
+                      <div className="text-[11px] text-zinc-500">ZALO_WEBHOOK_URL hoặc ZALO_ACCESS_TOKEN &amp; ZALO_OA_ID</div>
+                    </div>
+                    {metrics?.zaloConfigured ? (
+                      <span className="rounded-full bg-emerald-500/15 text-emerald-400 text-xs font-semibold px-2.5 py-0.5 border border-emerald-500/20">
+                        Đã kết nối
+                      </span>
+                    ) : (
+                      <span className="rounded-full bg-zinc-800 text-zinc-400 text-xs font-semibold px-2.5 py-0.5">
+                        Chưa cấu hình
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="flex items-center justify-between p-3 rounded-xl border border-zinc-800 bg-zinc-950">
+                    <div>
+                      <div className="text-xs font-semibold text-white">CRM &amp; Team Webhook (Slack / Lark / Discord)</div>
+                      <div className="text-[11px] text-zinc-500">Notification:WebhookUrl hoặc ENTERPRISE_LEAD_WEBHOOK_URL</div>
+                    </div>
+                    {metrics?.webhookConfigured ? (
+                      <span className="rounded-full bg-emerald-500/15 text-emerald-400 text-xs font-semibold px-2.5 py-0.5 border border-emerald-500/20">
+                        Đã kết nối
+                      </span>
+                    ) : (
+                      <span className="rounded-full bg-zinc-800 text-zinc-400 text-xs font-semibold px-2.5 py-0.5">
+                        Chưa cấu hình
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <div className="rounded-2xl border border-zinc-800 bg-zinc-900/40 p-6 space-y-4">
+                <h3 className="text-base font-bold text-white flex items-center gap-2">
+                  <Send className="h-5 w-5 text-emerald-400" />
+                  <span>Kiểm Tra Thông Báo Thử Nghiệm (Test Ping)</span>
+                </h3>
+                <p className="text-xs text-zinc-400 leading-relaxed">
+                  Bấm nút bên dưới để gửi tin nhắn thử nghiệm tới toàn bộ các kênh (Telegram, Zalo, Webhook) đã cấu hình để đảm bảo nhân viên kinh doanh nhận được tin nhắn tức thì.
+                </p>
+
+                <div className="pt-3">
+                  <button
+                    type="button"
+                    onClick={handleTestNotification}
+                    disabled={testNotificationResult.status === 'sending'}
+                    className="w-full py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white font-semibold text-xs flex items-center justify-center gap-2 transition cursor-pointer shadow-md shadow-emerald-500/20"
+                  >
+                    <Send className="h-4 w-4" />
+                    <span>
+                      {testNotificationResult.status === 'sending'
+                        ? 'Đang gửi thông báo thử...'
+                        : 'Gửi Thông Báo Thử Nghiệm Ngay'}
                     </span>
-                  ) : (
-                    <span className="rounded-full bg-zinc-800 text-zinc-400 text-xs font-semibold px-2.5 py-0.5">
-                      Chưa cấu hình
-                    </span>
-                  )}
+                  </button>
                 </div>
 
-                <div className="flex items-center justify-between p-3 rounded-xl border border-zinc-800 bg-zinc-950">
-                  <div>
-                    <div className="text-xs font-semibold text-white">CRM Webhook Endpoint</div>
-                    <div className="text-[11px] text-zinc-500">Notification:WebhookUrl hoặc ENTERPRISE_LEAD_WEBHOOK_URL</div>
+                {testNotificationResult.status === 'success' && (
+                  <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-3 text-xs text-emerald-300 flex items-center gap-2">
+                    <CheckCircle2 className="h-4 w-4 shrink-0" />
+                    <span>{testNotificationResult.message}</span>
                   </div>
-                  {metrics?.webhookConfigured ? (
-                    <span className="rounded-full bg-emerald-500/15 text-emerald-400 text-xs font-semibold px-2.5 py-0.5 border border-emerald-500/20">
-                      Đã kết nối
-                    </span>
-                  ) : (
-                    <span className="rounded-full bg-zinc-800 text-zinc-400 text-xs font-semibold px-2.5 py-0.5">
-                      Chưa cấu hình
-                    </span>
-                  )}
-                </div>
+                )}
+
+                {testNotificationResult.status === 'error' && (
+                  <div className="rounded-xl border border-rose-500/30 bg-rose-500/10 p-3 text-xs text-rose-300 flex items-center gap-2">
+                    <ShieldAlert className="h-4 w-4 shrink-0" />
+                    <span>{testNotificationResult.message}</span>
+                  </div>
+                )}
               </div>
             </div>
 
-            <div className="rounded-2xl border border-zinc-800 bg-zinc-900/40 p-6 space-y-4">
-              <h3 className="text-base font-bold text-white flex items-center gap-2">
-                <Send className="h-5 w-5 text-emerald-400" />
-                <span>Kiểm Tra Thông Báo Thử Nghiệm (Test Ping)</span>
-              </h3>
-              <p className="text-xs text-zinc-400 leading-relaxed">
-                Bấm nút bên dưới để gửi tin nhắn thử nghiệm tới các kênh thông báo đã cấu hình để đảm bảo nhân viên kinh doanh nhận được tin nhắn tức thì.
-              </p>
-
-              <div className="pt-3">
-                <button
-                  type="button"
-                  onClick={handleTestNotification}
-                  disabled={testNotificationResult.status === 'sending'}
-                  className="w-full py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white font-semibold text-xs flex items-center justify-center gap-2 transition cursor-pointer shadow-md shadow-emerald-500/20"
-                >
-                  <Send className="h-4 w-4" />
-                  <span>
-                    {testNotificationResult.status === 'sending'
-                      ? 'Đang gửi thông báo thử...'
-                      : 'Gửi Thông Báo Thử Nghiệm Ngay'}
-                  </span>
-                </button>
+            {/* Step-by-Step Setup Guides */}
+            <div className="rounded-2xl border border-zinc-800 bg-zinc-900/40 p-6 space-y-5">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div>
+                  <h3 className="text-base font-bold text-white flex items-center gap-2">
+                    <Zap className="h-5 w-5 text-amber-400" />
+                    <span>Hướng Dẫn Thiết Lập Tích Hợp Kênh Thông Báo</span>
+                  </h3>
+                  <p className="text-xs text-zinc-400 mt-1">
+                    Chọn kênh bên dưới để xem hướng dẫn từng bước lấy token và cấu hình biến môi trường nhanh chóng.
+                  </p>
+                </div>
+                <div className="flex items-center gap-1.5 p-1 rounded-xl bg-zinc-950 border border-zinc-800 self-start sm:self-auto">
+                  <button
+                    type="button"
+                    onClick={() => setNotificationGuideTab('telegram')}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer ${
+                      notificationGuideTab === 'telegram'
+                        ? 'bg-blue-600 text-white shadow-sm'
+                        : 'text-zinc-400 hover:text-white'
+                    }`}
+                  >
+                    Telegram
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setNotificationGuideTab('zalo')}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer ${
+                      notificationGuideTab === 'zalo'
+                        ? 'bg-blue-600 text-white shadow-sm'
+                        : 'text-zinc-400 hover:text-white'
+                    }`}
+                  >
+                    Zalo
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setNotificationGuideTab('webhook')}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer ${
+                      notificationGuideTab === 'webhook'
+                        ? 'bg-blue-600 text-white shadow-sm'
+                        : 'text-zinc-400 hover:text-white'
+                    }`}
+                  >
+                    Slack / Lark / Webhook
+                  </button>
+                </div>
               </div>
 
-              {testNotificationResult.status === 'success' && (
-                <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-3 text-xs text-emerald-300 flex items-center gap-2">
-                  <CheckCircle2 className="h-4 w-4 shrink-0" />
-                  <span>{testNotificationResult.message}</span>
+              {notificationGuideTab === 'telegram' && (
+                <div className="rounded-xl border border-zinc-800/80 bg-zinc-950/70 p-5 space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div className="text-sm font-bold text-blue-400 flex items-center gap-2">
+                      <span>Cấu hình Telegram Sales &amp; Alert Bot</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        const snippet = `TELEGRAM_BOT_TOKEN=123456789:ABCdefGHIjklMNOpqrsTUVwxyz\nTELEGRAM_CHAT_ID=-1001234567890`;
+                        await copyText(snippet);
+                        setGuideCopied('telegram');
+                        setTimeout(() => setGuideCopied(null), 2000);
+                      }}
+                      className="px-2.5 py-1 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-[11px] font-medium flex items-center gap-1.5 transition cursor-pointer"
+                    >
+                      {guideCopied === 'telegram' ? <Check className="h-3.5 w-3.5 text-emerald-400" /> : <Copy className="h-3.5 w-3.5" />}
+                      <span>{guideCopied === 'telegram' ? 'Đã sao chép' : 'Sao chép .env mẫu'}</span>
+                    </button>
+                  </div>
+                  <ol className="text-xs text-zinc-300 space-y-2 list-decimal list-inside leading-relaxed">
+                    <li>
+                      Mở ứng dụng Telegram, tìm kiếm bot <strong className="text-white">@BotFather</strong> và gửi lệnh <code className="px-1.5 py-0.5 rounded bg-zinc-800 text-amber-300 font-mono">/newbot</code>.
+                    </li>
+                    <li>
+                      Đặt tên cho bot và username (kết thúc bằng <code className="px-1 py-0.5 rounded bg-zinc-800 text-zinc-200">bot</code>). BotFather sẽ trả về chuỗi <strong className="text-white">HTTP API Token</strong>.
+                    </li>
+                    <li>
+                      Tạo nhóm chat Telegram tiếp nhận đơn hàng, thêm bot vừa tạo vào nhóm. Nhắn tin bất kỳ vào nhóm rồi truy cập bot <strong className="text-white">@userinfobot</strong> hoặc <strong className="text-white">@getmyid_bot</strong> để lấy <strong className="text-white">Chat ID</strong> (thường bắt đầu bằng dấu trừ, ví dụ: <code className="px-1 py-0.5 rounded bg-zinc-800 text-zinc-200">-1001234567890</code>).
+                    </li>
+                    <li>
+                      Điền 2 biến môi trường vào file <code className="px-1 py-0.5 rounded bg-zinc-800 text-blue-300">.env</code> hoặc cấu hình hệ thống:
+                      <pre className="mt-2 p-3 rounded-lg bg-zinc-900 border border-zinc-800 font-mono text-[11px] text-zinc-300 overflow-x-auto">
+{`TELEGRAM_BOT_TOKEN=123456789:ABCdefGHIjklMNOpqrsTUVwxyz
+TELEGRAM_CHAT_ID=-1001234567890`}
+                      </pre>
+                    </li>
+                  </ol>
                 </div>
               )}
 
-              {testNotificationResult.status === 'error' && (
-                <div className="rounded-xl border border-rose-500/30 bg-rose-500/10 p-3 text-xs text-rose-300 flex items-center gap-2">
-                  <ShieldAlert className="h-4 w-4 shrink-0" />
-                  <span>{testNotificationResult.message}</span>
+              {notificationGuideTab === 'zalo' && (
+                <div className="rounded-xl border border-zinc-800/80 bg-zinc-950/70 p-5 space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div className="text-sm font-bold text-sky-400 flex items-center gap-2">
+                      <span>Cấu hình Zalo Official Account (OA) &amp; Webhook</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        const snippet = `ZALO_WEBHOOK_URL=https://your-zalo-webhook-relay.example.com/api/notify\n# Hoặc dùng Zalo OA OpenAPI\n# ZALO_ACCESS_TOKEN=your_zalo_access_token\n# ZALO_OA_ID=your_oa_id`;
+                        await copyText(snippet);
+                        setGuideCopied('zalo');
+                        setTimeout(() => setGuideCopied(null), 2000);
+                      }}
+                      className="px-2.5 py-1 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-[11px] font-medium flex items-center gap-1.5 transition cursor-pointer"
+                    >
+                      {guideCopied === 'zalo' ? <Check className="h-3.5 w-3.5 text-emerald-400" /> : <Copy className="h-3.5 w-3.5" />}
+                      <span>{guideCopied === 'zalo' ? 'Đã sao chép' : 'Sao chép .env mẫu'}</span>
+                    </button>
+                  </div>
+                  <ol className="text-xs text-zinc-300 space-y-2 list-decimal list-inside leading-relaxed">
+                    <li>
+                      <strong>Cách 1 (Khuyên dùng - Nhanh nhất qua Webhook Bot Zalo / n8n / Zapier)</strong>: Cấu hình một Webhook Endpoint để nhận JSON tin nhắn và chuyển tiếp vào nhóm chat Zalo.
+                      <pre className="mt-2 p-3 rounded-lg bg-zinc-900 border border-zinc-800 font-mono text-[11px] text-zinc-300 overflow-x-auto">
+{`ZALO_WEBHOOK_URL=https://your-webhook-relay.example.com/api/zalo-notify`}
+                      </pre>
+                    </li>
+                    <li>
+                      <strong>Cách 2 (Zalo Official Account Doanh Nghiệp Open API)</strong>:
+                      Đăng ký ứng dụng tại <a href="https://developers.zalo.me" target="_blank" rel="noreferrer" className="text-blue-400 hover:underline">developers.zalo.me</a>, liên kết OA Doanh nghiệp, xin quyền gửi tin Notification/Transaction, và lấy Access Token cùng OA ID:
+                      <pre className="mt-2 p-3 rounded-lg bg-zinc-900 border border-zinc-800 font-mono text-[11px] text-zinc-300 overflow-x-auto">
+{`ZALO_ACCESS_TOKEN=your_zalo_access_token_here
+ZALO_OA_ID=your_official_account_id`}
+                      </pre>
+                    </li>
+                  </ol>
+                </div>
+              )}
+
+              {notificationGuideTab === 'webhook' && (
+                <div className="rounded-xl border border-zinc-800/80 bg-zinc-950/70 p-5 space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div className="text-sm font-bold text-violet-400 flex items-center gap-2">
+                      <span>Cấu hình CRM, Slack, Lark / Feishu, Discord Webhook</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        const snippet = `ENTERPRISE_LEAD_WEBHOOK_URL=https://hooks.slack.com/services/T00/B00/XXXXX`;
+                        await copyText(snippet);
+                        setGuideCopied('webhook');
+                        setTimeout(() => setGuideCopied(null), 2000);
+                      }}
+                      className="px-2.5 py-1 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-[11px] font-medium flex items-center gap-1.5 transition cursor-pointer"
+                    >
+                      {guideCopied === 'webhook' ? <Check className="h-3.5 w-3.5 text-emerald-400" /> : <Copy className="h-3.5 w-3.5" />}
+                      <span>{guideCopied === 'webhook' ? 'Đã sao chép' : 'Sao chép .env mẫu'}</span>
+                    </button>
+                  </div>
+                  <div className="text-xs text-zinc-300 space-y-2 leading-relaxed">
+                    <p>
+                      Hệ thống tự động phát payload chuẩn JSON kèm sự kiện (<code className="px-1 py-0.5 rounded bg-zinc-800 text-zinc-200">payment.success</code>, <code className="px-1 py-0.5 rounded bg-zinc-800 text-zinc-200">lead.captured</code>, <code className="px-1 py-0.5 rounded bg-zinc-800 text-zinc-200">system.alert.*</code>) tới bất kỳ Incoming Webhook nào.
+                    </p>
+                    <ul className="list-disc list-inside space-y-1 text-zinc-400 pt-1">
+                      <li><strong>Slack</strong>: Cài đặt Incoming Webhooks trong Slack App directory.</li>
+                      <li><strong>Lark / Feishu</strong>: Thêm Custom Bot vào nhóm và copy Webhook URL.</li>
+                      <li><strong>Discord</strong>: Server Settings &rarr; Integrations &rarr; Webhooks &rarr; Copy Webhook URL.</li>
+                      <li><strong>CRM nội bộ (HubSpot, n8n, Make)</strong>: Dán URL endpoint webhook của kịch bản workflow.</li>
+                    </ul>
+                    <pre className="mt-2 p-3 rounded-lg bg-zinc-900 border border-zinc-800 font-mono text-[11px] text-zinc-300 overflow-x-auto">
+{`ENTERPRISE_LEAD_WEBHOOK_URL=https://hooks.slack.com/services/...`}
+                    </pre>
+                  </div>
                 </div>
               )}
             </div>

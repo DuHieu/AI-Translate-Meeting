@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation, Link, Navigate } from 'react-router-dom';
 import { meetingApi } from '../api/meetingApi';
 import {
@@ -19,6 +19,8 @@ import {
   Calendar,
   Menu,
   LogOut,
+  ChevronDown,
+  Link2,
 } from 'lucide-react';
 import { admissionStorage } from '../utils/admissionStorage';
 import { LayaMeetLogo } from '../components/common/LayaMeetLogo';
@@ -33,6 +35,7 @@ import { LanguageSwitcher } from '../components/common/LanguageSwitcher';
 import { NeuralLinguisticBackground } from '../components/common/NeuralLinguisticBackground';
 import { GoogleAuthControl } from '../components/auth/GoogleAuthControl';
 import { ScheduleMeetingModal } from '../components/home/ScheduleMeetingModal';
+import { CreateMeetingForLaterModal } from '../components/home/CreateMeetingForLaterModal';
 import { UpcomingMeetingsStrip } from '../components/home/UpcomingMeetingsStrip';
 import { scrollLock } from '../utils/scrollLock';
 
@@ -88,6 +91,12 @@ const HOME_UI: Record<string, Record<string, string>> = {
     historyNav: 'Lịch sử cuộc họp',
     toolsNav: 'Cài đặt AI & API Key',
     blogNav: 'Cẩm Nang & Blog',
+    menuCreateForLater: 'Tạo một cuộc họp để sử dụng sau',
+    menuCreateForLaterDesc: 'Nhận đường liên kết để chia sẻ cho người khác',
+    menuStartInstant: 'Bắt đầu một cuộc họp tức thì',
+    menuStartInstantDesc: 'Vào ngay phòng họp với camera và micro',
+    menuSchedule: 'Lên lịch trong Lịch',
+    menuScheduleDesc: 'Lên kế hoạch và gửi thư mời trước',
   },
   en: {
     joinShort: 'Join',
@@ -140,6 +149,12 @@ const HOME_UI: Record<string, Record<string, string>> = {
     historyNav: 'Meeting History',
     toolsNav: 'AI & API Key Settings',
     blogNav: 'Guides & Blog',
+    menuCreateForLater: 'Create a meeting for later',
+    menuCreateForLaterDesc: 'Get a link that you can share with people',
+    menuStartInstant: 'Start an instant meeting',
+    menuStartInstantDesc: 'Join immediately with your camera and mic',
+    menuSchedule: 'Schedule in Calendar',
+    menuScheduleDesc: 'Plan ahead and send calendar invites',
   },
   ja: {
     joinShort: '参加',
@@ -192,6 +207,12 @@ const HOME_UI: Record<string, Record<string, string>> = {
     historyNav: '会議の履歴',
     toolsNav: 'AI・APIキー設定',
     blogNav: 'ガイド & ブログ',
+    menuCreateForLater: '後で利用する会議を作成',
+    menuCreateForLaterDesc: '他の参加者と共有できるリンクを取得します',
+    menuStartInstant: '今すぐ会議を開始',
+    menuStartInstantDesc: 'カメラとマイクを準備して即時参加します',
+    menuSchedule: 'カレンダーでスケジュール設定',
+    menuScheduleDesc: '事前計画を立てて招待状を送信します',
   },
 };
 
@@ -248,6 +269,28 @@ export const HomePage: React.FC<HomePageProps> = ({ forcedLanguage }) => {
   // Unified Google Meet style Left Menu Drawer (opens on logo / menu click)
   const [isNavDrawerOpen, setIsNavDrawerOpen] = useState(false);
 
+  // Google Meet style New Meeting menu & Create For Later modal
+  const [isNewMeetingMenuOpen, setIsNewMeetingMenuOpen] = useState(false);
+  const [isCreateForLaterModalOpen, setIsCreateForLaterModalOpen] = useState(false);
+  const [createdMeetingForLaterCode, setCreatedMeetingForLaterCode] = useState<string | null>(null);
+  const newMeetingMenuDesktopRef = useRef<HTMLDivElement>(null);
+  const newMeetingMenuMobileRef = useRef<HTMLDivElement>(null);
+
+  // Close New Meeting menu on click outside
+  useEffect(() => {
+    if (!isNewMeetingMenuOpen) return;
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Node;
+      const clickedDesktop = newMeetingMenuDesktopRef.current?.contains(target);
+      const clickedMobile = newMeetingMenuMobileRef.current?.contains(target);
+      if (!clickedDesktop && !clickedMobile) {
+        setIsNewMeetingMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [isNewMeetingMenuOpen]);
+
   // Interactive Meeting Preview visibility (in-memory state, resets on page reload)
   const [isPreviewVisible, setIsPreviewVisible] = useState(true);
 
@@ -256,6 +299,7 @@ export const HomePage: React.FC<HomePageProps> = ({ forcedLanguage }) => {
     const isAnyOverlayOpen =
       isNavDrawerOpen ||
       isScheduleMeetingOpen ||
+      isCreateForLaterModalOpen ||
       Boolean(legalModalType);
 
     if (isAnyOverlayOpen) {
@@ -267,6 +311,7 @@ export const HomePage: React.FC<HomePageProps> = ({ forcedLanguage }) => {
   }, [
     isNavDrawerOpen,
     isScheduleMeetingOpen,
+    isCreateForLaterModalOpen,
     legalModalType,
   ]);
 
@@ -274,7 +319,11 @@ export const HomePage: React.FC<HomePageProps> = ({ forcedLanguage }) => {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
-        if (isNavDrawerOpen) {
+        if (isNewMeetingMenuOpen) {
+          setIsNewMeetingMenuOpen(false);
+        } else if (isCreateForLaterModalOpen) {
+          setIsCreateForLaterModalOpen(false);
+        } else if (isNavDrawerOpen) {
           setIsNavDrawerOpen(false);
         } else if (legalModalType) {
           setLegalModalType(null);
@@ -288,6 +337,8 @@ export const HomePage: React.FC<HomePageProps> = ({ forcedLanguage }) => {
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [
+    isNewMeetingMenuOpen,
+    isCreateForLaterModalOpen,
     isNavDrawerOpen,
     legalModalType,
     isScheduleMeetingOpen,
@@ -367,6 +418,35 @@ export const HomePage: React.FC<HomePageProps> = ({ forcedLanguage }) => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleCreateForLater = async () => {
+    setIsNewMeetingMenuOpen(false);
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await meetingApi.createMeeting('LayaMeet', {
+        hostEmail: user?.email || null,
+      });
+      admissionStorage.saveHostToken(res.meetingCode, res.hostToken);
+      setCreatedMeetingForLaterCode(res.meetingCode);
+      setIsCreateForLaterModalOpen(true);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : ui.createMeetingFailed;
+      setError(msg);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleStartInstantMeeting = async () => {
+    setIsNewMeetingMenuOpen(false);
+    await handleCreateNewMeeting();
+  };
+
+  const handleOpenSchedule = () => {
+    setIsNewMeetingMenuOpen(false);
+    setIsScheduleMeetingOpen(true);
   };
 
   const extractMeetingCode = (rawInput: string): string => {
@@ -581,16 +661,92 @@ export const HomePage: React.FC<HomePageProps> = ({ forcedLanguage }) => {
 
             {/* Primary Actions: Start Meeting + Join by Code */}
             <div className="space-y-3">
-              {/* 1. Large Primary Button */}
-              <button
-                type="button"
-                onClick={handleCreateNewMeeting}
-                disabled={loading}
-                className="w-full h-12 px-5 rounded-xl bg-blue-600 hover:bg-blue-500 active:bg-blue-700 disabled:opacity-50 text-white font-semibold flex items-center justify-center gap-2.5 text-sm shadow-sm transition-all cursor-pointer"
-              >
-                <Video className="w-5 h-5 shrink-0" />
-                <span>{loading ? t.hero.btnCreating : t.hero.btnCreate}</span>
-              </button>
+              {/* 1. Large Primary Button with Dropdown Menu (Google Meet style) */}
+              <div className="relative w-full" ref={newMeetingMenuMobileRef}>
+                <button
+                  type="button"
+                  onClick={() => setIsNewMeetingMenuOpen((prev) => !prev)}
+                  disabled={loading}
+                  aria-haspopup="true"
+                  aria-expanded={isNewMeetingMenuOpen}
+                  className="w-full h-12 px-5 rounded-xl bg-blue-600 hover:bg-blue-500 active:bg-blue-700 disabled:opacity-50 text-white font-semibold flex items-center justify-between gap-2.5 text-sm shadow-sm transition-all cursor-pointer"
+                >
+                  <div className="flex items-center gap-2.5">
+                    <Video className="w-5 h-5 shrink-0" />
+                    <span>{loading ? t.hero.btnCreating : t.hero.btnCreate}</span>
+                  </div>
+                  <ChevronDown
+                    className={`w-4 h-4 shrink-0 transition-transform duration-200 ${
+                      isNewMeetingMenuOpen ? 'rotate-180' : ''
+                    }`}
+                  />
+                </button>
+
+                {/* Dropdown Menu */}
+                {isNewMeetingMenuOpen && (
+                  <div
+                    role="menu"
+                    className="absolute top-full left-0 right-0 mt-2 z-30 rounded-2xl bg-white dark:bg-[#18181c] border border-zinc-200 dark:border-zinc-800 shadow-xl p-1.5 space-y-1 animate-in fade-in zoom-in-95 duration-150"
+                  >
+                    <button
+                      type="button"
+                      role="menuitem"
+                      onClick={handleCreateForLater}
+                      className="w-full text-left p-2.5 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800/80 transition-colors flex items-start gap-3 cursor-pointer group"
+                    >
+                      <div className="w-8 h-8 rounded-lg bg-zinc-100 dark:bg-zinc-800 group-hover:bg-blue-50 dark:group-hover:bg-blue-950/40 flex items-center justify-center shrink-0 text-zinc-700 dark:text-zinc-300 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                        <Link2 className="w-4 h-4" />
+                      </div>
+                      <div className="min-w-0">
+                        <div className="text-xs font-semibold text-zinc-900 dark:text-zinc-100">
+                          {ui.menuCreateForLater}
+                        </div>
+                        <div className="text-[11px] text-zinc-500 dark:text-zinc-400 leading-tight mt-0.5">
+                          {ui.menuCreateForLaterDesc}
+                        </div>
+                      </div>
+                    </button>
+
+                    <button
+                      type="button"
+                      role="menuitem"
+                      onClick={handleStartInstantMeeting}
+                      className="w-full text-left p-2.5 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800/80 transition-colors flex items-start gap-3 cursor-pointer group"
+                    >
+                      <div className="w-8 h-8 rounded-lg bg-blue-50 dark:bg-blue-950/40 flex items-center justify-center shrink-0 text-blue-600 dark:text-blue-400 transition-colors">
+                        <Plus className="w-4 h-4" />
+                      </div>
+                      <div className="min-w-0">
+                        <div className="text-xs font-semibold text-zinc-900 dark:text-zinc-100">
+                          {ui.menuStartInstant}
+                        </div>
+                        <div className="text-[11px] text-zinc-500 dark:text-zinc-400 leading-tight mt-0.5">
+                          {ui.menuStartInstantDesc}
+                        </div>
+                      </div>
+                    </button>
+
+                    <button
+                      type="button"
+                      role="menuitem"
+                      onClick={handleOpenSchedule}
+                      className="w-full text-left p-2.5 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800/80 transition-colors flex items-start gap-3 cursor-pointer group"
+                    >
+                      <div className="w-8 h-8 rounded-lg bg-zinc-100 dark:bg-zinc-800 group-hover:bg-blue-50 dark:group-hover:bg-blue-950/40 flex items-center justify-center shrink-0 text-zinc-700 dark:text-zinc-300 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                        <Calendar className="w-4 h-4" />
+                      </div>
+                      <div className="min-w-0">
+                        <div className="text-xs font-semibold text-zinc-900 dark:text-zinc-100">
+                          {ui.menuSchedule}
+                        </div>
+                        <div className="text-[11px] text-zinc-500 dark:text-zinc-400 leading-tight mt-0.5">
+                          {ui.menuScheduleDesc}
+                        </div>
+                      </div>
+                    </button>
+                  </div>
+                )}
+              </div>
 
               {/* 2. Join with Code inline */}
               <form onSubmit={handleJoinWithCode} className="flex items-center gap-2">
@@ -687,15 +843,90 @@ export const HomePage: React.FC<HomePageProps> = ({ forcedLanguage }) => {
 
                 {/* CTA row — Primary Meeting Actions */}
                 <div className="flex flex-row flex-wrap items-center justify-center lg:justify-start gap-3 pt-1">
-                  <button
-                    type="button"
-                    onClick={handleCreateNewMeeting}
-                    disabled={loading}
-                    className="whitespace-nowrap px-5 py-3 bg-blue-600 hover:bg-blue-500 active:bg-blue-700 disabled:opacity-50 text-white font-semibold rounded-xl transition-all flex items-center justify-center gap-2 text-sm sm:text-base cursor-pointer disabled:cursor-not-allowed shadow-sm"
-                  >
-                    <Plus className="w-5 h-5 shrink-0" />
-                    <span>{loading ? t.hero.btnCreating : t.hero.btnCreate}</span>
-                  </button>
+                  {/* Google Meet style New Meeting dropdown button */}
+                  <div className="relative" ref={newMeetingMenuDesktopRef}>
+                    <button
+                      type="button"
+                      onClick={() => setIsNewMeetingMenuOpen((prev) => !prev)}
+                      disabled={loading}
+                      aria-haspopup="true"
+                      aria-expanded={isNewMeetingMenuOpen}
+                      className="whitespace-nowrap px-5 py-3 bg-blue-600 hover:bg-blue-500 active:bg-blue-700 disabled:opacity-50 text-white font-semibold rounded-xl transition-all flex items-center justify-center gap-2.5 text-sm sm:text-base cursor-pointer disabled:cursor-not-allowed shadow-sm"
+                    >
+                      <Video className="w-5 h-5 shrink-0" />
+                      <span>{loading ? t.hero.btnCreating : t.hero.btnCreate}</span>
+                      <ChevronDown
+                        className={`w-4 h-4 ml-0.5 shrink-0 transition-transform duration-200 ${
+                          isNewMeetingMenuOpen ? 'rotate-180' : ''
+                        }`}
+                      />
+                    </button>
+
+                    {/* Google Meet Dropdown Menu */}
+                    {isNewMeetingMenuOpen && (
+                      <div
+                        role="menu"
+                        className="absolute top-full left-0 mt-2 z-30 w-84 rounded-2xl bg-white dark:bg-[#18181c] border border-zinc-200 dark:border-zinc-800 shadow-2xl p-1.5 space-y-1 animate-in fade-in zoom-in-95 duration-150"
+                      >
+                        <button
+                          type="button"
+                          role="menuitem"
+                          onClick={handleCreateForLater}
+                          className="w-full text-left p-3 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800/80 transition-colors flex items-start gap-3 cursor-pointer group"
+                        >
+                          <div className="w-9 h-9 rounded-xl bg-zinc-100 dark:bg-zinc-800 group-hover:bg-blue-50 dark:group-hover:bg-blue-950/40 flex items-center justify-center shrink-0 text-zinc-700 dark:text-zinc-300 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                            <Link2 className="w-4 h-4" />
+                          </div>
+                          <div className="min-w-0">
+                            <div className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
+                              {ui.menuCreateForLater}
+                            </div>
+                            <div className="text-xs text-zinc-500 dark:text-zinc-400 leading-tight mt-0.5">
+                              {ui.menuCreateForLaterDesc}
+                            </div>
+                          </div>
+                        </button>
+
+                        <button
+                          type="button"
+                          role="menuitem"
+                          onClick={handleStartInstantMeeting}
+                          className="w-full text-left p-3 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800/80 transition-colors flex items-start gap-3 cursor-pointer group"
+                        >
+                          <div className="w-9 h-9 rounded-xl bg-blue-50 dark:bg-blue-950/40 flex items-center justify-center shrink-0 text-blue-600 dark:text-blue-400 transition-colors">
+                            <Plus className="w-4 h-4" />
+                          </div>
+                          <div className="min-w-0">
+                            <div className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
+                              {ui.menuStartInstant}
+                            </div>
+                            <div className="text-xs text-zinc-500 dark:text-zinc-400 leading-tight mt-0.5">
+                              {ui.menuStartInstantDesc}
+                            </div>
+                          </div>
+                        </button>
+
+                        <button
+                          type="button"
+                          role="menuitem"
+                          onClick={handleOpenSchedule}
+                          className="w-full text-left p-3 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800/80 transition-colors flex items-start gap-3 cursor-pointer group"
+                        >
+                          <div className="w-9 h-9 rounded-xl bg-zinc-100 dark:bg-zinc-800 group-hover:bg-blue-50 dark:group-hover:bg-blue-950/40 flex items-center justify-center shrink-0 text-zinc-700 dark:text-zinc-300 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                            <Calendar className="w-4 h-4" />
+                          </div>
+                          <div className="min-w-0">
+                            <div className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
+                              {ui.menuSchedule}
+                            </div>
+                            <div className="text-xs text-zinc-500 dark:text-zinc-400 leading-tight mt-0.5">
+                              {ui.menuScheduleDesc}
+                            </div>
+                          </div>
+                        </button>
+                      </div>
+                    )}
+                  </div>
 
                   <button
                     type="button"
@@ -974,6 +1205,15 @@ export const HomePage: React.FC<HomePageProps> = ({ forcedLanguage }) => {
         onClose={() => setIsScheduleMeetingOpen(false)}
         onCreated={() => setScheduleRefreshKey((value) => value + 1)}
       />
+
+      {/* Create Meeting For Later Modal (Google Meet style) */}
+      {createdMeetingForLaterCode && (
+        <CreateMeetingForLaterModal
+          isOpen={isCreateForLaterModalOpen}
+          meetingCode={createdMeetingForLaterCode}
+          onClose={() => setIsCreateForLaterModalOpen(false)}
+        />
+      )}
 
       {/* Legal & Terms Modal */}
       <LegalModal

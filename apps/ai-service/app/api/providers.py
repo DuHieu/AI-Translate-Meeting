@@ -191,6 +191,12 @@ async def recommend_translation_model(
     }
 
 
+@router.get("/usage/summary")
+async def get_global_translation_usage() -> dict[str, Any]:
+    """Return aggregated global translation token metrics across all meetings."""
+    return await quota_manager.get_global_usage()
+
+
 @router.get("/usage/{meeting_id}", response_model=TranslationUsageResponse)
 async def get_translation_usage(
     meeting_id: str,

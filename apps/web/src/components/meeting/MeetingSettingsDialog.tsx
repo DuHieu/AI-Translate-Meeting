@@ -497,6 +497,29 @@ export const MeetingSettingsDialog: React.FC<MeetingSettingsDialogProps> = ({
 
           {activeTab === 'subtitles' && (
             <div className="space-y-4">
+              {/* Interim Real-time Subtitle Stream Toggle */}
+              <div className="flex items-center justify-between rounded-xl border border-[#2c2f37] bg-[#1f2127] p-3.5">
+                <div className="pr-2">
+                  <p className="text-sm font-semibold text-zinc-100">Hiển thị phụ đề thời gian thực (Interim Stream)</p>
+                  <p className="text-xs text-zinc-400">Hiển thị chữ mờ ngay khi đang nói (độ trễ ~350ms), tự động chốt nét khi dứt câu</p>
+                </div>
+                <button
+                  type="button"
+                  aria-label="Hiển thị phụ đề thời gian thực"
+                  aria-pressed={userSettings.showInterimSubtitles}
+                  onClick={() => handleUpdateSetting('showInterimSubtitles', !userSettings.showInterimSubtitles)}
+                  className={`w-11 h-6 flex items-center rounded-full p-1 transition-colors cursor-pointer shrink-0 ml-2 ${
+                    userSettings.showInterimSubtitles ? 'bg-sky-700' : 'bg-[#2e313b]'
+                  }`}
+                >
+                  <div
+                    className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform ${
+                      userSettings.showInterimSubtitles ? 'translate-x-5' : 'translate-x-0'
+                    }`}
+                  />
+                </button>
+              </div>
+
               {/* Subtitle Display Mode */}
               <div className="rounded-xl border border-[#2c2f37] bg-[#1f2127] p-3.5 space-y-2.5">
                 <div>

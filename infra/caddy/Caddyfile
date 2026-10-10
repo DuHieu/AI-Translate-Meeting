@@ -6,3 +6,11 @@
 {$LIVEKIT_DOMAIN} {
 	reverse_proxy livekit:7880
 }
+
+# Dedicated Internal Operations / Admin Subdomain (Phương án 2)
+{$OPS_DOMAIN:ops.layameet.com} {
+	encode zstd gzip
+	# Reverse proxy to web application (isolated by hostname)
+	reverse_proxy web:3000
+}
+

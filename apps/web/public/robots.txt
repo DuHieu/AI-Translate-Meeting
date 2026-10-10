@@ -1,24 +1,108 @@
-# robots.txt for LayaMeet (https://layameet.com)
+# robots.txt for Laya Meet (https://layameet.com)
+# Optimized for Traditional Search Engines (Google, Bing) and AI Search Agents (ChatGPT, Perplexity, Claude, Gemini)
+
+# -----------------------------------------------------------------------------
+# 1. Standard Crawlers (Googlebot, Bingbot, DuckDuckBot, YandexBot)
+# -----------------------------------------------------------------------------
 User-agent: *
 Allow: /
-Allow: /#features
-Allow: /#pricing
-Allow: /#faq
-Allow: /#contact
-Allow: /developers
+Allow: /llms.txt
+Allow: /llms-full.txt
+Allow: /cam-nang
+Allow: /cam-nang/
+Allow: /en/guide
+Allow: /ja/guide
 Allow: /hop-song-ngu-tieng-nhat
 Allow: /hop-song-ngu-tieng-anh
+Allow: /hop-song-ngu-tieng-trung
+Allow: /hop-song-ngu-tieng-han
 Allow: /so-sanh/layameet-vs-zoom
 Allow: /so-sanh/layameet-vs-google-meet
-Allow: /ja
-Allow: /en
+Allow: /developers
 
-# Disallow private meeting rooms and streaming endpoints for privacy and security
+# Disallow private meeting rooms, live streams, and private APIs
 Disallow: /meeting/
 Disallow: /prejoin/
 Disallow: /api/
 Disallow: /ws/
 
-# Host and Sitemap
+# -----------------------------------------------------------------------------
+# 2. AI Search & LLM Retrieval Crawlers (GEO - Generative Engine Optimization)
+# -----------------------------------------------------------------------------
+# OpenAI ChatGPT Search & Ingestion
+User-agent: GPTBot
+Allow: /
+Allow: /llms.txt
+Allow: /llms-full.txt
+Allow: /cam-nang
+Allow: /hop-song-ngu-
+Allow: /so-sanh/
+Disallow: /meeting/
+Disallow: /prejoin/
+Disallow: /api/
+Disallow: /ws/
+
+# OpenAI Browsing (user requested web lookups)
+User-agent: ChatGPT-User
+Allow: /
+Allow: /llms.txt
+Allow: /llms-full.txt
+Disallow: /meeting/
+Disallow: /prejoin/
+Disallow: /api/
+Disallow: /ws/
+
+# Perplexity AI Search Crawler
+User-agent: PerplexityBot
+Allow: /
+Allow: /llms.txt
+Allow: /llms-full.txt
+Allow: /cam-nang
+Allow: /hop-song-ngu-
+Allow: /so-sanh/
+Disallow: /meeting/
+Disallow: /prejoin/
+Disallow: /api/
+Disallow: /ws/
+
+# Anthropic Claude Web Crawler
+User-agent: ClaudeBot
+Allow: /
+Allow: /llms.txt
+Allow: /llms-full.txt
+Allow: /cam-nang
+Allow: /hop-song-ngu-
+Allow: /so-sanh/
+Disallow: /meeting/
+Disallow: /prejoin/
+Disallow: /api/
+Disallow: /ws/
+
+# Google AI & Gemini Training / Search
+User-agent: Google-Extended
+Allow: /
+Allow: /llms.txt
+Allow: /llms-full.txt
+Allow: /cam-nang
+Allow: /hop-song-ngu-
+Allow: /so-sanh/
+Disallow: /meeting/
+Disallow: /prejoin/
+Disallow: /api/
+Disallow: /ws/
+
+# Apple Intelligence
+User-agent: Applebot-Extended
+Allow: /
+Allow: /llms.txt
+Allow: /llms-full.txt
+Disallow: /meeting/
+Disallow: /prejoin/
+Disallow: /api/
+Disallow: /ws/
+
+# -----------------------------------------------------------------------------
+# 3. Host and Sitemap Specifications
+# -----------------------------------------------------------------------------
 Host: https://layameet.com
 Sitemap: https://layameet.com/sitemap.xml

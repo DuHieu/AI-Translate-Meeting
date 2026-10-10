@@ -66,7 +66,7 @@ export const SubtitleOverlay: React.FC<SubtitleOverlayProps> = ({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isMobileSheetOpen]);
 
-  const displaySubtitle = subtitle?.isFinal ? subtitle : null;
+  const displaySubtitle = subtitle?.isFinal || settings.showInterimSubtitles ? subtitle : null;
 
   if (!isCaptionsOn && !displaySubtitle && translatingCount === 0 && !isMobileSheetOpen) return null;
 
@@ -176,7 +176,13 @@ export const SubtitleOverlay: React.FC<SubtitleOverlayProps> = ({
                     )}
                   </div>
 
-                  <span className={`line-clamp-2 block font-medium leading-relaxed text-white ${fontSizeClass}`}>
+                  <span
+                    className={`line-clamp-2 block leading-relaxed transition-opacity duration-150 ${fontSizeClass} ${
+                      displaySubtitle.isFinal
+                        ? 'font-medium text-white'
+                        : 'italic text-zinc-300/85 animate-pulse'
+                    }`}
+                  >
                     {primaryText}
                   </span>
 

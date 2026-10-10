@@ -2,7 +2,6 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import {
   Check,
-  CreditCard,
   ExternalLink,
   FileText,
   Loader2,
@@ -12,11 +11,23 @@ import {
   ShieldCheck,
   UserCheck,
   X,
+  Info,
 } from 'lucide-react';
 import { meetingApi, PaymentOrderResponse, PolarProductPlan } from '../../api/meetingApi';
 import { useAuth } from '../../context/auth-context-def';
 import { useLanguage } from '../../context/language-context-def';
 import { scrollLock } from '../../utils/scrollLock';
+import { LayaMeetLogo } from './LayaMeetLogo';
+import {
+  VisaIcon,
+  MastercardIcon,
+  JcbIcon,
+  AmexIcon,
+  DiscoverIcon,
+  UnionPayIcon,
+  ApplePayIcon,
+  GooglePayIcon,
+} from './PaymentMethodIcons';
 
 const PENDING_CHECKOUT_PLAN_KEY = 'layameet:pending-checkout-plan';
 const PAYMENT_ORDER_ERROR = '__PAYMENT_ORDER_FAILED__';
@@ -108,14 +119,13 @@ interface CheckoutCopy {
   popularBadge: string;
   billedPeriod: (months: number, usd: number, vnd: number) => string;
   perMonth: string;
+  subscriptionDetailsTitle: string;
   orderSummaryTitle: string;
-  serviceName: string;
-  serviceDesc: string;
-  billingDuration: string;
+  paymentMethodTitle: string;
+  dueToday: string;
   subtotal: string;
   taxVat: string;
   taxIncluded: string;
-  totalDue: string;
   ctaButton: (usd: number) => string;
   processingSession: string;
   waitingPayment: string;
@@ -132,38 +142,37 @@ interface CheckoutCopy {
   orderError: string;
 }
 
-const CHECKOUT_COPY: Record<string, CheckoutCopy> = {
+const CHECKOUT_I18N: Record<string, CheckoutCopy> = {
   vi: {
     close: 'Đóng thanh toán',
     title: 'Nâng cấp LayaMeet Pro',
-    subtitle: 'Thanh toán trực tiếp qua cổng Polar (Merchant of Record quốc tế)',
-    steps: ['1. Tài khoản', '2. Chọn gói & Thanh toán', '3. Kích hoạt'],
+    subtitle: 'Thanh toán bảo mật chuẩn quốc tế qua cổng Polar (Merchant of Record)',
+    steps: ['1. Tài khoản', '2. Gói & Thanh toán', '3. Kích hoạt'],
     checkingAccount: 'Đang xác thực thông tin tài khoản…',
-    gateTitle: 'Yêu cầu đăng nhập tài khoản Google',
+    gateTitle: 'Yêu cầu tài khoản Google',
     gateBody:
-      'Gói bản quyền LayaMeet Pro sẽ được gắn trực tiếp vào tài khoản Google của bạn để đồng bộ quyền Host, thời lượng không giới hạn và các tính năng AI trên mọi thiết bị.',
-    selectedPlan: 'Gói dịch vụ đã chọn',
+      'Bản quyền LayaMeet Pro được liên kết trực tiếp vào tài khoản Google của bạn để đồng bộ quyền Host, thời lượng họp không giới hạn và các tính năng AI trên mọi thiết bị.',
+    selectedPlan: 'Gói đã chọn',
     signIn: 'Đăng nhập Google để tiếp tục',
-    signInError: 'Không thể khởi động đăng nhập Google. Vui lòng thử lại.',
-    accountBoundNotice: 'Bản quyền Pro sẽ được kích hoạt cho tài khoản này',
-    chooseCycle: 'Chọn thời hạn đăng ký',
+    signInError: 'Không thể đăng nhập Google. Vui lòng thử lại.',
+    accountBoundNotice: 'Bản quyền sẽ được kích hoạt cho tài khoản này',
+    chooseCycle: 'Chọn thời hạn bản quyền',
     savePercent: (pct) => `Tiết kiệm ${pct}%`,
     popularBadge: 'Được chọn nhiều nhất',
     billedPeriod: (months, usd, vnd) =>
       `Thanh toán $${usd.toFixed(2)} USD (~${vnd.toLocaleString('vi-VN')}đ) / ${months} tháng`,
     perMonth: '/ tháng',
+    subscriptionDetailsTitle: 'Thông tin gói đăng ký',
     orderSummaryTitle: 'Tóm tắt đơn hàng',
-    serviceName: 'LayaMeet Pro Unlimited Host',
-    serviceDesc: 'Không giới hạn thời lượng họp · Dịch thuật AI song song · Ghi biên bản tự động',
-    billingDuration: 'Thời hạn bản quyền',
+    paymentMethodTitle: 'Phương thức thanh toán',
+    dueToday: 'Thanh toán ngay hôm nay',
     subtotal: 'Giá gói',
-    taxVat: 'Thuế & Phí giao dịch',
+    taxVat: 'Thuế & Phí dịch vụ',
     taxIncluded: 'Đã bao gồm thuế (Polar MoR)',
-    totalDue: 'Tổng số tiền thanh toán',
-    ctaButton: (usd) => `Tiếp tục thanh toán $${usd.toFixed(2)} USD`,
-    processingSession: 'Đang khởi tạo cổng thanh toán bảo mật…',
-    waitingPayment: 'Đang chờ xác nhận giao dịch · Hệ thống tự động kích hoạt tài khoản ngay khi hoàn tất',
-    securityGuarantee: 'Bảo mật SSL 256-bit · Tiêu chuẩn PCI-DSS Level 1 · Cổng thanh toán quốc tế Polar',
+    ctaButton: (usd) => `Tiến hành thanh toán $${usd.toFixed(2)} USD`,
+    processingSession: 'Đang khởi tạo phiên thanh toán bảo mật…',
+    waitingPayment: 'Đang chờ xác nhận thanh toán · Hệ thống tự động kích hoạt ngay khi nhận được giao dịch',
+    securityGuarantee: 'Bảo mật SSL 256-bit · Chuẩn PCI-DSS Level 1 · Cổng thanh toán Polar MoR',
     invoiceNotice: 'Hóa đơn điện tử (VAT/Receipt) sẽ được tự động gửi vào email của bạn ngay sau khi thanh toán.',
     paidTitle: 'Bản quyền Pro đã kích hoạt thành công',
     paidBody: 'đã được nâng cấp thành công lên gói Pro. Bạn có thể sử dụng đầy đủ quyền hạn ngay bây giờ.',
@@ -194,15 +203,14 @@ const CHECKOUT_COPY: Record<string, CheckoutCopy> = {
     billedPeriod: (months, usd, vnd) =>
       `Billed $${usd.toFixed(2)} USD (~${vnd.toLocaleString('vi-VN')} VND) for ${months} months`,
     perMonth: '/ month',
-    orderSummaryTitle: 'Order Summary',
-    serviceName: 'LayaMeet Pro Unlimited Host',
-    serviceDesc: 'Unlimited meeting duration · Real-time AI dual subtitles · Auto meeting minutes',
-    billingDuration: 'Subscription Period',
+    subscriptionDetailsTitle: 'Subscription details',
+    orderSummaryTitle: 'Order summary',
+    paymentMethodTitle: 'Payment method',
+    dueToday: 'Due today',
     subtotal: 'Plan Price',
     taxVat: 'Taxes & Fees',
     taxIncluded: 'Included (Polar MoR)',
-    totalDue: 'Total Amount',
-    ctaButton: (usd) => `Proceed to Secure Checkout ($${usd.toFixed(2)} USD)`,
+    ctaButton: (usd) => `Proceed to secure checkout ($${usd.toFixed(2)} USD)`,
     processingSession: 'Initializing secure checkout session…',
     waitingPayment: 'Waiting for payment confirmation · Account activates automatically upon receipt',
     securityGuarantee: '256-bit SSL · PCI-DSS Level 1 Compliant · Powered by Polar MoR',
@@ -220,44 +228,43 @@ const CHECKOUT_COPY: Record<string, CheckoutCopy> = {
   ja: {
     close: '決済画面を閉じる',
     title: 'LayaMeet Proへアップグレード',
-    subtitle: 'Polar（国際Merchant of Record）による安全なオンライン決済',
-    steps: ['1. アカウント', '2. プラン選択・決済', '3. 有効化完了'],
-    checkingAccount: 'アカウント情報を確認しています…',
-    gateTitle: 'Googleアカウントへのログインが必要です',
+    subtitle: 'Polar（Merchant of Record）による安全な決済',
+    steps: ['1. アカウント', '2. プラン選択', '3. 有効化完了'],
+    checkingAccount: 'アカウント情報を確認中…',
+    gateTitle: 'Googleログインが必要です',
     gateBody:
-      'LayaMeet Proのライセンスはお客様のGoogleアカウントに紐づき、ホスト権限、無制限の会議時間、AI翻訳機能をすべての端末で同期します。',
+      'LayaMeet Proのライセンスはお客様のGoogleアカウントに紐づけられ、すべての端末で時間無制限の会議機能とAI字幕翻訳をご利用いただけます。',
     selectedPlan: '選択されたプラン',
-    signIn: 'Googleでログインして続行',
+    signIn: 'Googleでログインして続ける',
     signInError: 'Googleログインに失敗しました。再度お試しください。',
-    accountBoundNotice: 'Proライセンスはこのアカウントに付与されます',
+    accountBoundNotice: 'このアカウントにProライセンスが付与されます',
     chooseCycle: '請求サイクルを選択',
-    savePercent: (pct) => `${pct}% お得`,
-    popularBadge: '人気プラン',
-    billedPeriod: (months, usd, vnd) =>
-      `${months}ヶ月分を一括請求: $${usd.toFixed(2)} USD (~${vnd.toLocaleString('vi-VN')} VND)`,
+    savePercent: (pct) => `${pct}%お得`,
+    popularBadge: '一番人気',
+    billedPeriod: (months, usd, _vnd) =>
+      `$${usd.toFixed(2)} USD / ${months}ヶ月分`,
     perMonth: '/ 月',
-    orderSummaryTitle: '注文内容の確認',
-    serviceName: 'LayaMeet Pro Unlimited Host',
-    serviceDesc: '会議時間無制限 · リアルタイム双方向AI字幕翻訳 · 議事録自動生成',
-    billingDuration: '有効期間',
+    subscriptionDetailsTitle: '契約内容の詳細',
+    orderSummaryTitle: 'ご注文内容',
+    paymentMethodTitle: 'お支払い方法',
+    dueToday: '本日のお支払い合計',
     subtotal: 'プラン料金',
-    taxVat: '税金・手数料',
-    taxIncluded: '税込 (Polar MoR)',
-    totalDue: '合計金額',
-    ctaButton: (usd) => `安全な決済画面へ進む ($${usd.toFixed(2)} USD)`,
-    processingSession: '安全な決済セッションを準備しています…',
-    waitingPayment: '決済完了を待機中 · 完了次第、自動的にPro権限が有効化されます',
+    taxVat: '税金および手数料',
+    taxIncluded: '税込み (Polar MoR)',
+    ctaButton: (usd) => `安全なお支払いへ進む ($${usd.toFixed(2)} USD)`,
+    processingSession: '安全な決済セッションを作成中…',
+    waitingPayment: '決済の確認を待機しています · 完了次第、自動的にアカウントがProへ切り替わります',
     securityGuarantee: '256ビットSSL暗号化 · PCI-DSS Level 1準拠 · Polar MoR',
-    invoiceNotice: '電子領収書およびインボイスは決済完了後すぐにメールで送付されます。',
-    paidTitle: 'Proライセンスが有効になりました',
-    paidBody: 'のProアップグレードが完了しました。すべてのPro機能をご利用いただけます。',
+    invoiceNotice: 'お支払い完了後、領収書および明細書がご登録のメールアドレスに自動送信されます。',
+    paidTitle: 'Proプランの有効化が完了しました',
+    paidBody: 'が正常にProへアップグレードされました。時間無制限の会議を開始できます。',
     expiresOn: '有効期限',
     done: '完了して会議に戻る',
-    paymentPolicyLink: '決済ポリシー',
+    paymentPolicyLink: '支払いポリシー',
     refundPolicyLink: '返金ポリシー',
     supportEmail: 'サポート: support@layameet.com',
-    retry: '決済セッションを再試行',
-    orderError: '決済セッションを作成できませんでした。もう一度お試しください。',
+    retry: 'もう一度試す',
+    orderError: '決済の初期化に失敗しました。もう一度お試しください。',
   },
 };
 
@@ -269,118 +276,116 @@ export interface CheckoutModalProps {
   onPaymentSuccess?: () => void;
 }
 
-function normalizePlanId(planId?: string): BillingPlanId {
-  if (planId === 'pro_2year' || planId === '2year' || planId === 'pro_biennial' || planId === 'biennial') {
-    return 'pro_2year';
+const normalizePlanId = (rawId?: string): BillingPlanId => {
+  if (rawId === 'pro_quarterly' || rawId === 'pro_annual' || rawId === 'pro_2year') {
+    return rawId;
   }
-  if (planId === 'pro_quarterly' || planId === 'quarterly' || planId === '3month' || planId === 'pro_3month') {
-    return 'pro_quarterly';
-  }
-  return planId === 'pro_annual' || planId === 'annual' ? 'pro_annual' : 'pro';
-}
+  return 'pro';
+};
 
 export const CheckoutModal: React.FC<CheckoutModalProps> = ({
   isOpen,
   onClose,
   meetingCode,
-  initialPlanId = 'pro',
+  initialPlanId,
   onPaymentSuccess,
 }) => {
-  const { user, loading: authLoading, signInWithGoogle } = useAuth();
   const { language } = useLanguage();
-  const copy = CHECKOUT_COPY[language] || CHECKOUT_COPY.vi;
+  const { user, loading: authLoading, signInWithGoogle } = useAuth();
+  const copy = CHECKOUT_I18N[language] || CHECKOUT_I18N.vi;
 
-  const [plans, setPlans] = useState<PlanDisplayItem[]>(DEFAULT_PLANS);
-  const [selectedPlanId, setSelectedPlanId] = useState<BillingPlanId>(
+  const [selectedPlanId, setSelectedPlanId] = useState<BillingPlanId>(() =>
     normalizePlanId(initialPlanId),
   );
+  const [plans, setPlans] = useState<PlanDisplayItem[]>(DEFAULT_PLANS);
   const [order, setOrder] = useState<PaymentOrderResponse | null>(null);
   const [checkoutUrl, setCheckoutUrl] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isPaid, setIsPaid] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<'card' | 'apple_pay' | 'google_pay'>('card');
 
   const pollingRef = useRef<number | null>(null);
-  const requestSequenceRef = useRef(0);
-  const lastAutoRequestRef = useRef<string | null>(null);
   const modalRef = useRef<HTMLDivElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
+  const requestSequenceRef = useRef<number>(0);
+  const lastAutoRequestRef = useRef<string | null>(null);
   const onCloseRef = useRef(onClose);
-
-  useEffect(() => {
-    onCloseRef.current = onClose;
-  }, [onClose]);
+  onCloseRef.current = onClose;
 
   const clearPolling = useCallback(() => {
-    if (pollingRef.current !== null) {
+    if (pollingRef.current) {
       window.clearInterval(pollingRef.current);
       pollingRef.current = null;
     }
   }, []);
 
-  // Fetch real-time products and dynamic savings calculations directly from Polar
+  // Fetch real plans from backend / Polar API if available
   useEffect(() => {
-    if (!isOpen) return;
-    let isSubscribed = true;
+    let isMounted = true;
+    meetingApi
+      .getPolarProducts()
+      .then((polarPlans) => {
+        if (!isMounted || !Array.isArray(polarPlans) || polarPlans.length === 0) return;
 
-    async function loadPolarCatalog() {
-      try {
-        const polarPlans: PolarProductPlan[] = await meetingApi.getPolarProducts();
-        if (!isSubscribed || !Array.isArray(polarPlans) || polarPlans.length === 0) return;
+        const planLookup = new Map<string, PolarProductPlan>();
+        for (const p of polarPlans) {
+          planLookup.set(p.polar_product_id, p);
+        }
 
-        const mapped: PlanDisplayItem[] = polarPlans.map((p) => ({
-          id: p.id,
-          polarProductId: p.polar_product_id,
-          name: p.name,
-          months: p.months,
-          priceUsd: p.price_usd,
-          priceVnd: p.price_vnd,
-          pricePerMonthUsd: p.price_per_month_usd,
-          pricePerMonthVnd: p.price_per_month_vnd,
-          savingsPercent: p.savings_percent,
-          isPopular: p.id === 'pro_annual',
-        }));
+        const updated: PlanDisplayItem[] = DEFAULT_PLANS.map((def) => {
+          const live = planLookup.get(def.polarProductId);
+          if (!live) return def;
 
-        setPlans(mapped);
-      } catch {
-        // Keeps DEFAULT_PLANS fallback silently if offline
-      }
-    }
+          return {
+            ...def,
+            name: live.name || def.name,
+            priceUsd: live.price_usd,
+            priceVnd: live.price_vnd,
+            pricePerMonthUsd: live.price_per_month_usd,
+            pricePerMonthVnd: live.price_per_month_vnd,
+            savingsPercent: live.savings_percent,
+          };
+        });
 
-    void loadPolarCatalog();
+        setPlans(updated);
+      })
+      .catch(() => {
+        // Fallback to DEFAULT_PLANS
+      });
+
     return () => {
-      isSubscribed = false;
+      isMounted = false;
     };
-  }, [isOpen]);
+  }, []);
 
   const fetchCheckoutSession = useCallback(
     async (planId: BillingPlanId) => {
       if (!user?.email) return;
 
-      const requestId = ++requestSequenceRef.current;
-      setIsLoading(true);
-      setIsPaid(false);
-      setError(null);
+      const requestId = (requestSequenceRef.current += 1);
       clearPolling();
-
-      const activePlan = plans.find((p) => p.id === planId) || DEFAULT_PLANS.find((p) => p.id === planId);
-      const productId = activePlan?.polarProductId || POLAR_PRODUCT_IDS[planId];
-      const fallbackUrl = `/checkout?products=${productId}&customer_email=${encodeURIComponent(user.email)}`;
+      setIsLoading(true);
+      setError(null);
 
       try {
+        const selected = plans.find((p) => p.id === planId) || DEFAULT_PLANS[0];
+        const fallbackUrl = `/checkout?products=${selected.polarProductId}&customer_email=${encodeURIComponent(user.email)}`;
         let liveUrl = fallbackUrl;
+
         try {
-          const polarSession = await meetingApi.getPolarCheckoutUrl(
-            productId,
-            user.email,
-            user.fullName,
-            user.id,
+          const res = await fetch(
+            `/checkout?products=${selected.polarProductId}&customer_email=${encodeURIComponent(user.email)}&format=json`,
+            { headers: { Accept: 'application/json' } },
           );
-          if (polarSession?.checkout_url) {
-            liveUrl = polarSession.checkout_url;
+          if (res.ok) {
+            const polarSession = (await res.json()) as { checkout_url?: string };
+            if (polarSession.checkout_url) {
+              liveUrl = polarSession.checkout_url;
+            }
           }
         } catch {
-          // In case JSON endpoint is slow, fallbackUrl will direct 303 via /checkout
+          // fallback to 303 endpoint
         }
 
         if (requestId === requestSequenceRef.current) {
@@ -469,18 +474,17 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
           onPaymentSuccess?.();
         }
       } catch {
-        // Continue polling; non-blocking
+        // Non-blocking polling error
       }
     }, 2_500);
 
     return clearPolling;
   }, [clearPolling, isOpen, isPaid, onPaymentSuccess, orderCode, user?.email]);
 
-  // Modal accessibility: Escape, tab trap, scroll lock
+  // Modal accessibility
   useEffect(() => {
     if (!isOpen) return undefined;
 
-    const previousFocus = document.activeElement as HTMLElement | null;
     const releaseScrollLock = scrollLock.lock();
     window.setTimeout(() => closeButtonRef.current?.focus(), 0);
 
@@ -508,11 +512,10 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
       }
     };
 
-    document.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('keydown', handleKeyDown);
     return () => {
-      document.removeEventListener('keydown', handleKeyDown);
       releaseScrollLock();
-      previousFocus?.focus();
+      window.removeEventListener('keydown', handleKeyDown);
     };
   }, [isOpen]);
 
@@ -541,7 +544,6 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
 
   if (!isOpen || typeof document === 'undefined') return null;
 
-  const activeStep = !user ? 1 : isPaid ? 3 : 2;
   const currentPlan = plans.find((p) => p.id === selectedPlanId) || DEFAULT_PLANS[0];
 
   const currentCheckoutUrl =
@@ -551,7 +553,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
 
   return createPortal(
     <div
-      className="fixed inset-0 z-[200] flex items-center justify-center bg-black/80 p-3 backdrop-blur-sm sm:p-6"
+      className="fixed inset-0 z-[200] flex items-center justify-center bg-black/85 p-3 sm:p-6 backdrop-blur-md"
       style={{
         top: 'var(--viewport-top)',
         height: 'var(--app-height)',
@@ -564,7 +566,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
         role="dialog"
         aria-modal="true"
         aria-labelledby="checkout-title"
-        className="relative max-h-[calc(var(--app-height)-1.5rem)] w-full max-w-2xl overflow-y-auto rounded-2xl border border-zinc-800 bg-zinc-950 text-zinc-100 shadow-2xl"
+        className="relative max-h-[calc(var(--app-height)-1.5rem)] w-full max-w-4xl overflow-y-auto rounded-3xl border border-zinc-800 bg-[#09090c] text-zinc-100 shadow-2xl transition-all"
       >
         {/* Dismiss Button */}
         <button
@@ -572,70 +574,42 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
           type="button"
           onClick={onClose}
           aria-label={copy.close}
-          className="absolute right-3.5 top-3.5 z-10 flex h-10 w-10 items-center justify-center rounded-xl text-zinc-400 transition hover:bg-zinc-800 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400"
+          className="absolute right-4 top-4 z-10 flex h-10 w-10 items-center justify-center rounded-xl text-zinc-400 transition hover:bg-zinc-800 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400 cursor-pointer"
         >
           <X className="h-5 w-5" />
         </button>
 
-        {/* Modal Header */}
-        <header className="border-b border-zinc-800/80 px-6 pb-5 pt-6 sm:px-8">
-          <div className="pr-10">
-            <div className="flex items-center gap-2">
-              <span className="flex h-6 items-center rounded-md bg-blue-500/10 px-2 text-[11px] font-semibold text-blue-400 border border-blue-500/20">
-                LayaMeet Official
-              </span>
-              <span className="text-xs text-zinc-400 flex items-center gap-1">
-                <Lock className="h-3 w-3 text-emerald-400" /> PCI-DSS Level 1
-              </span>
-            </div>
-            <h2 id="checkout-title" className="mt-2 text-xl font-bold tracking-tight text-white">
-              {copy.title}
-            </h2>
-            <p className="mt-1 text-xs text-zinc-400">{copy.subtitle}</p>
+        {/* Modal Top Header with Logo */}
+        <header className="border-b border-zinc-800/80 px-6 py-5 sm:px-8 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <LayaMeetLogo size="md" />
+            <span className="hidden sm:inline-flex h-5 items-center rounded-md bg-[#00e676]/10 px-2 text-[10px] font-bold text-[#00e676] border border-[#00e676]/20">
+              Pro Checkout
+            </span>
           </div>
-
-          {/* Stepper Progress */}
-          <ol className="mt-5 grid grid-cols-3 gap-2" aria-label="Checkout progress">
-            {copy.steps.map((step: string, index: number) => {
-              const stepNumber = index + 1;
-              const isActive = stepNumber === activeStep;
-              const isComplete = stepNumber < activeStep;
-              return (
-                <li
-                  key={step}
-                  aria-current={isActive ? 'step' : undefined}
-                  className={`overflow-hidden text-ellipsis whitespace-nowrap rounded-lg border px-2 py-1.5 text-center text-xs font-medium transition ${
-                    isActive
-                      ? 'border-blue-500/80 bg-blue-500/10 text-blue-300 font-semibold'
-                      : isComplete
-                        ? 'border-emerald-500/30 bg-emerald-500/5 text-emerald-400'
-                        : 'border-zinc-800 bg-zinc-900/50 text-zinc-400'
-                  }`}
-                >
-                  {step}
-                </li>
-              );
-            })}
-          </ol>
+          <div className="flex items-center gap-2 text-xs text-zinc-400 mr-8 sm:mr-10">
+            <Lock className="h-3.5 w-3.5 text-[#00e676]" />
+            <span className="hidden sm:inline">256-bit SSL · Powered by Polar MoR</span>
+          </div>
         </header>
 
-        {/* Modal Main Content */}
+        {/* Modal Body */}
         <main className="p-6 sm:p-8">
           {authLoading ? (
             <div className="flex min-h-64 flex-col items-center justify-center text-zinc-400" aria-busy="true">
-              <Loader2 className="h-8 w-8 animate-spin text-blue-400" />
+              <Loader2 className="h-8 w-8 animate-spin text-[#00e676]" />
               <p className="mt-3 text-sm">{copy.checkingAccount}</p>
             </div>
           ) : !user?.email ? (
             /* Step 1: Sign in required */
-            <section className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-6">
-              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-500/10 text-blue-400 border border-blue-500/20">
-                <UserCheck className="h-5 w-5" />
+            <section className="rounded-2xl border border-zinc-800 bg-[#121216] p-6 sm:p-8 max-w-lg mx-auto text-center">
+              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-[#00e676]/10 text-[#00e676] border border-[#00e676]/20">
+                <UserCheck className="h-6 w-6" />
               </div>
-              <h3 className="mt-4 text-base font-bold text-white">{copy.gateTitle}</h3>
-              <p className="mt-1.5 text-xs leading-relaxed text-zinc-400">{copy.gateBody}</p>
+              <h3 className="mt-4 text-lg font-bold text-white">{copy.gateTitle}</h3>
+              <p className="mt-2 text-xs leading-relaxed text-zinc-400">{copy.gateBody}</p>
 
-              <div className="mt-5 flex items-center justify-between rounded-xl border border-zinc-800 bg-zinc-900 p-4">
+              <div className="mt-6 flex items-center justify-between rounded-xl border border-zinc-800 bg-[#18181d] p-4 text-left">
                 <div>
                   <p className="text-[11px] font-medium uppercase tracking-wider text-zinc-400">
                     {copy.selectedPlan}
@@ -659,7 +633,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
               <button
                 type="button"
                 onClick={() => void handleSignIn()}
-                className="mt-5 flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-white px-4 py-2.5 text-xs font-bold text-zinc-950 transition hover:bg-zinc-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 cursor-pointer"
+                className="mt-6 flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-white px-4 py-3 text-xs font-bold text-zinc-950 transition hover:bg-zinc-200 cursor-pointer shadow-md"
               >
                 <LogIn className="h-4 w-4" />
                 <span>{copy.signIn}</span>
@@ -668,18 +642,18 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
           ) : isPaid ? (
             /* Step 3: Success & Activated */
             <section
-              className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-7 text-center"
+              className="rounded-2xl border border-[#00e676]/30 bg-[#00e676]/5 p-8 text-center max-w-lg mx-auto"
               role="status"
             >
-              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
-                <Check className="h-6 w-6" />
+              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-[#00e676]/20 text-[#00e676] border border-[#00e676]/40">
+                <Check className="h-7 w-7" />
               </div>
-              <h3 className="mt-4 text-lg font-bold text-emerald-300">{copy.paidTitle}</h3>
+              <h3 className="mt-4 text-xl font-bold text-[#00e676]">{copy.paidTitle}</h3>
               <p className="mt-2 text-xs text-zinc-300">
                 Tài khoản <strong className="text-white">{user.email}</strong> {copy.paidBody}
               </p>
-              <div className="mx-auto mt-5 flex max-w-sm items-center justify-center gap-2 rounded-xl border border-zinc-800 bg-zinc-900/80 p-3 text-xs text-zinc-300">
-                <FileText className="h-4 w-4 text-emerald-400" />
+              <div className="mx-auto mt-6 flex max-w-sm items-center justify-center gap-2 rounded-xl border border-zinc-800 bg-[#141418] p-3 text-xs text-zinc-300">
+                <FileText className="h-4 w-4 text-[#00e676]" />
                 <span>
                   {copy.expiresOn}:{' '}
                   <strong className="text-white">{formatExpiry(order?.subscriptionExpiresAt)}</strong>
@@ -688,150 +662,217 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
               <button
                 type="button"
                 onClick={onClose}
-                className="mt-6 min-h-11 rounded-xl bg-emerald-600 px-6 py-2 text-xs font-semibold text-white transition hover:bg-emerald-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 cursor-pointer"
+                className="mt-6 min-h-11 rounded-xl bg-[#00e676] hover:bg-[#00c853] px-6 py-2.5 text-xs font-bold text-black transition cursor-pointer shadow-lg shadow-[#00e676]/20"
               >
                 {copy.done}
               </button>
             </section>
           ) : (
-            /* Step 2: Plan Selection & Order Summary */
-            <section className="space-y-6">
-              {/* Account Binding Confirmation Bar */}
-              <div className="flex items-center justify-between rounded-xl border border-zinc-800/80 bg-zinc-900/60 p-3.5">
-                <div className="flex items-center gap-3 min-w-0">
-                  {user.avatarUrl ? (
-                    <img
-                      src={user.avatarUrl}
-                      alt=""
-                      className="h-9 w-9 rounded-full object-cover border border-zinc-700"
-                      referrerPolicy="no-referrer"
-                    />
-                  ) : (
-                    <div className="flex h-9 w-9 items-center justify-center rounded-full bg-blue-600 text-xs font-bold text-white">
-                      {(user.fullName || user.email).charAt(0).toUpperCase()}
+            /* Step 2: TRAE 2-Column Subscription Details & Payment Method Layout */
+            <div className="grid grid-cols-1 md:grid-cols-12 gap-6 lg:gap-8 items-start">
+              {/* Left Column: Subscription details (5 cols) */}
+              <div className="md:col-span-5 space-y-4">
+                <h3 className="text-sm font-semibold text-zinc-300 flex items-center gap-1.5">
+                  <span>{copy.subscriptionDetailsTitle}</span>
+                </h3>
+
+                <div className="rounded-2xl border border-zinc-800 bg-[#121216] p-5 space-y-4">
+                  {/* Plan summary row */}
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-sm font-bold text-white">{currentPlan.name}</span>
+                      <Info className="w-3.5 h-3.5 text-zinc-400" />
                     </div>
-                  )}
-                  <div className="min-w-0">
-                    <p className="truncate text-xs font-semibold text-white">{user.fullName}</p>
-                    <p className="truncate text-[11px] text-zinc-400">{user.email}</p>
+                    <span className="font-mono text-sm font-semibold text-zinc-200">
+                      ${currentPlan.priceUsd.toFixed(2)} / {currentPlan.months === 1 ? '30 days' : `${currentPlan.months} mo`}
+                    </span>
                   </div>
-                </div>
-                <span className="hidden sm:inline-flex items-center gap-1 rounded-md bg-emerald-500/10 px-2 py-0.5 text-[11px] font-medium text-emerald-400 border border-emerald-500/20">
-                  <Check className="h-3 w-3" /> {copy.accountBoundNotice}
-                </span>
-              </div>
 
-              {/* Cycle Options Grid */}
-              <div>
-                <p className="text-xs font-medium text-zinc-300 mb-2.5">{copy.chooseCycle}</p>
-                <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-4">
-                  {plans.map((plan) => {
-                    const isSelected = plan.id === selectedPlanId;
-                    return (
-                      <button
-                        key={plan.id}
-                        type="button"
-                        aria-pressed={isSelected}
-                        onClick={() => handlePlanChange(plan.id)}
-                        className={`relative rounded-xl border p-3.5 text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 cursor-pointer ${
-                          isSelected
-                            ? 'border-blue-500 bg-blue-500/10 ring-1 ring-blue-500/40'
-                            : 'border-zinc-800 bg-zinc-900/40 hover:border-zinc-700 hover:bg-zinc-900'
-                        }`}
-                      >
-                        {/* Dynamic Savings Badge or Popular Badge */}
-                        <div className="flex items-center justify-between gap-1 mb-1.5">
-                          <span className="text-xs font-bold text-white">{plan.name}</span>
-                          {plan.savingsPercent > 0 ? (
-                            <span className="rounded-md bg-emerald-500/15 px-1.5 py-0.5 text-[10px] font-bold text-emerald-400 border border-emerald-500/20">
-                              {copy.savePercent(plan.savingsPercent)}
-                            </span>
-                          ) : null}
-                        </div>
+                  {/* Cycle Selector Pills inside modal */}
+                  <div className="grid grid-cols-2 gap-2 pt-1">
+                    {plans.map((p) => {
+                      const isSelected = p.id === selectedPlanId;
+                      return (
+                        <button
+                          key={p.id}
+                          type="button"
+                          onClick={() => handlePlanChange(p.id)}
+                          className={`p-2 rounded-xl text-left transition border cursor-pointer ${
+                            isSelected
+                              ? 'border-[#00e676] bg-[#00e676]/10 text-white'
+                              : 'border-zinc-800/80 bg-[#18181e] text-zinc-400 hover:text-zinc-200 hover:border-zinc-700'
+                          }`}
+                        >
+                          <div className="flex items-center justify-between text-[11px] font-bold">
+                            <span>{p.months === 1 ? '1 Tháng' : p.months === 3 ? '1 Quý' : p.months === 12 ? '1 Năm' : '2 Năm'}</span>
+                            {p.savingsPercent > 0 && (
+                              <span className="text-[#00e676] text-[10px]">
+                                -{p.savingsPercent}%
+                              </span>
+                            )}
+                          </div>
+                          <div className="font-mono text-xs font-semibold text-zinc-200 mt-1">
+                            ${p.priceUsd.toFixed(2)}
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
 
-                        {/* Price per month */}
-                        <div className="mt-2">
-                          <span className="font-mono text-base font-bold text-white">
-                            ${plan.pricePerMonthUsd.toFixed(2)}
-                          </span>
-                          <span className="text-[11px] text-zinc-400 ml-1">{copy.perMonth}</span>
-                        </div>
+                  <div className="border-t border-zinc-800/80 pt-4 space-y-2.5">
+                    <h4 className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">
+                      {copy.orderSummaryTitle}
+                    </h4>
 
-                        {/* Billed duration subtitle */}
-                        <p className="mt-1.5 text-[10px] text-zinc-400 leading-tight">
-                          {copy.billedPeriod(plan.months, plan.priceUsd, plan.priceVnd)}
+                    <div className="flex items-center justify-between text-xs text-zinc-400">
+                      <span>{copy.subtotal}</span>
+                      <span className="font-mono text-zinc-200">${currentPlan.priceUsd.toFixed(2)} USD</span>
+                    </div>
+
+                    <div className="flex items-center justify-between text-xs text-zinc-400">
+                      <span>{copy.taxVat}</span>
+                      <span className="text-[#00e676] font-medium">{copy.taxIncluded}</span>
+                    </div>
+
+                    <div className="border-t border-zinc-800/80 pt-3 flex items-baseline justify-between">
+                      <span className="text-sm font-bold text-white">{copy.dueToday}</span>
+                      <div className="text-right">
+                        <span className="font-mono text-xl font-extrabold text-white">
+                          ${currentPlan.priceUsd.toFixed(2)}
+                        </span>
+                        <p className="text-[11px] text-zinc-400 font-normal">
+                          ~{currentPlan.priceVnd.toLocaleString('vi-VN')} VND
                         </p>
-                      </button>
-                    );
-                  })}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Account binding info */}
+                  <div className="rounded-xl bg-[#18181e] p-3 border border-zinc-800 flex items-center gap-2 text-[11px] text-zinc-400">
+                    <Check className="w-3.5 h-3.5 text-[#00e676] shrink-0" />
+                    <span className="truncate">
+                      Gắn với: <strong className="text-zinc-200">{user.email}</strong>
+                    </span>
+                  </div>
                 </div>
               </div>
 
-              {/* Order Summary Breakdown Card (Credible & Transparent) */}
-              <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-5">
-                <div className="border-b border-zinc-800/80 pb-4">
-                  <h4 className="text-xs font-bold uppercase tracking-wider text-zinc-400">
-                    {copy.orderSummaryTitle}
-                  </h4>
-                  <div className="mt-3 flex items-start justify-between gap-3">
-                    <div>
-                      <p className="text-sm font-semibold text-white">{currentPlan.name}</p>
-                      <p className="mt-0.5 text-xs text-zinc-400">{copy.serviceDesc}</p>
+              {/* Right Column: Payment method (7 cols) */}
+              <div className="md:col-span-7 space-y-4">
+                <h3 className="text-sm font-semibold text-zinc-300">
+                  {copy.paymentMethodTitle}
+                </h3>
+
+                <div className="space-y-2.5">
+                  {/* Option 1: Credit / debit card */}
+                  <div
+                    onClick={() => setSelectedPaymentMethod('card')}
+                    className={`rounded-2xl border p-4 flex items-center justify-between transition-all cursor-pointer ${
+                      selectedPaymentMethod === 'card'
+                        ? 'border-[#00e676] bg-[#121216]'
+                        : 'border-zinc-800 bg-[#121216]/60 hover:border-zinc-700'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <VisaIcon className="h-4.5 w-auto" />
+                        <MastercardIcon className="h-4.5 w-auto" />
+                        <JcbIcon className="h-4.5 w-auto" />
+                        <AmexIcon className="h-4.5 w-auto" />
+                        <DiscoverIcon className="h-4.5 w-auto" />
+                        <UnionPayIcon className="h-4.5 w-auto" />
+                      </div>
+                      <span className="text-xs sm:text-sm font-semibold text-white ml-1">
+                        Credit / debit card
+                      </span>
                     </div>
-                    <span className="text-right font-mono text-sm font-bold text-white shrink-0">
-                      ${currentPlan.priceUsd.toFixed(2)} USD
-                    </span>
+
+                    <div
+                      className={`h-4.5 w-4.5 rounded-full border flex items-center justify-center shrink-0 ${
+                        selectedPaymentMethod === 'card'
+                          ? 'border-[#00e676] bg-[#00e676]'
+                          : 'border-zinc-600 bg-transparent'
+                      }`}
+                    >
+                      {selectedPaymentMethod === 'card' && (
+                        <div className="h-2 w-2 rounded-full bg-black" />
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Option 2: Apple Pay */}
+                  <div
+                    onClick={() => setSelectedPaymentMethod('apple_pay')}
+                    className={`rounded-2xl border p-4 flex items-center justify-between transition-all cursor-pointer ${
+                      selectedPaymentMethod === 'apple_pay'
+                        ? 'border-[#00e676] bg-[#121216]'
+                        : 'border-zinc-800 bg-[#121216]/60 hover:border-zinc-700'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <ApplePayIcon className="h-6 w-auto" />
+                      <div>
+                        <span className="text-xs sm:text-sm font-semibold text-white">
+                          Apple Pay
+                        </span>
+                        <p className="text-[11px] text-zinc-400">
+                          Thanh toán 1-chạm bảo mật trên Safari & thiết bị Apple
+                        </p>
+                      </div>
+                    </div>
+
+                    <div
+                      className={`h-4.5 w-4.5 rounded-full border flex items-center justify-center shrink-0 ${
+                        selectedPaymentMethod === 'apple_pay'
+                          ? 'border-[#00e676] bg-[#00e676]'
+                          : 'border-zinc-600 bg-transparent'
+                      }`}
+                    >
+                      {selectedPaymentMethod === 'apple_pay' && (
+                        <div className="h-2 w-2 rounded-full bg-black" />
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Option 3: Google Pay */}
+                  <div
+                    onClick={() => setSelectedPaymentMethod('google_pay')}
+                    className={`rounded-2xl border p-4 flex items-center justify-between transition-all cursor-pointer ${
+                      selectedPaymentMethod === 'google_pay'
+                        ? 'border-[#00e676] bg-[#121216]'
+                        : 'border-zinc-800 bg-[#121216]/60 hover:border-zinc-700'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <GooglePayIcon className="h-6 w-auto" />
+                      <div>
+                        <span className="text-xs sm:text-sm font-semibold text-white">
+                          Google Pay
+                        </span>
+                        <p className="text-[11px] text-zinc-400">
+                          Thanh toán nhanh bảo mật qua Google Wallet & Chrome
+                        </p>
+                      </div>
+                    </div>
+
+                    <div
+                      className={`h-4.5 w-4.5 rounded-full border flex items-center justify-center shrink-0 ${
+                        selectedPaymentMethod === 'google_pay'
+                          ? 'border-[#00e676] bg-[#00e676]'
+                          : 'border-zinc-600 bg-transparent'
+                      }`}
+                    >
+                      {selectedPaymentMethod === 'google_pay' && (
+                        <div className="h-2 w-2 rounded-full bg-black" />
+                      )}
+                    </div>
                   </div>
                 </div>
 
-                {/* Subtotal line items */}
-                <div className="py-3.5 space-y-2 text-xs border-b border-zinc-800/80">
-                  <div className="flex justify-between text-zinc-400">
-                    <span>{copy.billingDuration}</span>
-                    <span className="font-medium text-zinc-200">{currentPlan.months} tháng</span>
-                  </div>
-                  <div className="flex justify-between text-zinc-400">
-                    <span>{copy.subtotal}</span>
-                    <span className="font-mono font-medium text-zinc-200">
-                      ${currentPlan.priceUsd.toFixed(2)} USD (~{currentPlan.priceVnd.toLocaleString('vi-VN')} VND)
-                    </span>
-                  </div>
-                  <div className="flex justify-between text-zinc-400">
-                    <span>{copy.taxVat}</span>
-                    <span className="text-emerald-400 font-medium">{copy.taxIncluded}</span>
-                  </div>
-                </div>
-
-                {/* Total Line */}
-                <div className="pt-3.5 flex items-center justify-between">
-                  <span className="text-xs font-semibold text-zinc-300">{copy.totalDue}</span>
-                  <div className="text-right">
-                    <span className="font-mono text-xl font-bold text-white">
-                      ${currentPlan.priceUsd.toFixed(2)} USD
-                    </span>
-                    <p className="text-[11px] text-zinc-400">~{currentPlan.priceVnd.toLocaleString('vi-VN')} VND</p>
-                  </div>
-                </div>
-
-                {/* Accepted Payment Brands */}
-                <div className="mt-4 pt-3.5 border-t border-zinc-800/60 flex flex-wrap items-center justify-between gap-2">
-                  <div className="flex items-center gap-1.5 text-zinc-400 text-[11px]">
-                    <CreditCard className="h-3.5 w-3.5" />
-                    <span>Thanh toán chấp nhận:</span>
-                  </div>
-                  <div className="flex items-center gap-1.5 text-[10px] font-semibold text-zinc-300">
-                    <span className="rounded bg-zinc-800 px-1.5 py-0.5 border border-zinc-700">Visa</span>
-                    <span className="rounded bg-zinc-800 px-1.5 py-0.5 border border-zinc-700">Mastercard</span>
-                    <span className="rounded bg-zinc-800 px-1.5 py-0.5 border border-zinc-700">Apple Pay</span>
-                    <span className="rounded bg-zinc-800 px-1.5 py-0.5 border border-zinc-700">Google Pay</span>
-                    <span className="rounded bg-zinc-800 px-1.5 py-0.5 border border-zinc-700">JCB</span>
-                  </div>
-                </div>
-
-                {/* Action CTA & State */}
-                <div className="mt-5 space-y-3">
+                {/* Action CTA & Polling Status */}
+                <div className="pt-2 space-y-3">
                   {error ? (
-                    <div role="alert" className="rounded-lg border border-red-500/30 bg-red-950/20 p-4 text-center">
+                    <div role="alert" className="rounded-xl border border-red-500/30 bg-red-950/20 p-4 text-center">
                       <p className="text-xs text-red-300">
                         {error === PAYMENT_ORDER_ERROR ? copy.orderError : error}
                       </p>
@@ -844,8 +885,8 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
                       </button>
                     </div>
                   ) : isLoading ? (
-                    <div className="flex h-11 items-center justify-center gap-2 rounded-xl bg-zinc-800 text-xs text-zinc-400">
-                      <Loader2 className="h-4 w-4 animate-spin text-blue-400" />
+                    <div className="flex h-12 items-center justify-center gap-2 rounded-xl bg-zinc-800 text-xs text-zinc-400">
+                      <Loader2 className="h-4 w-4 animate-spin text-[#00e676]" />
                       <span>{copy.processingSession}</span>
                     </div>
                   ) : (
@@ -854,33 +895,33 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
                         href={currentCheckoutUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-5 py-2.5 text-xs font-bold text-white shadow-sm transition hover:bg-blue-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 cursor-pointer"
+                        className="flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#00e676] hover:bg-[#00c853] px-5 py-3 text-sm font-bold text-black shadow-lg shadow-[#00e676]/20 transition-all cursor-pointer active:scale-[0.99]"
                       >
-                        <Lock className="h-3.5 w-3.5" />
+                        <Lock className="h-4 w-4" />
                         <span>{copy.ctaButton(currentPlan.priceUsd)}</span>
-                        <ExternalLink className="h-3.5 w-3.5 ml-0.5 opacity-80" />
+                        <ExternalLink className="h-4 w-4 ml-0.5 opacity-80" />
                       </a>
-                      <div className="flex items-center justify-center gap-2 text-[11px] text-emerald-400" role="status">
-                        <span className="h-2 w-2 animate-pulse rounded-full bg-emerald-400" />
+
+                      <div className="flex items-center justify-center gap-2 text-[11px] text-[#00e676]" role="status">
+                        <span className="h-2 w-2 animate-pulse rounded-full bg-[#00e676]" />
                         <span>{copy.waitingPayment}</span>
                       </div>
                     </>
                   )}
                 </div>
 
-                {/* Invoice Reassurance */}
-                <p className="mt-3 text-[11px] leading-relaxed text-zinc-400 text-center">
+                <p className="text-[11px] leading-relaxed text-zinc-500 text-center">
                   {copy.invoiceNotice}
                 </p>
               </div>
-            </section>
+            </div>
           )}
         </main>
 
         {/* Modal Footer with Compliance Links */}
-        <footer className="border-t border-zinc-800/80 px-6 py-3.5 sm:px-8 bg-zinc-950/80 flex flex-wrap items-center justify-between gap-3 text-[11px] text-zinc-400">
+        <footer className="border-t border-zinc-800/80 px-6 py-4 sm:px-8 bg-[#070709] flex flex-wrap items-center justify-between gap-3 text-[11px] text-zinc-400">
           <div className="flex items-center gap-1.5 text-zinc-400">
-            <ShieldCheck className="h-3.5 w-3.5 text-emerald-400" />
+            <ShieldCheck className="h-3.5 w-3.5 text-[#00e676]" />
             <span>{copy.securityGuarantee}</span>
           </div>
 
@@ -889,7 +930,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
               href="/payment-policy"
               target="_blank"
               rel="noopener noreferrer"
-              className="hover:text-zinc-200 underline-offset-2 hover:underline"
+              className="hover:text-[#00e676] underline-offset-2 hover:underline"
             >
               {copy.paymentPolicyLink}
             </a>
@@ -898,12 +939,12 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
               href="/refund-policy"
               target="_blank"
               rel="noopener noreferrer"
-              className="hover:text-zinc-200 underline-offset-2 hover:underline"
+              className="hover:text-[#00e676] underline-offset-2 hover:underline"
             >
               {copy.refundPolicyLink}
             </a>
             <span>·</span>
-            <span className="text-zinc-400">{copy.supportEmail}</span>
+            <span className="text-zinc-500">{copy.supportEmail}</span>
           </div>
         </footer>
       </div>

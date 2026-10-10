@@ -19,6 +19,7 @@ public interface INotificationDispatcher
         CancellationToken cancellationToken = default);
     bool IsTelegramConfigured { get; }
     bool IsWebhookConfigured { get; }
+    bool IsZaloConfigured { get; }
 }
 
 public sealed class NotificationDispatcher : INotificationDispatcher
@@ -43,11 +44,23 @@ public sealed class NotificationDispatcher : INotificationDispatcher
     private string? TelegramChatId =>
         _configuration["Telegram:ChatId"] ?? _configuration["TELEGRAM_CHAT_ID"];
 
+    private string? ZaloWebhookUrl =>
+        _configuration["Zalo:WebhookUrl"] ?? _configuration["ZALO_WEBHOOK_URL"];
+
+    private string? ZaloAccessToken =>
+        _configuration["Zalo:AccessToken"] ?? _configuration["ZALO_ACCESS_TOKEN"];
+
+    private string? ZaloOaId =>
+        _configuration["Zalo:OaId"] ?? _configuration["ZALO_OA_ID"];
+
     private string? WebhookUrl =>
         _configuration["Notification:WebhookUrl"] ?? _configuration["ENTERPRISE_LEAD_WEBHOOK_URL"];
 
     public bool IsTelegramConfigured =>
         !string.IsNullOrWhiteSpace(TelegramBotToken) && !string.IsNullOrWhiteSpace(TelegramChatId);
+
+    public bool IsZaloConfigured =>
+        !string.IsNullOrWhiteSpace(ZaloWebhookUrl) || (!string.IsNullOrWhiteSpace(ZaloAccessToken) && !string.IsNullOrWhiteSpace(ZaloOaId));
 
     public bool IsWebhookConfigured =>
         !string.IsNullOrWhiteSpace(WebhookUrl) && Uri.TryCreate(WebhookUrl, UriKind.Absolute, out _);
@@ -64,7 +77,10 @@ public sealed class NotificationDispatcher : INotificationDispatcher
 
         _logger.LogInformation("Dispatching payment success notification for order {OrderCode} ({Amount} VND)", order.OrderCode, order.Amount);
 
+        var plainText = $"[LayaMeet] Thanh toan VIP thanh cong: Don {order.OrderCode}, Goi {order.PlanName}, So tien {order.Amount:N0}d";
+
         await SendTelegramMessageAsync(message, cancellationToken);
+        await SendZaloMessageAsync(plainText, cancellationToken);
         await SendWebhookPayloadAsync("payment.success", order, cancellationToken);
     }
 
@@ -83,7 +99,10 @@ public sealed class NotificationDispatcher : INotificationDispatcher
 
         _logger.LogInformation("Dispatching enterprise lead notification for {Email} ({Company})", lead.Email, lead.Company);
 
+        var plainText = $"[LayaMeet] Khach hang Enterprise moi: {lead.FullName} ({lead.Company}), Email: {lead.Email}, Quy mo: {lead.TeamSize}";
+
         await SendTelegramMessageAsync(message, cancellationToken);
+        await SendZaloMessageAsync(plainText, cancellationToken);
         await SendWebhookPayloadAsync("lead.captured", lead, cancellationToken);
     }
 
@@ -91,8 +110,9 @@ public sealed class NotificationDispatcher : INotificationDispatcher
     {
         var formatted = $"🧪 <b>[LayaMeet Test Notification]</b>\n{message}\n<i>Timestamp: {DateTime.UtcNow:yyyy-MM-dd HH:mm:ss} UTC</i>";
         var tgOk = await SendTelegramMessageAsync(formatted, cancellationToken);
+        var zaloOk = await SendZaloMessageAsync(message, cancellationToken);
         var whOk = await SendWebhookPayloadAsync("test.ping", new { message, timestamp = DateTime.UtcNow }, cancellationToken);
-        return tgOk || whOk;
+        return tgOk || zaloOk || whOk;
     }
 
     public async Task<bool> DispatchSystemAlertAsync(
@@ -129,6 +149,7 @@ public sealed class NotificationDispatcher : INotificationDispatcher
         _logger.LogWarning("Dispatching system alert ({Severity}): {Title} - {Detail}", severity, title, detail);
 
         var tgOk = await SendTelegramMessageAsync(message, cancellationToken);
+        var zaloOk = await SendZaloMessageAsync($"[LayaMeet Alert {severity.ToUpperInvariant()}] {title}: {detail}", cancellationToken);
         var whOk = await SendWebhookPayloadAsync($"system.alert.{severity.ToLowerInvariant()}", new
         {
             severity,
@@ -138,7 +159,7 @@ public sealed class NotificationDispatcher : INotificationDispatcher
             timestamp = DateTime.UtcNow
         }, cancellationToken);
 
-        return tgOk || whOk;
+        return tgOk || zaloOk || whOk;
     }
 
     private async Task<bool> SendTelegramMessageAsync(string htmlText, CancellationToken cancellationToken)
@@ -169,6 +190,62 @@ public sealed class NotificationDispatcher : INotificationDispatcher
         catch (Exception ex)
         {
             _logger.LogWarning(ex, "Failed to send Telegram notification");
+            return false;
+        }
+    }
+
+    private async Task<bool> SendZaloMessageAsync(string text, CancellationToken cancellationToken)
+    {
+        if (!IsZaloConfigured)
+        {
+            return false;
+        }
+
+        try
+        {
+            if (!string.IsNullOrWhiteSpace(ZaloWebhookUrl))
+            {
+                var payload = new
+                {
+                    message = text,
+                    source = "layameet_system",
+                    timestamp = DateTime.UtcNow
+                };
+
+                using var content = new StringContent(
+                    JsonSerializer.Serialize(payload),
+                    Encoding.UTF8,
+                    "application/json");
+
+                var response = await _httpClient.PostAsync(ZaloWebhookUrl, content, cancellationToken);
+                return response.IsSuccessStatusCode;
+            }
+
+            if (!string.IsNullOrWhiteSpace(ZaloAccessToken) && !string.IsNullOrWhiteSpace(ZaloOaId))
+            {
+                var url = "https://openapi.zalo.me/v2.0/oa/message";
+                var payload = new
+                {
+                    recipient = new { user_id = ZaloOaId },
+                    message = new { text }
+                };
+
+                using var request = new HttpRequestMessage(HttpMethod.Post, url);
+                request.Headers.Add("access_token", ZaloAccessToken);
+                request.Content = new StringContent(
+                    JsonSerializer.Serialize(payload),
+                    Encoding.UTF8,
+                    "application/json");
+
+                var response = await _httpClient.SendAsync(request, cancellationToken);
+                return response.IsSuccessStatusCode;
+            }
+
+            return false;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to send Zalo notification");
             return false;
         }
     }

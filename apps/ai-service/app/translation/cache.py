@@ -102,12 +102,12 @@ class TranslationCache:
 
     @staticmethod
     def normalize_text(text: str) -> str:
-        """Normalizes source text by stripping terminal punctuation and redundant whitespaces."""
+        """Normalizes source text by stripping terminal/leading punctuation and redundant whitespaces."""
         if not text:
             return ""
         cleaned = text.strip().lower()
         cleaned = re.sub(r"[\s\t\n]+", " ", cleaned)
-        cleaned = cleaned.rstrip(".!?,。！？、:;…")
+        cleaned = cleaned.strip(".!?,。！？、:;…~-–—")
         return cleaned.strip()
 
     def build_general_key(
@@ -143,8 +143,8 @@ class TranslationCache:
         trans:{meeting_id_hash}:{source_lang}:{target_lang}:{provider}:{glossary}:{context_hash}:{text_hash}
         """
         meeting_hash = hashlib.sha256(meeting_id.encode("utf-8")).hexdigest()[:12] if meeting_id else "global"
-        text_clean = text.strip()
-        text_hash = hashlib.sha256(text_clean.encode("utf-8")).hexdigest()[:16]
+        norm_text = self.normalize_text(text) or text.strip()
+        text_hash = hashlib.sha256(norm_text.encode("utf-8")).hexdigest()[:16]
 
         s_lang = source_lang.strip().lower()
         t_lang = target_lang.strip().lower()

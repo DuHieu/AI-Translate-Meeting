@@ -336,6 +336,8 @@ public sealed class SystemControllerTests
             builder.UseSetting("SubtitleToken:SigningKey", "subtitle-signing-key-0123456789-abcdef");
             builder.UseSetting("AdmissionToken:SigningKey", "admission-signing-key-0123456789-abcdef");
             builder.UseSetting("SessionToken:SigningKey", "session-signing-key-0123456789-abcdef");
+            builder.UseSetting("License:DefaultMaxRooms", "1");
+            builder.UseSetting("License:DefaultMaxParticipants", "5");
 
             var dbName = $"system-{Guid.NewGuid():N}";
             builder.ConfigureTestServices(services =>

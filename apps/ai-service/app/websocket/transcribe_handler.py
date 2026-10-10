@@ -427,11 +427,14 @@ class TranscribeWebSocketHandler:
                         transcript, "language_probability", 0.88
                     )
 
-                    # Dynamic spoken language smoothing & session anchor update
+                    # Dynamic spoken language smoothing & speaker-anchored profile update
                     if source_language.lower() == "auto":
                         lang_prob = getattr(transcript, "language_probability", 0.0)
                         if is_final or lang_prob >= 0.45 or len(audio_buffer) >= 3:
                             session_spoken_lang = lang
+                            await self.connection_manager.update_speaker_language(
+                                meeting_id, participant_id, lang
+                            )
                         else:
                             lang = session_spoken_lang
 
@@ -499,6 +502,9 @@ class TranscribeWebSocketHandler:
                             lang = text_lang
                         if text_confidence >= 0.45:
                             session_spoken_lang = lang
+                            await self.connection_manager.update_speaker_language(
+                                meeting_id, participant_id, lang
+                            )
                         if "confidence" in parsed and isinstance(parsed["confidence"], (int, float)):
                             segment_stt_confidence = max(0.0, min(1.0, float(parsed["confidence"])))
                         else:

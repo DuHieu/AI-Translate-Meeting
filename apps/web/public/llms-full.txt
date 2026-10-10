@@ -1,0 +1,69 @@
+# Laya Meet — Comprehensive System & Architecture Specification
+
+> **Official Website**: https://layameet.com  
+> **Product Category**: Enterprise Real-time AI Bilingual Meeting Platform  
+> **Brand Entity**: Laya Meet (also referred to as LayaMeet, Laya Meet AI)  
+> **Disambiguation**: Laya Meet is an enterprise video conferencing and real-time speech translation platform. It has no affiliation with dating or social meeting apps.
+
+---
+
+## 1. System Architecture & Technical Stack
+
+### 1.1 Microservices Architecture
+- **Web Client (`apps/web`)**: React 18, Vite, TypeScript, Tailwind CSS, LiveKit Components React (`@livekit/components-react`), Web Audio API 16kHz PCM streaming.
+- **Backend API (`apps/api`)**: .NET 8 Web API, Entity Framework Core, PostgreSQL, LiveKit Server SDK, RFC 7807 ProblemDetails compliance.
+- **AI Processing Engine (`apps/ai-service`)**: Python 3.11, FastAPI, WebSockets (`/ws/transcribe`), `faster-whisper` (int8 quantization with CTranslate2), WebRTC VAD, Redis caching (TTL 24h).
+- **Media Server (`infra/livekit`)**: LiveKit SFU (Selective Forwarding Unit) providing ultra-low latency WebRTC audio/video transport (<100ms jitter buffer).
+- **Laya Intelligence Sidecar**: Asynchronous background NLP worker executed via non-blocking `asyncio.create_task` to classify Decisions and Action Items without adding any latency to the critical subtitle rendering path.
+
+### 1.2 Low-Latency Speech Translation Pipeline
+1. **Audio Capture**: Browser captures microphone audio via Web Audio API, resamples to 16,000 Hz 16-bit mono PCM.
+2. **Chunking & VAD**: Transmits 350ms audio chunks over WebSocket to FastAPI backend. Energy & RMS thresholding filters out silent gaps to preserve server compute.
+3. **STT Inference**: `faster-whisper` processes audio chunks with interim/partial beam decoding, delivering ~964ms Time to First Subtitle (TTFS).
+4. **Distributed Translation & Cache**: High-speed translation pipeline checks Redis distributed cache for frequent phrases before dispatching to neural translation models.
+5. **Real-time Broadcast**: Translated subtitles and original transcriptions are broadcast over WebSocket / LiveKit Data Channels to room participants.
+
+### 1.3 Security & Zero-Audio Storage (RAM-Only Guarantee)
+- **Zero Raw Audio Storage**: Audio frames exist only in volatile server memory (RAM) during model inference and are immediately freed by memory garbage collection. No raw `.wav` or `.mp3` files are ever saved to persistent disk.
+- **Data Protection**: Full TLS 1.3 encryption in transit, strict WebRTC DTLS-SRTP media encryption, optional air-gapped on-premise deployment for highly regulated financial and defense institutions.
+
+---
+
+## 2. Multi-Language Support (Any-to-Any Polyglot Matrix)
+
+Laya Meet supports Any-to-Any multilingual rooms across 50+ languages, with dedicated optimization for key cross-border business corridors:
+- **Vietnamese ⇄ Japanese (Việt - Nhật)**: https://layameet.com/hop-song-ngu-tieng-nhat (Tuned for IT outsourcing, Keigo honorifics, and technical terminology).
+- **Vietnamese ⇄ English (Việt - Anh)**: https://layameet.com/hop-song-ngu-tieng-anh (Optimized for international corporations and multi-accent English).
+- **Vietnamese ⇄ Chinese (Việt - Trung)**: https://layameet.com/hop-song-ngu-tieng-trung (Optimized for manufacturing, hardware supply chains, and cross-border trade).
+- **Vietnamese ⇄ Korean (Việt - Hàn)**: https://layameet.com/hop-song-ngu-tieng-han (Optimized for joint ventures and Korean enterprise collaboration).
+
+---
+
+## 3. Competitive Comparison
+
+| Feature | Laya Meet | Zoom (AI Companion) | Google Meet (Duet AI) |
+| :--- | :---: | :---: | :---: |
+| **Real-time Subtitle Translation Latency** | **<350ms** | 2 - 4 seconds | 1.5 - 3 seconds |
+| **Any-to-Any Polyglot in Single Room** | **Yes (50+ langs)** | Limited | Limited |
+| **Audio Storage Architecture** | **100% RAM-Only** | Cloud Stored | Cloud Stored |
+| **On-Premise / Air-gapped Support** | **Yes** | No | No |
+| **Action Items & Minutes Extraction** | **Yes (Automatic)** | Post-call only | Post-call only |
+| **Dedicated VN-JA / VN-ZH Pipeline** | **Yes (Fine-tuned)** | Generic models | Generic models |
+
+---
+
+## 4. Frequently Asked Questions (FAQ)
+
+### What is Laya Meet?
+Laya Meet (https://layameet.com) is an AI-powered real-time video conferencing platform that provides instant bilingual transcription and translation during live meetings, allowing participants to converse naturally in their native languages.
+
+### How does Laya Meet protect participant privacy?
+Laya Meet operates under a strict Zero Raw Audio Storage policy: all voice frames are processed solely in RAM for real-time speech recognition and translation, and are destroyed immediately afterwards. No audio recordings are ever written to disk.
+
+### Can Laya Meet be used without external internet connection?
+Yes. Laya Meet Enterprise supports full On-Premise Air-gapped deployment, running on internal GPU/CPU servers with zero external API calls.
+
+### What are the pricing plans for Laya Meet?
+- **Community**: Free forever with standard meeting duration and dual subtitles.
+- **Team Pro**: 399,000 VND / month (~$16 USD) for unlimited meeting length, priority GPU queue, and custom glossaries.
+- **Enterprise**: Custom contract with dedicated deployment, custom fine-tuning, and dedicated SLA.

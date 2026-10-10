@@ -62,9 +62,8 @@ def test_web_admin_dashboard_and_expanded_checkout_contract() -> None:
     assert "createPortal" in checkout_source
     assert "useAuth" in checkout_source
     assert "layameet:pending-checkout-plan" in checkout_source
-    assert "Pro Unlimited" in checkout_source
-    assert "99.000đ · $4.99" in checkout_source
-    assert "948.000đ · $47.88" in checkout_source
+    assert "Pro" in checkout_source
+    assert "POLAR_PRODUCT_IDS" in checkout_source
 
     assert 'path="/admin"' in app_source
     assert "AdminDashboardPage" in app_source

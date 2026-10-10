@@ -3,6 +3,9 @@ using AITranslateMeeting.Api.DTOs;
 using AITranslateMeeting.Api.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using StackExchange.Redis;
+using System.Security.Cryptography;
+using System.Text;
 
 namespace AITranslateMeeting.Api.Controllers;
 
@@ -17,6 +20,7 @@ public sealed class AdminController : ControllerBase
     private readonly IDatabaseCleanupService _cleanupService;
     private readonly IParticipantSessionService _sessionTokenService;
     private readonly AppDbContext _dbContext;
+    private readonly IConnectionMultiplexer? _redis;
     private readonly string _adminSecretKey;
 
     public AdminController(
@@ -27,7 +31,8 @@ public sealed class AdminController : ControllerBase
         IDatabaseCleanupService cleanupService,
         IParticipantSessionService sessionTokenService,
         AppDbContext dbContext,
-        IConfiguration configuration)
+        IConfiguration configuration,
+        IConnectionMultiplexer? redis = null)
     {
         _billingService = billingService;
         _leadService = leadService;
@@ -36,24 +41,49 @@ public sealed class AdminController : ControllerBase
         _cleanupService = cleanupService;
         _sessionTokenService = sessionTokenService;
         _dbContext = dbContext;
+        _redis = redis;
         _adminSecretKey = configuration["Admin:SecretKey"] ?? "vimeet-admin-secret-2026";
     }
 
     private bool IsAuthorized()
     {
-        if (Request.Headers.TryGetValue("X-Admin-Key", out var headerKey) &&
-            string.Equals(headerKey.ToString().Trim(), _adminSecretKey, StringComparison.Ordinal))
+        if (Request.Headers.TryGetValue("X-Admin-Key", out var headerKey))
         {
-            return true;
+            var candidate = headerKey.ToString().Trim();
+            if (SafeSecretEquals(candidate, _adminSecretKey))
+            {
+                return true;
+            }
         }
 
-        if (Request.Query.TryGetValue("key", out var queryKey) &&
-            string.Equals(queryKey.ToString().Trim(), _adminSecretKey, StringComparison.Ordinal))
+        // Restrict query parameter key in production to prevent credential leakage in access logs
+        var env = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Production";
+        if (!string.Equals(env, "Production", StringComparison.OrdinalIgnoreCase))
         {
-            return true;
+            if (Request.Query.TryGetValue("key", out var queryKey))
+            {
+                var candidate = queryKey.ToString().Trim();
+                if (SafeSecretEquals(candidate, _adminSecretKey))
+                {
+                    return true;
+                }
+            }
         }
 
         return false;
+    }
+
+    private static bool SafeSecretEquals(string candidate, string expected)
+    {
+        if (string.IsNullOrEmpty(candidate) || string.IsNullOrEmpty(expected))
+        {
+            return false;
+        }
+
+        var candidateBytes = Encoding.UTF8.GetBytes(candidate);
+        var expectedBytes = Encoding.UTF8.GetBytes(expected);
+
+        return CryptographicOperations.FixedTimeEquals(candidateBytes, expectedBytes);
     }
 
     private ActionResult UnauthorizedResult()
@@ -90,6 +120,24 @@ public sealed class AdminController : ControllerBase
         var billingMetrics = _billingService.GetMetrics();
         var totalLeads = _leadService.GetLeadCount();
 
+        long totalTokensUsed = 0;
+        long proTokensUsed = 0;
+        if (_redis != null)
+        {
+            try
+            {
+                var db = _redis.GetDatabase();
+                var totalVal = await db.HashGetAsync("translation:quota:global", "total_tokens");
+                if (totalVal.HasValue && long.TryParse(totalVal, out var t)) totalTokensUsed = t;
+                var proVal = await db.HashGetAsync("translation:quota:global", "tier:pro");
+                if (proVal.HasValue && long.TryParse(proVal, out var p)) proTokensUsed = p;
+            }
+            catch
+            {
+                // Non-blocking fallback
+            }
+        }
+
         return Ok(new AdminMetricsResponse(
             ActiveMeetings: activeMeetings,
             TotalOrders: billingMetrics.TotalOrders,
@@ -98,7 +146,10 @@ public sealed class AdminController : ControllerBase
             TotalLeads: totalLeads,
             TelegramConfigured: _notificationDispatcher.IsTelegramConfigured,
             WebhookConfigured: _notificationDispatcher.IsWebhookConfigured,
-            GeneratedAtUtc: DateTime.UtcNow
+            GeneratedAtUtc: DateTime.UtcNow,
+            TotalTokensUsed: totalTokensUsed,
+            ProTokensUsed: proTokensUsed,
+            ZaloConfigured: _notificationDispatcher.IsZaloConfigured
         ));
     }
 

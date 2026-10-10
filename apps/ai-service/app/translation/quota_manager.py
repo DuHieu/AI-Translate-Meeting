@@ -23,6 +23,8 @@ class TokenQuotaManager:
         self.quota = max(0, quota if quota is not None else settings.PRO_MEETING_TOKEN_QUOTA)
         self._memory: dict[str, dict[str, Any]] = {}
         self._last_tier_by_meeting: dict[str, str] = {}
+        self._global_tokens_used = 0
+        self._global_tier_tokens: dict[str, int] = {"pro": 0, "byok": 0}
         self._lock = asyncio.Lock()
         self._redis = redis_client
         if enable_redis and self._redis is None:
@@ -114,6 +116,8 @@ class TokenQuotaManager:
                 async def _pipeline_op() -> list[Any]:
                     async with self._redis.pipeline(transaction=True) as pipeline:
                         pipeline.hincrby(key, f"used:{normalized_tier}", tokens)
+                        pipeline.hincrby("translation:quota:global", "total_tokens", tokens)
+                        pipeline.hincrby("translation:quota:global", f"tier:{normalized_tier}", tokens)
                         pipeline.hset(
                             key,
                             mapping={
@@ -135,6 +139,10 @@ class TokenQuotaManager:
                     state["downgraded"] = False
                     state["downgrade_reason"] = None
                     self._last_tier_by_meeting[meeting_id] = normalized_tier
+                    self._global_tokens_used += tokens
+                    self._global_tier_tokens[normalized_tier] = (
+                        self._global_tier_tokens.get(normalized_tier, 0) + tokens
+                    )
                 return total
             except Exception as exc:
                 self._disable_redis("write", exc)
@@ -146,6 +154,10 @@ class TokenQuotaManager:
             )
             state["total_tokens_used"] += tokens
             self._last_tier_by_meeting[meeting_id] = normalized_tier
+            self._global_tokens_used += tokens
+            self._global_tier_tokens[normalized_tier] = (
+                self._global_tier_tokens.get(normalized_tier, 0) + tokens
+            )
             if state["total_tokens_used"] < self.quota:
                 state["downgraded"] = False
                 state["downgrade_reason"] = None
@@ -234,6 +246,29 @@ class TokenQuotaManager:
             state["downgraded"] = True
             state["downgrade_reason"] = reason
             self._last_tier_by_meeting[meeting_id] = normalized_tier
+
+    async def get_global_usage(self) -> dict[str, Any]:
+        if self._redis is not None:
+            try:
+                data = await asyncio.wait_for(
+                    self._redis.hgetall("translation:quota:global"),
+                    timeout=0.25,
+                )
+                if data:
+                    return {
+                        "total_tokens_used": int(data.get("total_tokens", 0)),
+                        "pro_tokens_used": int(data.get("tier:pro", 0)),
+                        "byok_tokens_used": int(data.get("tier:byok", 0)),
+                    }
+            except Exception as exc:
+                self._disable_redis("read global quota", exc)
+
+        async with self._lock:
+            return {
+                "total_tokens_used": self._global_tokens_used,
+                "pro_tokens_used": self._global_tier_tokens.get("pro", 0),
+                "byok_tokens_used": self._global_tier_tokens.get("byok", 0),
+            }
 
     async def reset_usage(self, meeting_id: str) -> None:
         if self._redis is not None:

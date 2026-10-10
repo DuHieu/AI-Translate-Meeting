@@ -42,7 +42,7 @@ def test_billing_api_exposes_payment_order_contract() -> None:
     assert "/api/billing/subscription?${query.toString()}" in source
 
 
-def test_checkout_modal_supports_vietqr_and_pending_order_polling() -> None:
+def test_checkout_modal_supports_polar_checkout_and_polling() -> None:
     source = read("components/common/CheckoutModal.tsx")
 
     for prop in (
@@ -57,29 +57,17 @@ def test_checkout_modal_supports_vietqr_and_pending_order_polling() -> None:
     assert "meetingApi.createPaymentOrder" in source
     assert "meetingApi.getPaymentOrder" in source
     assert "2_500" in source
-    assert "status !== 'pending'" in source
-    assert "status === 'paid'" in source
+    assert "status.toLowerCase() === 'paid'" in source
     assert "onPaymentSuccess?.()" in source
     assert "createPortal" in source
     assert "useAuth" in source
     assert "useLanguage" in source
-    assert "if (!user?.email) return" in source
     assert "layameet:pending-checkout-plan" in source
-    assert "signInWithGoogle" in source
-    assert "Pro Unlimited đã được kích hoạt" in source
-    assert "src={order.qrUrl}" in source
-    for label in (
-        "Ngân hàng",
-        "Số tài khoản",
-        "Chủ tài khoản",
-        "Số tiền",
-        "Nội dung chuyển khoản",
-    ):
-        assert label in source
-    assert "navigator.clipboard.writeText" in source
-    assert "99.000đ · $4.99" in source
-    assert "948.000đ · $47.88" in source
+    assert "POLAR_PRODUCT_IDS" in source
     assert "'pro_annual'" in source
+    assert "'pro_quarterly'" in source
+    assert "'pro_2year'" in source
+    assert "polar" in source.lower()
 
 
 def test_checkout_modal_is_wired_into_meeting_and_pricing() -> None:

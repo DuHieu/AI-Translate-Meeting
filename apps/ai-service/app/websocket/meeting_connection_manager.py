@@ -15,6 +15,7 @@ class ParticipantConnection:
     participant_name: str
     livekit_identity: str
     target_language: str
+    speaker_language: str = "vi"
     send_lock: asyncio.Lock = field(default_factory=asyncio.Lock)
 
 
@@ -139,3 +140,16 @@ class MeetingConnectionManager:
             room = self._meetings.get(meeting_id)
             if room and participant_id in room:
                 room[participant_id].target_language = target_language
+
+    async def update_speaker_language(self, meeting_id: str, participant_id: str, speaker_language: str) -> None:
+        async with self._lock:
+            room = self._meetings.get(meeting_id)
+            if room and participant_id in room:
+                room[participant_id].speaker_language = speaker_language
+
+    async def get_speaker_language(self, meeting_id: str, participant_id: str, fallback: str = "vi") -> str:
+        async with self._lock:
+            room = self._meetings.get(meeting_id)
+            if room and participant_id in room:
+                return room[participant_id].speaker_language
+            return fallback

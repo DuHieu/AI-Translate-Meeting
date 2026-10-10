@@ -32,6 +32,7 @@ export interface UserMeetingSettings {
   autoAiMinutesExport?: boolean;
   actionSyncPlatform: ActionSyncPlatform;
   actionSyncWebhookUrl: string;
+  showInterimSubtitles: boolean;
 }
 
 export const DEFAULT_USER_SETTINGS: UserMeetingSettings = {
@@ -56,6 +57,7 @@ export const DEFAULT_USER_SETTINGS: UserMeetingSettings = {
   autoAiMinutesExport: false,
   actionSyncPlatform: 'slack',
   actionSyncWebhookUrl: '',
+  showInterimSubtitles: true,
 };
 
 const STORAGE_KEY = 'layameet_user_settings';

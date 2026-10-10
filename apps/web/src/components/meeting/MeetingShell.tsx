@@ -40,6 +40,8 @@ import { PostMeetingModal } from './PostMeetingModal';
 import { UpgradeRequiredModal } from './UpgradeRequiredModal';
 import { CheckoutModal } from '../common/CheckoutModal';
 import { WebRtcDiagnostics } from './WebRtcDiagnostics';
+import { MeetingDetailsDialog } from './MeetingDetailsDialog';
+import { MeetingReadyCard } from './MeetingReadyCard';
 import { SubtitleOverlay } from '../subtitle/SubtitleOverlay';
 import { SubtitlePanel } from '../subtitle/SubtitlePanel';
 import { InlineGlossaryModal } from '../subtitle/InlineGlossaryModal';
@@ -109,6 +111,42 @@ function playWaitingRoomKnockChime(): void {
     }, 1000);
   } catch {
     // Ignore audio autoplay restrictions if user hasn't interacted yet
+  }
+}
+
+function playCallConnectedChime(): void {
+  try {
+    const AudioCtx =
+      window.AudioContext ||
+      (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+    if (!AudioCtx) return;
+    const ctx = new AudioCtx();
+    const now = ctx.currentTime;
+
+    // Classic pleasant Google Meet ascending connection chime (E5 -> G#5 -> B5)
+    const notes = [659.25, 830.61, 987.77];
+    notes.forEach((freq, idx) => {
+      const start = now + idx * 0.11;
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(freq, start);
+
+      gain.gain.setValueAtTime(0.0001, start);
+      gain.gain.exponentialRampToValueAtTime(0.12, start + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.0001, start + 0.35);
+
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(start);
+      osc.stop(start + 0.36);
+    });
+
+    window.setTimeout(() => {
+      void ctx.close().catch(() => {});
+    }, 1000);
+  } catch {
+    // Ignore audio autoplay restrictions
   }
 }
 
@@ -277,6 +315,16 @@ export const MeetingShell: React.FC<MeetingShellProps> = ({
   }, []);
   const [isCaptionsOn, setIsCaptionsOn] = useState(true);
   const [isInfoCardOpen, setIsInfoCardOpen] = useState(false);
+  const [isMeetingReadyCardOpen, setIsMeetingReadyCardOpen] = useState(() => session.role === 'host');
+  const hasPlayedConnectedChimeRef = useRef(false);
+
+  useEffect(() => {
+    if (isRoomConnected && !hasPlayedConnectedChimeRef.current) {
+      hasPlayedConnectedChimeRef.current = true;
+      playCallConnectedChime();
+    }
+  }, [isRoomConnected]);
+
   const [isEmptyCallTimeoutOpen, setIsEmptyCallTimeoutOpen] = useState(false);
   const [showHandLowerPrompt, setShowHandLowerPrompt] = useState(false);
   const aloneStartTimeRef = useRef<number | null>(null);
@@ -1192,6 +1240,13 @@ export const MeetingShell: React.FC<MeetingShellProps> = ({
     participants.unshift(room.localParticipant);
   }
 
+  // Auto-dismiss the "Meeting Ready" call prompt when another participant arrives
+  useEffect(() => {
+    if (participants.length > 1) {
+      setIsMeetingReadyCardOpen(false);
+    }
+  }, [participants.length]);
+
   const subtitleOptions = React.useMemo(
     () => ({
       subtitleToken,
@@ -1740,7 +1795,8 @@ export const MeetingShell: React.FC<MeetingShellProps> = ({
         onOpenPeoplePanel={handleTogglePeoplePanel}
         onToggleSubtitlePanel={() => setIsCaptionsOn((current) => !current)}
         onOpenLanguage={() => setIsLanguageOpen(true)}
-        onOpenMeetingInfo={() => setIsInfoCardOpen(true)}
+        onOpenMeetingInfo={() => setIsInfoCardOpen((prev) => !prev)}
+        isMeetingInfoOpen={isInfoCardOpen}
         onOpenSubtitleHistory={() => { setSidecarTab('all'); setActiveSidePanel('subtitles'); }}
         onOpenActions={() => {
           handleSidecarPreferencesChange({ ...sidecarPreferences, showActions: true });
@@ -2032,6 +2088,24 @@ export const MeetingShell: React.FC<MeetingShellProps> = ({
         initialSourceTerm={glossaryTerms.source}
         initialTargetTerm={glossaryTerms.target}
       />
+
+      {/* Google Meet signature "Cuộc họp của bạn đã sẵn sàng" prompt */}
+      <MeetingReadyCard
+        meetingCode={session.meetingCode}
+        isOpen={isMeetingReadyCardOpen && participants.length <= 1}
+        onClose={() => setIsMeetingReadyCardOpen(false)}
+        onOpenInvite={() => setIsInfoCardOpen(true)}
+      />
+
+      {/* Meeting Details Dialog (ⓘ) */}
+      {isInfoCardOpen && (
+        <MeetingDetailsDialog
+          meetingCode={session.meetingCode}
+          role={session.role}
+          hostToken={effectiveHostToken}
+          onClose={() => setIsInfoCardOpen(false)}
+        />
+      )}
     </div>
   );
 };

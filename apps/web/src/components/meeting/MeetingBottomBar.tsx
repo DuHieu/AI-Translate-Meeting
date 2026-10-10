@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Mic, MicOff, Video, VideoOff, Monitor, PhoneOff, Users, Settings, Grid, Subtitles, Headphones, Hand, CircleDot, Tv2, MoreHorizontal, MessageSquare, Shapes, Shield, Languages, X, UserPlus, ListTodo, FileText, Sparkles } from 'lucide-react';
+import { Mic, MicOff, Video, VideoOff, Monitor, PhoneOff, Users, Settings, Grid, Subtitles, Headphones, Hand, CircleDot, Tv2, MoreHorizontal, MessageSquare, Shapes, Shield, Languages, X, UserPlus, ListTodo, FileText, Sparkles, Info } from 'lucide-react';
 import { LocalAudioTrack } from 'livekit-client';
 import { ttsEngine } from '../../utils/speechSynthesis';
 import { AdaptiveDialog } from '../common/AdaptiveDialog';
@@ -59,6 +59,7 @@ interface MeetingBottomBarProps {
   pendingAdmissionsCount?: number;
   onPushToTalk?: (active: boolean) => void;
   unreadChatCount?: number;
+  isMeetingInfoOpen?: boolean;
 }
 
 export const MeetingBottomBar: React.FC<MeetingBottomBarProps> = (props) => {
@@ -207,6 +208,16 @@ export const MeetingBottomBar: React.FC<MeetingBottomBarProps> = (props) => {
             false,
             props.subtitleCount || null,
             'Nhiệm vụ, Quyết định & Trợ lý AI cuộc họp',
+          )}
+          {control(
+            'Chi tiết',
+            <Info />,
+            props.onOpenMeetingInfo,
+            props.isMeetingInfoOpen,
+            false,
+            false,
+            null,
+            'Chi tiết cuộc họp & thông tin tham gia (I)',
           )}
         </div>
       </div>

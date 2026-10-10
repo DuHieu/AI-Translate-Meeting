@@ -117,7 +117,10 @@ public sealed record AdminMetricsResponse(
     int TotalLeads,
     bool TelegramConfigured,
     bool WebhookConfigured,
-    DateTime GeneratedAtUtc
+    DateTime GeneratedAtUtc,
+    long TotalTokensUsed = 0,
+    long ProTokensUsed = 0,
+    bool ZaloConfigured = false
 );
 
 public sealed record InfraHealthIndicator(

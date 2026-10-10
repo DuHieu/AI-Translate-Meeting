@@ -133,18 +133,32 @@ export function useSubtitle(meetingId?: string, participantId?: string, options?
         return;
       }
 
-      // Chỉ hiển thị và lưu trữ bản phụ đề hoàn chỉnh (final), loại bỏ hoàn toàn hiện tượng hiển thị bản interim sai/dở dang trước đó
-      if (!msg.isFinal) {
+      const showInterim = getUserSettings().showInterimSubtitles;
+      if (!msg.isFinal && !showInterim) {
         return;
       }
 
-      const exportIndex = exportHistoryRef.current.findIndex((item) => item.id === msg.id);
-      if (exportIndex >= 0) {
-        exportHistoryRef.current[exportIndex] = msg;
-      } else {
-        exportHistoryRef.current.push(msg);
+      // History and exports only record finalized sentences for clean minutes
+      if (msg.isFinal) {
+        const exportIndex = exportHistoryRef.current.findIndex((item) => item.id === msg.id);
+        if (exportIndex >= 0) {
+          exportHistoryRef.current[exportIndex] = msg;
+        } else {
+          exportHistoryRef.current.push(msg);
+        }
+
+        setHistory((prev) => {
+          const existingIdx = prev.findIndex((item) => item.id === msg.id);
+          if (existingIdx >= 0) {
+            const next = [...prev];
+            next[existingIdx] = msg;
+            return next;
+          }
+          return [...prev, msg].slice(-SUBTITLE_HISTORY_LIMIT);
+        });
       }
 
+      // Live subtitle banner reflects both interim ghosting and final committed subtitles
       setActiveSubtitle(msg);
       setActiveSubtitles((prev) => {
         const existingIdx = prev.findIndex((item) => item.id === msg.id || item.participantId === msg.participantId);
@@ -154,16 +168,6 @@ export function useSubtitle(meetingId?: string, participantId?: string, options?
           return next;
         }
         return [...prev, msg].slice(-3);
-      });
-
-      setHistory((prev) => {
-        const existingIdx = prev.findIndex((item) => item.id === msg.id);
-        if (existingIdx >= 0) {
-          const next = [...prev];
-          next[existingIdx] = msg;
-          return next;
-        }
-        return [...prev, msg].slice(-SUBTITLE_HISTORY_LIMIT);
       });
 
       // Play subtle chime on action items or decisions

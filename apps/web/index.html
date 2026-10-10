@@ -15,6 +15,10 @@
     <link rel="alternate" hreflang="ja" href="https://layameet.com/ja" />
     <link rel="alternate" hreflang="x-default" href="https://layameet.com/" />
 
+    <!-- AI Search & LLM Context Discovery (llms.txt standard) -->
+    <link rel="alternate" type="text/plain" href="https://layameet.com/llms.txt" title="LLMs.txt" />
+    <link rel="alternate" type="text/plain" href="https://layameet.com/llms-full.txt" title="LLMs-full.txt" />
+
     <!-- Performance Optimization: DNS Prefetch & Preconnect -->
     <link rel="dns-prefetch" href="https://www.googletagmanager.com" />
     <link rel="preconnect" href="https://www.googletagmanager.com" crossorigin />
@@ -107,7 +111,11 @@
           "publisher": {
             "@id": "https://layameet.com/#organization"
           },
-          "inLanguage": ["vi-VN", "en-US", "ja-JP"]
+          "inLanguage": ["vi-VN", "en-US", "ja-JP"],
+          "speakable": {
+            "@type": "SpeakableSpecification",
+            "cssSelector": ["h1", ".hero-description", "#features", "#faq"]
+          }
         },
         {
           "@type": "SoftwareApplication",
