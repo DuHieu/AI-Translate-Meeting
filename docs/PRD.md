@@ -2,7 +2,7 @@
 
 > **Tác giả:** AI Business Analyst (Bella) & Senior Product Architect  
 > **Dự án:** AI-Translate-Meeting  
-> **Phiên bản:** 1.2.0 (Self-Hosted Private Edition)  
+> **Phiên bản:** 1.3.0 (Self-Hosted Private Edition)  
 > **Trạng thái:** Approved / Active Development  
 > **Định vị sản phẩm:** Private bilingual AI meeting workspace dành cho đội dự án Việt–Nhật, có thể triển khai trong VPS/on-premise của khách hàng, tối ưu thuật ngữ dự án, phụ đề thời gian thực và biên bản hành động song ngữ.  
 > **Nguyên tắc định vị:** Không cạnh tranh thay thế toàn diện Zoom, Microsoft Teams hay Google Meet (không xây dựng calendar/email suite hay voice cloning). Lợi thế cốt lõi là quyền tự chủ dữ liệu (Data Ownership), triển khai on-premise/VPS nội bộ, tối ưu sâu cặp ngôn ngữ Việt – Nhật – Anh, và biên bản hành động tức thì.

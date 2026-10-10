@@ -333,7 +333,7 @@ export const SystemStatusPage: React.FC = () => {
                 {isAllHealthy ? copy.allOperational : copy.systemReady}
               </div>
               <div className="text-xs text-zinc-500 dark:text-zinc-400">
-                {status?.productName || 'LayaMeet'} · {status?.version ? `v${status.version}` : 'v1.2.0'}
+                {status?.productName || 'LayaMeet'} · {status?.version ? `v${status.version}` : 'v1.3.0'}
               </div>
             </div>
           </div>

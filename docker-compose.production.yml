@@ -153,6 +153,9 @@ services:
       PRO_MEETING_TOKEN_QUOTA: "${PRO_MEETING_TOKEN_QUOTA:-100000}"
       PRO_GRACEFUL_DOWNGRADE_ENABLED: "${PRO_GRACEFUL_DOWNGRADE_ENABLED:-true}"
       TRANSLATION_DATASET_COLLECTION_ENABLED: "false"
+      POLAR_ACCESS_TOKEN: "${POLAR_ACCESS_TOKEN:-}"
+      POLAR_WEBHOOK_SECRET: "${POLAR_WEBHOOK_SECRET:-}"
+      POLAR_SERVER: "${POLAR_SERVER:-production}"
     volumes:
       - whisper_cache:/root/.cache/huggingface
     networks:

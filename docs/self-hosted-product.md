@@ -1,6 +1,6 @@
 # AI-Translate-Meeting: Self-Hosted Product Specification & Operator Guide
 
-> **Phiên bản:** 1.2.0  
+> **Phiên bản:** 1.3.0  
 > **Định vị sản phẩm:** Private bilingual AI meeting workspace dành cho đội dự án Việt–Nhật, có thể triển khai trong VPS/on-premise của khách hàng, tối ưu thuật ngữ dự án, phụ đề thời gian thực và biên bản hành động song ngữ.  
 > **Target Environment:** Ubuntu 24.04 LTS (Docker Compose)  
 > **Phân loại:** Tài liệu Đặc tả Sản phẩm & Hướng dẫn Vận hành Thương mại  

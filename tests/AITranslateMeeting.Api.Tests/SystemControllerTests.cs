@@ -54,7 +54,7 @@ public sealed class SystemControllerTests
         var root = doc.RootElement;
 
         Assert.Equal("AI Translate Meeting (Private Bilingual Workspace)", root.GetProperty("productName").GetString());
-        Assert.Equal("1.2.0", root.GetProperty("version").GetString());
+        Assert.Equal("1.3.0", root.GetProperty("version").GetString());
         Assert.Equal("pilot", root.GetProperty("deploymentProfile").GetString());
         Assert.True(root.GetProperty("security").GetProperty("zeroRawAudioPolicy").GetBoolean());
 

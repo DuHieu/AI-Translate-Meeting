@@ -139,7 +139,7 @@ Write-Host "====================================================================
 Write-Host "      AI-TRANSLATE-MEETING -- SELF-HOSTED OPERATIONAL BOOTSTRAP SUMMARY         "
 Write-Host "================================================================================"
 Write-Host ("{0,-26}: {1}" -f @("Product", "AI Translate Meeting (Private Bilingual Workspace)"))
-Write-Host ("{0,-26}: {1}" -f @("Version", "1.2.0"))
+Write-Host ("{0,-26}: {1}" -f @("Version", "1.3.0"))
 Write-Host ("{0,-26}: {1} ({2}, {3})" -f @("License / Organization", $licenseOrg, $licenseTier.ToUpper(), $licenseStatus))
 Write-Host ("{0,-26}: {1}" -f @("Deployment Profile", $profile.ToUpper()))
 Write-Host ("{0,-26}: {1}" -f @("Whisper STT Model", "$whisperModel (int8 CPU optimized)"))

@@ -9,6 +9,7 @@ from app.api.health import router as health_router
 from app.api.glossary import router as glossary_router
 from app.api.translation_qa import router as translation_qa_router
 from app.api.providers import router as providers_router
+from app.api.polar_routes import router as polar_router
 from app.config.settings import settings
 from app.security.rate_limiter import WebSocketRateLimiter
 from app.security.client_ip import resolve_client_ip
@@ -75,6 +76,7 @@ app.include_router(health_router)
 app.include_router(glossary_router)
 app.include_router(translation_qa_router)
 app.include_router(providers_router)
+app.include_router(polar_router)
 
 
 class RoomGlossaryRequest(BaseModel):

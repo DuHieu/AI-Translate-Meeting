@@ -81,6 +81,18 @@ export interface RoomGlossaryResponse {
   terms: Record<string, string>;
 }
 
+export interface PolarProductPlan {
+  id: 'pro' | 'pro_quarterly' | 'pro_annual' | 'pro_2year';
+  polar_product_id: string;
+  name: string;
+  months: number;
+  price_usd: number;
+  price_vnd: number;
+  price_per_month_usd: number;
+  price_per_month_vnd: number;
+  savings_percent: number;
+}
+
 export interface TranslationUsageResponse {
   meeting_id: string;
   tier: 'standard' | 'pro' | 'byok';
@@ -624,6 +636,32 @@ export const meetingApi = {
       body: JSON.stringify({ planId, meetingCode, customerEmail, customerName, userId, paymentMethod, currency }),
     });
     return handleResponse<PaymentOrderResponse>(res);
+  },
+
+  async getPolarCheckoutUrl(
+    productId: string,
+    customerEmail?: string,
+    customerName?: string,
+    userId?: string,
+  ): Promise<{ checkout_url: string; session_id: string }> {
+    const params = new URLSearchParams({ products: productId });
+    if (customerEmail) params.append('customer_email', customerEmail);
+    if (customerName) params.append('customer_name', customerName);
+    if (userId) params.append('external_customer_id', userId);
+
+    const res = await fetch(`/api/polar/checkout-url?${params.toString()}`, {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' },
+    });
+    return handleResponse<{ checkout_url: string; session_id: string }>(res);
+  },
+
+  async getPolarProducts(): Promise<PolarProductPlan[]> {
+    const res = await fetch('/api/polar/products', {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' },
+    });
+    return handleResponse<PolarProductPlan[]>(res);
   },
 
   async getPaymentOrder(orderCode: string): Promise<PaymentOrderResponse> {

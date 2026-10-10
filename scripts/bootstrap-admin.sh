@@ -174,7 +174,7 @@ echo "==========================================================================
 echo "      AI-TRANSLATE-MEETING — SELF-HOSTED OPERATIONAL BOOTSTRAP SUMMARY         "
 echo "================================================================================"
 printf "%-26s: %s\n" "Product" "AI Translate Meeting (Private Bilingual Workspace)"
-printf "%-26s: %s\n" "Version" "1.2.0"
+printf "%-26s: %s\n" "Version" "1.3.0"
 printf "%-26s: %s (%s, %s)\n" "License / Organization" "${LICENSE_ORG}" "${LICENSE_TIER^^}" "${LICENSE_STATUS}"
 printf "%-26s: %s\n" "Deployment Profile" "${PROFILE^^}"
 printf "%-26s: %s\n" "Whisper STT Model" "${WHISPER_MODEL} (int8 CPU optimized)"

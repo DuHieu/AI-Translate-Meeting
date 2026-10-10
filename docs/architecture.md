@@ -2,7 +2,7 @@
 
 > **Tác giả:** AI Solution Architect (Liam) & Senior Product Architect  
 > **Dự án:** AI-Translate-Meeting  
-> **Phiên bản:** 1.2.0 (Self-Hosted Private Architecture)  
+> **Phiên bản:** 1.3.0 (Self-Hosted Private Architecture)  
 > **Trạng thái:** Approved Architecture Baseline  
 > **Mô hình định vị:** Private bilingual AI meeting workspace dành cho đội dự án Việt–Nhật, tự lưu trữ (self-hosted) trên VPS/On-Premise của khách hàng, bảo mật dữ liệu tuyệt đối, không lưu audio thô, tối ưu thuật ngữ kỹ thuật và biên bản hành động song ngữ.
 

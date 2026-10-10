@@ -88,7 +88,7 @@ public sealed class SystemController : ControllerBase
 
         var response = new SystemStatusResponseDto(
             ProductName: "AI Translate Meeting (Private Bilingual Workspace)",
-            Version: "1.2.0",
+            Version: "1.3.0",
             DeploymentProfile: profile.ToLowerInvariant(),
             Environment: _environment.EnvironmentName,
             DatabaseStatus: health.DatabaseStatus,

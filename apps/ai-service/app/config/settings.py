@@ -1,8 +1,18 @@
 import os
+from pathlib import Path
+from dotenv import load_dotenv
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+# Ensure .env is loaded from root or current directory
+root_env = Path(__file__).resolve().parents[3] / ".env"
+local_env = Path(".env")
+if root_env.exists():
+    load_dotenv(dotenv_path=root_env)
+elif local_env.exists():
+    load_dotenv(dotenv_path=local_env)
+
 class Settings(BaseSettings):
-    model_config = SettingsConfigDict(env_file=".env", extra="ignore")
+    model_config = SettingsConfigDict(env_file=str(root_env if root_env.exists() else ".env"), extra="ignore")
 
     REDIS_HOST: str = os.getenv("REDIS_HOST", "redis")
     REDIS_PORT: int = int(os.getenv("REDIS_PORT", "6379"))
@@ -113,5 +123,10 @@ class Settings(BaseSettings):
     INTERIM_TRANSLATION_MIN_WORDS: int = int(os.getenv("INTERIM_TRANSLATION_MIN_WORDS", "3"))
     VAD_ENERGY_THRESHOLD: float = float(os.getenv("VAD_ENERGY_THRESHOLD", "0.00004"))
     VAD_RMS_THRESHOLD: float = float(os.getenv("VAD_RMS_THRESHOLD", "0.0025"))
+
+    # Polar Payment Integration
+    POLAR_ACCESS_TOKEN: str = os.getenv("POLAR_ACCESS_TOKEN", "")
+    POLAR_WEBHOOK_SECRET: str = os.getenv("POLAR_WEBHOOK_SECRET", "")
+    POLAR_SERVER: str = os.getenv("POLAR_SERVER", "production")
 
 settings = Settings()
