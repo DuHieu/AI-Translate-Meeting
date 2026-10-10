@@ -135,7 +135,7 @@ export const LeftMeetingScreen: React.FC<LeftMeetingScreenProps> = ({
   };
 
   return (
-    <div className="left-meeting-screen min-h-dvh w-full bg-[#0d0f14] text-zinc-100 flex flex-col justify-between p-4 sm:p-6 select-none font-sans relative overflow-hidden transition-colors">
+    <div className="left-meeting-screen min-h-dvh w-full bg-[#0d0f14] text-zinc-100 flex flex-col justify-between p-4 sm:p-6 select-none font-sans relative overflow-x-hidden overflow-y-auto transition-colors">
       {/* Subtle ambient lighting */}
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[300px] bg-gradient-to-b from-blue-600/10 via-indigo-600/5 to-transparent blur-3xl pointer-events-none" />
 

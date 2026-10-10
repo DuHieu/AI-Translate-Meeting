@@ -19,6 +19,7 @@ import { AppLanguage } from '../../i18n';
 import { CreateMeetingResponse, SupportedLanguage, SUPPORTED_LANGUAGES_LIST } from '../../types/meeting';
 import { admissionStorage } from '../../utils/admissionStorage';
 import { calendarScheduleStorage } from '../../utils/calendarScheduleStorage';
+import { scrollLock } from '../../utils/scrollLock';
 
 interface ScheduleMeetingModalProps {
   isOpen: boolean;
@@ -357,14 +358,13 @@ export const ScheduleMeetingModal: React.FC<ScheduleMeetingModalProps> = ({
 
   useEffect(() => {
     if (!isOpen) return undefined;
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
+    const releaseScrollLock = scrollLock.lock();
     const handleEscape = (event: KeyboardEvent) => {
       if (event.key === 'Escape') onClose();
     };
     window.addEventListener('keydown', handleEscape);
     return () => {
-      document.body.style.overflow = previousOverflow;
+      releaseScrollLock();
       window.removeEventListener('keydown', handleEscape);
     };
   }, [isOpen, onClose]);

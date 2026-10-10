@@ -1,4 +1,5 @@
 import React, { useEffect, useRef } from 'react';
+import { scrollLock } from '../../utils/scrollLock';
 
 interface AdaptiveDialogProps extends Pick<React.DialogHTMLAttributes<HTMLDialogElement>, 'aria-modal'> {
   children: React.ReactNode;
@@ -20,17 +21,20 @@ export function AdaptiveDialog({ children, label, onClose, className = '', docke
     const dialog = ref.current!;
     const media = window.matchMedia('(min-width: 1024px)');
     const previousFocus = document.activeElement as HTMLElement | null;
-    let restoreOverflow: string | null = null;
+    let releaseScrollLock: (() => void) | null = null;
     const update = () => {
       dialog.close();
       if (docked && media.matches) {
         dialog.show();
-        if (restoreOverflow !== null) document.body.style.overflow = restoreOverflow;
-        restoreOverflow = null;
+        if (releaseScrollLock) {
+          releaseScrollLock();
+          releaseScrollLock = null;
+        }
       } else {
         dialog.showModal();
-        if (restoreOverflow === null) restoreOverflow = document.body.style.overflow;
-        document.body.style.overflow = 'hidden';
+        if (!releaseScrollLock) {
+          releaseScrollLock = scrollLock.lock();
+        }
       }
     };
     update();
@@ -44,7 +48,10 @@ export function AdaptiveDialog({ children, label, onClose, className = '', docke
       dialog.close();
       media.removeEventListener('change', update);
       window.removeEventListener('keydown', escape);
-      if (restoreOverflow !== null) document.body.style.overflow = restoreOverflow;
+      if (releaseScrollLock) {
+        releaseScrollLock();
+        releaseScrollLock = null;
+      }
       previousFocus?.focus({ preventScroll: true });
     };
   }, [docked]);

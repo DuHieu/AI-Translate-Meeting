@@ -18,6 +18,7 @@ import {
 import { meetingApi, PaymentOrderResponse } from '../../api/meetingApi';
 import { useAuth } from '../../context/auth-context-def';
 import { useLanguage } from '../../context/language-context-def';
+import { scrollLock } from '../../utils/scrollLock';
 
 const PENDING_CHECKOUT_PLAN_KEY = 'layameet:pending-checkout-plan';
 const PAYMENT_ORDER_ERROR = '__PAYMENT_ORDER_FAILED__';
@@ -372,8 +373,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
     if (!isOpen) return undefined;
 
     const previousFocus = document.activeElement as HTMLElement | null;
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
+    const releaseScrollLock = scrollLock.lock();
     window.setTimeout(() => closeButtonRef.current?.focus(), 0);
 
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -403,7 +403,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
     document.addEventListener('keydown', handleKeyDown);
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
-      document.body.style.overflow = previousOverflow;
+      releaseScrollLock();
       previousFocus?.focus();
     };
   }, [isOpen]);

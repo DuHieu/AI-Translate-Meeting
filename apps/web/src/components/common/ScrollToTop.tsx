@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
+import { scrollLock } from '../../utils/scrollLock';
 
 /**
  * ScrollToTop ensures that navigating between pages always scrolls the window back to (0, 0),
@@ -11,9 +12,7 @@ export const ScrollToTop: React.FC = () => {
   useEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
     // Guarantee document body is never trapped in overflow: hidden after route transitions
-    if (document.body.style.overflow === 'hidden') {
-      document.body.style.overflow = '';
-    }
+    scrollLock.forceUnlock();
   }, [pathname]);
 
   return null;

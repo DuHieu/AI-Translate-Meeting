@@ -33,6 +33,7 @@ import { NeuralLinguisticBackground } from '../components/common/NeuralLinguisti
 import { GoogleAuthControl } from '../components/auth/GoogleAuthControl';
 import { ScheduleMeetingModal } from '../components/home/ScheduleMeetingModal';
 import { UpcomingMeetingsStrip } from '../components/home/UpcomingMeetingsStrip';
+import { scrollLock } from '../utils/scrollLock';
 
 const HOME_UI: Record<string, Record<string, string>> = {
   vi: {
@@ -257,10 +258,9 @@ export const HomePage: React.FC<HomePageProps> = ({ forcedLanguage }) => {
       Boolean(legalModalType);
 
     if (isAnyOverlayOpen) {
-      const prevOverflow = document.body.style.overflow;
-      document.body.style.overflow = 'hidden';
+      const releaseScrollLock = scrollLock.lock();
       return () => {
-        document.body.style.overflow = prevOverflow;
+        releaseScrollLock();
       };
     }
   }, [

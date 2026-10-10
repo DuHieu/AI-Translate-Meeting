@@ -24,6 +24,7 @@ import { LegalModal } from './LegalModal';
 import { useLanguage } from '../../context/language-context-def';
 import { useAuth } from '../../context/auth-context-def';
 import { AppLanguage } from '../../i18n';
+import { scrollLock } from '../../utils/scrollLock';
 
 const SHELL_COPY: Record<string, Record<string, string>> = {
   vi: {
@@ -160,12 +161,19 @@ export const PublicPageShell: React.FC<PublicPageShellProps> = ({
     }
   };
 
-  // Ensure document.body can always scroll naturally on dedicated pages
+  // Lock scroll when drawer is open
   useEffect(() => {
-    document.body.style.overflow = 'auto';
-    return () => {
-      document.body.style.overflow = '';
-    };
+    if (isNavDrawerOpen) {
+      const release = scrollLock.lock();
+      return () => {
+        release();
+      };
+    }
+  }, [isNavDrawerOpen]);
+
+  // Ensure document.body can always scroll naturally on dedicated pages and clear leftover locks
+  useEffect(() => {
+    scrollLock.forceUnlock();
   }, []);
 
   return (

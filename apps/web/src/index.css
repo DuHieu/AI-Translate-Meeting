@@ -36,6 +36,10 @@
   --grid-line:      rgba(0, 0, 0, 0.04);
   --glow-primary:   rgba(37, 99, 235, 0.08);
   --glow-secondary: rgba(99, 102, 241, 0.05);
+
+  --scrollbar-thumb:       #a1a1aa;
+  --scrollbar-thumb-hover: #71717a;
+  --scrollbar-track:       rgba(0, 0, 0, 0.04);
 }
 
 html.dark {
@@ -66,9 +70,21 @@ html.dark {
   --grid-line:      rgba(255, 255, 255, 0.035);
   --glow-primary:   rgba(37, 99, 235, 0.16);
   --glow-secondary: rgba(139, 92, 246, 0.10);
+
+  --scrollbar-thumb:       #52525b;
+  --scrollbar-thumb-hover: #71717a;
+  --scrollbar-track:       rgba(255, 255, 255, 0.04);
+}
+
+html {
+  overflow-y: scroll; /* Force vertical scrollbar to always exist so it never disappears */
+  scrollbar-gutter: stable; /* Keeps scrollbar gutter stable, eliminating jumping/shifting */
+  scrollbar-width: thin; /* W3C standard for Firefox */
+  scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track); /* W3C standard for Firefox */
 }
 
 body {
+  min-height: 100%;
   margin: 0;
   background-color: var(--bg-base);
   color: var(--text-primary);
@@ -78,6 +94,13 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+/* Meeting room exception: full-screen WebRTC room hides outer window scrollbar */
+:root:has(.meeting-room, .meeting-shell),
+html.in-meeting,
+body.in-meeting {
+  overflow: hidden !important;
 }
 
 /* ─── WCAG 2.2 AA & Mobile iOS Optimization ─────────────────────────────────── */
@@ -130,14 +153,35 @@ html.dark .ambient-hero-glow {
     radial-gradient(ellipse 60% 500px at 85% 18%, rgba(14, 165, 233, 0.14), transparent 65%);
 }
 
-/* ─── Scrollbar ────────────────────────────────────────────────────────────── */
-::-webkit-scrollbar { width: 6px; height: 6px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb {
-  background: var(--border-default);
-  border-radius: 9999px;
+/* ─── Scrollbar (Accessible & Visible Across Windows, Mac, Linux) ──────────── */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
 }
-::-webkit-scrollbar-thumb:hover { background: var(--border-strong); }
+::-webkit-scrollbar-track {
+  background: var(--scrollbar-track);
+}
+::-webkit-scrollbar-thumb {
+  background-color: var(--scrollbar-thumb);
+  border-radius: 9999px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+::-webkit-scrollbar-thumb:hover {
+  background-color: var(--scrollbar-thumb-hover);
+}
+
+/* Compact internal scrollable panels & dialogs */
+.custom-scrollbar::-webkit-scrollbar,
+.adaptive-dialog__content::-webkit-scrollbar {
+  width: 7px;
+  height: 7px;
+}
+.custom-scrollbar,
+.adaptive-dialog__content {
+  scrollbar-width: thin;
+  scrollbar-color: var(--scrollbar-thumb) transparent;
+}
 
 /* ─── Emoji Reaction Float Animation ──────────────────────────────────────── */
 @keyframes floatUp {
