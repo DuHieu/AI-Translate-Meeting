@@ -235,12 +235,14 @@ class PrejoinNotifier extends Notifier<PrejoinState> {
     );
 
     try {
+      final hostToken = await _storage.getHostToken();
       final response = await _meetingApi.joinMeeting(
         meetingCode,
         JoinRequest(
           displayName: state.displayName.trim(),
           spokenLanguage: state.spokenLanguage,
           targetLanguage: state.targetLanguage,
+          admissionToken: hostToken,
         ),
       );
 

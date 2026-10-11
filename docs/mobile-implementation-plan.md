@@ -473,23 +473,24 @@ Message Format: {
 **Dependencies**: All tasks complete
 
 **Steps**:
-1. Write unit tests for all providers (target 80%+ coverage)
-2. Write widget tests for all screens
-3. Write integration test (E2E: Home → Prejoin → Join → Leave)
-4. Manual QA on real devices (Android: Pixel, Samsung; iOS: iPhone, iPad)
-5. Test network scenarios (4G, WiFi, airplane mode)
-6. Battery drain test (1-hour meeting)
-7. Update GitHub Actions with test coverage report
+1. [x] Unit/widget tests for providers & screens
+2. [x] Flutter E2E flow (`test/e2e/full_app_flow_test.dart`) + `integration_test/`
+3. [x] Monorepo production E2E on `main` (see `docs/e2e/E2E_PRODUCTION.md`)
+4. [ ] Manual QA on real devices (Android: Pixel, Samsung; iOS: iPhone, iPad)
+5. [ ] Test network scenarios (4G, WiFi, airplane mode) on devices
+6. [ ] Battery drain test (1-hour meeting)
+7. [x] GitHub Actions: `mobile-ci.yml` + `e2e-production.yml`
 
 **Deliverables**:
-- 80%+ test coverage
-- QA test report
-- CI pipeline running tests
+- Widget + E2E suites in-repo
+- Production E2E workflow on push to `main`
+- Manual device QA still required before store release
 
 **Tests**:
-- ✅ `flutter test --coverage`
-- ✅ Integration test passes on emulator
-- ✅ Manual QA checklist complete
+- ✅ `flutter test` / `flutter test test/e2e/`
+- ✅ `integration_test/app_e2e_test.dart`
+- ✅ GitHub Actions E2E Production (compose + smoke + pytest + Playwright)
+- [ ] Manual QA checklist complete
 
 ---
 

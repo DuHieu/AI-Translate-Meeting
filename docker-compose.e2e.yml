@@ -1,0 +1,26 @@
+# CI/E2E overlay: faster AI boot, disable Laya sidecar dependency.
+# Usage: docker compose -f docker-compose.yml -f docker-compose.e2e.yml --env-file .env.ci up -d --build
+
+services:
+  laya:
+    profiles: ["laya-full"]
+
+  ai-service:
+    environment:
+      - WHISPER_MODEL=${WHISPER_MODEL:-tiny}
+      - WHISPER_DEVICE=cpu
+      - WHISPER_COMPUTE_TYPE=int8
+      - WHISPER_CPU_THREADS=2
+      - WHISPER_PRELOAD=true
+      - AI_MODEL_START_PERIOD=240s
+      - LAYA_ENABLED=false
+      - TRANSLATION_PROVIDER=local
+      - TRANSLATION_FALLBACK_PROVIDER=local
+      - TRANSLATION_CACHE_ENABLED=false
+      - PRO_TRANSLATION_PROVIDER=local
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health/ready', timeout=3)"]
+      interval: 15s
+      timeout: 10s
+      retries: 40
+      start_period: 240s

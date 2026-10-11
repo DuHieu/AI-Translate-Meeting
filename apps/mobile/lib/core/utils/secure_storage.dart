@@ -208,4 +208,8 @@ class SecureStorage {
   Future<void> saveHostToken(String token) async {
     await _write(AppConfig.keyHostToken, token);
   }
+
+  Future<String?> getHostToken() async {
+    return _read(AppConfig.keyHostToken);
+  }
 }

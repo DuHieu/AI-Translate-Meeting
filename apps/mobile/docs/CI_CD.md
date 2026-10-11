@@ -6,6 +6,7 @@
 |----------|------|----------|
 | **Mobile CI** | `.github/workflows/mobile-ci.yml` | Push / PR on `mobile-dev`, `main`, `master` (paths: `apps/mobile/**`) |
 | **Mobile Release** | `.github/workflows/mobile-release.yml` | Tag `mobile-v*`, or **workflow_dispatch** |
+| **E2E Production** | `.github/workflows/e2e-production.yml` | Push to `main` / `master` — full monorepo stack (see [`docs/e2e/E2E_PRODUCTION.md`](../../../docs/e2e/E2E_PRODUCTION.md)) |
 
 Jobs (CI): `analyze` → `test` → `build-android` (debug APK) + `build-ios` (no codesign).
 
