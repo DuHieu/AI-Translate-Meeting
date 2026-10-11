@@ -13,6 +13,8 @@ Laya Meet enables participants across the globe to speak in their native tongue 
 - **On-Premise & Air-Gapped Deployment**: Available for enterprise private clouds with full Docker/Kubernetes and zero external cloud API dependencies.
 
 ## Key Pages & Resources
+- [Văn Hóa Họp Doanh Nghiệp Hàn Quốc & Giải Pháp Dịch Phụ Đề Trực Tiếp Việt - Hàn Thời Gian Thực](https://layameet.com/cam-nang/hop-song-ngu-viet-han-van-hoa-va-giai-phap-dich-thoi-gian-thuc): Khám phá văn hóa họp trực tuyến với đối tác Hàn Quốc (Ppalli-ppalli, kính ngữ, chuẩn bị tài liệu) và cách công nghệ phụ ...
+- [Bí Quyết Đàm Phán & Họp Trực Tuyến Với Xưởng Sản Xuất Trung Quốc (1688 / Taobao) Cho Doanh Nghiệp Không Biết Tiếng Trung](https://layameet.com/cam-nang/dam-phan-hop-video-xuo-ng-trung-quoc-khong-biet-tieng-trung): Hướng dẫn chi tiết cách chủ shop và doanh nghiệp xuất nhập khẩu họp video trực tiếp với xưởng Trung Quốc, đàm phán giá c...
 - [Homepage](https://layameet.com/): Instant meeting launch, room creation, and feature highlights.
 - [Vietnamese - Japanese Meeting Translation](https://layameet.com/hop-song-ngu-tieng-nhat): Dedicated translation pipeline tuned for Japanese business honorifics and technical terms.
 - [Vietnamese - English Meeting Translation](https://layameet.com/hop-song-ngu-tieng-anh): Low-latency real-time translation for global tech teams.

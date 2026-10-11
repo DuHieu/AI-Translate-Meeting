@@ -258,6 +258,66 @@ const ROUTES = [
 // Rich Blog Articles for Static SEO Pre-rendering & Crawler Ingestion
 const BLOG_ARTICLES = [
   {
+  "route": "cam-nang/hop-song-ngu-viet-han-van-hoa-va-giai-phap-dich-thoi-gian-thuc",
+  "lang": "vi",
+  "title": "Họp Song Ngữ Việt - Hàn: Văn Hóa & Công Cụ Dịch Tức Thì | Laya Meet",
+  "headline": "Văn Hóa Họp Doanh Nghiệp Hàn Quốc & Giải Pháp Dịch Phụ Đề Trực Tiếp Việt - Hàn Thời Gian Thực",
+  "description": "Khám phá văn hóa họp trực tuyến với đối tác Hàn Quốc (Ppalli-ppalli, kính ngữ, chuẩn bị tài liệu) và cách công nghệ phụ đề AI Việt - Hàn của Laya Meet giúp nâng tầm hợp tác kinh doanh.",
+  "canonical": "https://layameet.com/cam-nang/hop-song-ngu-viet-han-van-hoa-va-giai-phap-dich-thoi-gian-thuc",
+  "datePublished": "2026-10-10",
+  "author": "Laya Meet Korea Business Unit",
+  "category": "Hợp Tác Quốc Tế & Văn Hóa Doanh Nghiệp",
+  "keywords": "Họp Tiếng Hàn, Doanh Nghiệp Hàn Quốc, Văn Hóa Ppalli-ppalli, Dịch Việt Hàn, Laya Meet",
+  "keyTakeaways": [
+    "Hiểu rõ văn hóa \"Ppalli-ppalli\" (Nhanh lên, nhanh lên): Đối tác Hàn Quốc đánh giá cực cao phản hồi tức thì và không làm gián đoạn luồng trao đổi.",
+    "Sự phân biệt kính ngữ (Jondaetmal) trong giao tiếp thương mại Hàn Quốc được AI của Laya Meet chuẩn hóa tự động.",
+    "Độ trễ <350ms giúp loại bỏ thời gian chết của phiên dịch nối tiếp, rút ngắn 50% thời lượng cuộc họp.",
+    "Hỗ trợ ghi nhận Action Items tự động giúp gửi biên bản họp chuẩn chỉ ngay sau khi kết thúc buổi làm việc."
+  ],
+  "faqs": [
+    {
+      "q": "Mô hình AI của Laya Meet có xử lý được kính ngữ trang trọng trong tiếng Hàn không?",
+      "a": "Có. Laya Meet được tinh chỉnh ngữ nghĩa thương mại Hàn Quốc, tự động áp dụng thể kính ngữ lịch sự (Hasipsio-che / Haeyo-che) phù hợp với ngữ cảnh đàm phán đối tác và cuộc họp cấp cao."
+    },
+    {
+      "q": "Cuộc họp có người Việt, người Hàn và đối tác nói tiếng Anh cùng tham gia được không?",
+      "a": "Hoàn toàn được nhờ ma trận Any-to-Any đa ngôn ngữ. Người Việt nói tiếng Việt, người Hàn nói tiếng Hàn, chuyên gia nói tiếng Anh; mỗi người tự chọn ngôn ngữ phụ đề riêng trên màn hình của mình."
+    }
+  ]
+},
+  {
+  "route": "cam-nang/dam-phan-hop-video-xuo-ng-trung-quoc-khong-biet-tieng-trung",
+  "lang": "vi",
+  "title": "Họp Video Với Xưởng Trung Quốc Khi Không Biết Tiếng | Laya Meet",
+  "headline": "Bí Quyết Đàm Phán & Họp Trực Tuyến Với Xưởng Sản Xuất Trung Quốc (1688 / Taobao) Cho Doanh Nghiệp Không Biết Tiếng Trung",
+  "description": "Hướng dẫn chi tiết cách chủ shop và doanh nghiệp xuất nhập khẩu họp video trực tiếp với xưởng Trung Quốc, đàm phán giá cả và kiểm tra mẫu qua phụ đề dịch song ngữ tức thì <350ms.",
+  "canonical": "https://layameet.com/cam-nang/dam-phan-hop-video-xuo-ng-trung-quoc-khong-biet-tieng-trung",
+  "datePublished": "2026-10-10",
+  "author": "Laya Meet Cross-Border Commerce Team",
+  "category": "Thương Mại & Đàm Phán Quốc Tế",
+  "keywords": "Họp Tiếng Trung, Nhập Hàng 1688, Đàm Phán Xưởng Trung Quốc, Dịch Song Ngữ Trực Tiếp, Laya Meet",
+  "keyTakeaways": [
+    "Giao tiếp video call trực tiếp giúp kiểm tra mẫu thực tế (QC mẫu) nhanh hơn 5 lần so với nhắn tin WeChat.",
+    "Sử dụng phụ đề song ngữ Việt - Trung tức thì (<350ms) giúp xóa bỏ rào cản từ ngữ chuyên ngành sản xuất, vải vóc, linh kiện.",
+    "Bảo mật 100% RAM-Only ngăn ngừa rò rỉ mẫu thiết kế độc quyền và hợp đồng đàm phán giá mật.",
+    "Tự động xuất biên bản họp tóm tắt các thỏa thuận về số lượng MOQ, đơn giá và thời gian giao hàng."
+  ],
+  "faqs": [
+    {
+      "q": "Tôi không biết một chữ tiếng Trung nào, có thể tự họp với xưởng được không?",
+      "a": "Hoàn toàn được. Bạn nói tiếng Việt bình thường, Laya Meet sẽ hiển thị phụ đề dịch tiếng Trung giản thể tức thì trên màn hình chủ xưởng, và ngược lại khi họ nói tiếng Trung bạn sẽ đọc được tiếng Việt ngay lập tức."
+    },
+    {
+      "q": "Dịch thuật có hiểu được các thuật ngữ chuyên ngành sản xuất hoặc vật liệu không?",
+      "a": "Laya Meet sử dụng mô hình Whisper và hệ thống từ điển chuyên sâu ngành thương mại, hiểu chính xác các thuật ngữ như MOQ, FOB, CIF, dung sai kỹ thuật, thông số bao bì."
+    },
+    {
+      "q": "Chủ xưởng bên Trung Quốc có cần cài đặt phần mềm phức tạp không?",
+      "a": "Không cần. Chủ xưởng chỉ cần nhấp vào liên kết phòng họp trên trình duyệt web bất kỳ (Chrome, Edge, Safari) trên máy tính hoặc điện thoại là có thể tham gia ngay lập tức."
+    }
+  ]
+},
+  {
     route: 'cam-nang/ket-qua-benchmark-ai-audio-lid-1000-voice-xau-ngap-ngung',
     lang: 'vi',
     title: 'Benchmark 1.000 Voice Thật: Nhận Diện Ngôn Ngữ AI | Laya Meet',
