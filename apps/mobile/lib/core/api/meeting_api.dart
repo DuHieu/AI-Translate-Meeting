@@ -39,9 +39,8 @@ class MeetingApiImpl implements MeetingApi {
   @override
   Future<CreateMeetingResponse> createMeeting({String? title}) async {
     try {
-      final name = (title == null || title.trim().isEmpty)
-          ? 'Laya Meet'
-          : title.trim();
+      final name =
+          (title == null || title.trim().isEmpty) ? 'Laya Meet' : title.trim();
       AppLogger.d('Creating meeting: $name');
 
       final response = await _client.post(
@@ -81,7 +80,8 @@ class MeetingApiImpl implements MeetingApi {
   }
 
   @override
-  Future<void> leaveMeeting(String code, {required String participantId}) async {
+  Future<void> leaveMeeting(String code,
+      {required String participantId}) async {
     try {
       final normalizedCode = Validators.normalizeMeetingCode(code);
       AppLogger.d('Leaving meeting: $normalizedCode');

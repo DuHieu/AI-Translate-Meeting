@@ -24,15 +24,13 @@ class Subtitle {
     final isFinal = json['isFinal'] as bool?;
     return Subtitle(
       speaker: (json['speaker'] ?? json['participantName']) as String? ?? '',
-      sourceText:
-          (json['sourceText'] ?? json['originalText']) as String? ?? '',
+      sourceText: (json['sourceText'] ?? json['originalText']) as String? ?? '',
       translatedText: json['translatedText'] as String? ?? '',
       timestamp: DateTime.tryParse(json['timestamp']?.toString() ?? '') ??
           DateTime.now().toUtc(),
-      tags: (json['tags'] as List<dynamic>?)
-              ?.map((e) => e.toString())
-              .toList() ??
-          const [],
+      tags:
+          (json['tags'] as List<dynamic>?)?.map((e) => e.toString()).toList() ??
+              const [],
       confidence: (json['confidence'] as num?)?.toDouble() ?? 0.0,
       isPartial: json['isPartial'] as bool? ?? (isFinal == false),
       messageId: (json['messageId'] ?? json['id'])?.toString(),

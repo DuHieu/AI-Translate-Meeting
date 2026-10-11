@@ -144,9 +144,8 @@ class _CameraPreviewBoxState extends State<CameraPreviewBox> {
                   const SizedBox(width: 12),
                   _RoundToggle(
                     tooltip: widget.showCamera ? l10n.cameraOn : l10n.cameraOff,
-                    icon: widget.showCamera
-                        ? Icons.videocam
-                        : Icons.videocam_off,
+                    icon:
+                        widget.showCamera ? Icons.videocam : Icons.videocam_off,
                     active: widget.showCamera,
                     onPressed: widget.onToggleCamera,
                   ),

@@ -47,8 +47,7 @@ class LiveKitRoomSession implements LiveKitSession {
       StreamController<List<RoomParticipantView>>.broadcast();
   final _connectionController =
       StreamController<lk.ConnectionState>.broadcast();
-  final _qualityController =
-      StreamController<NetworkQualityLevel>.broadcast();
+  final _qualityController = StreamController<NetworkQualityLevel>.broadcast();
 
   String? _url;
   String? _token;
@@ -277,9 +276,8 @@ class LiveKitRoomSession implements LiveKitSession {
     return RoomParticipantView(
       sid: participant.sid,
       identity: participant.identity,
-      displayName: participant.name.isNotEmpty
-          ? participant.name
-          : participant.identity,
+      displayName:
+          participant.name.isNotEmpty ? participant.name : participant.identity,
       isLocal: isLocal,
       isMicMuted: micPub?.muted ?? true,
       isCameraEnabled: cameraPub != null && !(cameraPub.muted),
@@ -317,8 +315,7 @@ class FakeLiveKitSession implements LiveKitSession {
       StreamController<List<RoomParticipantView>>.broadcast();
   final _connectionController =
       StreamController<lk.ConnectionState>.broadcast();
-  final _qualityController =
-      StreamController<NetworkQualityLevel>.broadcast();
+  final _qualityController = StreamController<NetworkQualityLevel>.broadcast();
 
   @override
   Stream<List<RoomParticipantView>> get participantsStream =>

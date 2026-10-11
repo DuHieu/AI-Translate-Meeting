@@ -52,8 +52,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   Future<void> _onCreatePressed() async {
-    final meeting =
-        await ref.read(homeProvider.notifier).createQuickMeeting();
+    final meeting = await ref.read(homeProvider.notifier).createQuickMeeting();
     if (meeting != null) {
       _codeController.text = meeting.meetingCode;
       await _navigateToPrejoin(meeting);
@@ -153,8 +152,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       SizedBox(
                         width: double.infinity,
                         child: FilledButton.icon(
-                          onPressed:
-                              homeState.isBusy ? null : _onCreatePressed,
+                          onPressed: homeState.isBusy ? null : _onCreatePressed,
                           icon: homeState.isCreating
                               ? const SizedBox(
                                   width: 18,

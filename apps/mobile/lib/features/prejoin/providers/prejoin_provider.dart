@@ -52,8 +52,7 @@ class PrejoinState {
 
   bool get canShowCameraPreview => isCameraEnabled && hasCameraPermission;
 
-  bool get canJoin =>
-      Validators.isValidDisplayName(displayName) && !isJoining;
+  bool get canJoin => Validators.isValidDisplayName(displayName) && !isJoining;
 
   PrejoinState copyWith({
     String? displayName,
@@ -81,8 +80,7 @@ class PrejoinState {
       isMicEnabled: isMicEnabled ?? this.isMicEnabled,
       hasCameraPermission: hasCameraPermission ?? this.hasCameraPermission,
       hasMicPermission: hasMicPermission ?? this.hasMicPermission,
-      isLoadingPreferences:
-          isLoadingPreferences ?? this.isLoadingPreferences,
+      isLoadingPreferences: isLoadingPreferences ?? this.isLoadingPreferences,
       isJoining: isJoining ?? this.isJoining,
       errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
       permissionPrompt: clearPermissionPrompt

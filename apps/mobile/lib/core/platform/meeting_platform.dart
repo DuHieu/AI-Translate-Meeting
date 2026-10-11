@@ -5,7 +5,8 @@ import '../utils/logger.dart';
 /// Native bridges for Android foreground service + iOS audio session.
 class MeetingPlatform {
   MeetingPlatform({MethodChannel? channel})
-      : _channel = channel ?? const MethodChannel('com.layameet.mobile/meeting');
+      : _channel =
+            channel ?? const MethodChannel('com.layameet.mobile/meeting');
 
   final MethodChannel _channel;
 

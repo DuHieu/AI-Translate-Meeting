@@ -70,8 +70,7 @@ class AppLocalizationsVi extends AppLocalizations {
   @override
   String get meetingEnded => 'Phòng đã kết thúc hoặc bị khóa';
   @override
-  String get createMeetingUnauthorized =>
-      'Cần xác thực host để tạo cuộc họp';
+  String get createMeetingUnauthorized => 'Cần xác thực host để tạo cuộc họp';
   @override
   String get networkError => 'Lỗi mạng. Vui lòng kiểm tra kết nối.';
   @override
@@ -94,8 +93,7 @@ class AppLocalizationsVi extends AppLocalizations {
   @override
   String get cancel => 'Hủy';
   @override
-  String get meetingRoomPlaceholder =>
-      'Phòng họp đang chuẩn bị cho Task 5';
+  String get meetingRoomPlaceholder => 'Phòng họp đang chuẩn bị cho Task 5';
   @override
   String get meetingRoomPlaceholderBody =>
       'Token đã sẵn sàng. Lưới video LiveKit sẽ có ở bước tiếp theo.';
@@ -159,13 +157,11 @@ class AppLocalizationsVi extends AppLocalizations {
   @override
   String get networkReconnectFailed => 'Không thể kết nối lại cuộc họp';
   @override
-  String get networkReconnecting =>
-      'Mạng không ổn định — đang kết nối lại…';
+  String get networkReconnecting => 'Mạng không ổn định — đang kết nối lại…';
   @override
   String get networkRestored => 'Đã khôi phục kết nối';
   @override
-  String get videoDegraded =>
-      'Đã tạm tắt camera để giữ chất lượng cuộc gọi';
+  String get videoDegraded => 'Đã tạm tắt camera để giữ chất lượng cuộc gọi';
   @override
   String get cameraFlipped => 'Đã đổi camera';
 }

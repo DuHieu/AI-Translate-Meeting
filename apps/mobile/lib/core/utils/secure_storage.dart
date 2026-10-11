@@ -178,7 +178,8 @@ class SecureStorage {
       final decoded = jsonDecode(raw) as List<dynamic>;
       return decoded
           .whereType<Map>()
-          .map((item) => RecentMeeting.fromJson(Map<String, dynamic>.from(item)))
+          .map(
+              (item) => RecentMeeting.fromJson(Map<String, dynamic>.from(item)))
           .toList();
     } catch (e, stackTrace) {
       AppLogger.e('Failed to read recent meetings', e, stackTrace);
@@ -192,9 +193,8 @@ class SecureStorage {
       final filtered = existing
           .where((item) => item.meetingCode != meeting.meetingCode)
           .toList();
-      final updated = [meeting, ...filtered]
-          .take(AppConfig.maxRecentMeetings)
-          .toList();
+      final updated =
+          [meeting, ...filtered].take(AppConfig.maxRecentMeetings).toList();
       await _write(
         AppConfig.keyRecentMeetings,
         jsonEncode(updated.map((e) => e.toJson()).toList()),

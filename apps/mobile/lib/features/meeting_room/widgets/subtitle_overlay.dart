@@ -165,7 +165,9 @@ class _SubtitleCard extends StatelessWidget {
                   ],
                   const Spacer(),
                   if (subtitle.isDecision)
-                    _TagBadge(label: l10n.tagDecision, color: const Color(0xFFFF6B6B)),
+                    _TagBadge(
+                        label: l10n.tagDecision,
+                        color: const Color(0xFFFF6B6B)),
                   if (subtitle.isActionItem) ...[
                     if (subtitle.isDecision) const SizedBox(width: 4),
                     _TagBadge(

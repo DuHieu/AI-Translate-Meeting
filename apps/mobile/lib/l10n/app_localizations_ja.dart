@@ -70,8 +70,7 @@ class AppLocalizationsJa extends AppLocalizations {
   @override
   String get meetingEnded => 'ミーティングは終了またはロックされています';
   @override
-  String get createMeetingUnauthorized =>
-      'ミーティング作成にはホスト認証が必要です';
+  String get createMeetingUnauthorized => 'ミーティング作成にはホスト認証が必要です';
   @override
   String get networkError => 'ネットワークエラー。接続を確認してください。';
   @override
@@ -87,15 +86,13 @@ class AppLocalizationsJa extends AppLocalizations {
   @override
   String get permissionRequiredTitle => '権限が必要です';
   @override
-  String get permissionRequiredBody =>
-      'カメラまたはマイクの権限が拒否されています。設定から有効にしてください。';
+  String get permissionRequiredBody => 'カメラまたはマイクの権限が拒否されています。設定から有効にしてください。';
   @override
   String get openSettings => '設定を開く';
   @override
   String get cancel => 'キャンセル';
   @override
-  String get meetingRoomPlaceholder =>
-      'ミーティングルームは Task 5 向けに準備中です';
+  String get meetingRoomPlaceholder => 'ミーティングルームは Task 5 向けに準備中です';
   @override
   String get meetingRoomPlaceholderBody =>
       'トークンの準備は完了しました。次に LiveKit ビデオグリッドを実装します。';
@@ -138,8 +135,7 @@ class AppLocalizationsJa extends AppLocalizations {
   @override
   String get leaveMeetingConfirmTitle => '退出しますか？';
   @override
-  String get leaveMeetingConfirmBody =>
-      'ビデオ、音声、字幕の接続が切断されます。';
+  String get leaveMeetingConfirmBody => 'ビデオ、音声、字幕の接続が切断されます。';
   @override
   String get errorTitle => 'エラーが発生しました';
   @override
