@@ -26,6 +26,12 @@ class Settings(BaseSettings):
     PHOWHISPER_MODEL_PATH: str = os.getenv(
         "PHOWHISPER_MODEL_PATH", "diepho/PhoWhisper-base-ct2"
     )
+    # Cloud STT provider: "local" (faster-whisper on CPU) or "groq" (falls back to local on failure).
+    # GROQ_API_KEY must never be logged.
+    STT_PROVIDER: str = os.getenv("STT_PROVIDER", "local")
+    GROQ_API_KEY: str = os.getenv("GROQ_API_KEY", "")
+    GROQ_STT_MODEL: str = os.getenv("GROQ_STT_MODEL", "whisper-large-v3-turbo")
+    GROQ_STT_TIMEOUT_SECONDS: float = float(os.getenv("GROQ_STT_TIMEOUT_SECONDS", "3.0"))
     WHISPER_INITIAL_PROMPT: str = os.getenv(
         "WHISPER_INITIAL_PROMPT",
         "Cuộc họp trực tuyến. Chúng tôi trao đổi về công việc, kế hoạch, tiến độ dự án, báo cáo, giải pháp, PR, sprint, bug, deploy.",

@@ -51,6 +51,8 @@ async def lifespan(application: FastAPI):
             preload_task.cancel()
             with suppress(asyncio.CancelledError):
                 await preload_task
+        if ws_handler.cloud_stt is not None:
+            await ws_handler.cloud_stt.close()
 
 
 app = FastAPI(
