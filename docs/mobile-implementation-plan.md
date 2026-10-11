@@ -508,7 +508,7 @@ Message Format: {
 6. [x] Beta tester invite tracker template (`docs/BETA_TESTERS.md`)
 7. [x] Crashlytics documented as optional (no Firebase files committed)
 8. [x] Update documentation (`apps/mobile/README.md`, `docs/RELEASE.md`)
-9. [x] CI/CD: GitLab `.gitlab-ci.yml` (analyze/test/APK + tagged AAB) + optional GitHub mobile workflows
+9. [x] CI/CD: GitHub Actions `mobile-ci.yml` + `mobile-release.yml` (analyze/test/APK/iOS + tagged AAB)
 
 **Deliverables**:
 - [x] Signing + build scripts for signed AAB/APK / IPA

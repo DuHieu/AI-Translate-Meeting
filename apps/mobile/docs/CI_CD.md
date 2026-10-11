@@ -1,47 +1,48 @@
-# Laya Meet Mobile — CI/CD
+# Laya Meet Mobile — CI/CD (GitHub Actions)
 
-## Remote
+## Pipelines
 
-Primary git remote: **GitLab** (`origin` → `gitlab.com/.../ai-translate-meeting`).
+| Workflow | File | Triggers |
+|----------|------|----------|
+| **Mobile CI** | `.github/workflows/mobile-ci.yml` | Push / PR on `mobile-dev`, `main`, `master` (paths: `apps/mobile/**`) |
+| **Mobile Release** | `.github/workflows/mobile-release.yml` | Tag `mobile-v*`, or **workflow_dispatch** |
 
-| Pipeline | File | When it runs |
-|----------|------|----------------|
-| **GitLab CI (active)** | `.gitlab-ci.yml` | Push / MR touching `apps/mobile/**`, tags `mobile-v*` |
-| GitHub Actions (optional) | `.github/workflows/mobile-ci.yml`, `mobile-release.yml` | Only if the repo is also on GitHub |
+Jobs (CI): `analyze` → `test` → `build-android` (debug APK) + `build-ios` (no codesign).
 
-## GitLab jobs
+## GitHub secrets & variables
 
-| Job | Stage | Purpose |
-|-----|-------|---------|
-| `mobile:analyze` | analyze | `dart format` + `flutter analyze` |
-| `mobile:test` | test | `flutter test --coverage` |
-| `mobile:build-android-debug` | build | Debug APK artifact (branch/MR) |
-| `mobile:release-android` | release | Release AAB on tag `mobile-v*` |
+**Settings → Secrets and variables → Actions**
 
-## GitLab CI/CD variables (Settings → CI/CD → Variables)
+### Secrets (signed AAB)
 
-For **signed** release AAB:
+| Secret | Description |
+|--------|-------------|
+| `ANDROID_KEYSTORE_BASE64` | `base64 -w0 android/upload-keystore.jks` (Git Bash / WSL) |
+| `ANDROID_STORE_PASSWORD` | Keystore password |
+| `ANDROID_KEY_PASSWORD` | Key password |
+| `ANDROID_KEY_ALIAS` | Usually `layameet` |
 
-| Variable | Protected | Masked | Notes |
-|----------|-----------|--------|-------|
-| `ANDROID_KEYSTORE_BASE64` | ✅ | ✅ | `base64 -w0 android/upload-keystore.jks` |
-| `ANDROID_STORE_PASSWORD` | ✅ | ✅ | |
-| `ANDROID_KEY_PASSWORD` | ✅ | ✅ | |
-| `ANDROID_KEY_ALIAS` | ✅ | | usually `layameet` |
-| `API_BASE_URL` | optional | | production API |
-| `LIVEKIT_URL` | optional | | `wss://...` |
-| `SUBTITLE_WS_URL` | optional | | `wss://.../ws/transcribe` |
+### Variables (optional dart-defines)
 
-Without keystore variables, the release job still builds an AAB (debug-signed) for smoke tests — do **not** upload that to Play.
+| Variable | Example |
+|----------|---------|
+| `API_BASE_URL` | `https://api.example.com` |
+| `LIVEKIT_URL` | `wss://livekit.example.com` |
+| `SUBTITLE_WS_URL` | `wss://ai.example.com/ws/transcribe` |
 
-## Trigger a release build
+Without keystore secrets, release still builds an AAB with **debug signing** — do not upload that to Play.
+
+## Release flow
 
 ```bash
 git tag mobile-v1.0.0
 git push origin mobile-v1.0.0
+# or: git push github mobile-v1.0.0
 ```
 
-Download the AAB from the pipeline **Artifacts**.
+Then open **Actions → Mobile Release → Artifacts** and download `layameet-android-release-aab`.
+
+Or run **Actions → Mobile Release → Run workflow** manually.
 
 ## Local parity
 

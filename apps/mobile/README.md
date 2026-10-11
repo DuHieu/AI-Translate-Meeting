@@ -68,20 +68,20 @@ Related files:
 | `docs/RELEASE_NOTES_1.0.0.md` | Store / TestFlight notes |
 | `docs/BETA_TESTERS.md` | Tester invite tracker |
 | `android/key.properties.example` | Signing template |
-| `.gitlab-ci.yml` | **Active** CI on GitLab (analyze / test / APK / tagged AAB) |
-| `docs/CI_CD.md` | GitLab variables + release tag flow |
-| `.github/workflows/mobile-*.yml` | Optional if repo is mirrored to GitHub |
+| `.github/workflows/mobile-ci.yml` | Analyze / test / debug APK / iOS |
+| `.github/workflows/mobile-release.yml` | Tagged / manual release AAB |
+| `docs/CI_CD.md` | Secrets, variables, tag flow |
 
-### GitLab CI/CD variables (signed AAB)
+### GitHub Actions secrets (signed AAB)
 
-| Variable | Description |
-|----------|-------------|
+| Secret | Description |
+|--------|-------------|
 | `ANDROID_KEYSTORE_BASE64` | `base64 -w0 upload-keystore.jks` |
 | `ANDROID_STORE_PASSWORD` | Keystore password |
 | `ANDROID_KEY_PASSWORD` | Key password |
 | `ANDROID_KEY_ALIAS` | Alias (e.g. `layameet`) |
 
-Optional: `API_BASE_URL`, `LIVEKIT_URL`, `SUBTITLE_WS_URL`. Full guide: [`docs/CI_CD.md`](docs/CI_CD.md).
+Optional repo **Variables**: `API_BASE_URL`, `LIVEKIT_URL`, `SUBTITLE_WS_URL`. Full guide: [`docs/CI_CD.md`](docs/CI_CD.md).
 
 ## Manual QA checklist
 

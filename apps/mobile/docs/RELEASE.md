@@ -118,10 +118,9 @@ Until then, rely on store crash reports + server logs (never log tokens).
 - [ ] Testers can join a real meeting end-to-end
 - [ ] No secrets committed (`git status` clean of `*.jks`, `key.properties`)
 
-## 6. CI/CD
+## 6. CI/CD (GitHub Actions)
 
-Primary remote is **GitLab** — see [`CI_CD.md`](CI_CD.md).
+See [`CI_CD.md`](CI_CD.md).
 
-- Push / MR (`apps/mobile/**`): `.gitlab-ci.yml` → analyze, test, debug APK
-- Tag `mobile-v*`: `.gitlab-ci.yml` → `mobile:release-android` (signed AAB when CI variables set)
-- Optional GitHub mirror: `.github/workflows/mobile-ci.yml` + `mobile-release.yml`
+- Push / PR (`apps/mobile/**`): `.github/workflows/mobile-ci.yml` → analyze, test, debug APK, iOS no-codesign
+- Tag `mobile-v*` or manual dispatch: `.github/workflows/mobile-release.yml` → release AAB (signed when secrets set)

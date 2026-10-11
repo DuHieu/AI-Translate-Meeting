@@ -1,11 +1,19 @@
+# Laya Meet Mobile — release AAB (GitHub Actions)
+# Tag: mobile-v1.0.0  OR  Actions → Mobile Release → Run workflow
 name: Mobile Release
 
-# Builds Android AAB on tags mobile-v* (signed when keystore secrets exist).
 on:
   push:
     tags:
       - 'mobile-v*'
   workflow_dispatch:
+
+concurrency:
+  group: mobile-release-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
 
 jobs:
   android-release:
@@ -25,6 +33,7 @@ jobs:
         with:
           flutter-version: '3.24.0'
           channel: stable
+          cache: true
 
       - uses: actions/setup-java@v4
         with:
@@ -32,32 +41,31 @@ jobs:
           java-version: '17'
 
       - name: Default dart-define endpoints
+        shell: bash
         run: |
           echo "API_BASE_URL=${API_BASE_URL:-https://api.example.com}" >> "$GITHUB_ENV"
           echo "LIVEKIT_URL=${LIVEKIT_URL:-wss://livekit.example.com}" >> "$GITHUB_ENV"
           echo "SUBTITLE_WS_URL=${SUBTITLE_WS_URL:-wss://ai.example.com/ws/transcribe}" >> "$GITHUB_ENV"
 
       - name: Decode upload keystore
-        id: keystore
         env:
           ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
           ANDROID_STORE_PASSWORD: ${{ secrets.ANDROID_STORE_PASSWORD }}
           ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
           ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+        shell: bash
         run: |
           if [ -z "${ANDROID_KEYSTORE_BASE64}" ]; then
-            echo "present=false" >> "$GITHUB_OUTPUT"
-            echo "No ANDROID_KEYSTORE_BASE64 — release AAB will use debug signing (smoke only)."
+            echo "No ANDROID_KEYSTORE_BASE64 — AAB will use debug signing (smoke only)."
             exit 0
           fi
           echo "$ANDROID_KEYSTORE_BASE64" | base64 -d > android/upload-keystore.jks
-          {
-            echo "storePassword=${ANDROID_STORE_PASSWORD}"
-            echo "keyPassword=${ANDROID_KEY_PASSWORD}"
-            echo "keyAlias=${ANDROID_KEY_ALIAS}"
-            echo "storeFile=upload-keystore.jks"
-          } > android/key.properties
-          echo "present=true" >> "$GITHUB_OUTPUT"
+          printf '%s\n' \
+            "storePassword=${ANDROID_STORE_PASSWORD}" \
+            "keyPassword=${ANDROID_KEY_PASSWORD}" \
+            "keyAlias=${ANDROID_KEY_ALIAS}" \
+            "storeFile=upload-keystore.jks" \
+            > android/key.properties
 
       - name: Pub get
         run: flutter pub get
@@ -69,6 +77,7 @@ jobs:
         run: flutter test
 
       - name: Build App Bundle
+        shell: bash
         run: |
           flutter build appbundle --release \
             --dart-define=API_BASE_URL="${API_BASE_URL}" \
