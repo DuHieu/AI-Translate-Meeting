@@ -4,3 +4,4 @@ import os
 # Set before any app module is imported so Settings picks these up over .env.
 os.environ["STT_PROVIDER"] = "local"
 os.environ["GROQ_API_KEY"] = ""
+os.environ.setdefault("POLAR_WEBHOOK_SECRET", "mock_polar_webhook_secret_12345")

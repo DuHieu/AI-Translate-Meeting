@@ -7,6 +7,11 @@ from polar.v2026_10.webhooks import WebhookOrderPaidPayload, WebhookCustomerStat
 client = TestClient(app)
 
 
+@pytest.fixture(autouse=True)
+def setup_polar_env(monkeypatch):
+    monkeypatch.setattr("app.api.polar_routes.settings.POLAR_WEBHOOK_SECRET", "mock_polar_webhook_secret_12345")
+
+
 def test_checkout_missing_products_param():
     response = client.get("/checkout")
     assert response.status_code == 422
