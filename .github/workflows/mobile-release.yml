@@ -43,9 +43,11 @@ jobs:
       - name: Default dart-define endpoints
         shell: bash
         run: |
-          echo "API_BASE_URL=${API_BASE_URL:-https://api.example.com}" >> "$GITHUB_ENV"
-          echo "LIVEKIT_URL=${LIVEKIT_URL:-wss://livekit.example.com}" >> "$GITHUB_ENV"
-          echo "SUBTITLE_WS_URL=${SUBTITLE_WS_URL:-wss://ai.example.com/ws/transcribe}" >> "$GITHUB_ENV"
+          {
+            echo "API_BASE_URL=${API_BASE_URL:-https://api.example.com}"
+            echo "LIVEKIT_URL=${LIVEKIT_URL:-wss://livekit.example.com}"
+            echo "SUBTITLE_WS_URL=${SUBTITLE_WS_URL:-wss://ai.example.com/ws/transcribe}"
+          } >> "$GITHUB_ENV"
 
       - name: Decode upload keystore
         env:
