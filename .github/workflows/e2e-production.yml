@@ -1,0 +1,109 @@
+# Production E2E — full stack against docker compose built from this commit.
+# Runs on every push to main/master (and manual dispatch).
+name: E2E Production
+
+on:
+  push:
+    branches: [main, master]
+  workflow_dispatch:
+
+concurrency:
+  group: e2e-production-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  ENV_FILE: .env.ci
+  E2E_API_URL: http://127.0.0.1:5000
+  E2E_AI_URL: http://127.0.0.1:8000
+  E2E_WEB_URL: http://127.0.0.1:3000
+  E2E_LIVEKIT_HTTP: http://127.0.0.1:7880
+  MOBILE_BASE_URL: http://127.0.0.1:3000
+  MOBILE_DEVICE: pixel7-chromium
+  MOBILE_ARTIFACT_ROOT: output/playwright/e2e-ci
+  PLAYWRIGHT_BROWSERS_PATH: output/playwright/browsers
+
+jobs:
+  e2e:
+    name: Full-stack E2E (Web + API + AI + Mobile)
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Make scripts executable
+        run: chmod +x scripts/ci-e2e-up.sh scripts/ci-e2e-down.sh scripts/smoke-test.sh
+
+      - name: Bring up compose stack
+        run: ./scripts/ci-e2e-up.sh
+
+      - name: Smoke test (ops + meeting JWTs + security)
+        run: ./scripts/smoke-test.sh
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: API/AI pytest E2E
+        run: |
+          python -m pip install --upgrade pip
+          pip install requests pytest pytest-asyncio websockets
+          pytest e2e/ -v -m e2e --junitxml=output/e2e-pytest-junit.xml
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+
+      - name: Install web deps + Playwright Chromium
+        working-directory: apps/web
+        run: |
+          npm ci
+          npx playwright install --with-deps chromium
+
+      - name: Web Playwright E2E (live stack)
+        working-directory: apps/web
+        run: npm run test:e2e:ci
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.24.0'
+          channel: stable
+          cache: true
+
+      - name: Mobile unit + widget + E2E flow tests
+        working-directory: apps/mobile
+        run: |
+          flutter pub get
+          flutter analyze
+          flutter test --coverage
+          flutter test test/e2e/
+
+      - name: Collect compose logs
+        if: always()
+        run: |
+          mkdir -p output/compose-logs
+          docker compose -f docker-compose.yml -f docker-compose.e2e.yml --env-file .env.ci logs --no-color > output/compose-logs/stack.log 2>&1 || true
+          docker compose -f docker-compose.yml -f docker-compose.e2e.yml --env-file .env.ci ps > output/compose-logs/ps.txt 2>&1 || true
+
+      - name: Tear down stack
+        if: always()
+        run: ./scripts/ci-e2e-down.sh
+
+      - name: Upload E2E artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-production-${{ github.sha }}
+          path: |
+            output/
+            apps/mobile/coverage/lcov.info
+          if-no-files-found: ignore
+          retention-days: 14

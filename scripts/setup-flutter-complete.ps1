@@ -91,7 +91,7 @@ Write-Host "3. Accept Android licenses:" -ForegroundColor White
 Write-Host "   flutter doctor --android-licenses" -ForegroundColor Green
 Write-Host "4. Create mobile project:" -ForegroundColor White
 Write-Host "   cd D:\MyProject\AI-Translate-Meeting\apps" -ForegroundColor Green
-Write-Host "   flutter create --org com.vimeet --project-name mobile mobile" -ForegroundColor Green
+Write-Host "   flutter create --org com.layameet --project-name mobile ." -ForegroundColor Green
 Write-Host "   cd mobile" -ForegroundColor Green
 Write-Host "   flutter pub get" -ForegroundColor Green
 Write-Host "   flutter run" -ForegroundColor Green

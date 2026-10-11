@@ -1,5 +1,5 @@
 name: mobile
-description: ViMeet Mobile - AI-powered bilingual meeting platform for Android and iOS
+description: Laya Meet - AI-powered bilingual meeting platform for Android and iOS
 publish_to: 'none'
 version: 1.0.0+1
 
@@ -74,5 +74,6 @@ flutter:
   #       - asset: fonts/Roboto-Bold.ttf
   #         weight: 700
   
-  # Internationalization
-  generate: true
+  # Internationalization: hand-maintained delegates in lib/l10n/
+  # Set generate: true after Flutter install if you prefer gen-l10n from ARB.
+  generate: false

@@ -180,7 +180,7 @@ Message Format: {
 
 **Steps**:
 1. Install Flutter SDK (see `apps/mobile/SETUP.md`)
-2. Create project: `flutter create --org com.vimeet mobile`
+2. Create project: `flutter create --org com.layameet mobile`
 3. Configure `pubspec.yaml` dependencies
 4. Setup Android permissions (`AndroidManifest.xml`)
 5. Setup iOS permissions (`Info.plist`)
@@ -473,51 +473,54 @@ Message Format: {
 **Dependencies**: All tasks complete
 
 **Steps**:
-1. Write unit tests for all providers (target 80%+ coverage)
-2. Write widget tests for all screens
-3. Write integration test (E2E: Home → Prejoin → Join → Leave)
-4. Manual QA on real devices (Android: Pixel, Samsung; iOS: iPhone, iPad)
-5. Test network scenarios (4G, WiFi, airplane mode)
-6. Battery drain test (1-hour meeting)
-7. Update GitHub Actions with test coverage report
+1. [x] Unit/widget tests for providers & screens
+2. [x] Flutter E2E flow (`test/e2e/full_app_flow_test.dart`) + `integration_test/`
+3. [x] Monorepo production E2E on `main` (see `docs/e2e/E2E_PRODUCTION.md`)
+4. [ ] Manual QA on real devices (Android: Pixel, Samsung; iOS: iPhone, iPad)
+5. [ ] Test network scenarios (4G, WiFi, airplane mode) on devices
+6. [ ] Battery drain test (1-hour meeting)
+7. [x] GitHub Actions: `mobile-ci.yml` + `e2e-production.yml`
 
 **Deliverables**:
-- 80%+ test coverage
-- QA test report
-- CI pipeline running tests
+- Widget + E2E suites in-repo
+- Production E2E workflow on push to `main`
+- Manual device QA still required before store release
 
 **Tests**:
-- ✅ `flutter test --coverage`
-- ✅ Integration test passes on emulator
-- ✅ Manual QA checklist complete
+- ✅ `flutter test` / `flutter test test/e2e/`
+- ✅ `integration_test/app_e2e_test.dart`
+- ✅ GitHub Actions E2E Production (compose + smoke + pytest + Playwright)
+- [ ] Manual QA checklist complete
 
 ---
 
 ### 🚀 Task 14: Deployment & App Store Preparation
 **Owner**: DevOps + Release Manager  
 **Estimated Time**: 6 hours  
-**Dependencies**: Task 13 complete
+**Dependencies**: Task 13 complete  
+**Status**: Repo prep complete — store upload requires org credentials
 
 **Steps**:
-1. Generate signed APK/AAB with keystore (Android)
-2. Configure signing in Xcode (iOS)
-3. Create internal testing track (Google Play Console)
-4. Upload to TestFlight (iOS)
-5. Create release notes and changelog
-6. Invite 5-10 beta testers
-7. Setup Firebase Crashlytics (optional)
-8. Update documentation (`apps/mobile/README.md`)
+1. [x] Android release signing via `key.properties` + upload keystore scripts
+2. [x] iOS ExportOptions templates + IPA build script
+3. [ ] Create internal testing track (Google Play Console) — manual
+4. [ ] Upload to TestFlight (iOS) — manual
+5. [x] Create release notes and changelog
+6. [x] Beta tester invite tracker template (`docs/BETA_TESTERS.md`)
+7. [x] Crashlytics documented as optional (no Firebase files committed)
+8. [x] Update documentation (`apps/mobile/README.md`, `docs/RELEASE.md`)
+9. [x] CI/CD: GitHub Actions `mobile-ci.yml` + `mobile-release.yml` (analyze/test/APK/iOS + tagged AAB)
 
 **Deliverables**:
-- Signed APK/AAB available
-- TestFlight build available
-- Beta testers invited
-- Documentation updated
+- [x] Signing + build scripts for signed AAB/APK / IPA
+- [ ] Play internal track live (manual)
+- [ ] TestFlight build live (manual)
+- [x] Documentation + changelog + release notes
 
 **Tests**:
-- ✅ Install APK from Play Console internal track
-- ✅ Install from TestFlight on iPhone
-- ✅ Beta testers successfully join test meeting
+- [ ] Install APK/AAB from Play Console internal track
+- [ ] Install from TestFlight on iPhone
+- [ ] Beta testers successfully join test meeting
 
 ---
 

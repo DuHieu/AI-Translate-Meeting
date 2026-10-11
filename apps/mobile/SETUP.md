@@ -59,7 +59,7 @@ Once Flutter is installed, run:
 
 ```bash
 cd d:\MyProject\AI-Translate-Meeting\apps
-flutter create --org com.vimeet --project-name mobile mobile
+flutter create --org com.layameet --project-name mobile .
 cd mobile
 flutter pub get
 ```
@@ -116,9 +116,14 @@ export HTTP_PROXY=http://your-proxy:port
 export HTTPS_PROXY=http://your-proxy:port
 ```
 
+## Release / store prep
+
+See [`docs/RELEASE.md`](docs/RELEASE.md) and [`README.md`](README.md) (Task 14).
+
 ## Resources
 
 - Flutter Documentation: https://docs.flutter.dev
 - Flutter Samples: https://github.com/flutter/samples
 - LiveKit Flutter SDK: https://pub.dev/packages/livekit_client
 - Riverpod State Management: https://riverpod.dev
+
