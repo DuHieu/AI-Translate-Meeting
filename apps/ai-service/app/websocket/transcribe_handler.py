@@ -21,7 +21,12 @@ from app.schemas.subtitle import (
     SubtitleBroadcastMessage,
     SubtitleData,
 )
-from app.speech.whisper_service import SpeechToTextService, detect_text_language
+from app.speech.groq_whisper_service import GroqSpeechToTextService
+from app.speech.whisper_service import (
+    SpeechToTextService,
+    TranscriptResult,
+    detect_text_language,
+)
 from app.services.laya_client import LayaDecisionClient
 from app.translation.cache import TranslationCache
 from app.translation.context_manager import ContextSegment, MeetingContextManager
@@ -105,8 +110,17 @@ class TranscribeWebSocketHandler:
         stt: SpeechToTextService | None = None,
         quality_filter: SpeechQualityFilter | None = None,
         moderation_filter: ContentModerationFilter | None = None,
+        cloud_stt: GroqSpeechToTextService | None = None,
     ):
         self.stt = stt or SpeechToTextService()
+        if cloud_stt is not None:
+            self.cloud_stt = cloud_stt
+        elif settings.STT_PROVIDER.strip().lower() == "groq" and settings.GROQ_API_KEY.strip():
+            self.cloud_stt = GroqSpeechToTextService()
+        else:
+            if settings.STT_PROVIDER.strip().lower() == "groq":
+                logger.warning("STT_PROVIDER=groq but GROQ_API_KEY is empty; using local faster-whisper")
+            self.cloud_stt = None
         self.glossary_manager = glossary_manager or GlossaryManager()
         self.cache = cache or TranslationCache()
         self.context_manager = context_manager or MeetingContextManager()
@@ -395,28 +409,13 @@ class TranscribeWebSocketHandler:
                     effective_stt_lang = (
                         "auto" if source_language.lower() == "auto" else source_language
                     )
-                    try:
-                        transcript = await self.stt.transcribe(
-                            full_audio,
-                            language=effective_stt_lang,
-                            is_final=is_final,
-                            initial_prompt=active_initial_prompt,
-                            vad_filter=False,
-                        )
-                    except TypeError:
-                        try:
-                            transcript = await self.stt.transcribe(
-                                full_audio,
-                                language=effective_stt_lang,
-                                is_final=is_final,
-                                initial_prompt=active_initial_prompt,
-                            )
-                        except TypeError:
-                            transcript = await self.stt.transcribe(
-                                full_audio,
-                                language=effective_stt_lang,
-                                is_final=is_final,
-                            )
+                    transcript = await self._transcribe_audio(
+                        full_audio,
+                        language=effective_stt_lang,
+                        is_final=is_final,
+                        initial_prompt=active_initial_prompt,
+                        meeting_id=meeting_id,
+                    )
                     t_stt_end = time.perf_counter()
                     last_interim_time = t_stt_end
                     stt_latency_ms = (t_stt_end - t_stt_start) * 1000
@@ -987,6 +986,61 @@ class TranscribeWebSocketHandler:
             remaining_listeners = await self.connection_manager.get_listeners(meeting_id)
             if not remaining_listeners:
                 await self.context_manager.clear_meeting(meeting_id)
+
+    async def _transcribe_audio(
+        self,
+        audio: np.ndarray,
+        *,
+        language: str,
+        is_final: bool,
+        initial_prompt: str | None,
+        meeting_id: str,
+    ) -> TranscriptResult:
+        """Cloud STT first when configured; any cloud failure falls back to local faster-whisper."""
+        if self.cloud_stt is not None:
+            try:
+                text, detected_lang, confidence = await self.cloud_stt.transcribe_audio_chunk(
+                    audio,
+                    source_lang=language,
+                    prompt=initial_prompt,
+                )
+                return TranscriptResult(
+                    text=text,
+                    language=detected_lang,
+                    is_final=is_final,
+                    language_probability=confidence,
+                )
+            except asyncio.CancelledError:
+                raise
+            except Exception as ex:
+                logger.warning(
+                    "event=stt_fallback meeting_id=%s from=groq to=local reason=%s",
+                    meeting_id,
+                    ex or type(ex).__name__,
+                )
+
+        try:
+            return await self.stt.transcribe(
+                audio,
+                language=language,
+                is_final=is_final,
+                initial_prompt=initial_prompt,
+                vad_filter=False,
+            )
+        except TypeError:
+            try:
+                return await self.stt.transcribe(
+                    audio,
+                    language=language,
+                    is_final=is_final,
+                    initial_prompt=initial_prompt,
+                )
+            except TypeError:
+                return await self.stt.transcribe(
+                    audio,
+                    language=language,
+                    is_final=is_final,
+                )
 
     async def _broadcast_pipeline_status(
         self,
