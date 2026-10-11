@@ -42,6 +42,59 @@ export interface BlogPost {
 
 export const BLOG_POSTS: BlogPost[] = [
   {
+  "slug": "bi-quyet-hop-tieng-anh-cho-ky-su-it-tu-tin-trao-doi-voi-khach-quoc-te",
+  "title": "Bí Quyết Tham Gia Cuộc Họp Tiếng Anh Cho Kỹ Sư Phần Mềm: Tự Tin Trình Bày & Không Sợ Nghe Nhầm Accent",
+  "seoTitle": "Bí Quyết Họp Tiếng Anh Cho Kỹ Sư IT: Dịch Phụ Đề Tức Thì | Laya Meet",
+  "description": "Kinh nghiệm thực chiến cho Dev, QA, PM khi họp Daily Scrum hoặc Sprint Review tiếng Anh với khách hàng Mỹ, Singapore, Ấn Độ. Khắc phục nỗi sợ accent lạ bằng phụ đề AI song ngữ.",
+  "canonicalUrl": "https://layameet.com/cam-nang/bi-quyet-hop-tieng-anh-cho-ky-su-it-tu-tin-trao-doi-voi-khach-quoc-te",
+  "author": "Laya Meet Tech Leadership Community",
+  "authorRole": "Cộng Đồng Kỹ Sư Phần Mềm Quốc Tế",
+  "date": "2026-10-11",
+  "readTime": "5 phút đọc",
+  "category": "Kỹ Năng Kỹ Sư & Agile",
+  "tags": [
+    "Họp Tiếng Anh",
+    "Kỹ Sư IT",
+    "Daily Scrum",
+    "Khách Hàng Quốc Tế",
+    "Laya Meet"
+  ],
+  "lang": "vi",
+  "excerpt": "Nhiều lập trình viên Việt Nam code rất giỏi nhưng lại toát mồ hôi mỗi khi đến giờ Daily Standup tiếng Anh với khách hàng nước ngoài vì nghe không kịp accent. Dưới đây là giải pháp đột phá.",
+  "keyTakeaways": [
+    "Nghe không kịp accent Ấn Độ, Singapore hoặc tiếng lóng kỹ thuật là nỗi sợ phổ biến nhất của các lập trình viên.",
+    "Phụ đề song ngữ thời gian thực (Dual Subtitles) hiển thị đồng thời cả tiếng Anh gốc và tiếng Việt giúp đối chiếu nghĩa tức thì.",
+    "Tính năng trích xuất việc cần làm (Action Items) tự động ghi nhận các bug, task cần fix trong buổi họp mà không sợ sót.",
+    "Tự tin phát biểu tiếng Việt khi cần trình bày giải pháp kỹ thuật phức tạp với phụ đề dịch sang tiếng Anh chuẩn xác cho đối tác."
+  ],
+  "faqs": [
+    {
+      "question": "Laya Meet có nhận diện được accent tiếng Anh của người Ấn Độ hoặc Singapore không?",
+      "answer": "Có. Mô hình Faster-Whisper được huấn luyện trên hàng trăm ngàn giờ dữ liệu giọng nói đa accent toàn cầu, giúp nhận diện chính xác kể cả các giọng đặc trưng như Indian English hay Singlish."
+    },
+    {
+      "question": "Tôi có thể vừa xem phụ đề tiếng Anh vừa xem tiếng Việt không?",
+      "answer": "Hoàn toàn được. Laya Meet cung cấp chế độ phụ đề song ngữ kép (Dual Subtitle View) giúp bạn vừa rèn luyện khả năng nghe tiếng Anh vừa nắm chắc 100% nội dung qua tiếng Việt."
+    }
+  ],
+  "sections": [
+    {
+      "heading": "1. Nỗi sợ vô hình của lập trình viên trong các buổi họp Daily Standup",
+      "paragraphs": [
+        "Trong thời đại làm việc từ xa (Remote work), việc hợp tác với các đồng nghiệp và khách hàng quốc tế đã trở thành tiêu chuẩn. Tuy nhiên, rào cản nghe nói tiếng Anh vẫn là nguyên nhân hàng đầu khiến nhiều kỹ sư giỏi ngần ngại nhận các dự án nước ngoài có mức lương cao.",
+        "Các buổi họp Daily Scrum thường diễn ra với tốc độ rất nhanh, mọi người nói nhanh và dùng nhiều thuật ngữ chuyên môn. Nếu nghe sót một yêu cầu (requirement), hậu quả có thể là hàng tuần code sai hướng."
+      ]
+    },
+    {
+      "heading": "2. \"Trợ lý phiên dịch\" tàng hình ngay trên màn hình phòng họp",
+      "paragraphs": [
+        "Bằng cách sử dụng Laya Meet (https://layameet.com/hop-song-ngu-tieng-anh), bạn không còn phải lo lắng về việc nghe sót thông tin. Mọi lời nói của các thành viên đều được chuyển thành văn bản tức thì với độ trễ <350ms.",
+        "Cuối buổi họp, toàn bộ quyết định kỹ thuật và các đầu việc được giao sẽ được Laya Sidecar AI tổng hợp sẵn thành biên bản họp Markdown rõ ràng, giúp bạn tự tin hoàn thành công việc xuất sắc."
+      ]
+    }
+  ]
+},
+  {
   "slug": "hop-song-ngu-viet-han-van-hoa-va-giai-phap-dich-thoi-gian-thuc",
   "title": "Văn Hóa Họp Doanh Nghiệp Hàn Quốc & Giải Pháp Dịch Phụ Đề Trực Tiếp Việt - Hàn Thời Gian Thực",
   "seoTitle": "Họp Song Ngữ Việt - Hàn: Văn Hóa & Công Cụ Dịch Tức Thì | Laya Meet",

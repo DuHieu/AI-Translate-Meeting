@@ -223,9 +223,9 @@ export const PublicPageShell: React.FC<PublicPageShellProps> = ({
               <LayaMeetLogo size="md" />
             </Link>
 
-            {/* Inline Header Breadcrumb: 0 vertical space wasted */}
+            {/* Inline Header Breadcrumb: 0 vertical space wasted on desktop, hidden on tiny mobile */}
             {breadcrumbs && breadcrumbs.length > 0 && (
-              <div className="flex items-center gap-1.5 sm:gap-2 text-xs min-w-0 animate-in fade-in duration-200">
+              <div className="hidden sm:flex items-center gap-1.5 sm:gap-2 text-xs min-w-0 animate-in fade-in duration-200">
                 <span className="text-zinc-300 dark:text-zinc-700 font-light select-none text-sm shrink-0" aria-hidden="true">
                   /
                 </span>
@@ -237,7 +237,7 @@ export const PublicPageShell: React.FC<PublicPageShellProps> = ({
           </div>
 
           {/* Right: Shortcuts + Language + Theme + Auth */}
-          <div className="flex items-center gap-2 sm:gap-2.5">
+          <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
             <div className="hidden lg:flex items-center gap-1 pr-1 border-r border-zinc-200/80 dark:border-[#2e2e30]/80">
               <button
                 type="button"
@@ -268,7 +268,9 @@ export const PublicPageShell: React.FC<PublicPageShellProps> = ({
               </button>
             </div>
 
-            <LanguageSwitcher />
+            <div className="hidden sm:block">
+              <LanguageSwitcher />
+            </div>
             <ThemeToggle />
             <GoogleAuthControl variant="navbar" />
           </div>

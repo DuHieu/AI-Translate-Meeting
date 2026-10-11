@@ -21,6 +21,7 @@ import {
   LogOut,
   ChevronDown,
   Link2,
+  ShieldCheck,
 } from 'lucide-react';
 import { admissionStorage } from '../utils/admissionStorage';
 import { LayaMeetLogo } from '../components/common/LayaMeetLogo';
@@ -631,7 +632,7 @@ export const HomePage: React.FC<HomePageProps> = ({ forcedLanguage }) => {
       <main className="relative z-10 flex-1 flex flex-col justify-between w-full">
         {/* ── MOBILE: Primary Meeting Workspace (< md) ── */}
         {activeSection === 'home' && (
-          <section className="md:hidden flex-1 flex flex-col justify-start px-4 py-6 max-w-md mx-auto w-full space-y-5">
+          <section className="md:hidden flex-1 flex flex-col justify-start px-4 sm:px-6 py-6 sm:py-8 max-w-md mx-auto w-full space-y-5 sm:space-y-6">
             {error && (
               <div role="alert" className="p-3 rounded-xl bg-red-50 dark:bg-red-950/60 border border-red-200 dark:border-red-900/50 text-red-700 dark:text-red-300 text-xs">
                 {error}
@@ -780,7 +781,7 @@ export const HomePage: React.FC<HomePageProps> = ({ forcedLanguage }) => {
                 <button
                   type="button"
                   onClick={() => navigate('/calendar')}
-                  className="h-10 px-3 rounded-xl bg-white dark:bg-[#18181c] border border-zinc-200 dark:border-zinc-800 text-xs font-medium text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800 flex items-center justify-center gap-2 transition-colors cursor-pointer"
+                  className="h-11 px-3 rounded-xl bg-white dark:bg-[#18181c] border border-zinc-200 dark:border-zinc-800 text-xs font-medium text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800 flex items-center justify-center gap-2 transition-colors cursor-pointer"
                 >
                   <Calendar className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
                   <span>{language === 'ja' ? '予定を設定' : language === 'en' ? 'Schedule' : 'Đặt lịch họp'}</span>
@@ -788,7 +789,7 @@ export const HomePage: React.FC<HomePageProps> = ({ forcedLanguage }) => {
                 <button
                   type="button"
                   onClick={() => navigate('/history')}
-                  className="h-10 px-3 rounded-xl bg-white dark:bg-[#18181c] border border-zinc-200 dark:border-zinc-800 text-xs font-medium text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800 flex items-center justify-center gap-2 transition-colors cursor-pointer"
+                  className="h-11 px-3 rounded-xl bg-white dark:bg-[#18181c] border border-zinc-200 dark:border-zinc-800 text-xs font-medium text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800 flex items-center justify-center gap-2 transition-colors cursor-pointer"
                 >
                   <Clock className="w-3.5 h-3.5 text-zinc-500" />
                   <span>{ui.historyNav}</span>
@@ -802,6 +803,47 @@ export const HomePage: React.FC<HomePageProps> = ({ forcedLanguage }) => {
                 refreshKey={scheduleRefreshKey}
                 onOpenCalendar={() => navigate('/calendar')}
               />
+            </div>
+
+            {/* Mobile Feature Highlights: Instant Trust & Value Props */}
+            <div className="pt-2 pb-1 space-y-2">
+              <div className="grid grid-cols-3 gap-2">
+                <div className="p-3 rounded-xl bg-white/80 dark:bg-[#18181c]/80 border border-zinc-200/80 dark:border-zinc-800 text-center space-y-1 shadow-2xs">
+                  <div className="w-7 h-7 rounded-lg bg-blue-500/10 text-blue-600 dark:text-blue-400 mx-auto flex items-center justify-center">
+                    <Zap className="w-3.5 h-3.5" />
+                  </div>
+                  <div className="text-xs font-bold text-zinc-900 dark:text-white">
+                    {t.hero.metricLatency}
+                  </div>
+                  <div className="text-[10px] text-zinc-500 dark:text-zinc-400 leading-tight">
+                    {t.hero.metricLatencySub}
+                  </div>
+                </div>
+
+                <div className="p-3 rounded-xl bg-white/80 dark:bg-[#18181c]/80 border border-zinc-200/80 dark:border-zinc-800 text-center space-y-1 shadow-2xs">
+                  <div className="w-7 h-7 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 mx-auto flex items-center justify-center">
+                    <ShieldCheck className="w-3.5 h-3.5" />
+                  </div>
+                  <div className="text-xs font-bold text-zinc-900 dark:text-white">
+                    RAM-Only
+                  </div>
+                  <div className="text-[10px] text-zinc-500 dark:text-zinc-400 leading-tight">
+                    {t.hero.metricZeroSub}
+                  </div>
+                </div>
+
+                <div className="p-3 rounded-xl bg-white/80 dark:bg-[#18181c]/80 border border-zinc-200/80 dark:border-zinc-800 text-center space-y-1 shadow-2xs">
+                  <div className="w-7 h-7 rounded-lg bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 mx-auto flex items-center justify-center">
+                    <Globe className="w-3.5 h-3.5" />
+                  </div>
+                  <div className="text-xs font-bold text-zinc-900 dark:text-white">
+                    {language === 'ja' ? '8言語' : language === 'en' ? '8 Languages' : '8 Ngôn ngữ'}
+                  </div>
+                  <div className="text-[10px] text-zinc-500 dark:text-zinc-400 leading-tight">
+                    {language === 'ja' ? '双方向翻訳' : language === 'en' ? 'Live subtitle' : 'Dịch song song'}
+                  </div>
+                </div>
+              </div>
             </div>
           </section>
         )}

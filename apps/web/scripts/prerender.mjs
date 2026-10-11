@@ -258,6 +258,34 @@ const ROUTES = [
 // Rich Blog Articles for Static SEO Pre-rendering & Crawler Ingestion
 const BLOG_ARTICLES = [
   {
+  "route": "cam-nang/bi-quyet-hop-tieng-anh-cho-ky-su-it-tu-tin-trao-doi-voi-khach-quoc-te",
+  "lang": "vi",
+  "title": "Bí Quyết Họp Tiếng Anh Cho Kỹ Sư IT: Dịch Phụ Đề Tức Thì | Laya Meet",
+  "headline": "Bí Quyết Tham Gia Cuộc Họp Tiếng Anh Cho Kỹ Sư Phần Mềm: Tự Tin Trình Bày & Không Sợ Nghe Nhầm Accent",
+  "description": "Kinh nghiệm thực chiến cho Dev, QA, PM khi họp Daily Scrum hoặc Sprint Review tiếng Anh với khách hàng Mỹ, Singapore, Ấn Độ. Khắc phục nỗi sợ accent lạ bằng phụ đề AI song ngữ.",
+  "canonical": "https://layameet.com/cam-nang/bi-quyet-hop-tieng-anh-cho-ky-su-it-tu-tin-trao-doi-voi-khach-quoc-te",
+  "datePublished": "2026-10-11",
+  "author": "Laya Meet Tech Leadership Community",
+  "category": "Kỹ Năng Kỹ Sư & Agile",
+  "keywords": "Họp Tiếng Anh, Kỹ Sư IT, Daily Scrum, Khách Hàng Quốc Tế, Laya Meet",
+  "keyTakeaways": [
+    "Nghe không kịp accent Ấn Độ, Singapore hoặc tiếng lóng kỹ thuật là nỗi sợ phổ biến nhất của các lập trình viên.",
+    "Phụ đề song ngữ thời gian thực (Dual Subtitles) hiển thị đồng thời cả tiếng Anh gốc và tiếng Việt giúp đối chiếu nghĩa tức thì.",
+    "Tính năng trích xuất việc cần làm (Action Items) tự động ghi nhận các bug, task cần fix trong buổi họp mà không sợ sót.",
+    "Tự tin phát biểu tiếng Việt khi cần trình bày giải pháp kỹ thuật phức tạp với phụ đề dịch sang tiếng Anh chuẩn xác cho đối tác."
+  ],
+  "faqs": [
+    {
+      "q": "Laya Meet có nhận diện được accent tiếng Anh của người Ấn Độ hoặc Singapore không?",
+      "a": "Có. Mô hình Faster-Whisper được huấn luyện trên hàng trăm ngàn giờ dữ liệu giọng nói đa accent toàn cầu, giúp nhận diện chính xác kể cả các giọng đặc trưng như Indian English hay Singlish."
+    },
+    {
+      "q": "Tôi có thể vừa xem phụ đề tiếng Anh vừa xem tiếng Việt không?",
+      "a": "Hoàn toàn được. Laya Meet cung cấp chế độ phụ đề song ngữ kép (Dual Subtitle View) giúp bạn vừa rèn luyện khả năng nghe tiếng Anh vừa nắm chắc 100% nội dung qua tiếng Việt."
+    }
+  ]
+},
+  {
   "route": "cam-nang/hop-song-ngu-viet-han-van-hoa-va-giai-phap-dich-thoi-gian-thuc",
   "lang": "vi",
   "title": "Họp Song Ngữ Việt - Hàn: Văn Hóa & Công Cụ Dịch Tức Thì | Laya Meet",

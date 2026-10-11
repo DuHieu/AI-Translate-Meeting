@@ -3,7 +3,7 @@ from playwright.async_api import async_playwright
 
 # THÔNG TIN ĐIỀN FORM (Bạn có thể cập nhật thông tin tại đây)
 FORM_DATA = {
-    "ho_ten": "",           # Ví dụ: "Dư Văn Hiếu"
+    "ho_ten": "",           # Ví dụ: "Nguyễn Văn A"
     "ngay_sinh": "",        # Định dạng: "dd/mm/yyyy" (ví dụ: "15/08/1998")
     "so_cccd": "",          # Số CCCD 12 số
     "dia_chi": "",          # Địa chỉ chi tiết (Số nhà, tên đường, thôn/xóm)

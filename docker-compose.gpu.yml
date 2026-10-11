@@ -1,0 +1,33 @@
+# docker-compose.gpu.yml - GPU-Accelerated Profile for LayaMeet On-Premise / Enterprise
+# Use with: docker compose -f docker-compose.production.yml -f docker-compose.gpu.yml up -d
+# Requirements: Host server with NVIDIA GPU, NVIDIA Driver >= 525, and nvidia-container-toolkit installed.
+
+services:
+  ai-service:
+    environment:
+      # Switch faster-whisper to CUDA with float16 / int8_float16
+      WHISPER_DEVICE: "cuda"
+      WHISPER_COMPUTE_TYPE: "float16"
+      WHISPER_MAX_CONCURRENT_TRANSCRIBES: "16"
+      # Preload model in GPU memory for sub-second first subtitle response
+      WHISPER_PRELOAD: "true"
+      # Scale WebSocket queues for high density concurrent rooms
+      WS_RATE_LIMIT_PER_MINUTE: "120"
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+
+  laya:
+    environment:
+      LAYA_DEVICE: "cuda"
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]

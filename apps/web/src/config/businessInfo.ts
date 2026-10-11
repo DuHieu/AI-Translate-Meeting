@@ -44,19 +44,19 @@ export interface BusinessInfo {
 }
 
 export const BUSINESS_INFO: BusinessInfo = {
-  ownerName: 'Dư Văn Hiếu',
-  companyName: 'LayaMeet AI - Dư Văn Hiếu',
+  ownerName: 'LayaMeet Team',
+  companyName: 'LayaMeet AI Platform',
   brandName: 'LayaMeet AI',
-  legalRepresentative: 'Dư Văn Hiếu',
-  taxId: '', // Hiện chưa có MST / Mã số doanh nghiệp
+  legalRepresentative: 'Ban Quản Trị LayaMeet',
+  taxId: '', // Mã số doanh nghiệp / ĐKDN
   taxIssuedDate: '',
   taxIssuedPlace: '',
-  address: '32 Phan Bội Châu, Phường 14, Quận Bình Thạnh, TP. Hồ Chí Minh',
-  officeAddress: '32 Phan Bội Châu, Phường 14, Quận Bình Thạnh, TP. Hồ Chí Minh',
-  hotline: '0336 061 654',
-  email: 'duvanhieu1@gmail.com',
-  supportEmail: 'duvanhieu1@gmail.com',
-  linkedinUrl: 'https://www.linkedin.com/in/hieudu/',
+  address: 'Quận Bình Thạnh, TP. Hồ Chí Minh, Việt Nam',
+  officeAddress: 'Quận Bình Thạnh, TP. Hồ Chí Minh, Việt Nam',
+  hotline: '1900 6868',
+  email: 'contact@layameet.com',
+  supportEmail: 'support@layameet.com',
+  linkedinUrl: '',
   workingHours: '08:00 - 18:00 (Thứ 2 - Thứ 7)',
   moitStatus: 'pending', // Đang trong quá trình nộp / duyệt hồ sơ tại Bộ Công Thương
   moitVerifyUrl: 'http://online.gov.vn/',

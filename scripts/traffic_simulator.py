@@ -2,11 +2,155 @@ import asyncio
 import random
 import sys
 import math
+import datetime
 
 # Ensure UTF-8 output encoding for Windows CMD / PowerShell
 sys.stdout.reconfigure(encoding='utf-8')
 
 from playwright.async_api import async_playwright
+
+# ==============================================================================
+# 📅 7-DAY DYNAMIC SCENARIO MATRIX (KỊCH BẢN THAY ĐỔI TỰ ĐỘNG MỖI NGÀY)
+# ==============================================================================
+DAY_SCENARIOS = {
+    0: {  # Thứ Hai (Monday)
+        "day_name": "Thứ Hai (Monday)",
+        "theme": "Khởi Động Doanh Nghiệp & Sprint Kickoff",
+        "persona": "Project Manager / CEO / Tech Leader",
+        "keywords": [
+            "laya meet họp trực tuyến",
+            "giải pháp họp song ngữ cho doanh nghiệp laya meet",
+            "nền tảng laya meet",
+            "laya meet quản lý cuộc họp",
+            "laya meet xuất biên bản họp action items",
+            "phần mềm họp trực tuyến laya meet",
+            "laya meet ram-only",
+            "laya meet"
+        ],
+        "target_pages": [
+            "https://layameet.com/pricing",
+            "https://layameet.com/features",
+            "https://layameet.com/contact"
+        ],
+        "focus_action": "Khám phá bảng giá & tư vấn On-Premise"
+    },
+    1: {  # Thứ Ba (Tuesday)
+        "day_name": "Thứ Ba (Tuesday)",
+        "theme": "Thị Trường Nhật Bản & BrSE IT Outsourcing",
+        "persona": "BrSE / Kỹ sư IT làm việc với khách hàng Nhật Bản",
+        "keywords": [
+            "họp song ngữ việt nhật laya meet",
+            "laya meet dịch phụ đề tiếng nhật",
+            "cẩm nang họp việt nhật laya meet",
+            "laya meet dịch tiếng nhật thời gian thực",
+            "họp trực tuyến tiếng nhật không cần phiên dịch laya meet",
+            "so sánh laya meet vs zoom tiếng nhật",
+            "layameet subtitle translation"
+        ],
+        "target_pages": [
+            "https://layameet.com/hop-song-ngu-tieng-nhat",
+            "https://layameet.com/cam-nang/hop-song-ngu-viet-nhat-khong-can-phien-dich-vien"
+        ],
+        "focus_action": "Đọc cẩm nang họp Việt - Nhật không cần phiên dịch"
+    },
+    2: {  # Thứ Tư (Wednesday)
+        "day_name": "Thứ Tư (Wednesday)",
+        "theme": "Thương Mại Trung Quốc & Đàm Phán Xưởng 1688",
+        "persona": "Chủ shop E-commerce / Nhà nhập khẩu hàng xưởng Trung Quốc",
+        "keywords": [
+            "họp video với xưởng trung quốc laya meet",
+            "đàm phán xưởng 1688 tiếng trung laya meet",
+            "laya meet dịch tiếng trung trực tiếp",
+            "họp trực tuyến việt trung laya meet",
+            "laya meet hop song ngu tieng trung",
+            "công cụ dịch họp xưởng trung quốc laya meet",
+            "layameet"
+        ],
+        "target_pages": [
+            "https://layameet.com/hop-song-ngu-tieng-trung",
+            "https://layameet.com/cam-nang/dam-phan-hop-video-xuo-ng-trung-quoc-khong-biet-tieng-trung"
+        ],
+        "focus_action": "Tìm hiểu giải pháp đàm phán trực tiếp với xưởng Trung Quốc"
+    },
+    3: {  # Thứ Năm (Thursday)
+        "day_name": "Thứ Năm (Thursday)",
+        "theme": "Thị Trường Hàn Quốc & Doanh Nghiệp FDI",
+        "persona": "Doanh nghiệp hợp tác Hàn Quốc / Kỹ sư công ty FDI",
+        "keywords": [
+            "họp song ngữ việt hàn laya meet",
+            "văn hóa họp hàn quốc ppalli ppalli laya meet",
+            "laya meet dịch tiếng hàn trực tiếp",
+            "phần mềm họp đối tác hàn quốc laya meet",
+            "laya meet hop song ngu tieng han",
+            "dịch phụ đề việt hàn thời gian thực laya meet"
+        ],
+        "target_pages": [
+            "https://layameet.com/hop-song-ngu-tieng-han",
+            "https://layameet.com/cam-nang/hop-song-ngu-viet-han-van-hoa-va-giai-phap-dich-thoi-gian-thuc"
+        ],
+        "focus_action": "Tìm hiểu văn hóa họp Ppalli-ppalli & phụ đề Việt - Hàn"
+    },
+    4: {  # Thứ Sáu (Friday)
+        "day_name": "Thứ Sáu (Friday)",
+        "theme": "Bảo Mật Doanh Nghiệp, RAM-Only & Air-Gapped",
+        "persona": "CTO / CISO / Security Architect / Ngân hàng",
+        "keywords": [
+            "laya meet ram only",
+            "bảo mật cuộc họp trực tuyến không lưu audio laya meet",
+            "laya meet on-premise air-gapped",
+            "họp trực tuyến bảo mật cao laya meet",
+            "laya meet zero raw audio storage",
+            "so sánh laya meet vs google meet bảo mật",
+            "laya meet vs zoom ai companion"
+        ],
+        "target_pages": [
+            "https://layameet.com/features",
+            "https://layameet.com/developers",
+            "https://layameet.com/so-sanh/layameet-vs-google-meet"
+        ],
+        "focus_action": "Kiểm tra kiến trúc RAM-only & tài liệu Developers API"
+    },
+    5: {  # Thứ Bảy (Saturday)
+        "day_name": "Thứ Bảy (Saturday)",
+        "theme": "Kỹ Sư IT Toàn Cầu & Đọc Cẩm Nang Kỹ Năng",
+        "persona": "Lập trình viên Remote / Kỹ sư IT họp khách quốc tế",
+        "keywords": [
+            "bí quyết họp tiếng anh cho kỹ sư it laya meet",
+            "laya meet real time meeting translation",
+            "benchmark faster whisper laya meet",
+            "laya meet vs zoom ai companion",
+            "layameet subtitle translation",
+            "laya meet dịch tiếng anh thời gian thực"
+        ],
+        "target_pages": [
+            "https://layameet.com/hop-song-ngu-tieng-anh",
+            "https://layameet.com/cam-nang/bi-quyet-hop-tieng-anh-cho-ky-su-it-tu-tin-trao-doi-voi-khach-quoc-te",
+            "https://layameet.com/cam-nang/ket-qua-benchmark-ai-audio-lid-1000-voice-xau-ngap-ngung"
+        ],
+        "focus_action": "Đọc cẩm nang họp tiếng Anh cho kỹ sư & benchmark AI"
+    },
+    6: {  # Chủ Nhật (Sunday)
+        "day_name": "Chủ Nhật (Sunday)",
+        "theme": "Trải Nghiệm Tự Do & Khám Phá Cẩm Nang Laya Meet",
+        "persona": "Người dùng tự do / Sinh viên / Khám phá công nghệ mới",
+        "keywords": [
+            "laya meet",
+            "layameet",
+            "layameet.com",
+            "phần mềm họp trực tuyến miễn phí laya meet",
+            "laya meet cẩm nang",
+            "hướng dẫn họp song ngữ laya meet",
+            "laya meet ai",
+            "ứng dụng laya meet"
+        ],
+        "target_pages": [
+            "https://layameet.com/cam-nang",
+            "https://layameet.com/faq",
+            "https://layameet.com"
+        ],
+        "focus_action": "Dạo đọc thư viện cẩm nang & trang câu hỏi thường gặp FAQ"
+    }
+}
 
 # ==============================================================================
 # 🎯 DYNAMIC KEYWORD GENERATOR (ĐẨY TOP 1 TÌM KIẾM GOOGLE)
@@ -46,7 +190,17 @@ GLOBAL_QUERIES = [
 PREFIXES = ["phần mềm", "nền tảng", "công cụ", "ứng dụng", "giải pháp", "hướng dẫn"]
 SUFFIXES = ["cho doanh nghiệp", "thời gian thực", "độ trễ thấp", "ai", "miễn phí"]
 
+def get_today_scenario():
+    weekday = datetime.datetime.now().weekday()
+    return DAY_SCENARIOS.get(weekday, DAY_SCENARIOS[0])
+
 def generate_random_keyword() -> str:
+    today_scenario = get_today_scenario()
+    # 65% chance: Pick from today's targeted scenario
+    if random.random() < 0.65 and today_scenario["keywords"]:
+        return random.choice(today_scenario["keywords"])
+    
+    # 35% chance: Pick general / brand / global queries for natural organic diversity
     category = random.choices(["brand", "feature", "global", "combo"], weights=[35, 40, 15, 10])[0]
     if category == "brand":
         return random.choice(CORE_BRAND_QUERIES)
@@ -55,7 +209,6 @@ def generate_random_keyword() -> str:
     elif category == "global":
         return random.choice(GLOBAL_QUERIES)
     else:
-        # Dynamic combo
         prefix = random.choice(PREFIXES)
         brand = random.choice(["laya meet", "layameet"])
         topic = random.choice(["họp song ngữ", "dịch trực tiếp", "phụ đề ai", "họp trực tuyến"])
@@ -301,7 +454,22 @@ async def simulate_organic_search(keyword: str, headless: bool = False):
                 print("  🌐 Thực hiện truy cập trực tiếp layameet.com với Google Referrer để kích hoạt tín hiệu Brand Search...")
                 await page.goto("https://layameet.com", referer="https://www.google.com/", wait_until="domcontentloaded")
                 await human_smooth_scroll(page, steps=4)
-                await asyncio.sleep(random.uniform(6.0, 10.0))
+                await asyncio.sleep(random.uniform(5.0, 8.0))
+
+                # Dynamic Deep Exploration matching Today's Scenario
+                today_scenario = get_today_scenario()
+                if today_scenario.get("target_pages") and random.random() < 0.75:
+                    target_sub = random.choice(today_scenario["target_pages"])
+                    print(f"  👉 [Kịch bản {today_scenario['day_name']}] Tương tác sâu trang chuyên biệt: {target_sub}...")
+                    try:
+                        await page.goto(target_sub, referer="https://layameet.com/", wait_until="domcontentloaded")
+                        await human_smooth_scroll(page, steps=random.randint(3, 5))
+                        dwell = random.randint(8, 15)
+                        print(f"     Đọc nội dung chuyên đề trong {dwell} giây...")
+                        await asyncio.sleep(dwell)
+                    except Exception:
+                        pass
+                
                 print("  ✅ Đã ghi nhận 1 phiên truy cập Brand Referral từ Google.")
                 
         except Exception as e:
@@ -333,8 +501,12 @@ async def main():
         elif arg.isdigit():
             count = int(arg)
             
+    today_scenario = get_today_scenario()
     print("=" * 70)
     print("🔥 LAYAMEET GOOGLE SEARCH TOP 1 RANK BOOSTER & ORGANIC TRAFFIC TOOL 🔥")
+    print(f"📅 [Kịch bản hôm nay]: {today_scenario['day_name']} — {today_scenario['theme']}")
+    print(f"🎭 Persona: {today_scenario['persona']}")
+    print(f"🎯 Hành vi mục tiêu: {today_scenario['focus_action']}")
     print(f"Chế độ: {'Ẩn danh (Headless)' if headless else 'Trình duyệt GUI thật (Hiển thị màn hình)'}")
     print(f"Số lượng truy vấn ngẫu nhiên trong phiên: {count} lượt")
     print("=" * 70)

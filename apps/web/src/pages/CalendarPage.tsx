@@ -65,6 +65,9 @@ const CALENDAR_COPY = {
     filterByDay: 'Lọc theo ngày đã chọn',
     showAll: 'Xem tất cả',
     clickToEditHint: 'Nhấp vào cuộc họp để chỉnh sửa trực tiếp',
+    agendaForDay: 'Lịch trình ngày',
+    noMeetingsToday: 'Không có cuộc họp nào trong ngày này.',
+    scheduleForDayBtn: 'Đặt lịch cho ngày này',
   },
   en: {
     breadcrumb: 'Meeting Calendar',
@@ -95,6 +98,9 @@ const CALENDAR_COPY = {
     filterByDay: 'Filtered by selected day',
     showAll: 'Show All',
     clickToEditHint: 'Click any meeting to edit directly on calendar',
+    agendaForDay: 'Schedule for',
+    noMeetingsToday: 'No meetings scheduled for this day.',
+    scheduleForDayBtn: 'Schedule for this day',
   },
   ja: {
     breadcrumb: '会議カレンダー',
@@ -125,6 +131,9 @@ const CALENDAR_COPY = {
     filterByDay: '選択した日付で絞り込み',
     showAll: 'すべて表示',
     clickToEditHint: '会議をクリックして直接編集できます',
+    agendaForDay: '日の予定',
+    noMeetingsToday: 'この日の予定はありません。',
+    scheduleForDayBtn: 'この日に予約',
   },
   ko: {
     breadcrumb: '회의 캘린더',
@@ -155,6 +164,9 @@ const CALENDAR_COPY = {
     filterByDay: '선택한 날짜 필터링',
     showAll: '전체 보기',
     clickToEditHint: '회의를 클릭하여 바로 편집할 수 있습니다',
+    agendaForDay: '일정',
+    noMeetingsToday: '이 날짜에 예정된 회의가 없습니다.',
+    scheduleForDayBtn: '이 날짜로 예약',
   },
   zh: {
     breadcrumb: '会议日程日历',
@@ -185,6 +197,9 @@ const CALENDAR_COPY = {
     filterByDay: '按选中日期筛选',
     showAll: '查看全部',
     clickToEditHint: '点击会议卡片可直接编辑',
+    agendaForDay: '当日日程',
+    noMeetingsToday: '当天暂无安排的会议。',
+    scheduleForDayBtn: '安排此日会议',
   },
   fr: {
     breadcrumb: 'Calendrier des réunions',
@@ -215,6 +230,9 @@ const CALENDAR_COPY = {
     filterByDay: 'Filtré par date sélectionnée',
     showAll: 'Tout afficher',
     clickToEditHint: 'Cliquez sur une réunion pour la modifier',
+    agendaForDay: 'Programme du',
+    noMeetingsToday: 'Aucune réunion prévue pour ce jour.',
+    scheduleForDayBtn: 'Planifier pour ce jour',
   },
   de: {
     breadcrumb: 'Meeting-Kalender',
@@ -245,6 +263,9 @@ const CALENDAR_COPY = {
     filterByDay: 'Nach gewähltem Datum gefiltert',
     showAll: 'Alle anzeigen',
     clickToEditHint: 'Klicken Sie auf ein Meeting zum direkten Bearbeiten',
+    agendaForDay: 'Tagesplan für',
+    noMeetingsToday: 'Keine Meetings für diesen Tag geplant.',
+    scheduleForDayBtn: 'Für diesen Tag planen',
   },
   es: {
     breadcrumb: 'Calendario de reuniones',
@@ -275,6 +296,9 @@ const CALENDAR_COPY = {
     filterByDay: 'Filtrado por día seleccionado',
     showAll: 'Mostrar todo',
     clickToEditHint: 'Haga clic en una reunión para editarla',
+    agendaForDay: 'Agenda del día',
+    noMeetingsToday: 'No hay reuniones programadas para este día.',
+    scheduleForDayBtn: 'Programar para este día',
   },
 };
 
@@ -411,6 +435,19 @@ export const CalendarPage: React.FC<CalendarPageProps> = ({ forcedLanguage }) =>
 
     return result;
   }, [meetings, selectedDate, searchQuery]);
+
+  // Active mobile date: selectedDate or today
+  const activeMobileDate = useMemo(() => {
+    return selectedDate || new Date();
+  }, [selectedDate]);
+
+  const activeMobileDateKey = useMemo(() => {
+    return `${activeMobileDate.getFullYear()}-${activeMobileDate.getMonth()}-${activeMobileDate.getDate()}`;
+  }, [activeMobileDate]);
+
+  const activeMobileDayMeetings = useMemo(() => {
+    return meetingsByDateMap.get(activeMobileDateKey) || [];
+  }, [meetingsByDateMap, activeMobileDateKey]);
 
   const handleCopyLink = async (code: string) => {
     const inviteUrl = `${window.location.origin}/prejoin/${code.toUpperCase()}`;
@@ -624,123 +661,313 @@ export const CalendarPage: React.FC<CalendarPageProps> = ({ forcedLanguage }) =>
 
         {/* ── Main Workspace: Full Month Grid or Detailed List ── */}
         {viewMode === 'grid' ? (
-          /* ── FULL-WIDTH INTERACTIVE EDITABLE CALENDAR GRID ── */
-          <div className="rounded-3xl bg-white/80 dark:bg-[#141519]/80 border border-zinc-200/80 dark:border-[#262832]/80 p-4 sm:p-6 shadow-sm backdrop-blur-md space-y-4">
-            {/* Weekday Names Header (Mon to Sun) */}
-            <div className="grid grid-cols-7 gap-1 sm:gap-2 text-center text-xs font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider py-1 border-b border-zinc-100 dark:border-zinc-800/80">
-              {copy.weekdays.map((day) => (
-                <div key={day} className="py-1">
-                  {day}
-                </div>
-              ))}
-            </div>
+          <>
+            {/* ── DESKTOP GRID VIEW (md+) ── */}
+            <div className="hidden md:block rounded-3xl bg-white/80 dark:bg-[#141519]/80 border border-zinc-200/80 dark:border-[#262832]/80 p-4 sm:p-6 shadow-sm backdrop-blur-md space-y-4">
+              {/* Weekday Names Header (Mon to Sun) */}
+              <div className="grid grid-cols-7 gap-1 sm:gap-2 text-center text-xs font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider py-1 border-b border-zinc-100 dark:border-zinc-800/80">
+                {copy.weekdays.map((day) => (
+                  <div key={day} className="py-1">
+                    {day}
+                  </div>
+                ))}
+              </div>
 
-            {/* Monthly Calendar Cells Grid */}
-            <div className="grid grid-cols-7 gap-1.5 sm:gap-2.5">
-              {calendarDays.map((date, idx) => {
-                if (!date) {
+              {/* Monthly Calendar Cells Grid */}
+              <div className="grid grid-cols-7 gap-1.5 sm:gap-2.5">
+                {calendarDays.map((date, idx) => {
+                  if (!date) {
+                    return (
+                      <div
+                        key={`empty-${idx}`}
+                        className="min-h-[110px] sm:min-h-[135px] rounded-2xl bg-zinc-50/40 dark:bg-[#181920]/30 border border-transparent"
+                      />
+                    );
+                  }
+
+                  const dateKey = `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
+                  const dayMeetings = meetingsByDateMap.get(dateKey) || [];
+                  const isToday = new Date().toDateString() === date.toDateString();
+                  const isSelected =
+                    selectedDate &&
+                    date.getFullYear() === selectedDate.getFullYear() &&
+                    date.getMonth() === selectedDate.getMonth() &&
+                    date.getDate() === selectedDate.getDate();
+
                   return (
                     <div
-                      key={`empty-${idx}`}
-                      className="min-h-[110px] sm:min-h-[135px] rounded-2xl bg-zinc-50/40 dark:bg-[#181920]/30 border border-transparent"
-                    />
-                  );
-                }
-
-                const dateKey = `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
-                const dayMeetings = meetingsByDateMap.get(dateKey) || [];
-                const isToday = new Date().toDateString() === date.toDateString();
-                const isSelected =
-                  selectedDate &&
-                  date.getFullYear() === selectedDate.getFullYear() &&
-                  date.getMonth() === selectedDate.getMonth() &&
-                  date.getDate() === selectedDate.getDate();
-
-                return (
-                  <div
-                    key={dateKey}
-                    onClick={() => openQuickAddForDate(date)}
-                    className={`group relative min-h-[110px] sm:min-h-[135px] rounded-2xl p-2 sm:p-2.5 transition-all flex flex-col justify-between border cursor-pointer ${
-                      isSelected
-                        ? 'bg-blue-50/80 dark:bg-blue-950/20 border-blue-500 ring-2 ring-blue-500/20'
-                        : isToday
-                        ? 'bg-white dark:bg-[#181922] border-blue-500/50 shadow-xs'
-                        : 'bg-white/60 dark:bg-[#171821]/60 hover:bg-white dark:hover:bg-[#1c1d27] border-zinc-200/70 dark:border-[#242632]'
-                    }`}
-                  >
-                    {/* Day Cell Top Header: Date Number + Quick Add '+' Button */}
-                    <div className="flex items-center justify-between">
-                      <span
-                        className={`text-xs font-bold w-6 h-6 rounded-full flex items-center justify-center transition ${
-                          isToday
-                            ? 'bg-blue-600 text-white shadow-xs'
-                            : 'text-zinc-700 dark:text-zinc-300'
-                        }`}
-                      >
-                        {date.getDate()}
-                      </span>
-
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          openQuickAddForDate(date);
-                        }}
-                        className="opacity-0 group-hover:opacity-100 p-1 rounded-lg text-zinc-500 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-500/10 transition cursor-pointer"
-                        title={copy.quickAdd}
-                      >
-                        <Plus className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-
-                    {/* Day Cell Events List (Meeting Chips) */}
-                    <div className="mt-1.5 space-y-1.5 flex-1 overflow-hidden">
-                      {dayMeetings.slice(0, 3).map((m) => (
-                        <div
-                          key={m.meetingCode}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setSelectedMeetingToEdit(m);
-                          }}
-                          className="w-full text-left p-1.5 rounded-xl text-xs font-medium transition-all group/chip bg-blue-500/10 hover:bg-blue-500/20 dark:bg-blue-950/40 dark:hover:bg-blue-900/50 border border-blue-500/20 dark:border-blue-800/60 shadow-2xs cursor-pointer overflow-hidden"
-                          title={`${m.name} (${formatMeetingTime(m.scheduledStartAt)}) - ${copy.clickToEditHint}`}
+                      key={dateKey}
+                      onClick={() => openQuickAddForDate(date)}
+                      className={`group relative min-h-[110px] sm:min-h-[135px] rounded-2xl p-2 sm:p-2.5 transition-all flex flex-col justify-between border cursor-pointer ${
+                        isSelected
+                          ? 'bg-blue-50/80 dark:bg-blue-950/20 border-blue-500 ring-2 ring-blue-500/20'
+                          : isToday
+                          ? 'bg-white dark:bg-[#181922] border-blue-500/50 shadow-xs'
+                          : 'bg-white/60 dark:bg-[#171821]/60 hover:bg-white dark:hover:bg-[#1c1d27] border-zinc-200/70 dark:border-[#242632]'
+                      }`}
+                    >
+                      {/* Day Cell Top Header: Date Number + Quick Add '+' Button */}
+                      <div className="flex items-center justify-between">
+                        <span
+                          className={`text-xs font-bold w-6 h-6 rounded-full flex items-center justify-center transition ${
+                            isToday
+                              ? 'bg-blue-600 text-white shadow-xs'
+                              : 'text-zinc-700 dark:text-zinc-300'
+                          }`}
                         >
-                          <div className="flex items-center justify-between gap-1 mb-0.5">
-                            <span className="font-mono text-[10px] text-blue-600 dark:text-blue-400 font-bold shrink-0">
-                              {formatMeetingTime(m.scheduledStartAt)}
-                            </span>
-                            <div className="flex items-center gap-0.5 text-[10px] shrink-0 opacity-80 group-hover/chip:opacity-100">
-                              <CountryFlag code={m.defaultSpokenLanguage || 'vi'} size="xs" />
-                              <span className="text-zinc-400 text-[9px]">⇄</span>
-                              <CountryFlag code={m.defaultTargetLanguage || 'en'} size="xs" />
-                            </div>
-                          </div>
-                          <div className="text-zinc-900 dark:text-zinc-100 font-semibold truncate text-[11px] leading-tight flex items-center justify-between">
-                            <span className="truncate">{m.name || 'LayaMeet'}</span>
-                            <Edit3 className="w-2.5 h-2.5 opacity-0 group-hover/chip:opacity-100 text-blue-500 shrink-0 ml-1" />
-                          </div>
-                        </div>
-                      ))}
+                          {date.getDate()}
+                        </span>
 
-                      {dayMeetings.length > 3 && (
                         <button
                           type="button"
                           onClick={(e) => {
                             e.stopPropagation();
-                            setSelectedDate(date);
-                            setViewMode('list');
+                            openQuickAddForDate(date);
                           }}
-                          className="w-full text-center py-0.5 rounded-md text-[10px] font-semibold text-blue-600 dark:text-blue-400 hover:bg-blue-500/10 transition cursor-pointer"
+                          className="opacity-0 group-hover:opacity-100 p-1 rounded-lg text-zinc-500 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-500/10 transition cursor-pointer"
+                          title={copy.quickAdd}
                         >
-                          {copy.moreMeetings(dayMeetings.length - 3)}
+                          <Plus className="w-3.5 h-3.5" />
                         </button>
+                      </div>
+
+                      {/* Day Cell Events List (Meeting Chips) */}
+                      <div className="mt-1.5 space-y-1.5 flex-1 overflow-hidden">
+                        {dayMeetings.slice(0, 3).map((m) => (
+                          <div
+                            key={m.meetingCode}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedMeetingToEdit(m);
+                            }}
+                            className="w-full text-left p-1.5 rounded-xl text-xs font-medium transition-all group/chip bg-blue-500/10 hover:bg-blue-500/20 dark:bg-blue-950/40 dark:hover:bg-blue-900/50 border border-blue-500/20 dark:border-blue-800/60 shadow-2xs cursor-pointer overflow-hidden"
+                            title={`${m.name} (${formatMeetingTime(m.scheduledStartAt)}) - ${copy.clickToEditHint}`}
+                          >
+                            <div className="flex items-center justify-between gap-1 mb-0.5">
+                              <span className="font-mono text-[10px] text-blue-600 dark:text-blue-400 font-bold shrink-0">
+                                {formatMeetingTime(m.scheduledStartAt)}
+                              </span>
+                              <div className="flex items-center gap-0.5 text-[10px] shrink-0 opacity-80 group-hover/chip:opacity-100">
+                                <CountryFlag code={m.defaultSpokenLanguage || 'vi'} size="xs" />
+                                <span className="text-zinc-400 text-[9px]">⇄</span>
+                                <CountryFlag code={m.defaultTargetLanguage || 'en'} size="xs" />
+                              </div>
+                            </div>
+                            <div className="text-zinc-900 dark:text-zinc-100 font-semibold truncate text-[11px] leading-tight flex items-center justify-between">
+                              <span className="truncate">{m.name || 'LayaMeet'}</span>
+                              <Edit3 className="w-2.5 h-2.5 opacity-0 group-hover/chip:opacity-100 text-blue-500 shrink-0 ml-1" />
+                            </div>
+                          </div>
+                        ))}
+
+                        {dayMeetings.length > 3 && (
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedDate(date);
+                              setViewMode('list');
+                            }}
+                            className="w-full text-center py-0.5 rounded-md text-[10px] font-semibold text-blue-600 dark:text-blue-400 hover:bg-blue-500/10 transition cursor-pointer"
+                          >
+                            {copy.moreMeetings(dayMeetings.length - 3)}
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* ── MOBILE CALENDAR EXPERIENCE (< md): Compact Matrix + Selected Day Agenda ── */}
+            <div className="block md:hidden space-y-4">
+              {/* Compact Month Matrix */}
+              <div className="rounded-2xl bg-white dark:bg-[#141519] border border-zinc-200/80 dark:border-[#262832]/80 p-3 shadow-xs">
+                {/* Weekday Names Header */}
+                <div className="grid grid-cols-7 gap-1 text-center text-[11px] font-bold text-zinc-500 dark:text-zinc-400 uppercase py-1 border-b border-zinc-100 dark:border-zinc-800/80">
+                  {copy.weekdays.map((day) => (
+                    <div key={day} className="py-0.5">
+                      {day}
+                    </div>
+                  ))}
+                </div>
+
+                {/* Calendar Days Matrix */}
+                <div className="grid grid-cols-7 gap-1 pt-2">
+                  {calendarDays.map((date, idx) => {
+                    if (!date) {
+                      return <div key={`empty-mob-${idx}`} className="h-11 rounded-xl" />;
+                    }
+
+                    const dateKey = `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
+                    const dayMeetings = meetingsByDateMap.get(dateKey) || [];
+                    const isToday = new Date().toDateString() === date.toDateString();
+                    const isSelected = activeMobileDate.toDateString() === date.toDateString();
+
+                    return (
+                      <button
+                        key={`mob-${dateKey}`}
+                        type="button"
+                        onClick={() => setSelectedDate(date)}
+                        className={`h-11 rounded-xl flex flex-col items-center justify-center transition-all relative cursor-pointer ${
+                          isSelected
+                            ? 'bg-blue-600 text-white shadow-md shadow-blue-500/25 scale-[1.02]'
+                            : isToday
+                            ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400 font-bold border border-blue-500/30'
+                            : 'text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800/60'
+                        }`}
+                      >
+                        <span className="text-xs font-semibold leading-none">
+                          {date.getDate()}
+                        </span>
+
+                        {/* Meeting indicator dots */}
+                        {dayMeetings.length > 0 && (
+                          <div className="flex items-center gap-0.5 mt-1">
+                            {dayMeetings.slice(0, 3).map((_, i) => (
+                              <span
+                                key={i}
+                                className={`w-1 h-1 rounded-full ${
+                                  isSelected
+                                    ? 'bg-white'
+                                    : 'bg-blue-500 dark:bg-blue-400'
+                                }`}
+                              />
+                            ))}
+                          </div>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Interactive Agenda for Selected Day on Mobile */}
+              <div className="rounded-2xl bg-white dark:bg-[#141519] border border-zinc-200/80 dark:border-[#262832]/80 p-4 shadow-xs space-y-3">
+                <div className="flex items-center justify-between pb-2 border-b border-zinc-100 dark:border-zinc-800">
+                  <div className="min-w-0">
+                    <h3 className="text-[11px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
+                      {copy.agendaForDay}
+                    </h3>
+                    <div className="text-sm font-bold text-zinc-900 dark:text-white capitalize truncate">
+                      {activeMobileDate.toLocaleDateString(
+                        currentLang === 'ja'
+                          ? 'ja-JP'
+                          : currentLang === 'en'
+                          ? 'en-US'
+                          : 'vi-VN',
+                        { weekday: 'short', day: '2-digit', month: '2-digit', year: 'numeric' },
                       )}
                     </div>
                   </div>
-                );
-              })}
+
+                  <div className="flex items-center gap-2 shrink-0">
+                    <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400">
+                      {activeMobileDayMeetings.length} {copy.meetingUnit}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => openQuickAddForDate(activeMobileDate)}
+                      className="p-1.5 rounded-lg bg-blue-600 text-white hover:bg-blue-500 transition cursor-pointer"
+                      title={copy.quickAdd}
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                </div>
+
+                {/* Meetings List for Selected Day */}
+                {activeMobileDayMeetings.length === 0 ? (
+                  <div className="py-6 text-center space-y-2">
+                    <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                      {copy.noMeetingsToday}
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => openQuickAddForDate(activeMobileDate)}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-500/10 text-blue-600 dark:text-blue-400 hover:bg-blue-500/20 text-xs font-semibold transition cursor-pointer"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                      <span>{copy.scheduleForDayBtn}</span>
+                    </button>
+                  </div>
+                ) : (
+                  <div className="space-y-2.5">
+                    {activeMobileDayMeetings.map((m) => (
+                      <div
+                        key={m.meetingCode}
+                        className="p-3.5 rounded-xl bg-zinc-50/70 dark:bg-[#1a1b22] border border-zinc-200/70 dark:border-zinc-800 space-y-2.5"
+                      >
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-2 text-xs">
+                              <span className="font-bold text-blue-600 dark:text-blue-400 flex items-center gap-1">
+                                <Clock className="w-3 h-3" />
+                                <span>{formatMeetingTime(m.scheduledStartAt)}</span>
+                              </span>
+                              <span className="font-mono text-[11px] px-1.5 py-0.5 rounded bg-zinc-200/80 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300">
+                                {m.meetingCode}
+                              </span>
+                            </div>
+                            <h4 className="text-sm font-bold text-zinc-900 dark:text-white mt-1 truncate">
+                              {m.name || 'LayaMeet'}
+                            </h4>
+                          </div>
+
+                          <div className="flex items-center gap-1 shrink-0 px-2 py-1 rounded-md bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-xs">
+                            <CountryFlag code={m.defaultSpokenLanguage || 'vi'} size="xs" />
+                            <span className="text-[10px] text-zinc-400">⇄</span>
+                            <CountryFlag code={m.defaultTargetLanguage || 'en'} size="xs" />
+                          </div>
+                        </div>
+
+                        {m.agenda && (
+                          <p className="text-xs text-zinc-500 dark:text-zinc-400 line-clamp-2 italic">
+                            {m.agenda}
+                          </p>
+                        )}
+
+                        <div className="flex items-center justify-between gap-2 pt-2 border-t border-zinc-200/60 dark:border-zinc-800/80">
+                          <div className="flex items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={() => setSelectedMeetingToEdit(m)}
+                              className="px-3 py-1.5 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-xs font-medium text-zinc-700 dark:text-zinc-300 flex items-center gap-1.5 cursor-pointer"
+                            >
+                              <Edit3 className="w-3.5 h-3.5" />
+                              <span>{copy.editMeeting}</span>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleCopyLink(m.meetingCode)}
+                              className="p-2 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 cursor-pointer"
+                              title={copy.copyLink}
+                            >
+                              {copiedCode === m.meetingCode ? (
+                                <Check className="w-3.5 h-3.5 text-emerald-500" />
+                              ) : (
+                                <Copy className="w-3.5 h-3.5" />
+                              )}
+                            </button>
+                          </div>
+
+                          <button
+                            type="button"
+                            onClick={() => navigate(`/prejoin/${m.meetingCode}`)}
+                            className="px-4 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold flex items-center gap-1.5 cursor-pointer shadow-xs"
+                          >
+                            <span>{copy.joinNow}</span>
+                            <ArrowRight className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
+          </>
         ) : (
           /* ── DETAILED SCHEDULE TIMELINE LIST VIEW ── */
           <div className="space-y-4">
@@ -844,7 +1071,7 @@ export const CalendarPage: React.FC<CalendarPageProps> = ({ forcedLanguage }) =>
                       </div>
 
                       {/* Actions Toolbar */}
-                      <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-zinc-100 dark:border-white/[0.06]">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-3 border-t border-zinc-100 dark:border-white/[0.06]">
                         <div className="flex flex-wrap items-center gap-2">
                           {/* Edit button */}
                           <button
@@ -897,7 +1124,7 @@ export const CalendarPage: React.FC<CalendarPageProps> = ({ forcedLanguage }) =>
                         <button
                           type="button"
                           onClick={() => navigate(`/prejoin/${m.meetingCode}`)}
-                          className="px-4 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-xs sm:text-sm font-semibold flex items-center gap-1.5 transition cursor-pointer shadow-xs"
+                          className="w-full sm:w-auto justify-center px-4 py-2 sm:py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-xs sm:text-sm font-semibold flex items-center gap-1.5 transition cursor-pointer shadow-xs"
                         >
                           <span>{copy.joinNow}</span>
                           <ArrowRight className="w-4 h-4" />
