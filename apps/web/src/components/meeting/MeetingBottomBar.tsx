@@ -116,12 +116,16 @@ export const MeetingBottomBar: React.FC<MeetingBottomBarProps> = (props) => {
           </span>
         )}
       </div>
-      <span>{label}</span>
+      <span className="meeting-control-label">{label}</span>
     </button>
   );
 
   const menuAction = (label: string, icon: React.ReactNode, callback: () => void, active?: boolean, disabled = false) => (
-    <button type="button" className="meeting-menu-action" aria-label={label} aria-pressed={active} disabled={disabled} onClick={callback}>{icon}<span>{label}</span>{active && <span className="ml-auto text-sky-300 font-medium">Đang bật</span>}</button>
+    <button type="button" className="meeting-menu-action" aria-label={label} aria-pressed={active} disabled={disabled} onClick={callback}>
+      <span className="shrink-0 text-sky-400">{icon}</span>
+      <span className="truncate flex-1">{label}</span>
+      {active && <span className="ml-auto text-sky-300 font-medium text-xs shrink-0">Đang bật</span>}
+    </button>
   );
 
   return (
@@ -173,7 +177,7 @@ export const MeetingBottomBar: React.FC<MeetingBottomBarProps> = (props) => {
           )}
           {control('Phụ đề', <Subtitles />, onToggleSubtitlePanel, props.isCaptionsActive, false, false, null, 'Bật/Tắt phụ đề AI trực tiếp (C)')}
           {control('Ngôn ngữ', <Languages />, props.onOpenLanguage, false, false, false, null, 'Đổi ngôn ngữ nhận phụ đề & dịch thuật')}
-          {control('Thêm', <MoreHorizontal />, () => setMenu('more'), menu === 'more', false, false, null, 'Tùy chọn khác')}
+          {control('Thêm', <MoreHorizontal />, () => setMenu('more'), menu === 'more', false, false, props.unreadChatCount || null, 'Tùy chọn khác')}
           {control('Rời', <PhoneOff />, props.onLeaveRoom, false, false, true, null, 'Rời phòng họp')}
         </div>
 
