@@ -4,11 +4,17 @@ import '../api/api_client.dart';
 import '../api/meeting_api.dart';
 import '../api/websocket_client.dart';
 import '../constants/app_config.dart';
+import '../utils/permission_service.dart';
 import '../utils/secure_storage.dart';
 
 /// Provider for secure storage
 final secureStorageProvider = Provider<SecureStorage>((ref) {
   return SecureStorage();
+});
+
+/// Provider for camera/microphone permission helpers
+final permissionServiceProvider = Provider<PermissionService>((ref) {
+  return PermissionService();
 });
 
 /// Provider for API client
@@ -24,15 +30,10 @@ final meetingApiProvider = Provider<MeetingApi>((ref) {
   return MeetingApi(ref.watch(apiClientProvider));
 });
 
-/// Provider for WebSocket client
-final websocketClientProvider = Provider<WebSocketClient>((ref) {
+/// Provider for subtitle realtime socket
+final websocketClientProvider = Provider<SubtitleSocket>((ref) {
   final client = WebSocketClient();
-  
-  // Cleanup on dispose
-  ref.onDispose(() {
-    client.dispose();
-  });
-  
+  ref.onDispose(client.dispose);
   return client;
 });
 

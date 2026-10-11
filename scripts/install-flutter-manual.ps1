@@ -98,4 +98,4 @@ Write-Host "2. Run: flutter doctor" -ForegroundColor White
 Write-Host "3. Accept licenses: flutter doctor --android-licenses" -ForegroundColor White
 Write-Host "4. Create project:" -ForegroundColor White
 Write-Host "   cd D:\MyProject\AI-Translate-Meeting\apps" -ForegroundColor Green
-Write-Host "   flutter create --org com.vimeet --project-name mobile mobile" -ForegroundColor Green
+Write-Host "   flutter create --org com.layameet --project-name mobile ." -ForegroundColor Green

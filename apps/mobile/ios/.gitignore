@@ -32,3 +32,9 @@ Runner/GeneratedPluginRegistrant.*
 !default.mode2v3
 !default.pbxuser
 !default.perspectivev3
+
+# Local signing / Firebase (never commit secrets)
+ExportOptions.plist
+Runner/GoogleService-Info.plist
+GoogleService-Info.plist
+

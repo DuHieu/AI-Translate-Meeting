@@ -1,0 +1,82 @@
+name: Mobile Release
+
+# Builds Android AAB on tags mobile-v* (signed when keystore secrets exist).
+on:
+  push:
+    tags:
+      - 'mobile-v*'
+  workflow_dispatch:
+
+jobs:
+  android-release:
+    name: Build Android AAB
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/mobile
+    env:
+      API_BASE_URL: ${{ vars.API_BASE_URL }}
+      LIVEKIT_URL: ${{ vars.LIVEKIT_URL }}
+      SUBTITLE_WS_URL: ${{ vars.SUBTITLE_WS_URL }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.24.0'
+          channel: stable
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: zulu
+          java-version: '17'
+
+      - name: Default dart-define endpoints
+        run: |
+          echo "API_BASE_URL=${API_BASE_URL:-https://api.example.com}" >> "$GITHUB_ENV"
+          echo "LIVEKIT_URL=${LIVEKIT_URL:-wss://livekit.example.com}" >> "$GITHUB_ENV"
+          echo "SUBTITLE_WS_URL=${SUBTITLE_WS_URL:-wss://ai.example.com/ws/transcribe}" >> "$GITHUB_ENV"
+
+      - name: Decode upload keystore
+        id: keystore
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_STORE_PASSWORD: ${{ secrets.ANDROID_STORE_PASSWORD }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+        run: |
+          if [ -z "${ANDROID_KEYSTORE_BASE64}" ]; then
+            echo "present=false" >> "$GITHUB_OUTPUT"
+            echo "No ANDROID_KEYSTORE_BASE64 — release AAB will use debug signing (smoke only)."
+            exit 0
+          fi
+          echo "$ANDROID_KEYSTORE_BASE64" | base64 -d > android/upload-keystore.jks
+          {
+            echo "storePassword=${ANDROID_STORE_PASSWORD}"
+            echo "keyPassword=${ANDROID_KEY_PASSWORD}"
+            echo "keyAlias=${ANDROID_KEY_ALIAS}"
+            echo "storeFile=upload-keystore.jks"
+          } > android/key.properties
+          echo "present=true" >> "$GITHUB_OUTPUT"
+
+      - name: Pub get
+        run: flutter pub get
+
+      - name: Analyze
+        run: flutter analyze
+
+      - name: Test
+        run: flutter test
+
+      - name: Build App Bundle
+        run: |
+          flutter build appbundle --release \
+            --dart-define=API_BASE_URL="${API_BASE_URL}" \
+            --dart-define=LIVEKIT_URL="${LIVEKIT_URL}" \
+            --dart-define=SUBTITLE_WS_URL="${SUBTITLE_WS_URL}"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: layameet-android-release-aab
+          path: apps/mobile/build/app/outputs/bundle/release/app-release.aab
+          retention-days: 14

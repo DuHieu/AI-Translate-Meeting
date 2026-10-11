@@ -1,13 +1,15 @@
+# Optional: only runs if this repo is also on GitHub.
+# Primary CI is GitLab (.gitlab-ci.yml).
 name: Mobile CI
 
 on:
   push:
-    branches: [mobile-dev, main]
+    branches: [mobile-dev, main, master]
     paths:
       - 'apps/mobile/**'
       - '.github/workflows/mobile-ci.yml'
   pull_request:
-    branches: [mobile-dev, main]
+    branches: [mobile-dev, main, master]
     paths:
       - 'apps/mobile/**'
       - '.github/workflows/mobile-ci.yml'

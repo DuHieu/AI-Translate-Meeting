@@ -17,7 +17,7 @@ class AppConfig {
   );
 
   // App Configuration
-  static const String appName = 'ViMeet Mobile';
+  static const String appName = 'Laya Meet';
   static const String appVersion = '1.0.0';
 
   // Meeting Configuration
@@ -41,7 +41,8 @@ class AppConfig {
   // Language Configuration
   static const List<String> supportedLanguages = ['vi', 'ja', 'en'];
   static const String defaultSpokenLanguage = 'vi';
-  static const String defaultTargetLanguage = 'ja';
+  static const String defaultTargetLanguage = 'en';
+  static const int maxRecentMeetings = 8;
 
   // Network Configuration
   static const Duration httpConnectTimeout = Duration(seconds: 10);
@@ -54,6 +55,9 @@ class AppConfig {
   static const String keyUserPreferences = 'user_preferences';
   static const String keySpokenLanguage = 'spoken_language';
   static const String keyTargetLanguage = 'target_language';
+  static const String keyDisplayName = 'display_name';
+  static const String keyRecentMeetings = 'recent_meetings';
+  static const String keyHostToken = 'host_token';
 
   // Prevent instantiation
   AppConfig._();

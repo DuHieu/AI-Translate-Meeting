@@ -32,6 +32,16 @@ htmlcov/
 *.pem
 *.key
 
+# Flutter mobile release secrets (never commit)
+apps/mobile/android/key.properties
+apps/mobile/android/*.jks
+apps/mobile/android/*.keystore
+apps/mobile/android/app/google-services.json
+apps/mobile/ios/ExportOptions.plist
+apps/mobile/ios/Runner/GoogleService-Info.plist
+apps/mobile/dart_defines.json
+apps/mobile/dart_defines.*.local.json
+
 # IDE & OS Files
 .vscode/
 .idea/

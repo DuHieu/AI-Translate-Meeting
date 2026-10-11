@@ -5,12 +5,23 @@ import '../utils/validators.dart';
 import 'api_client.dart';
 
 /// API endpoints for meeting operations
-class MeetingApi {
+abstract class MeetingApi {
+  factory MeetingApi(ApiClient client) = MeetingApiImpl;
+
+  Future<MeetingDetails> getMeeting(String code);
+  Future<CreateMeetingResponse> createMeeting({String? title});
+  Future<JoinResponse> joinMeeting(String code, JoinRequest request);
+  Future<void> leaveMeeting(String code, {required String participantId});
+  Future<List<Participant>> getParticipants(String code);
+  Future<bool> checkHealth();
+}
+
+class MeetingApiImpl implements MeetingApi {
+  MeetingApiImpl(this._client);
+
   final ApiClient _client;
 
-  MeetingApi(this._client);
-
-  /// Get meeting details by code
+  @override
   Future<MeetingDetails> getMeeting(String code) async {
     try {
       final normalizedCode = Validators.normalizeMeetingCode(code);
@@ -25,7 +36,29 @@ class MeetingApi {
     }
   }
 
-  /// Join a meeting
+  @override
+  Future<CreateMeetingResponse> createMeeting({String? title}) async {
+    try {
+      final name = (title == null || title.trim().isEmpty)
+          ? 'Laya Meet'
+          : title.trim();
+      AppLogger.d('Creating meeting: $name');
+
+      final response = await _client.post(
+        '/api/meetings',
+        data: {'name': name},
+      );
+
+      return CreateMeetingResponse.fromJson(
+        response.data as Map<String, dynamic>,
+      );
+    } catch (e, stackTrace) {
+      AppLogger.e('Failed to create meeting', e, stackTrace);
+      rethrow;
+    }
+  }
+
+  @override
   Future<JoinResponse> joinMeeting(
     String code,
     JoinRequest request,
@@ -47,13 +80,16 @@ class MeetingApi {
     }
   }
 
-  /// Leave a meeting
-  Future<void> leaveMeeting(String code) async {
+  @override
+  Future<void> leaveMeeting(String code, {required String participantId}) async {
     try {
       final normalizedCode = Validators.normalizeMeetingCode(code);
       AppLogger.d('Leaving meeting: $normalizedCode');
 
-      await _client.post('/api/meetings/$normalizedCode/leave');
+      await _client.post(
+        '/api/meetings/$normalizedCode/leave',
+        data: {'participantId': participantId},
+      );
 
       AppLogger.d('Left meeting successfully');
     } catch (e, stackTrace) {
@@ -62,7 +98,7 @@ class MeetingApi {
     }
   }
 
-  /// Get active participants in a meeting
+  @override
   Future<List<Participant>> getParticipants(String code) async {
     try {
       final normalizedCode = Validators.normalizeMeetingCode(code);
@@ -81,7 +117,7 @@ class MeetingApi {
     }
   }
 
-  /// Health check endpoint
+  @override
   Future<bool> checkHealth() async {
     try {
       final response = await _client.get('/health');

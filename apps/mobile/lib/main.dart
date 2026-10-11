@@ -17,9 +17,9 @@ void main() {
   // Run app with Riverpod
   runApp(
     const ProviderScope(
-      child: ViMeetApp(),
+      child: LayaMeetApp(),
     ),
   );
 
-  AppLogger.i('ViMeet Mobile app started');
+  AppLogger.i('Laya Meet app started');
 }

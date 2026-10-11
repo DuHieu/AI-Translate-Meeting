@@ -1,4 +1,8 @@
 # Configuration for flutter_localizations
+# Hand-maintained delegates currently live in lib/l10n/app_localizations*.dart.
+# After installing Flutter, prefer regenerating from ARB, then keep
+# app_localizations_ext.dart for helper methods.
 arb-dir: lib/l10n
 template-arb-file: app_en.arb
 output-localization-file: app_localizations.dart
+nullable-getter: false

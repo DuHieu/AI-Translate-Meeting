@@ -180,7 +180,7 @@ Message Format: {
 
 **Steps**:
 1. Install Flutter SDK (see `apps/mobile/SETUP.md`)
-2. Create project: `flutter create --org com.vimeet mobile`
+2. Create project: `flutter create --org com.layameet mobile`
 3. Configure `pubspec.yaml` dependencies
 4. Setup Android permissions (`AndroidManifest.xml`)
 5. Setup iOS permissions (`Info.plist`)
@@ -496,28 +496,30 @@ Message Format: {
 ### 🚀 Task 14: Deployment & App Store Preparation
 **Owner**: DevOps + Release Manager  
 **Estimated Time**: 6 hours  
-**Dependencies**: Task 13 complete
+**Dependencies**: Task 13 complete  
+**Status**: Repo prep complete — store upload requires org credentials
 
 **Steps**:
-1. Generate signed APK/AAB with keystore (Android)
-2. Configure signing in Xcode (iOS)
-3. Create internal testing track (Google Play Console)
-4. Upload to TestFlight (iOS)
-5. Create release notes and changelog
-6. Invite 5-10 beta testers
-7. Setup Firebase Crashlytics (optional)
-8. Update documentation (`apps/mobile/README.md`)
+1. [x] Android release signing via `key.properties` + upload keystore scripts
+2. [x] iOS ExportOptions templates + IPA build script
+3. [ ] Create internal testing track (Google Play Console) — manual
+4. [ ] Upload to TestFlight (iOS) — manual
+5. [x] Create release notes and changelog
+6. [x] Beta tester invite tracker template (`docs/BETA_TESTERS.md`)
+7. [x] Crashlytics documented as optional (no Firebase files committed)
+8. [x] Update documentation (`apps/mobile/README.md`, `docs/RELEASE.md`)
+9. [x] CI/CD: GitLab `.gitlab-ci.yml` (analyze/test/APK + tagged AAB) + optional GitHub mobile workflows
 
 **Deliverables**:
-- Signed APK/AAB available
-- TestFlight build available
-- Beta testers invited
-- Documentation updated
+- [x] Signing + build scripts for signed AAB/APK / IPA
+- [ ] Play internal track live (manual)
+- [ ] TestFlight build live (manual)
+- [x] Documentation + changelog + release notes
 
 **Tests**:
-- ✅ Install APK from Play Console internal track
-- ✅ Install from TestFlight on iPhone
-- ✅ Beta testers successfully join test meeting
+- [ ] Install APK/AAB from Play Console internal track
+- [ ] Install from TestFlight on iPhone
+- [ ] Beta testers successfully join test meeting
 
 ---
 

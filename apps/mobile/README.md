@@ -1,248 +1,100 @@
-# ViMeet Mobile - Flutter App
+# Laya Meet
 
-Cross-platform mobile application for **AI-Translate-Meeting** platform. Supports real-time video conferencing with bilingual subtitle translation on Android and iOS.
+Flutter client for AI-Translate-Meeting (Android + iOS).
 
-## 🚀 Quick Start
+## Features (Tasks 1–13)
 
-### Prerequisites
+- Home: create / join meeting by 6-character code, recent meetings
+- Prejoin: camera preview, mic/camera toggles, language selection, permissions
+- Meeting room: LiveKit video grid with sequential camera→mic publish
+- Real-time bilingual subtitles over WebSocket with exponential backoff reconnect
+- In-call controls: mute, camera, flip, speaker, leave confirmation
+- Android foreground service notification for active meetings
+- iOS voice-chat audio session + background audio mode
+- Network quality indicator, auto-reconnect (max 3), video degrade on poor network
+- Localization: English, Vietnamese, Japanese
+- Shared `ErrorDialog` for user-facing failures
 
-- Flutter SDK 3.24+ ([Install Guide](SETUP.md))
-- Android Studio (for Android development)
-- Xcode 14+ (for iOS development, macOS only)
-
-### Installation
+## Setup
 
 ```bash
-# Install dependencies
+cd apps/mobile
 flutter pub get
-
-# Generate code (models, providers)
-flutter pub run build_runner build --delete-conflicting-outputs
-
-# Run on emulator/simulator
-flutter run
-
-# Run on specific device
-flutter run -d "iPhone 15 Pro"      # iOS
-flutter run -d "Pixel_7_Pro_API_34"  # Android
-```
-
-## 📁 Project Structure
-
-```
-lib/
-├── main.dart                    # App entry point
-├── app.dart                     # MaterialApp config
-├── core/                        # Shared infrastructure
-│   ├── api/                     # HTTP & WebSocket clients
-│   ├── models/                  # Data models
-│   ├── providers/               # Global providers
-│   ├── constants/               # Configuration
-│   └── utils/                   # Utilities
-├── features/                    # Feature modules
-│   ├── home/                    # Join meeting screen
-│   ├── prejoin/                 # Device setup
-│   ├── meeting_room/            # Video room
-│   └── shared/                  # Reusable widgets
-└── l10n/                        # Internationalization
-```
-
-## 🛠️ Development
-
-### Run Tests
-
-```bash
-# Unit & widget tests
-flutter test
-
-# Integration tests
-flutter test integration_test/
-
-# Test coverage
-flutter test --coverage
-```
-
-### Code Generation
-
-```bash
-# Generate freezed models & riverpod providers
-flutter pub run build_runner watch
-```
-
-### Linting
-
-```bash
 flutter analyze
-flutter format lib/ --set-exit-if-changed
+flutter test
 ```
 
-### Build
+Pass API endpoints at build/run time:
 
 ```bash
-# Android APK (debug)
-flutter build apk --debug
-
-# Android AAB (release)
-flutter build appbundle --release
-
-# iOS (requires macOS)
-flutter build ios --release
+flutter run \
+  --dart-define=API_BASE_URL=http://10.0.2.2:5000 \
+  --dart-define=LIVEKIT_URL=ws://10.0.2.2:7880 \
+  --dart-define=SUBTITLE_WS_URL=ws://10.0.2.2:8000/ws/transcribe
 ```
 
-## 🌍 Localization
+## Release / store prep (Task 14)
 
-Supported languages:
-- 🇻🇳 Vietnamese (`vi`)
-- 🇯🇵 Japanese (`ja`)
-- 🇬🇧 English (`en`)
+Full guide: [`docs/RELEASE.md`](docs/RELEASE.md)
 
-Add translations in `lib/l10n/app_*.arb` files.
+Quick Android release:
 
-## 🧪 Testing Strategy
+```powershell
+# once
+./scripts/create-upload-keystore.ps1
 
-- **Unit Tests**: All providers, models, utilities (target 80%+ coverage)
-- **Widget Tests**: All screens and widgets
-- **Integration Tests**: End-to-end user flows
-
-## 📦 Dependencies
-
-### Core
-- `flutter_riverpod` - State management
-- `livekit_client` - WebRTC video/audio
-- `dio` - HTTP client
-- `web_socket_channel` - Real-time subtitles
-
-### Storage
-- `flutter_secure_storage` - Token storage
-- `shared_preferences` - User preferences
-
-### Utilities
-- `permission_handler` - Camera/mic permissions
-- `logger` - Logging
-- `freezed` - Immutable models
-
-## 🔧 Configuration
-
-### Environment Variables
-
-Create `.env` file (gitignored):
-
-```env
-API_BASE_URL=https://api.vimeet.vn
-LIVEKIT_URL=wss://livekit.vimeet.vn
-SUBTITLE_WS_URL=wss://api.vimeet.vn/ws/transcribe
+# every release
+./scripts/build-release.ps1 -Android `
+  -ApiBaseUrl "https://your-api" `
+  -LivekitUrl "wss://your-livekit" `
+  -SubtitleWsUrl "wss://your-ai/ws/transcribe"
 ```
 
-For local development, defaults to:
-- API: `http://10.0.2.2:5000` (Android emulator localhost)
-- LiveKit: `ws://10.0.2.2:7880`
-- Subtitle WS: `ws://10.0.2.2:8000/ws/transcribe`
+Upload `build/app/outputs/bundle/release/app-release.aab` to Play **Internal testing**.
 
-### Android Permissions
+iOS (macOS): configure signing in Xcode, copy `ios/ExportOptions-appstore.plist.example` → `ios/ExportOptions.plist`, then:
 
-Configured in `android/app/src/main/AndroidManifest.xml`:
-- `INTERNET` - Network access
-- `CAMERA` - Video streaming
-- `RECORD_AUDIO` - Audio streaming
-- `FOREGROUND_SERVICE` - Background audio
-
-### iOS Permissions
-
-Configured in `ios/Runner/Info.plist`:
-- `NSCameraUsageDescription` - Camera access
-- `NSMicrophoneUsageDescription` - Microphone access
-- `UIBackgroundModes: audio` - Background audio
-
-## 🚢 Deployment
-
-### Android (Google Play)
-
-1. Generate signing key:
-   ```bash
-   keytool -genkey -v -keystore ~/upload-keystore.jks -keyalg RSA -keysize 2048 -validity 10000 -alias upload
-   ```
-
-2. Configure `android/key.properties` (gitignored):
-   ```properties
-   storePassword=<password>
-   keyPassword=<password>
-   keyAlias=upload
-   storeFile=<path-to-keystore>
-   ```
-
-3. Build release:
-   ```bash
-   flutter build appbundle --release
-   ```
-
-### iOS (App Store)
-
-1. Configure signing in Xcode:
-   - Open `ios/Runner.xcworkspace`
-   - Select Runner target → Signing & Capabilities
-   - Set Team and Bundle Identifier
-
-2. Archive and upload:
-   ```bash
-   flutter build ios --release
-   open ios/Runner.xcworkspace
-   # Product → Archive → Distribute App
-   ```
-
-## 📱 Supported Platforms
-
-| Platform | Minimum Version | Target Version |
-|----------|----------------|----------------|
-| Android | API 24 (7.0) | API 35 (15.0) |
-| iOS | 12.1 | 18.0 |
-
-## 🐛 Troubleshooting
-
-### Common Issues
-
-**1. Flutter command not found**
 ```bash
-# Add Flutter to PATH
-export PATH="$PATH:/path/to/flutter/bin"
+./scripts/build-release.sh --ios
 ```
 
-**2. Android licenses not accepted**
-```bash
-flutter doctor --android-licenses
-```
+Upload the IPA via Xcode Organizer or `xcrun altool` / Transporter → TestFlight.
 
-**3. iOS build fails**
-```bash
-cd ios
-pod install
-cd ..
-flutter clean
-flutter pub get
-```
+Related files:
 
-**4. Code generation errors**
-```bash
-flutter pub run build_runner clean
-flutter pub run build_runner build --delete-conflicting-outputs
-```
+| File | Purpose |
+|------|---------|
+| `CHANGELOG.md` | Version history |
+| `docs/RELEASE_NOTES_1.0.0.md` | Store / TestFlight notes |
+| `docs/BETA_TESTERS.md` | Tester invite tracker |
+| `android/key.properties.example` | Signing template |
+| `.gitlab-ci.yml` | **Active** CI on GitLab (analyze / test / APK / tagged AAB) |
+| `docs/CI_CD.md` | GitLab variables + release tag flow |
+| `.github/workflows/mobile-*.yml` | Optional if repo is mirrored to GitHub |
 
-## 📚 Documentation
+### GitLab CI/CD variables (signed AAB)
 
-- [Setup Guide](SETUP.md) - Flutter SDK installation
-- [Implementation Plan](../../docs/mobile-implementation-plan.md) - Development roadmap
-- [API Documentation](../../docs/PRD.md) - Backend API reference
-- [Architecture](../../docs/architecture.md) - System design
+| Variable | Description |
+|----------|-------------|
+| `ANDROID_KEYSTORE_BASE64` | `base64 -w0 upload-keystore.jks` |
+| `ANDROID_STORE_PASSWORD` | Keystore password |
+| `ANDROID_KEY_PASSWORD` | Key password |
+| `ANDROID_KEY_ALIAS` | Alias (e.g. `layameet`) |
 
-## 🤝 Contributing
+Optional: `API_BASE_URL`, `LIVEKIT_URL`, `SUBTITLE_WS_URL`. Full guide: [`docs/CI_CD.md`](docs/CI_CD.md).
 
-See parent repository [CONTRIBUTING.md](../../CONTRIBUTING.md).
+## Manual QA checklist
 
-## 📄 License
+- [ ] Join with valid code → prejoin → room
+- [ ] Invalid / ended room shows friendly error
+- [ ] Mute / camera / flip / speaker toggle
+- [ ] Leave confirm → returns home, tokens cleared
+- [ ] Android: Home button keeps notification + audio
+- [ ] iOS: Lock screen keeps audio
+- [ ] Airplane mode → reconnect toast or failure dialog
+- [ ] Subtitles appear with speaker + translation
+- [ ] Internal track / TestFlight install works for beta testers
 
-Business Source License 1.1 (BSL 1.1) - See [LICENSE](../../LICENSE)
+## Crashlytics (optional)
 
----
-
-**Version**: 1.0.0  
-**Last Updated**: October 11, 2026  
-**Status**: 🚧 In Development
+Not bundled yet. See `docs/RELEASE.md` §4 when Firebase project files are available.

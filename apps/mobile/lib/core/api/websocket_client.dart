@@ -8,8 +8,27 @@ import '../constants/app_config.dart';
 import '../models/subtitle.dart';
 import '../utils/logger.dart';
 
+typedef WebSocketConnector = WebSocketChannel Function(Uri uri);
+
+/// Contract for subtitle realtime transport.
+abstract class SubtitleSocket {
+  Stream<Subtitle> get subtitleStream;
+  Stream<WebSocketState> get stateStream;
+  WebSocketState get state;
+  bool get isConnected;
+
+  Future<void> connect(String wsUrl, String token);
+  Future<void> disconnect();
+  void dispose();
+}
+
 /// WebSocket client for real-time subtitle streaming
-class WebSocketClient {
+class WebSocketClient implements SubtitleSocket {
+  WebSocketClient({WebSocketConnector? connector})
+      : _connector = connector ?? WebSocketChannel.connect;
+
+  final WebSocketConnector _connector;
+
   WebSocketChannel? _channel;
   StreamController<Subtitle>? _subtitleController;
   StreamController<WebSocketState>? _stateController;
@@ -18,28 +37,31 @@ class WebSocketClient {
   int _reconnectAttempts = 0;
   String? _lastUrl;
   bool _manualClose = false;
+  StreamSubscription<dynamic>? _channelSub;
 
-  /// Stream of subtitle messages
+  @override
   Stream<Subtitle> get subtitleStream =>
       _subtitleController?.stream ?? const Stream.empty();
 
-  /// Stream of connection state changes
+  @override
   Stream<WebSocketState> get stateStream =>
       _stateController?.stream ?? const Stream.empty();
 
-  /// Current connection state
   WebSocketState _state = WebSocketState.disconnected;
+
+  @override
   WebSocketState get state => _state;
 
-  /// Connect to subtitle WebSocket endpoint
+  @override
   Future<void> connect(String wsUrl, String token) async {
-    if (_channel != null) {
-      AppLogger.w('WebSocket already connected, disconnecting first');
+    if (_channel != null || _reconnectTimer != null) {
+      AppLogger.w('WebSocket already active, disconnecting first');
       await disconnect();
     }
 
     _manualClose = false;
-    _lastUrl = '$wsUrl?token=$token';
+    final separator = wsUrl.contains('?') ? '&' : '?';
+    _lastUrl = '$wsUrl${separator}token=${Uri.encodeQueryComponent(token)}';
 
     _subtitleController = StreamController<Subtitle>.broadcast();
     _stateController = StreamController<WebSocketState>.broadcast();
@@ -56,16 +78,18 @@ class WebSocketClient {
 
     try {
       _updateState(WebSocketState.connecting);
-      AppLogger.d('Connecting to WebSocket: $_lastUrl');
+      AppLogger.d('Connecting to WebSocket');
 
-      _channel = WebSocketChannel.connect(Uri.parse(_lastUrl!));
+      await _channelSub?.cancel();
+      await _channel?.sink.close();
+
+      _channel = _connector(Uri.parse(_lastUrl!));
 
       _updateState(WebSocketState.connected);
       _reconnectAttempts = 0;
       AppLogger.d('WebSocket connected successfully');
 
-      // Listen to incoming messages
-      _channel!.stream.listen(
+      _channelSub = _channel!.stream.listen(
         _handleMessage,
         onError: _handleError,
         onDone: _handleDone,
@@ -80,12 +104,16 @@ class WebSocketClient {
 
   void _handleMessage(dynamic message) {
     try {
-      final json = jsonDecode(message as String) as Map<String, dynamic>;
+      final raw = message is String ? message : message.toString();
+      final json = jsonDecode(raw) as Map<String, dynamic>;
       final subtitleMessage = SubtitleMessage.fromJson(json);
 
-      if (subtitleMessage.type == 'subtitle' && subtitleMessage.subtitle != null) {
+      if (subtitleMessage.type == 'subtitle' &&
+          subtitleMessage.subtitle != null) {
         _subtitleController?.add(subtitleMessage.subtitle!);
-        AppLogger.v('Received subtitle: ${subtitleMessage.subtitle!.sourceText}');
+        AppLogger.v(
+          'Received subtitle: ${subtitleMessage.subtitle!.sourceText}',
+        );
       } else if (subtitleMessage.type == 'error') {
         AppLogger.e('Subtitle error: ${subtitleMessage.error}');
       }
@@ -97,7 +125,7 @@ class WebSocketClient {
   void _handleError(dynamic error) {
     AppLogger.e('WebSocket error', error);
     _updateState(WebSocketState.error);
-    
+
     if (!_manualClose) {
       _scheduleReconnect();
     }
@@ -106,7 +134,7 @@ class WebSocketClient {
   void _handleDone() {
     AppLogger.d('WebSocket connection closed');
     _updateState(WebSocketState.disconnected);
-    
+
     if (!_manualClose) {
       _scheduleReconnect();
     }
@@ -128,13 +156,11 @@ class WebSocketClient {
 
     _reconnectAttempts++;
 
-    // Exponential backoff: 1s, 2s, 4s, 8s, max 10s
-    final delay = Duration(
-      seconds: min(
-        pow(2, _reconnectAttempts - 1).toInt(),
-        AppConfig.wsReconnectMaxDelay.inSeconds,
-      ),
+    final delaySeconds = min(
+      pow(2, _reconnectAttempts - 1).toInt(),
+      AppConfig.wsReconnectMaxDelay.inSeconds,
     );
+    final delay = Duration(seconds: delaySeconds);
 
     AppLogger.d(
       'Scheduling reconnect attempt $_reconnectAttempts in ${delay.inSeconds}s',
@@ -152,12 +178,13 @@ class WebSocketClient {
   void _updateState(WebSocketState newState) {
     if (_state != newState) {
       _state = newState;
-      _stateController?.add(newState);
+      if (_stateController != null && !_stateController!.isClosed) {
+        _stateController!.add(newState);
+      }
       AppLogger.d('WebSocket state changed: $newState');
     }
   }
 
-  /// Send a message to the server
   void send(Map<String, dynamic> message) {
     if (_channel == null || _state != WebSocketState.connected) {
       AppLogger.w('Cannot send message: not connected');
@@ -166,19 +193,21 @@ class WebSocketClient {
 
     try {
       _channel!.sink.add(jsonEncode(message));
-      AppLogger.v('Sent message: $message');
     } catch (e, stackTrace) {
       AppLogger.e('Failed to send message', e, stackTrace);
     }
   }
 
-  /// Disconnect from WebSocket
+  @override
   Future<void> disconnect() async {
     AppLogger.d('Disconnecting WebSocket');
     _manualClose = true;
 
     _reconnectTimer?.cancel();
     _reconnectTimer = null;
+
+    await _channelSub?.cancel();
+    _channelSub = null;
 
     await _channel?.sink.close();
     _channel = null;
@@ -191,20 +220,72 @@ class WebSocketClient {
 
     _updateState(WebSocketState.disconnected);
     _lastUrl = null;
-
-    AppLogger.d('WebSocket disconnected');
   }
 
-  /// Check if connected
+  @override
   bool get isConnected => _state == WebSocketState.connected;
 
-  /// Dispose resources
+  @override
   void dispose() {
-    disconnect();
+    unawaited(disconnect());
   }
 }
 
-/// WebSocket connection states
+/// In-memory socket for unit tests.
+class FakeSubtitleSocket implements SubtitleSocket {
+  final _subtitleController = StreamController<Subtitle>.broadcast();
+  final _stateController = StreamController<WebSocketState>.broadcast();
+
+  WebSocketState _state = WebSocketState.disconnected;
+  Object? connectError;
+  bool connectCalled = false;
+  bool disconnectCalled = false;
+  String? lastUrl;
+  String? lastToken;
+
+  @override
+  Stream<Subtitle> get subtitleStream => _subtitleController.stream;
+
+  @override
+  Stream<WebSocketState> get stateStream => _stateController.stream;
+
+  @override
+  WebSocketState get state => _state;
+
+  @override
+  bool get isConnected => _state == WebSocketState.connected;
+
+  @override
+  Future<void> connect(String wsUrl, String token) async {
+    connectCalled = true;
+    lastUrl = wsUrl;
+    lastToken = token;
+    if (connectError != null) throw connectError!;
+    _setState(WebSocketState.connected);
+  }
+
+  void emit(Subtitle subtitle) => _subtitleController.add(subtitle);
+
+  void emitState(WebSocketState state) => _setState(state);
+
+  void _setState(WebSocketState next) {
+    _state = next;
+    _stateController.add(next);
+  }
+
+  @override
+  Future<void> disconnect() async {
+    disconnectCalled = true;
+    _setState(WebSocketState.disconnected);
+  }
+
+  @override
+  void dispose() {
+    unawaited(_subtitleController.close());
+    unawaited(_stateController.close());
+  }
+}
+
 enum WebSocketState {
   disconnected,
   connecting,

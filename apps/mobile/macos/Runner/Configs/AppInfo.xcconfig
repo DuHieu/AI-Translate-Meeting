@@ -8,7 +8,7 @@
 PRODUCT_NAME = mobile
 
 // The application's bundle identifier
-PRODUCT_BUNDLE_IDENTIFIER = com.vimeet.mobile
+PRODUCT_BUNDLE_IDENTIFIER = com.layameet.mobile
 
 // The copyright displayed in application information
-PRODUCT_COPYRIGHT = Copyright © 2026 com.vimeet. All rights reserved.
+PRODUCT_COPYRIGHT = Copyright © 2026 com.layameet. All rights reserved.

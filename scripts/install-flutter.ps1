@@ -99,6 +99,6 @@ Write-Host "`nNext Steps:" -ForegroundColor Yellow
 Write-Host "1. Restart your terminal (or run: refreshenv)" -ForegroundColor White
 Write-Host "2. Run: flutter doctor" -ForegroundColor White
 Write-Host "3. Accept Android licenses: flutter doctor --android-licenses" -ForegroundColor White
-Write-Host "4. Create project: cd apps && flutter create --org com.vimeet mobile" -ForegroundColor White
+Write-Host "4. Create project: cd apps/mobile && flutter create --org com.layameet --project-name mobile ." -ForegroundColor White
 
 Write-Host "`nInstallation complete! 🎉" -ForegroundColor Green

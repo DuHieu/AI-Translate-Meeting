@@ -1,0 +1,124 @@
+# Laya Meet — GitLab CI (primary remote)
+# GitHub Actions under .github/workflows/ remain for mirror / dual-remote setups.
+
+workflow:
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH
+    - if: $CI_COMMIT_TAG
+
+stages:
+  - analyze
+  - test
+  - build
+  - release
+
+variables:
+  FLUTTER_VERSION: "3.24.0"
+  PUB_CACHE: "$CI_PROJECT_DIR/.pub-cache"
+
+.flutter_job:
+  image: ghcr.io/cirruslabs/flutter:${FLUTTER_VERSION}
+  cache:
+    key:
+      files:
+        - apps/mobile/pubspec.lock
+    paths:
+      - .pub-cache/
+      - apps/mobile/.dart_tool/
+  before_script:
+    - flutter --version
+    - cd apps/mobile
+    - flutter pub get
+
+.mobile_mr_or_branch: &mobile_mr_or_branch
+  - if: $CI_COMMIT_TAG =~ /^mobile-v/
+  - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    changes:
+      - apps/mobile/**/*
+      - .gitlab-ci.yml
+      - .github/workflows/mobile-*.yml
+  - if: $CI_COMMIT_BRANCH
+    changes:
+      - apps/mobile/**/*
+      - .gitlab-ci.yml
+      - .github/workflows/mobile-*.yml
+
+mobile:analyze:
+  extends: .flutter_job
+  stage: analyze
+  rules: *mobile_mr_or_branch
+  script:
+    - dart format --output=none --set-exit-if-changed lib/
+    - flutter analyze
+
+mobile:test:
+  extends: .flutter_job
+  stage: test
+  needs: ["mobile:analyze"]
+  rules: *mobile_mr_or_branch
+  script:
+    - flutter test --coverage
+  artifacts:
+    when: always
+    paths:
+      - apps/mobile/coverage/lcov.info
+    expire_in: 7 days
+
+mobile:build-android-debug:
+  extends: .flutter_job
+  stage: build
+  needs: ["mobile:test"]
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+      changes:
+        - apps/mobile/**/*
+        - .gitlab-ci.yml
+    - if: $CI_COMMIT_BRANCH =~ /^(mobile-dev|main|master)$/
+      changes:
+        - apps/mobile/**/*
+        - .gitlab-ci.yml
+  script:
+    - flutter build apk --debug
+  artifacts:
+    name: "layameet-android-debug-$CI_COMMIT_SHORT_SHA"
+    paths:
+      - apps/mobile/build/app/outputs/flutter-apk/app-debug.apk
+    expire_in: 7 days
+
+# Tag: mobile-v1.0.0
+# GitLab CI/CD Variables (masked/protected as needed):
+#   ANDROID_KEYSTORE_BASE64, ANDROID_STORE_PASSWORD, ANDROID_KEY_PASSWORD, ANDROID_KEY_ALIAS
+# Optional: API_BASE_URL, LIVEKIT_URL, SUBTITLE_WS_URL
+mobile:release-android:
+  extends: .flutter_job
+  stage: release
+  needs: ["mobile:test"]
+  rules:
+    - if: $CI_COMMIT_TAG =~ /^mobile-v/
+  script:
+    - |
+      set -euo pipefail
+      if [ -z "${ANDROID_KEYSTORE_BASE64:-}" ]; then
+        echo "ANDROID_KEYSTORE_BASE64 not set — release AAB uses debug signing (smoke only)."
+      else
+        echo "$ANDROID_KEYSTORE_BASE64" | base64 -d > android/upload-keystore.jks
+        printf '%s\n' \
+          "storePassword=${ANDROID_STORE_PASSWORD}" \
+          "keyPassword=${ANDROID_KEY_PASSWORD}" \
+          "keyAlias=${ANDROID_KEY_ALIAS}" \
+          "storeFile=upload-keystore.jks" \
+          > android/key.properties
+      fi
+      API_BASE_URL="${API_BASE_URL:-https://api.example.com}"
+      LIVEKIT_URL="${LIVEKIT_URL:-wss://livekit.example.com}"
+      SUBTITLE_WS_URL="${SUBTITLE_WS_URL:-wss://ai.example.com/ws/transcribe}"
+      flutter build appbundle --release \
+        --dart-define=API_BASE_URL="${API_BASE_URL}" \
+        --dart-define=LIVEKIT_URL="${LIVEKIT_URL}" \
+        --dart-define=SUBTITLE_WS_URL="${SUBTITLE_WS_URL}"
+  artifacts:
+    name: "layameet-android-release-$CI_COMMIT_TAG"
+    paths:
+      - apps/mobile/build/app/outputs/bundle/release/app-release.aab
+    expire_in: 30 days
