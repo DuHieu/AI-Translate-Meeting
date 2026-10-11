@@ -50,7 +50,7 @@ class FakeMeetingApi implements MeetingApi {
 
   @override
   Future<JoinResponse> joinMeeting(String code, JoinRequest request) async {
-    lastJoinedCode = code;
+    lastJoinedCode = code.toUpperCase();
     lastJoinRequest = request;
     if (joinError != null) throw joinError!;
     return joinResponse ??

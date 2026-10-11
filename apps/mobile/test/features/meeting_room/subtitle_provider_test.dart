@@ -24,7 +24,14 @@ void main() {
     container.dispose();
   });
 
+  ProviderSubscription<SubtitleState> keepAlive() {
+    final sub = container.listen(subtitleProvider, (_, __) {});
+    addTearDown(sub.close);
+    return sub;
+  }
+
   test('start connects with subtitle token', () async {
+    keepAlive();
     await container.read(subtitleProvider.notifier).start(
           subtitleToken: 'sub-token',
           wsUrl: 'ws://example/ws/transcribe',
@@ -40,6 +47,7 @@ void main() {
   });
 
   test('buffers subtitles and exposes latest three', () async {
+    keepAlive();
     await container.read(subtitleProvider.notifier).start(
           subtitleToken: 't',
         );
@@ -63,6 +71,7 @@ void main() {
   });
 
   test('replaces partial updates with same message id', () async {
+    keepAlive();
     await container.read(subtitleProvider.notifier).start(
           subtitleToken: 't',
         );
@@ -96,6 +105,7 @@ void main() {
   });
 
   test('trims buffer to max size', () async {
+    keepAlive();
     await container.read(subtitleProvider.notifier).start(
           subtitleToken: 't',
         );
@@ -120,6 +130,7 @@ void main() {
   });
 
   test('stop disconnects socket and clears buffer', () async {
+    keepAlive();
     await container.read(subtitleProvider.notifier).start(
           subtitleToken: 't',
         );

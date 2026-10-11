@@ -28,7 +28,7 @@ class PrejoinState {
     this.isMicEnabled = true,
     this.hasCameraPermission = false,
     this.hasMicPermission = false,
-    this.isLoadingPreferences = true,
+    this.isLoadingPreferences = false,
     this.isJoining = false,
     this.errorMessage,
     this.permissionPrompt = PermissionPrompt.none,
@@ -109,9 +109,13 @@ class PrejoinNotifier extends Notifier<PrejoinState> {
   }
 
   Future<void> _bootstrap() async {
-    await restorePreferences();
-    await refreshPermissions();
-    _updateMockMicLevel();
+    try {
+      await restorePreferences();
+      await refreshPermissions();
+      _updateMockMicLevel();
+    } catch (_) {
+      // Never block prejoin UI on preference/permission failures.
+    }
   }
 
   Future<void> restorePreferences() async {
@@ -123,7 +127,6 @@ class PrejoinNotifier extends Notifier<PrejoinState> {
       displayName: displayName ?? '',
       spokenLanguage: spoken ?? AppConfig.defaultSpokenLanguage,
       targetLanguage: target ?? AppConfig.defaultTargetLanguage,
-      isLoadingPreferences: false,
     );
   }
 

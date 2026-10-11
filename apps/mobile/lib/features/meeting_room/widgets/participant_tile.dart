@@ -35,10 +35,7 @@ class ParticipantTile extends StatelessWidget {
           fit: StackFit.expand,
           children: [
             if (participant.videoTrack != null && participant.isCameraEnabled)
-              lk.VideoTrackRenderer(
-                participant.videoTrack!,
-                fit: lk.VideoViewFit.cover,
-              )
+              lk.VideoTrackRenderer(participant.videoTrack!)
             else
               Center(
                 child: CircleAvatar(

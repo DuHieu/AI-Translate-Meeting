@@ -176,10 +176,7 @@ class _CameraPreviewBoxState extends State<CameraPreviewBox> {
     }
 
     if (widget.showCamera && _track != null) {
-      return VideoTrackRenderer(
-        _track!,
-        fit: VideoViewFit.cover,
-      );
+      return VideoTrackRenderer(_track!);
     }
 
     return Semantics(

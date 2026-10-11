@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/app.dart';
@@ -15,9 +16,53 @@ import 'package:mobile/l10n/app_localizations_en.dart';
 import '../helpers/fake_livekit_session.dart';
 import '../helpers/fakes.dart';
 
+const _meetingChannel = MethodChannel('com.layameet.mobile/meeting');
+
+void _mockMeetingPlatformChannel() {
+  TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+      .setMockMethodCallHandler(_meetingChannel, (call) async => null);
+}
+
+/// pumpAndSettle hangs on indeterminate CircularProgressIndicator animations.
+Future<void> pumpUntil(
+  WidgetTester tester,
+  Finder finder, {
+  Duration step = const Duration(milliseconds: 50),
+  int maxSteps = 80,
+}) async {
+  for (var i = 0; i < maxSteps; i++) {
+    await tester.pump(step);
+    if (finder.evaluate().isNotEmpty) return;
+  }
+  throw TestFailure('Timed out waiting for $finder');
+}
+
+Future<void> pumpUntilGone(
+  WidgetTester tester,
+  Finder finder, {
+  Duration step = const Duration(milliseconds: 50),
+  int maxSteps = 80,
+}) async {
+  for (var i = 0; i < maxSteps; i++) {
+    await tester.pump(step);
+    await tester.idle();
+    if (finder.evaluate().isEmpty) return;
+  }
+  throw TestFailure('Timed out waiting for $finder to disappear');
+}
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   final l10n = AppLocalizationsEn();
+
+  setUp(() {
+    _mockMeetingPlatformChannel();
+  });
+
+  tearDown(() {
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(_meetingChannel, null);
+  });
 
   testWidgets(
     'E2E: Home create → Prejoin → Meeting room → Leave → Home',
@@ -43,41 +88,59 @@ void main() {
           child: const LayaMeetApp(),
         ),
       );
-      await tester.pumpAndSettle();
+      await tester.pump();
+      await pumpUntil(tester, find.byType(HomeScreen));
 
-      expect(find.byType(HomeScreen), findsOneWidget);
       expect(find.textContaining(l10n.appName), findsWidgets);
 
       await tester.tap(find.text(l10n.createNewMeeting));
-      await tester.pumpAndSettle();
+      await tester.pump();
+      await tester.idle();
+      await tester.pump();
+      await pumpUntil(tester, find.byType(PrejoinScreen));
 
-      expect(find.byType(PrejoinScreen), findsOneWidget);
+      await tester.idle();
+      await tester.pump();
+      await pumpUntil(tester, find.byType(TextFormField), maxSteps: 120);
+      await tester.ensureVisible(find.byType(TextFormField));
+      await tester.pump();
+      await tester.enterText(find.byType(TextFormField), 'E2E User');
+      await tester.pump();
 
-      final nameField = find.byType(TextFormField);
-      expect(nameField, findsOneWidget);
-      await tester.enterText(nameField, 'E2E User');
-      await tester.pumpAndSettle();
+      final joinButton = find.text(l10n.joinNow);
+      await tester.ensureVisible(joinButton);
+      await tester.pump();
+      await tester.tap(joinButton);
+      await tester.pump();
+      await tester.idle();
+      await tester.pump();
+      await pumpUntil(tester, find.byType(MeetingRoomScreen), maxSteps: 160);
 
-      await tester.tap(find.text(l10n.joinNow));
-      await tester.pumpAndSettle(const Duration(seconds: 2));
-
-      expect(find.byType(MeetingRoomScreen), findsOneWidget);
+      // MeetingRoom starts LiveKit/subtitles in a post-frame callback after
+      // native MethodChannel calls — pump until the fake socket connects.
+      for (var i = 0; i < 40 && !subtitles.connectCalled; i++) {
+        await tester.pump(const Duration(milliseconds: 50));
+        await tester.idle();
+      }
       expect(subtitles.connectCalled, isTrue);
       expect(api.lastJoinRequest?.displayName, 'E2E User');
 
       await tester.tap(find.byTooltip(l10n.leaveMeeting));
-      await tester.pumpAndSettle();
+      await tester.pump();
+      await pumpUntil(tester, find.text(l10n.leaveMeetingConfirmTitle));
 
-      expect(find.text(l10n.leaveMeetingConfirmTitle), findsOneWidget);
       await tester.tap(find.text(l10n.leaveMeeting).last);
-      await tester.pumpAndSettle();
-
+      await tester.pump();
+      // HomeScreen stays under the navigator stack — wait until room is popped.
+      await pumpUntilGone(tester, find.byType(MeetingRoomScreen), maxSteps: 160);
       expect(find.byType(HomeScreen), findsOneWidget);
-      expect(find.byType(MeetingRoomScreen), findsNothing);
     },
   );
 
   testWidgets('E2E: invalid meeting code shows error snackbar', (tester) async {
+    tester.platformDispatcher.localeTestValue = const Locale('en');
+    addTearDown(tester.platformDispatcher.clearLocaleTestValue);
+
     final api = FakeMeetingApi(getMeetingError: Exception('not found'));
     await tester.pumpWidget(
       ProviderScope(
@@ -89,13 +152,13 @@ void main() {
         child: const LayaMeetApp(),
       ),
     );
-    await tester.pumpAndSettle();
+    await tester.pump();
+    await pumpUntil(tester, find.byType(TextField));
 
     await tester.enterText(find.byType(TextField), 'ABCDEF');
-    await tester.pumpAndSettle();
+    await tester.pump();
     await tester.tap(find.byIcon(Icons.login));
-    await tester.pumpAndSettle();
-
-    expect(find.byType(SnackBar), findsOneWidget);
+    await tester.pump();
+    await pumpUntil(tester, find.byType(SnackBar));
   });
 }

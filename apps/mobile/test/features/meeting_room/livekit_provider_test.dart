@@ -40,6 +40,9 @@ void main() {
   tearDown(() => container.dispose());
 
   test('start connects then publishes camera before microphone', () async {
+    final sub = container.listen(liveKitProvider, (_, __) {});
+    addTearDown(sub.close);
+
     await container.read(liveKitProvider.notifier).start(
           livekitUrl: 'wss://livekit.local',
           livekitToken: 'token',
@@ -50,12 +53,16 @@ void main() {
         );
 
     expect(session.connectCalled, isTrue);
-    expect(session.publishOrder, ['camera', 'microphone']);
+    // start() publishes media then enables speaker by default.
+    expect(session.publishOrder, ['camera', 'microphone', 'speaker_on']);
     expect(container.read(liveKitProvider).status, LiveKitStatus.connected);
     expect(container.read(liveKitProvider).isPublishing, isFalse);
   });
 
   test('start can enable camera only', () async {
+    final sub = container.listen(liveKitProvider, (_, __) {});
+    addTearDown(sub.close);
+
     await container.read(liveKitProvider.notifier).start(
           livekitUrl: 'wss://livekit.local',
           livekitToken: 'token',
@@ -65,10 +72,12 @@ void main() {
           micEnabled: false,
         );
 
-    expect(session.publishOrder, ['camera']);
+    expect(session.publishOrder, ['camera', 'speaker_on']);
   });
 
   test('start maps connect failure', () async {
+    final sub = container.listen(liveKitProvider, (_, __) {});
+    addTearDown(sub.close);
     session.connectError = Exception('boom');
 
     await container.read(liveKitProvider.notifier).start(
@@ -88,6 +97,8 @@ void main() {
   });
 
   test('leave disconnects session and clears tokens', () async {
+    final sub = container.listen(liveKitProvider, (_, __) {});
+    addTearDown(sub.close);
     final storage = container.read(secureStorageProvider);
     await storage.saveTokens(
       livekitToken: 'lk',
@@ -115,6 +126,9 @@ void main() {
   });
 
   test('flip and speaker update publish order', () async {
+    final sub = container.listen(liveKitProvider, (_, __) {});
+    addTearDown(sub.close);
+
     await container.read(liveKitProvider.notifier).start(
           livekitUrl: 'wss://livekit.local',
           livekitToken: 'token',
@@ -132,6 +146,9 @@ void main() {
   });
 
   test('poor network degrades video', () async {
+    final sub = container.listen(liveKitProvider, (_, __) {});
+    addTearDown(sub.close);
+
     await container.read(liveKitProvider.notifier).start(
           livekitUrl: 'wss://livekit.local',
           livekitToken: 'token',

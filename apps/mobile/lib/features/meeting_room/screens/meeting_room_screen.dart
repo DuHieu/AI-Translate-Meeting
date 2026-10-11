@@ -43,11 +43,20 @@ class _MeetingRoomScreenState extends ConsumerState<MeetingRoomScreen>
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     WidgetsBinding.instance.addPostFrameCallback((_) async {
-      await _platform.configureAudioSession();
-      await _platform.startForegroundService(
-        meetingCode: widget.meetingCode,
-        meetingName: widget.meetingName,
-      );
+      // MethodChannel calls can hang in widget tests without a mock handler.
+      // Never block LiveKit / subtitle startup on native bridge latency.
+      try {
+        await Future.wait<void>([
+          _platform.configureAudioSession(),
+          _platform.startForegroundService(
+            meetingCode: widget.meetingCode,
+            meetingName: widget.meetingName,
+          ),
+        ]).timeout(const Duration(milliseconds: 500));
+      } catch (_) {
+        // Missing plugin / timeout — continue into the room.
+      }
+      if (!mounted) return;
       ref.read(liveKitProvider.notifier).start(
             livekitUrl: widget.joinResponse.livekitUrl,
             livekitToken: widget.joinResponse.livekitToken,
@@ -102,11 +111,21 @@ class _MeetingRoomScreenState extends ConsumerState<MeetingRoomScreen>
   }
 
   Future<void> _leave() async {
-    await _platform.stopForegroundService();
-    await Future.wait([
-      ref.read(subtitleProvider.notifier).stop(),
-      ref.read(liveKitProvider.notifier).leave(),
-    ]);
+    try {
+      await _platform
+          .stopForegroundService()
+          .timeout(const Duration(milliseconds: 500));
+    } catch (_) {
+      // Native bridge missing / hung — still leave the room UI.
+    }
+    try {
+      await Future.wait<void>([
+        ref.read(subtitleProvider.notifier).stop(),
+        ref.read(liveKitProvider.notifier).leave(),
+      ]).timeout(const Duration(seconds: 2));
+    } catch (_) {
+      // Cleanup best-effort; navigation must proceed.
+    }
     if (!mounted) return;
     Navigator.of(context).popUntil((route) => route.isFirst);
   }

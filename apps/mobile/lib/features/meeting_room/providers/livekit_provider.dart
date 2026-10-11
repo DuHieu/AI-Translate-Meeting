@@ -91,7 +91,7 @@ final liveKitSessionProvider = Provider.autoDispose<LiveKitSession>((ref) {
   return session;
 });
 
-class LiveKitNotifier extends Notifier<LiveKitState> {
+class LiveKitNotifier extends AutoDisposeNotifier<LiveKitState> {
   static const maxReconnectAttempts = 3;
 
   LiveKitSession get _session => ref.read(liveKitSessionProvider);

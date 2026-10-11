@@ -46,7 +46,7 @@ class SubtitleState {
   }
 }
 
-class SubtitleNotifier extends Notifier<SubtitleState> {
+class SubtitleNotifier extends AutoDisposeNotifier<SubtitleState> {
   SubtitleSocket get _client => ref.read(websocketClientProvider);
 
   StreamSubscription<Subtitle>? _subtitleSub;

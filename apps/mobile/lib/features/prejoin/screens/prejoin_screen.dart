@@ -152,109 +152,106 @@ class _PrejoinScreenState extends ConsumerState<PrejoinScreen> {
         ),
       ),
       body: SafeArea(
-        child: state.isLoadingPreferences
-            ? const Center(child: CircularProgressIndicator())
-            : ListView(
-                padding: const EdgeInsets.all(24),
-                children: [
-                  Text(
-                    l10n.prejoinTitle,
-                    style: theme.textTheme.headlineSmall?.copyWith(
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    l10n.prejoinSubtitle,
-                    style: theme.textTheme.bodyLarge?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  CameraPreviewBox(
-                    showCamera: state.canShowCameraPreview,
-                    isMicEnabled: state.isMicEnabled && state.hasMicPermission,
-                    micLevel: state.micLevel,
-                    displayName: state.displayName,
-                    enableLivePreview: widget.enableLivePreview,
-                    onToggleCamera: () {
-                      ref.read(prejoinProvider.notifier).toggleCamera();
-                    },
-                    onToggleMic: () {
-                      ref.read(prejoinProvider.notifier).toggleMic();
-                    },
-                  ),
-                  const SizedBox(height: 24),
-                  TextFormField(
-                    controller: _nameController,
-                    enabled: !state.isJoining,
-                    textInputAction: TextInputAction.done,
-                    decoration: InputDecoration(
-                      labelText: l10n.displayName,
-                      hintText: l10n.displayNameHint,
-                      border: const OutlineInputBorder(),
-                      errorText: state.errorMessage == 'display_name_required'
-                          ? l10n.displayNameRequired
-                          : null,
-                    ),
-                    onChanged: (value) {
-                      ref.read(prejoinProvider.notifier).setDisplayName(value);
-                    },
-                  ),
-                  const SizedBox(height: 16),
-                  LanguageSelector(
-                    label: l10n.spokenLanguage,
-                    value: state.spokenLanguage,
-                    enabled: !state.isJoining,
-                    onChanged: (value) {
-                      ref
-                          .read(prejoinProvider.notifier)
-                          .setSpokenLanguage(value);
-                    },
-                  ),
-                  const SizedBox(height: 16),
-                  LanguageSelector(
-                    label: l10n.targetLanguage,
-                    value: state.targetLanguage,
-                    enabled: !state.isJoining,
-                    onChanged: (value) {
-                      ref
-                          .read(prejoinProvider.notifier)
-                          .setTargetLanguage(value);
-                    },
-                  ),
-                  if (state.errorMessage != null &&
-                      state.errorMessage != 'display_name_required') ...[
-                    const SizedBox(height: 16),
-                    Text(
-                      l10n.errorForKey(state.errorMessage),
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        color: theme.colorScheme.error,
-                      ),
-                    ),
-                  ],
-                  const SizedBox(height: 28),
-                  SizedBox(
-                    width: double.infinity,
-                    child: FilledButton.icon(
-                      onPressed: state.canJoin ? _onJoin : null,
-                      icon: state.isJoining
-                          ? const SizedBox(
-                              width: 18,
-                              height: 18,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          : const Icon(Icons.meeting_room_outlined),
-                      label: Text(
-                        state.isJoining ? l10n.joiningMeeting : l10n.joinNow,
-                      ),
-                      style: FilledButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                      ),
-                    ),
-                  ),
-                ],
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(
+                l10n.prejoinTitle,
+                style: theme.textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.w700,
+                ),
               ),
+              const SizedBox(height: 8),
+              Text(
+                l10n.prejoinSubtitle,
+                style: theme.textTheme.bodyLarge?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+              const SizedBox(height: 20),
+              CameraPreviewBox(
+                showCamera: state.canShowCameraPreview,
+                isMicEnabled: state.isMicEnabled && state.hasMicPermission,
+                micLevel: state.micLevel,
+                displayName: state.displayName,
+                enableLivePreview: widget.enableLivePreview,
+                onToggleCamera: () {
+                  ref.read(prejoinProvider.notifier).toggleCamera();
+                },
+                onToggleMic: () {
+                  ref.read(prejoinProvider.notifier).toggleMic();
+                },
+              ),
+              const SizedBox(height: 24),
+              TextFormField(
+                controller: _nameController,
+                enabled: !state.isJoining,
+                textInputAction: TextInputAction.done,
+                decoration: InputDecoration(
+                  labelText: l10n.displayName,
+                  hintText: l10n.displayNameHint,
+                  border: const OutlineInputBorder(),
+                  errorText: state.errorMessage == 'display_name_required'
+                      ? l10n.displayNameRequired
+                      : null,
+                ),
+                onChanged: (value) {
+                  ref.read(prejoinProvider.notifier).setDisplayName(value);
+                },
+              ),
+              const SizedBox(height: 16),
+              LanguageSelector(
+                label: l10n.spokenLanguage,
+                value: state.spokenLanguage,
+                enabled: !state.isJoining,
+                onChanged: (value) {
+                  ref.read(prejoinProvider.notifier).setSpokenLanguage(value);
+                },
+              ),
+              const SizedBox(height: 16),
+              LanguageSelector(
+                label: l10n.targetLanguage,
+                value: state.targetLanguage,
+                enabled: !state.isJoining,
+                onChanged: (value) {
+                  ref.read(prejoinProvider.notifier).setTargetLanguage(value);
+                },
+              ),
+              if (state.errorMessage != null &&
+                  state.errorMessage != 'display_name_required') ...[
+                const SizedBox(height: 16),
+                Text(
+                  l10n.errorForKey(state.errorMessage),
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: theme.colorScheme.error,
+                  ),
+                ),
+              ],
+              const SizedBox(height: 28),
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton.icon(
+                  onPressed: state.canJoin ? _onJoin : null,
+                  icon: state.isJoining
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(Icons.meeting_room_outlined),
+                  label: Text(
+                    state.isJoining ? l10n.joiningMeeting : l10n.joinNow,
+                  ),
+                  style: FilledButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

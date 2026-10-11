@@ -17,6 +17,9 @@ void main() {
     final storage = SecureStorage.memory();
     await storage.saveDisplayName('Lan');
 
+    tester.platformDispatcher.localeTestValue = const Locale('en');
+    addTearDown(tester.platformDispatcher.clearLocaleTestValue);
+
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
@@ -25,6 +28,7 @@ void main() {
           permissionServiceProvider.overrideWithValue(FakePermissionService()),
         ],
         child: MaterialApp(
+          locale: const Locale('en'),
           localizationsDelegates: const [
             AppLocalizations.delegate,
             GlobalMaterialLocalizations.delegate,
@@ -45,7 +49,10 @@ void main() {
       ),
     );
 
-    await tester.pumpAndSettle();
+    // Flush Riverpod microtask bootstrap (avoid pumpAndSettle + progress spinners).
+    await tester.pump();
+    await tester.idle();
+    await tester.pump();
 
     expect(find.text('Demo Room'), findsOneWidget);
     expect(find.byType(TextFormField), findsOneWidget);
