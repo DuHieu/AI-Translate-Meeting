@@ -62,6 +62,43 @@ class WorkerResult:
         self.leaked_meeting_ids: set[str] = set()
 
 
+# Omni-Router load mix (Sprint 4): VI local PhoWhisper, EN/JA/ZH Groq, AR Groq+RTL.
+DEFAULT_LANG_PROFILES: list[tuple[str, str]] = [
+    ("vi", "en"),
+    ("vi", "ja"),
+    ("vi", "en"),
+    ("vi", "ja"),
+    ("vi", "en"),
+    ("en", "vi"),
+    ("en", "ja"),
+    ("ja", "en"),
+    ("ja", "vi"),
+    ("zh", "en"),
+    ("zh", "vi"),
+    ("en", "zh"),
+    ("ja", "zh"),
+    ("ko", "en"),
+    ("fr", "en"),
+    ("ar", "vi"),
+    ("ar", "en"),
+    ("vi", "ar"),
+    ("en", "ar"),
+    ("ar", "ja"),
+]
+
+
+def resolve_room_languages(
+    room_idx: int,
+    source_lang: str,
+    target_lang: str,
+    use_omni_mix: bool,
+) -> tuple[str, str]:
+    if not use_omni_mix:
+        return source_lang, target_lang
+    profile = DEFAULT_LANG_PROFILES[(room_idx - 1) % len(DEFAULT_LANG_PROFILES)]
+    return profile
+
+
 async def run_worker(
     room_idx: int,
     worker_id: int,
@@ -271,6 +308,18 @@ async def main_async(args: argparse.Namespace) -> int:
         m_code = room["meeting_code"]
         m_id = room["meeting_id"]
         h_tok = room["host_token"]
+        room_source, room_target = resolve_room_languages(
+            r_idx,
+            args.source_lang,
+            args.target_lang,
+            use_omni_mix=args.omni_lang_mix,
+        )
+        logger.info(
+            "Room %d language pair: %s → %s",
+            r_idx,
+            room_source,
+            room_target,
+        )
 
         for p_idx in range(1, participants_per_room + 1):
             is_speaker = p_idx <= speakers_per_room
@@ -286,8 +335,8 @@ async def main_async(args: argparse.Namespace) -> int:
                     host_token=h_tok,
                     pcm_chunks=chunks,
                     chunk_interval=args.chunk_interval,
-                    source_lang=args.source_lang,
-                    target_lang=args.target_lang,
+                    source_lang=room_source,
+                    target_lang=room_target,
                     room_speaker_started=room_speaker_started,
                 )
             )
@@ -339,7 +388,8 @@ async def main_async(args: argparse.Namespace) -> int:
             print(f"  Listener Broadcast p50:      {statistics.median(listener_ttfs):.1f} ms")
         print("-" * 70)
 
-        sla_p50_target = 2000.0
+        # Blueprint Sprint 4 gate: TTFS median p50 ≤ 250ms.
+        sla_p50_target = float(args.ttfs_p50_target_ms)
         sla_pass = ttfs_p50 <= sla_p50_target and len(failed) == 0 and len(leaked) == 0
         if sla_pass:
             print(f"[RESULT] SLA PASSED: TTFS p50 ({ttfs_p50:.1f}ms) <= {sla_p50_target:.0f}ms & Zero Cross-Room Leakage.")
@@ -389,8 +439,19 @@ def main():
     parser.add_argument("--sample-file", default="vi_sample_16k.pcm", help="Path to 16kHz 16-bit mono PCM file")
     parser.add_argument("--chunk-size-bytes", type=int, default=11200, help="PCM frame chunk size in bytes (350ms)")
     parser.add_argument("--chunk-interval", type=float, default=0.35, help="Interval between audio frames in seconds")
-    parser.add_argument("--source-lang", default="vi", help="Source language")
-    parser.add_argument("--target-lang", default="en", help="Target language")
+    parser.add_argument("--source-lang", default="vi", help="Source language (ignored when --omni-lang-mix)")
+    parser.add_argument("--target-lang", default="en", help="Target language (ignored when --omni-lang-mix)")
+    parser.add_argument(
+        "--omni-lang-mix",
+        action="store_true",
+        help="Assign per-room language pairs (VI local / EN-JA-ZH Groq / AR Groq+RTL)",
+    )
+    parser.add_argument(
+        "--ttfs-p50-target-ms",
+        type=float,
+        default=250.0,
+        help="SLA threshold for TTFS median in milliseconds (blueprint: 250)",
+    )
     parser.add_argument("--output-json", default="", help="Optional JSON file path to save benchmark telemetry")
 
     args = parser.parse_args()

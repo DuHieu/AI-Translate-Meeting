@@ -15,6 +15,7 @@ from app.audio.local_agreement import LocalAgreement
 from app.audio.vad import VoiceActivityDetector
 from app.config.settings import settings
 from app.schemas.subtitle import (
+    LayaMetadata,
     PipelinePhase,
     PipelineStatusBroadcastMessage,
     PipelineStatusData,
@@ -23,9 +24,11 @@ from app.schemas.subtitle import (
 )
 from app.speech.groq_whisper_service import GroqSpeechToTextService
 from app.speech.whisper_service import (
+    OmniLanguageRouter,
     SpeechToTextService,
     TranscriptResult,
     detect_text_language,
+    get_cultural_initial_prompt,
 )
 from app.services.laya_client import LayaDecisionClient
 from app.translation.cache import TranslationCache
@@ -121,6 +124,7 @@ class TranscribeWebSocketHandler:
             if settings.STT_PROVIDER.strip().lower() == "groq":
                 logger.warning("STT_PROVIDER=groq but GROQ_API_KEY is empty; using local faster-whisper")
             self.cloud_stt = None
+        self.omni_router = OmniLanguageRouter(local_stt=self.stt, cloud_stt=self.cloud_stt)
         self.glossary_manager = glossary_manager or GlossaryManager()
         self.cache = cache or TranslationCache()
         self.context_manager = context_manager or MeetingContextManager()
@@ -242,7 +246,8 @@ class TranscribeWebSocketHandler:
                 min_cjk_chars=getattr(settings, "LOCAL_AGREEMENT_MIN_CJK_CHARS", 6),
             )
             room_terms = get_room_glossary(meeting_id) if meeting_id else {}
-            base_prompt = getattr(settings, "WHISPER_INITIAL_PROMPT", None)
+            cultural_prompt = get_cultural_initial_prompt(source_language)
+            base_prompt = cultural_prompt or getattr(settings, "WHISPER_INITIAL_PROMPT", None)
             if source_language.lower() == "auto":
                 active_initial_prompt = None
             else:
@@ -447,7 +452,7 @@ class TranscribeWebSocketHandler:
                             local_agreement.reset()
                         continue
 
-                # B. TEXT MESSAGE PROCESSING (Direct, benchmark text input, or session config)
+                # B. TEXT MESSAGE PROCESSING (Direct, client_transcript offload, or session config)
                 elif raw_text:
                     input_kind = "text"
                     try:
@@ -491,25 +496,53 @@ class TranscribeWebSocketHandler:
                                 bool(active_initial_prompt),
                             )
                             continue
-                        text = parsed.get("text", "")
-                        lang = parsed.get("language", source_language)
+
+                        # Desktop / local-STT clients: skip server STT entirely (0% CPU).
+                        is_client_transcript = (
+                            isinstance(parsed, dict)
+                            and parsed.get("type") == "client_transcript"
+                        )
+                        if is_client_transcript:
+                            input_kind = "client_transcript"
+                            text = str(parsed.get("text") or "")
+                            lang = str(
+                                parsed.get("sourceLanguage")
+                                or parsed.get("language")
+                                or source_language
+                            )
+                        else:
+                            text = parsed.get("text", "") if isinstance(parsed, dict) else ""
+                            lang = (
+                                parsed.get("language", source_language)
+                                if isinstance(parsed, dict)
+                                else source_language
+                            )
+
                         text_lang, text_confidence = detect_text_language(
                             text,
-                            session_spoken_lang if lang.lower() == "auto" else lang,
+                            session_spoken_lang if str(lang).lower() == "auto" else str(lang),
                         )
-                        if lang.lower() == "auto" or text_confidence >= 0.85:
+                        if str(lang).lower() == "auto" or text_confidence >= 0.85:
                             lang = text_lang
                         if text_confidence >= 0.45:
                             session_spoken_lang = lang
                             await self.connection_manager.update_speaker_language(
                                 meeting_id, participant_id, lang
                             )
-                        if "confidence" in parsed and isinstance(parsed["confidence"], (int, float)):
+                        if (
+                            isinstance(parsed, dict)
+                            and "confidence" in parsed
+                            and isinstance(parsed["confidence"], (int, float))
+                        ):
                             segment_stt_confidence = max(0.0, min(1.0, float(parsed["confidence"])))
                         else:
                             segment_stt_confidence = text_confidence
-                        is_final = parsed.get("isFinal", True)
-                        if "_t0" in parsed:
+                        is_final = (
+                            parsed.get("isFinal", True)
+                            if isinstance(parsed, dict)
+                            else True
+                        )
+                        if isinstance(parsed, dict) and "_t0" in parsed:
                             t0_bench = float(parsed["_t0"])
                     except Exception:
                         text = raw_text
@@ -679,6 +712,7 @@ class TranscribeWebSocketHandler:
                     # Dispatch final subtitle
                     sub_id = current_utterance_id
                     speaker_sequence += 1
+                    final_latency_ms = stt_latency_ms + trans_latency_ms
 
                     async def _send_to_listener(listener: ParticipantConnection):
                         listener_target = listener_targets.get(
@@ -698,7 +732,8 @@ class TranscribeWebSocketHandler:
                                 translatedText=listener_translated,
                                 isFinal=True,
                                 tags=[],
-                                confidence=0.0,
+                                confidence=segment_stt_confidence,
+                                latencyMs=round(final_latency_ms, 1),
                             )
                         )
                         try:
@@ -996,51 +1031,14 @@ class TranscribeWebSocketHandler:
         initial_prompt: str | None,
         meeting_id: str,
     ) -> TranscriptResult:
-        """Cloud STT first when configured; any cloud failure falls back to local faster-whisper."""
-        if self.cloud_stt is not None:
-            try:
-                text, detected_lang, confidence = await self.cloud_stt.transcribe_audio_chunk(
-                    audio,
-                    source_lang=language,
-                    prompt=initial_prompt,
-                )
-                return TranscriptResult(
-                    text=text,
-                    language=detected_lang,
-                    is_final=is_final,
-                    language_probability=confidence,
-                )
-            except asyncio.CancelledError:
-                raise
-            except Exception as ex:
-                logger.warning(
-                    "event=stt_fallback meeting_id=%s from=groq to=local reason=%s",
-                    meeting_id,
-                    ex or type(ex).__name__,
-                )
-
-        try:
-            return await self.stt.transcribe(
-                audio,
-                language=language,
-                is_final=is_final,
-                initial_prompt=initial_prompt,
-                vad_filter=False,
-            )
-        except TypeError:
-            try:
-                return await self.stt.transcribe(
-                    audio,
-                    language=language,
-                    is_final=is_final,
-                    initial_prompt=initial_prompt,
-                )
-            except TypeError:
-                return await self.stt.transcribe(
-                    audio,
-                    language=language,
-                    is_final=is_final,
-                )
+        """Omni-Language router: vi → PhoWhisper; others → Groq; with reciprocal fallbacks."""
+        return await self.omni_router.transcribe(
+            audio,
+            language=language,
+            is_final=is_final,
+            initial_prompt=initial_prompt,
+            meeting_id=meeting_id,
+        )
 
     async def _broadcast_pipeline_status(
         self,
@@ -1260,6 +1258,10 @@ class TranscribeWebSocketHandler:
                             isFinal=True,
                             tags=tags,
                             confidence=confidence,
+                            layaMetadata=LayaMetadata(
+                                isActionItem="action_item" in tags,
+                                isDecision="decision" in tags or "decision_made" in tags,
+                            ),
                         )
                     )
                     try:

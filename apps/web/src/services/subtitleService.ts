@@ -66,6 +66,13 @@ export function normalizeSubtitleMessage(raw: unknown, preferredTargetLanguage: 
 
   if (!originalText && !translatedText) return null;
 
+  const directionRaw = readString(payload.direction, '');
+  const direction =
+    directionRaw === 'rtl' || directionRaw === 'ltr'
+      ? directionRaw
+      : undefined;
+  const layaRaw = isRecord(payload.layaMetadata) ? payload.layaMetadata : null;
+
   return {
     id: readString(payload.id, createClientSubtitleId()),
     meetingId: readString(payload.meetingId),
@@ -80,6 +87,15 @@ export function normalizeSubtitleMessage(raw: unknown, preferredTargetLanguage: 
     tags: Array.isArray(payload.tags) ? (payload.tags as string[]) : [],
     confidence: typeof payload.confidence === 'number' ? payload.confidence : 0,
     speakerSequence: typeof payload.speakerSequence === 'number' ? payload.speakerSequence : undefined,
+    direction,
+    latencyMs: typeof payload.latencyMs === 'number' ? payload.latencyMs : null,
+    layaMetadata: layaRaw
+      ? {
+          isActionItem: Boolean(layaRaw.isActionItem),
+          isDecision: Boolean(layaRaw.isDecision),
+          topic: typeof layaRaw.topic === 'string' ? layaRaw.topic : null,
+        }
+      : null,
   };
 }
 
@@ -170,6 +186,8 @@ export class SubtitleWebSocketService {
             participantName: normalizedParticipantName,
             sourceLanguage: options.sourceLanguage,
             targetLanguage: options.targetLanguage,
+            clientType: 'web',
+            sttCapability: 'server',
           })
         );
       };
@@ -275,9 +293,19 @@ export class SubtitleWebSocketService {
     }
   }
 
-  sendSpeechText(text: string, language?: string, isFinal = true) {
+  sendSpeechText(text: string, language?: string, isFinal = true, confidence = 0.9) {
     if (this.ws && this.ws.readyState === WebSocket.OPEN && this.isAuthenticated && text.trim()) {
-      this.ws.send(JSON.stringify({ text: text.trim(), language, isFinal }));
+      // Hybrid protocol: client_transcript bypasses server STT (desktop / browser recognition).
+      this.ws.send(
+        JSON.stringify({
+          type: 'client_transcript',
+          text: text.trim(),
+          sourceLanguage: language,
+          language,
+          isFinal,
+          confidence,
+        }),
+      );
     }
   }
 

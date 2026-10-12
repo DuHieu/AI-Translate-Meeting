@@ -138,8 +138,12 @@ trusted_proxy_ips = {
     if value.strip()
 }
 
-SUPPORTED_TARGET_LANGUAGES = frozenset({"vi", "en", "ja", "ko", "zh", "fr", "de", "es"})
-SUPPORTED_SOURCE_LANGUAGES = frozenset({"auto", "vi", "en", "ja", "ko", "zh", "fr", "de", "es"})
+SUPPORTED_TARGET_LANGUAGES = frozenset(
+    {"vi", "en", "ja", "ko", "zh", "fr", "de", "es", "ar", "th", "id", "tl"}
+)
+SUPPORTED_SOURCE_LANGUAGES = frozenset(
+    {"auto", "vi", "en", "ja", "ko", "zh", "fr", "de", "es", "ar", "th", "id", "tl"}
+)
 SUPPORTED_LANGUAGES = SUPPORTED_TARGET_LANGUAGES
 DEFAULT_SOURCE_LANGUAGE = "vi"
 DEFAULT_TARGET_LANGUAGE = "en"

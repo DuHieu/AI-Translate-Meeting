@@ -1,3 +1,11 @@
+export type TextDirection = 'rtl' | 'ltr';
+
+export interface LayaMetadata {
+  isActionItem?: boolean;
+  isDecision?: boolean;
+  topic?: string | null;
+}
+
 export interface SubtitleMessage {
   id: string;
   meetingId: string;
@@ -12,6 +20,9 @@ export interface SubtitleMessage {
   tags?: string[];
   confidence?: number;
   speakerSequence?: number;
+  direction?: TextDirection;
+  latencyMs?: number | null;
+  layaMetadata?: LayaMetadata | null;
 }
 
 export interface SubtitleBroadcast {
