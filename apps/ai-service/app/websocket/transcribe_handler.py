@@ -228,8 +228,8 @@ class TranscribeWebSocketHandler:
             # Isolated per-connection state for streaming audio chunk buffering & VAD
             try:
                 vad = VoiceActivityDetector(
-                    energy_threshold=getattr(settings, "VAD_ENERGY_THRESHOLD", 0.00004),
-                    rms_threshold=getattr(settings, "VAD_RMS_THRESHOLD", 0.0025),
+                    energy_threshold=getattr(settings, "VAD_ENERGY_THRESHOLD", 0.00015),
+                    rms_threshold=getattr(settings, "VAD_RMS_THRESHOLD", 0.006),
                 )
             except TypeError:
                 vad = VoiceActivityDetector()
@@ -441,6 +441,9 @@ class TranscribeWebSocketHandler:
                             )
                         else:
                             lang = session_spoken_lang
+                    else:
+                        lang = source_language
+                        session_spoken_lang = source_language
 
                     if not text:
                         if is_final:
@@ -651,7 +654,9 @@ class TranscribeWebSocketHandler:
                     context_hash = await self.context_manager.get_context_hash(meeting_id, max_segments=5)
 
                     async def _translate_final_target(tl: str) -> tuple[str, str, str, bool]:
-                        if tl.lower() == lang.lower():
+                        clean_tl = tl.lower().split("-", 1)[0]
+                        clean_lang = lang.lower().split("-", 1)[0]
+                        if clean_tl == clean_lang or not text.strip():
                             return tl, text, "offline_pattern", False
 
                         # Tier-1/Tier-2 General Cache Check (sub-0.1ms L1, sub-2ms L2 Redis)
@@ -890,7 +895,9 @@ class TranscribeWebSocketHandler:
                             context_hash = await self.context_manager.get_context_hash(meeting_id, max_segments=5)
 
                             async def _translate_partial_target(tl: str) -> tuple[str, str]:
-                                if tl.lower() == p_lang.lower():
+                                clean_tl = tl.lower().split("-", 1)[0]
+                                clean_plang = p_lang.lower().split("-", 1)[0]
+                                if clean_tl == clean_plang or not p_text.strip():
                                     return tl, p_text
 
                                 gen_key = self.cache.build_general_key(

@@ -127,8 +127,8 @@ class Settings(BaseSettings):
     STT_INTERIM_MIN_DURATION_SECONDS: float = float(os.getenv("STT_INTERIM_MIN_DURATION_SECONDS", "0.8"))
     STT_INTERIM_THROTTLE_SECONDS: float = float(os.getenv("STT_INTERIM_THROTTLE_SECONDS", "0.8"))
     INTERIM_TRANSLATION_MIN_WORDS: int = int(os.getenv("INTERIM_TRANSLATION_MIN_WORDS", "3"))
-    VAD_ENERGY_THRESHOLD: float = float(os.getenv("VAD_ENERGY_THRESHOLD", "0.00004"))
-    VAD_RMS_THRESHOLD: float = float(os.getenv("VAD_RMS_THRESHOLD", "0.0025"))
+    VAD_ENERGY_THRESHOLD: float = float(os.getenv("VAD_ENERGY_THRESHOLD", "0.00015"))
+    VAD_RMS_THRESHOLD: float = float(os.getenv("VAD_RMS_THRESHOLD", "0.006"))
 
     # Polar Payment Integration
     POLAR_ACCESS_TOKEN: str = os.getenv("POLAR_ACCESS_TOKEN", "")

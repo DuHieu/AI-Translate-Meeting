@@ -736,6 +736,15 @@ class SpeechToTextService:
                 if isinstance(comp_ratio, (int, float)) and comp_ratio > compression_ratio_thresh:
                     continue
 
+                avg_logprob = getattr(segment, "avg_logprob", None)
+                if (
+                    isinstance(avg_logprob, (int, float))
+                    and avg_logprob < -1.15
+                    and isinstance(no_speech, (int, float))
+                    and no_speech > 0.35
+                ):
+                    continue
+
                 seg_text = getattr(segment, "text", "") or ""
                 seg_text = seg_text.strip()
                 if seg_text:

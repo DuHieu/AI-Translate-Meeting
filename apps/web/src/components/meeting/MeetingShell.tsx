@@ -7,7 +7,6 @@ import {
   Track,
   ParticipantEvent,
   AudioPresets,
-  VideoPresets,
 } from 'livekit-client';
 import type {
   AudioCaptureOptions,
@@ -186,7 +185,6 @@ const AUDIO_PUBLISH_OPTIONS: TrackPublishOptions = {
 
 const VIDEO_PUBLISH_OPTIONS: TrackPublishOptions = {
   simulcast: true,
-  videoEncoding: VideoPresets.h720.encoding,
 };
 const SCREEN_SHARE_CAPTURE_OPTIONS: ScreenShareCaptureOptions = {
   audio: true,

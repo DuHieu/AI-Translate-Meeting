@@ -28,7 +28,7 @@ export const ParticipantTile: React.FC<ParticipantTileProps> = ({
   onTogglePin,
 }) => {
   const isSpeaking = useIsSpeaking(participant) || participant.isSpeaking;
-  const videoRef = useRef<HTMLVideoElement>(null);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
 
   const [virtualBg, setVirtualBg] = useState<VirtualBackgroundMode>(() =>
     isLocal ? (getUserSettings().virtualBackground || 'none') : 'none'
@@ -85,13 +85,43 @@ export const ParticipantTile: React.FC<ParticipantTileProps> = ({
     };
   }, [participant]);
 
-  // Attach / Detach video track to HTMLVideoElement directly
+  // Robust attach & play handler to prevent browser buffering / loading spinner hang
+  const setVideoRef = React.useCallback(
+    (el: HTMLVideoElement | null) => {
+      const prev = videoRef.current;
+      videoRef.current = el;
+      const track = camPub?.track;
+
+      if (prev && prev !== el && track) {
+        track.detach(prev);
+      }
+
+      if (el && track && !isVideoMuted) {
+        el.muted = true;
+        el.defaultMuted = true;
+        track.attach(el);
+        const playPromise = el.play();
+        if (playPromise !== undefined) {
+          playPromise.catch(() => {});
+        }
+      }
+    },
+    [camPub?.track, isVideoMuted],
+  );
+
+  // Attach / Detach video track to HTMLVideoElement directly and ensure playback
   useEffect(() => {
     const el = videoRef.current;
     const track = camPub?.track;
 
     if (!isVideoMuted && el && track) {
+      el.muted = true;
+      el.defaultMuted = true;
       track.attach(el);
+      const playPromise = el.play();
+      if (playPromise !== undefined) {
+        playPromise.catch(() => {});
+      }
       return () => {
         track.detach(el);
       };
@@ -178,10 +208,22 @@ export const ParticipantTile: React.FC<ParticipantTileProps> = ({
       {/* Video Stream or Avatar Fallback */}
       {!isVideoMuted ? (
         <video
-          ref={videoRef}
+          ref={setVideoRef}
           autoPlay
           playsInline
           muted={true}
+          onLoadedMetadata={(e) => {
+            const el = e.currentTarget;
+            el.muted = true;
+            el.defaultMuted = true;
+            el.play().catch(() => {});
+          }}
+          onCanPlay={(e) => {
+            const el = e.currentTarget;
+            el.muted = true;
+            el.defaultMuted = true;
+            el.play().catch(() => {});
+          }}
           style={
             isLocal && virtualBg !== 'none'
               ? { filter: virtualBg === 'blur_light' ? 'blur(6px)' : 'blur(14px)' }
