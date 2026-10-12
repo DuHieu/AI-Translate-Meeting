@@ -5,8 +5,11 @@ from urllib.parse import quote
 from typing import Any
 import httpx
 from fastapi import APIRouter, HTTPException, Query
-from fastapi.responses import Response
+from fastapi.responses import Response, StreamingResponse
 from pydantic import BaseModel
+
+from app.translation.tts_streamer import default_tts_streamer, EDGE_VOICE_MAP
+from app.translation.clause_chunker import default_clause_chunker
 
 from app.translation.premium_provider import (
     PremiumTranslationProvider,
@@ -205,6 +208,65 @@ async def get_translation_usage(
     """Return premium translation quota usage for one meeting and tier."""
     usage = await quota_manager.get_usage(meeting_id, tier=tier)
     return TranslationUsageResponse(**usage)
+
+
+@router.get("/tts/voices")
+async def get_tts_voices() -> dict[str, Any]:
+    """Return available ultra-fast neural voices for real-time voice dubbing."""
+    return {
+        "engine": "edge-tts",
+        "latency_target_ms": 250,
+        "voices": EDGE_VOICE_MAP,
+    }
+
+
+@router.get("/tts/clauses")
+async def get_tts_clauses(
+    q: str = Query(..., min_length=1, max_length=1000),
+    tl: str = Query("vi", min_length=2, max_length=16),
+) -> dict[str, Any]:
+    """Split translated text into semantic prosodic clause chunks for streaming TTS."""
+    clauses = default_clause_chunker.split_into_clauses(q, lang=tl)
+    return {
+        "text": q,
+        "lang": tl,
+        "total_clauses": len(clauses),
+        "clauses": [
+            {
+                "text": c.text,
+                "index": c.index,
+                "is_terminal": c.is_terminal,
+                "word_count": c.word_count,
+            }
+            for c in clauses
+        ],
+    }
+
+
+@router.get("/tts/stream")
+async def stream_speech_tts(
+    q: str = Query(..., min_length=1, max_length=500),
+    tl: str = Query("vi", min_length=2, max_length=16),
+    gender: str = Query("auto", pattern="^(auto|female|male)$"),
+    speed: float = Query(1.0, ge=0.5, le=2.0),
+) -> StreamingResponse:
+    """Stream audio chunks via Edge-TTS for low-latency clause dubbing (<250ms)."""
+    cleaned_text = q.strip()[:300]
+    if not cleaned_text:
+        raise HTTPException(status_code=400, detail="Query 'q' must not be empty.")
+
+    voice = default_tts_streamer.get_voice(tl, gender=gender)
+    rate_str = default_tts_streamer.format_rate_string(speed)
+
+    return StreamingResponse(
+        default_tts_streamer.stream_speech_chunks(cleaned_text, voice=voice, rate=rate_str),
+        media_type="audio/mpeg",
+        headers={
+            "Cache-Control": "public, max-age=604800",
+            "X-TTS-Engine": "edge-tts",
+            "X-TTS-Voice": voice,
+        },
+    )
 
 
 @router.get("/tts")

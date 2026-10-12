@@ -3,6 +3,7 @@ import { SubtitleMessage } from '../types/subtitle';
 import { speakText, stopSpeech } from '../utils/speechAndAudio';
 import { audioDuckingRegistry } from '../utils/audioDuckingRegistry';
 import { getUserSettings, AudioBoothVoiceGender } from '../utils/userSettings';
+import { defaultClauseStreamBuffer } from '../utils/clauseStreamBuffer.ts';
 
 interface UseAudioBoothOptions {
   enabled: boolean;
@@ -168,15 +169,17 @@ export function useAudioBooth({
       if (!speechText) return;
 
       const preferredLang = item.targetLanguage || targetLanguage || 'vi';
+      const clauses = defaultClauseStreamBuffer.splitIntoClauses(speechText, preferredLang);
 
-      queueRef.current.push({
-        id: itemId,
-        text: speechText,
-        lang: preferredLang,
-        enqueuedAt: Date.now(),
+      clauses.forEach((clause) => {
+        queueRef.current.push({
+          id: `${itemId}-${clause.index}`,
+          text: clause.text,
+          lang: preferredLang,
+          enqueuedAt: Date.now(),
+        });
+        didEnqueue = true;
       });
-
-      didEnqueue = true;
     });
 
     if (didEnqueue && !isSpeakingRef.current) {
