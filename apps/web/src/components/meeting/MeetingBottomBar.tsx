@@ -98,6 +98,7 @@ export const MeetingBottomBar: React.FC<MeetingBottomBarProps> = (props) => {
     danger = false,
     badge?: number | string | null,
     titleHint?: string,
+    speakingRing = false,
   ) => (
     <button
       type="button"
@@ -106,7 +107,9 @@ export const MeetingBottomBar: React.FC<MeetingBottomBarProps> = (props) => {
       disabled={disabled}
       onClick={callback}
       title={titleHint || label}
-      className={`meeting-primary-control ${active ? 'is-active' : ''} ${danger ? 'is-danger' : ''} relative group`}
+      className={`meeting-primary-control ${active ? 'is-active' : ''} ${danger ? 'is-danger' : ''} relative group ${
+        speakingRing ? 'ring-2 ring-emerald-500 animate-pulse shadow-lg shadow-emerald-500/20 rounded-full' : ''
+      }`}
     >
       <div className="relative inline-flex items-center justify-center">
         {icon}
@@ -163,7 +166,10 @@ export const MeetingBottomBar: React.FC<MeetingBottomBarProps> = (props) => {
             !isConnected,
             false,
             null,
-            isMicOn ? 'Tắt microphone (Ctrl+D)' : 'Bật microphone (Ctrl+D)',
+            isMicOn
+              ? (props.isSpeaking ? 'Đang phát hiện giọng nói — audio đang gửi lên AI' : 'Tắt microphone (Ctrl+D)')
+              : 'Bật microphone (Ctrl+D)',
+            Boolean(isMicOn && props.isSpeaking),
           )}
           {control(
             isCameraOn ? 'Tắt cam' : 'Bật cam',

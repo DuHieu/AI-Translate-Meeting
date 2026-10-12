@@ -41,5 +41,7 @@ def test_meeting_bottom_bar_renders_live_microphone_visualizer():
 def test_meeting_shell_passes_local_speaking_state_to_bottom_bar():
     source = read("components/meeting/MeetingShell.tsx")
 
+    # LiveKit speaking still used for UX (e.g. hand-lower); mic ring uses VAD only.
     assert "useIsSpeaking(localParticipant)" in source
-    assert "isSpeaking={isLocalSpeaking}" in source
+    assert "isSpeaking={isVadSpeaking}" in source
+    assert "isSpeaking: isVadSpeaking" in source

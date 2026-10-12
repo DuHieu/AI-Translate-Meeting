@@ -21,7 +21,7 @@ x-api-environment: &api-environment
   License__LicenseKey: "${LICENSE_KEY:-}"
   License__SigningKey: "${LICENSE_SIGNING_KEY:-}"
   License__DefaultMaxRooms: "${DEFAULT_MAX_ROOMS:-25}"
-  License__DefaultMaxParticipants: "${DEFAULT_MAX_PARTICIPANTS:-15}"
+  License__DefaultMaxParticipants: "${DEFAULT_MAX_PARTICIPANTS:-50}"
   Security__EnforceProductionSecrets: "true"
   Cors__AllowedOrigins__0: "https://${APP_DOMAIN:?Set APP_DOMAIN}"
   ForwardedHeaders__KnownProxies__0: 172.30.0.10

@@ -522,9 +522,17 @@ class TranscribeWebSocketHandler:
                             text,
                             session_spoken_lang if str(lang).lower() == "auto" else str(lang),
                         )
-                        if str(lang).lower() == "auto" or text_confidence >= 0.85:
+                        # Desktop/local STT offload: trust explicit client sourceLanguage.
+                        # Only run LID override when the client asked for auto detection.
+                        client_lang_locked = (
+                            is_client_transcript
+                            and str(lang).strip().lower() not in ("", "auto")
+                        )
+                        if not client_lang_locked and (
+                            str(lang).lower() == "auto" or text_confidence >= 0.85
+                        ):
                             lang = text_lang
-                        if text_confidence >= 0.45:
+                        if client_lang_locked or text_confidence >= 0.45:
                             session_spoken_lang = lang
                             await self.connection_manager.update_speaker_language(
                                 meeting_id, participant_id, lang

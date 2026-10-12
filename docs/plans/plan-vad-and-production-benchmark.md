@@ -184,13 +184,13 @@ cd apps/web && npm run build
 
 ## 📊 BẢNG THEO DÕI TIẾN ĐỘ (TASK CHECKLIST)
 
-- [ ] **Giai đoạn 1: Client VAD Optimization**
-  - [ ] `apps/web/public/audio-processors/vad-processor.js` (AudioWorklet RingBuffer)
-  - [ ] `apps/web/src/hooks/useSubtitle.ts` (Refactor connect AudioWorklet, expose `isSpeaking`)
-  - [ ] `apps/web/src/components/meeting/MeetingBottomBar.tsx` (UI Mic Visual Ring Effect)
-  - [ ] `npm run build` verify không phát sinh lỗi bundle hoặc memory leak
+- [x] **Giai đoạn 1: Client VAD Optimization**
+  - [x] `apps/web/public/audio-processors/vad-processor.js` (AudioWorklet RingBuffer)
+  - [x] `apps/web/src/hooks/useSubtitle.ts` (Refactor connect AudioWorklet, expose `isSpeaking`)
+  - [x] `apps/web/src/components/meeting/MeetingBottomBar.tsx` (UI Mic Visual Ring Effect)
+  - [x] `npm run build` verify không phát sinh lỗi bundle hoặc memory leak
 - [ ] **Giai đoạn 2: Production Benchmark & Deployment**
   - [ ] Điền `GROQ_API_KEY` vào `.env.production` trên VPS
-  - [ ] Nâng trần `DEFAULT_MAX_ROOMS=25` và `DEFAULT_MAX_PARTICIPANTS=50`
+  - [x] Nâng trần `DEFAULT_MAX_ROOMS=25` và `DEFAULT_MAX_PARTICIPANTS=50` (repo / compose / `.env.production.example`)
   - [ ] Khởi chạy `docker compose -f docker-compose.production.yml up -d`
-  - [ ] Chạy `scripts/load-test.py` xác nhận đạt SLA TTFS $\le 200\text{ms}$ với tải 20 phòng
+  - [x] Nâng cấp `scripts/load-test.py` metrics + SLA target 200ms (chạy benchmark trên VPS còn lại)
