@@ -9,6 +9,7 @@ import { useKeyboardShortcuts } from '../../hooks/useKeyboardShortcuts';
 import { SupportedLanguage } from '../../types/meeting';
 import { ThemeToggle } from '../common/ThemeToggle';
 import { MeetingControlButton } from './MeetingControlButton';
+import { AudioTrackMode } from '../../utils/userSettings';
 
 interface MeetingBottomBarProps {
   meetingCode: string;
@@ -60,6 +61,8 @@ interface MeetingBottomBarProps {
   onPushToTalk?: (active: boolean) => void;
   unreadChatCount?: number;
   isMeetingInfoOpen?: boolean;
+  audioTrackMode?: AudioTrackMode;
+  onOpenAudioTrackSelector?: () => void;
 }
 
 export const MeetingBottomBar: React.FC<MeetingBottomBarProps> = (props) => {
@@ -229,6 +232,16 @@ export const MeetingBottomBar: React.FC<MeetingBottomBarProps> = (props) => {
             null,
             'Chi tiết cuộc họp & thông tin tham gia (I)',
           )}
+          {props.onOpenAudioTrackSelector && control(
+            'Kênh âm thanh',
+            <Headphones />,
+            props.onOpenAudioTrackSelector,
+            props.audioTrackMode === 'translated_only' || props.audioTrackMode === 'dual_ducking',
+            false,
+            false,
+            props.audioTrackMode === 'translated_only' ? 'DỊCH' : props.audioTrackMode === 'dual_ducking' ? 'ĐÔI' : null,
+            `Kênh âm thanh: ${props.audioTrackMode === 'translated_only' ? 'Chỉ nghe dịch (AI Dubbing)' : props.audioTrackMode === 'original' ? 'Âm thanh gốc' : 'Âm thanh kép Ducking (-18dB)'}`,
+          )}
         </div>
       </div>
       {!isConnected && <span className="sr-only" role="status">{isConnecting ? 'Đang kết nối phòng họp' : 'Phòng họp chưa kết nối'}</span>}
@@ -263,6 +276,7 @@ export const MeetingBottomBar: React.FC<MeetingBottomBarProps> = (props) => {
               {menuAction('Chọn camera', <Video />, () => setMenu('video'))}
               {menuAction('Phiên dịch âm thanh (TTS)', <Headphones />, () => { const next = !isTtsEnabled; setIsTtsEnabled(next); ttsEngine.updateSettings({ enabled: next }); }, isTtsEnabled)}
               {props.onToggleAudioBooth && menuAction('Cabin phiên dịch (Audio Booth — Ducking -18dB)', <Headphones />, action(props.onToggleAudioBooth), props.isAudioBoothActive)}
+              {props.onOpenAudioTrackSelector && menuAction(`Kênh âm thanh đa luồng (${props.audioTrackMode === 'translated_only' ? 'Chỉ nghe dịch' : props.audioTrackMode === 'original' ? 'Âm thanh gốc' : 'Âm thanh kép Ducking'})`, <Headphones />, action(props.onOpenAudioTrackSelector), props.audioTrackMode !== 'original')}
               {menuAction(props.isHandRaised ? 'Hạ tay' : 'Giơ tay', <Hand />, action(onToggleRaiseHand), props.isHandRaised, !isConnected)}
               {props.isRecordingEnabled && props.onToggleRecording && menuAction(props.isRecording ? 'Dừng ghi hình cuộc họp' : 'Ghi hình cuộc họp', <CircleDot />, () => {
                 if (!navigator.mediaDevices?.getDisplayMedia) setCapabilityNotice('Ghi hình cần quyền chia sẻ màn hình trên máy tính. Hãy mở cùng phòng trên PC; trên điện thoại bạn có thể xuất phụ đề và biên bản từ Trợ lý AI.');

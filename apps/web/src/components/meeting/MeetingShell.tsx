@@ -84,7 +84,9 @@ import type { BrandingConfigDto } from '../../api/meetingApi';
 import { saveRecording } from '../../utils/recordingStorage';
 import { BellRing, Mic } from 'lucide-react';
 import { CountryFlag } from '../common/CountryFlag';
-import { getUserSettings, subscribeUserSettings } from '../../utils/userSettings';
+import { getUserSettings, subscribeUserSettings, saveUserSettings, AudioTrackMode } from '../../utils/userSettings';
+import { audioDuckingRegistry } from '../../utils/audioDuckingRegistry';
+import { AudioTrackSelectorModal } from './AudioTrackSelectorModal';
 
 function playWaitingRoomKnockChime(): void {
   try {
@@ -534,6 +536,16 @@ export const MeetingShell: React.FC<MeetingShellProps> = ({
   const recordingDownloadUrlRef = useRef<string | null>(null);
 
   const [audioBoothToast, setAudioBoothToast] = useState<string | null>(null);
+  const [isAudioTrackSelectorOpen, setIsAudioTrackSelectorOpen] = useState(false);
+  const [audioTrackMode, setAudioTrackMode] = useState<AudioTrackMode>(() => getUserSettings().audioTrackMode);
+
+  useEffect(() => {
+    return subscribeUserSettings((newSettings) => {
+      if (newSettings.audioTrackMode) {
+        setAudioTrackMode(newSettings.audioTrackMode);
+      }
+    });
+  }, []);
   const [timeRemainingSeconds, setTimeRemainingSeconds] = useState<number | null>(
     isProPlan ? null : FREE_MEETING_LIMIT_SECONDS,
   );
@@ -766,6 +778,10 @@ export const MeetingShell: React.FC<MeetingShellProps> = ({
       ...sidecarPreferences,
       audioBooth: nextState,
     });
+    const nextMode: AudioTrackMode = nextState ? 'dual_ducking' : 'original';
+    setAudioTrackMode(nextMode);
+    saveUserSettings({ audioTrackMode: nextMode });
+    audioDuckingRegistry.setMode(nextMode);
     setAudioBoothToast(
       nextState
         ? 'Cabin phiên dịch đã bật: Tự động phát âm thanh dịch và giảm nhỏ giọng gốc (-18dB).'
@@ -1485,6 +1501,7 @@ export const MeetingShell: React.FC<MeetingShellProps> = ({
     localIdentity: localParticipant?.identity,
     targetLanguage: subtitleOptions.targetLanguage,
     allowSelfSpeech: participants.length <= 1,
+    audioTrackMode,
   });
 
   const handleTargetLanguageChange = useCallback(async (language: SupportedLanguage) => {
@@ -2034,6 +2051,8 @@ export const MeetingShell: React.FC<MeetingShellProps> = ({
         pendingAdmissionsCount={pendingAdmissions.length}
         onPushToTalk={handlePushToTalk}
         unreadChatCount={unreadChatCount}
+        audioTrackMode={audioTrackMode}
+        onOpenAudioTrackSelector={() => setIsAudioTrackSelectorOpen(true)}
       />
 
       {/* Push-to-Talk Floating Indicator (Zoom & Meet style) */}
@@ -2243,6 +2262,36 @@ export const MeetingShell: React.FC<MeetingShellProps> = ({
           onSidecarPreferencesChange={handleSidecarPreferencesChange}
         />
       )}
+
+      <AudioTrackSelectorModal
+        isOpen={isAudioTrackSelectorOpen}
+        onClose={() => setIsAudioTrackSelectorOpen(false)}
+        currentMode={audioTrackMode}
+        onSelectMode={(mode) => {
+          setAudioTrackMode(mode);
+          if (mode !== 'original' && !sidecarPreferences.audioBooth) {
+            handleSidecarPreferencesChange({
+              ...sidecarPreferences,
+              audioBooth: true,
+            });
+          } else if (mode === 'original' && sidecarPreferences.audioBooth) {
+            handleSidecarPreferencesChange({
+              ...sidecarPreferences,
+              audioBooth: false,
+            });
+          }
+          setAudioBoothToast(
+            mode === 'original'
+              ? 'Đã chuyển sang Âm thanh gốc: Chỉ nghe giọng thực của người phát biểu.'
+              : mode === 'translated_only'
+              ? 'Đã chuyển sang Chỉ nghe dịch: Đã tắt tiếng người nói, chỉ nghe lồng tiếng AI.'
+              : 'Đã chuyển sang Âm thanh kép: Tự động giảm nhỏ giọng gốc (-18dB) khi AI nói.'
+          );
+          window.setTimeout(() => setAudioBoothToast(null), 3500);
+        }}
+        targetLanguage={subtitleTargetLanguage}
+        onSelectTargetLanguage={handleTargetLanguageChange}
+      />
 
       <UpgradeRequiredModal
         isOpen={isUpgradeModalOpen}

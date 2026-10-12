@@ -10,6 +10,7 @@ export type TranslationTier = 'standard' | 'pro';
 export type ActionSyncPlatform = 'slack' | 'trello' | 'jira' | 'custom';
 export type AudioBoothVoiceGender = 'auto' | 'male' | 'female';
 export type VirtualBackgroundMode = 'none' | 'blur_light' | 'blur_deep';
+export type AudioTrackMode = 'original' | 'translated_only' | 'dual_ducking';
 
 export interface UserMeetingSettings {
   nativeLanguage?: SupportedLanguage;
@@ -24,6 +25,10 @@ export interface UserMeetingSettings {
   audioDuckingEnabled: boolean;
   audioBoothVoiceGender: AudioBoothVoiceGender;
   audioBoothSpeedRate: number;
+  audioTrackMode: AudioTrackMode;
+  dubbingTargetLanguage?: SupportedLanguage;
+  dubbingVolume: number;
+  duckedVolume: number;
   byokEnabled: boolean;
   byokProvider: ByokProvider;
   byokApiKey: string;
@@ -51,6 +56,10 @@ export const DEFAULT_USER_SETTINGS: UserMeetingSettings = {
   audioDuckingEnabled: true,
   audioBoothVoiceGender: 'auto',
   audioBoothSpeedRate: 1.0,
+  audioTrackMode: 'dual_ducking',
+  dubbingTargetLanguage: undefined,
+  dubbingVolume: 1.0,
+  duckedVolume: 0.18,
   byokEnabled: false,
   byokProvider: 'openai',
   byokApiKey: '',
@@ -86,6 +95,17 @@ export function getUserSettings(): UserMeetingSettings {
       providerKeys[parsed.byokProvider] = parsed.byokApiKey;
     }
     const savedNative = (localStorage.getItem('layameet:native-language') as SupportedLanguage | null) || undefined;
+    const rawMode = parsed.audioTrackMode;
+    const audioTrackMode: AudioTrackMode = (rawMode === 'original' || rawMode === 'translated_only' || rawMode === 'dual_ducking')
+      ? rawMode
+      : DEFAULT_USER_SETTINGS.audioTrackMode;
+    const dubbingVolume = typeof parsed.dubbingVolume === 'number' && parsed.dubbingVolume >= 0 && parsed.dubbingVolume <= 1
+      ? parsed.dubbingVolume
+      : DEFAULT_USER_SETTINGS.dubbingVolume;
+    const duckedVolume = typeof parsed.duckedVolume === 'number' && parsed.duckedVolume >= 0.05 && parsed.duckedVolume <= 0.5
+      ? parsed.duckedVolume
+      : DEFAULT_USER_SETTINGS.duckedVolume;
+
     return {
       ...DEFAULT_USER_SETTINGS,
       ...parsed,
@@ -94,6 +114,10 @@ export function getUserSettings(): UserMeetingSettings {
       providerKeys,
       audioBoothVoiceGender: parsed.audioBoothVoiceGender || DEFAULT_USER_SETTINGS.audioBoothVoiceGender,
       audioBoothSpeedRate: typeof parsed.audioBoothSpeedRate === 'number' ? parsed.audioBoothSpeedRate : DEFAULT_USER_SETTINGS.audioBoothSpeedRate,
+      audioTrackMode,
+      dubbingTargetLanguage: parsed.dubbingTargetLanguage || DEFAULT_USER_SETTINGS.dubbingTargetLanguage,
+      dubbingVolume,
+      duckedVolume,
       audioChunkMs: parsed.audioChunkMs ?? DEFAULT_USER_SETTINGS.audioChunkMs,
       unlimitedFreeMeeting: parsed.unlimitedFreeMeeting ?? DEFAULT_USER_SETTINGS.unlimitedFreeMeeting,
       virtualBackground: parsed.virtualBackground || DEFAULT_USER_SETTINGS.virtualBackground,

@@ -25,7 +25,9 @@ import {
   ByokProvider,
   TranslationTier,
   AudioBoothVoiceGender,
+  AudioTrackMode,
 } from '../../utils/userSettings';
+import { audioDuckingRegistry } from '../../utils/audioDuckingRegistry';
 
 interface MeetingSettingsDialogProps {
   onClose: () => void;
@@ -451,6 +453,42 @@ export const MeetingSettingsDialog: React.FC<MeetingSettingsDialogProps> = ({
                 </button>
               </div>
 
+              {/* Multi-Track Audio Selector */}
+              <div className="rounded-xl border border-[#2c2f37] bg-[#1f2127] p-4 space-y-3">
+                <div className="flex items-center gap-2.5">
+                  <Headphones className="w-4 h-4 text-sky-400 shrink-0" />
+                  <div>
+                    <p className="text-sm font-semibold text-zinc-100">Kênh âm thanh đa luồng (Multi-Track Audio)</p>
+                    <p className="text-xs text-zinc-400">Chọn chế độ nghe âm thanh người nói và thuyết minh dịch thuật AI</p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-1">
+                  {[
+                    { id: 'dual_ducking', label: 'Âm thanh kép', desc: 'Ducking -18dB khi AI nói' },
+                    { id: 'translated_only', label: 'Chỉ nghe dịch', desc: 'Mute hoàn toàn tiếng gốc' },
+                    { id: 'original', label: 'Âm thanh gốc', desc: 'Không lồng tiếng AI' },
+                  ].map(({ id, label, desc }) => (
+                    <button
+                      key={id}
+                      type="button"
+                      onClick={() => {
+                        handleUpdateSetting('audioTrackMode', id as AudioTrackMode);
+                        audioDuckingRegistry.setMode(id as AudioTrackMode);
+                      }}
+                      className={`p-3 rounded-xl text-left border transition cursor-pointer flex flex-col justify-between ${
+                        (userSettings.audioTrackMode || 'dual_ducking') === id
+                          ? 'bg-sky-500/15 text-white border-sky-500 shadow-xs'
+                          : 'bg-[#2a2d35] text-zinc-300 hover:bg-[#343842] border-[#383b44]'
+                      }`}
+                    >
+                      <span className="text-xs font-bold block">{label}</span>
+                      <span className="text-[10px] text-zinc-400 mt-1 block">{desc}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
               {/* Audio Cabin Voice & Speed Settings */}
               <div className="rounded-xl border border-[#2c2f37] bg-[#1f2127] p-4 space-y-3">
                 <div className="flex items-center gap-2.5">
@@ -516,6 +554,26 @@ export const MeetingSettingsDialog: React.FC<MeetingSettingsDialogProps> = ({
                       </button>
                     ))}
                   </div>
+                </div>
+
+                {/* Dubbing Volume Slider */}
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="text-[11px] font-medium text-zinc-400">Âm lượng lồng tiếng AI</label>
+                    <span className="text-[11px] font-semibold text-sky-400 font-mono">
+                      {Math.round((userSettings.dubbingVolume ?? 1.0) * 100)}%
+                    </span>
+                  </div>
+                  <input
+                    type="range"
+                    min="0"
+                    max="1"
+                    step="0.05"
+                    value={userSettings.dubbingVolume ?? 1.0}
+                    onChange={(e) => handleUpdateSetting('dubbingVolume', parseFloat(e.target.value))}
+                    aria-label="Âm lượng lồng tiếng AI"
+                    className="w-full accent-sky-500 cursor-pointer h-1.5 bg-zinc-700 rounded-lg"
+                  />
                 </div>
               </div>
             </div>

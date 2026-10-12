@@ -1,7 +1,7 @@
 import { useEffect, useRef, useCallback } from 'react';
 import { SubtitleMessage } from '../types/subtitle';
 import { speakText, stopSpeech } from '../utils/speechAndAudio';
-import { audioDuckingRegistry } from '../utils/audioDuckingRegistry';
+import { audioDuckingRegistry, AudioTrackMode } from '../utils/audioDuckingRegistry';
 import { getUserSettings, AudioBoothVoiceGender } from '../utils/userSettings';
 import { defaultClauseStreamBuffer } from '../utils/clauseStreamBuffer.ts';
 
@@ -15,6 +15,8 @@ interface UseAudioBoothOptions {
   allowSelfSpeech?: boolean;
   voiceGender?: AudioBoothVoiceGender;
   baseSpeedRate?: number;
+  audioTrackMode?: AudioTrackMode;
+  dubbingVolume?: number;
 }
 
 interface AudioBoothQueueItem {
@@ -45,7 +47,12 @@ export function useAudioBooth({
   allowSelfSpeech = false,
   voiceGender,
   baseSpeedRate,
+  audioTrackMode,
+  dubbingVolume,
 }: UseAudioBoothOptions): { isDucked: boolean; isSpeaking: boolean } {
+  const effectiveMode: AudioTrackMode = audioTrackMode ?? (enabled ? 'dual_ducking' : 'original');
+  const isBoothActive = enabled && effectiveMode !== 'original';
+
   const queueRef = useRef<AudioBoothQueueItem[]>([]);
   const isSpeakingRef = useRef<boolean>(false);
   const spokenIdsRef = useRef<Set<string>>(new Set());
@@ -55,7 +62,7 @@ export function useAudioBooth({
 
   // Sequential queue processor
   const processQueue = useCallback(() => {
-    if (!enabled || queueRef.current.length === 0) {
+    if (!isBoothActive || queueRef.current.length === 0) {
       isSpeakingRef.current = false;
       audioDuckingRegistry.setDucked(false);
       return;
@@ -90,6 +97,7 @@ export function useAudioBooth({
     const effectiveGender = voiceGender || settings.audioBoothVoiceGender || 'auto';
     const userSpeedMultiplier = baseSpeedRate ?? settings.audioBoothSpeedRate ?? 1.0;
     const finalSpeechRate = Math.max(0.75, Math.min(1.5, speechRate * userSpeedMultiplier));
+    const effectiveVolume = dubbingVolume ?? settings.dubbingVolume ?? 1.0;
 
     isSpeakingRef.current = true;
     audioDuckingRegistry.setDucked(true);
@@ -109,7 +117,7 @@ export function useAudioBooth({
         processQueue();
       },
       finalSpeechRate,
-      1.0,
+      effectiveVolume,
       effectiveGender
     );
 
@@ -117,11 +125,12 @@ export function useAudioBooth({
       // Browser speech synthesis failed or unsupported; continue queue
       processQueue();
     }
-  }, [enabled, voiceGender, baseSpeedRate]);
+  }, [isBoothActive, voiceGender, baseSpeedRate, dubbingVolume]);
 
-  // Record timestamp when audio booth is toggled on to ignore backlog
+  // Synchronize track mode and clear queue when muted
   useEffect(() => {
-    if (enabled) {
+    audioDuckingRegistry.setMode(effectiveMode);
+    if (isBoothActive) {
       enabledTimeRef.current = Date.now();
       // Mark existing history as already seen so we don't burst playback on enable
       historyRef.current.forEach((item) => {
@@ -135,12 +144,12 @@ export function useAudioBooth({
       stopSpeech();
       audioDuckingRegistry.setDucked(false);
     }
-  }, [enabled]);
+  }, [isBoothActive, effectiveMode]);
 
   // Inspect incoming final subtitles — duyệt toàn bộ history để tránh bỏ sót
   // khi nhiều câu final đến gần cùng lúc trong 1 React render cycle.
   useEffect(() => {
-    if (!enabled) return;
+    if (!enabled || !isBoothActive) return;
     if (history.length === 0) return;
 
     let didEnqueue = false;
@@ -185,7 +194,7 @@ export function useAudioBooth({
     if (didEnqueue && !isSpeakingRef.current) {
       processQueue();
     }
-  }, [history, enabled, currentUserId, localIdentity, targetLanguage, allowSelfSpeech, processQueue]);
+  }, [history, enabled, isBoothActive, currentUserId, localIdentity, targetLanguage, allowSelfSpeech, processQueue]);
 
   // Cleanup on unmount
   useEffect(() => {
