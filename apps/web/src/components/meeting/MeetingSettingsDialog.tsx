@@ -425,6 +425,32 @@ export const MeetingSettingsDialog: React.FC<MeetingSettingsDialogProps> = ({
                 </button>
               </div>
 
+              {/* AI Noise Suppression */}
+              <div className="flex items-center justify-between rounded-xl border border-[#2c2f37] bg-[#1f2127] p-4">
+                <div className="flex items-center gap-2.5 pr-2">
+                  <Sparkles className="w-4 h-4 text-sky-400 shrink-0" />
+                  <div>
+                    <p className="text-sm font-semibold text-zinc-100">Khử tiếng ồn nâng cao (AI Noise Suppression)</p>
+                    <p className="text-xs text-zinc-400">Lọc tiếng gõ bàn phím, tiếng quạt gió và tạp âm nền thông minh</p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  aria-label="Khử tiếng ồn nâng cao"
+                  aria-pressed={userSettings.aiNoiseSuppression}
+                  onClick={() => handleUpdateSetting('aiNoiseSuppression', !userSettings.aiNoiseSuppression)}
+                  className={`w-11 h-6 flex items-center rounded-full p-1 transition-colors cursor-pointer shrink-0 ml-2 ${
+                    userSettings.aiNoiseSuppression ? 'bg-sky-700' : 'bg-[#2e313b]'
+                  }`}
+                >
+                  <div
+                    className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform ${
+                      userSettings.aiNoiseSuppression ? 'translate-x-5' : 'translate-x-0'
+                    }`}
+                  />
+                </button>
+              </div>
+
               {/* Audio Cabin Voice & Speed Settings */}
               <div className="rounded-xl border border-[#2c2f37] bg-[#1f2127] p-4 space-y-3">
                 <div className="flex items-center gap-2.5">
@@ -893,23 +919,56 @@ export const MeetingSettingsDialog: React.FC<MeetingSettingsDialogProps> = ({
           )}
 
           {activeTab === 'video' && (
-            <div className="rounded-xl border border-[#2c2f37] bg-[#1f2127] p-3.5 space-y-2.5">
-              <label className="block text-xs font-semibold text-zinc-300">Camera thiết bị</label>
-              <select aria-label="Camera thiết bị"
-                value={selectedVideoId}
-                onChange={(e) => handleVideoChange(e.target.value)}
-                className="w-full bg-[#2a2d35] border border-[#383b44] text-zinc-100 text-xs rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-sky-500 font-medium"
-              >
-                {videoDevices.length > 0 ? (
-                  videoDevices.map((d) => (
-                    <option key={d.deviceId} value={d.deviceId}>
-                      {d.label || `Camera ${d.deviceId.slice(0, 5)}`}
-                    </option>
-                  ))
-                ) : (
-                  <option value="">Default Camera</option>
-                )}
-              </select>
+            <div className="space-y-4">
+              <div className="rounded-xl border border-[#2c2f37] bg-[#1f2127] p-3.5 space-y-2.5">
+                <label className="block text-xs font-semibold text-zinc-300">Camera thiết bị</label>
+                <select aria-label="Camera thiết bị"
+                  value={selectedVideoId}
+                  onChange={(e) => handleVideoChange(e.target.value)}
+                  className="w-full bg-[#2a2d35] border border-[#383b44] text-zinc-100 text-xs rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-sky-500 font-medium"
+                >
+                  {videoDevices.length > 0 ? (
+                    videoDevices.map((d) => (
+                      <option key={d.deviceId} value={d.deviceId}>
+                        {d.label || `Camera ${d.deviceId.slice(0, 5)}`}
+                      </option>
+                    ))
+                  ) : (
+                    <option value="">Default Camera</option>
+                  )}
+                </select>
+              </div>
+
+              {/* Virtual Background / Blur */}
+              <div className="rounded-xl border border-[#2c2f37] bg-[#1f2127] p-4 space-y-3">
+                <div className="flex items-center gap-2.5">
+                  <Sparkles className="w-4 h-4 text-sky-400 shrink-0" />
+                  <div>
+                    <p className="text-sm font-semibold text-zinc-100">Làm mờ hậu cảnh (Virtual Background Blur)</p>
+                    <p className="text-xs text-zinc-400">Bảo vệ riêng tư không gian cá nhân khi họp tại nhà hoặc văn phòng</p>
+                  </div>
+                </div>
+                <div className="grid grid-cols-3 gap-2 pt-1">
+                  {([
+                    { id: 'none', label: 'Tắt' },
+                    { id: 'blur_light', label: 'Làm mờ nhẹ' },
+                    { id: 'blur_deep', label: 'Làm mờ sâu' },
+                  ] as const).map(({ id, label }) => (
+                    <button
+                      key={id}
+                      type="button"
+                      onClick={() => handleUpdateSetting('virtualBackground', id)}
+                      className={`py-2 px-2 rounded-lg text-xs font-medium transition cursor-pointer text-center ${
+                        (userSettings.virtualBackground || 'none') === id
+                          ? 'bg-sky-700 text-white font-semibold border border-sky-500 shadow-xs'
+                          : 'bg-[#2a2d35] text-zinc-300 hover:bg-[#343842] border border-[#383b44]'
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              </div>
             </div>
           )}
 

@@ -1,7 +1,8 @@
-import React from 'react';
-import { Video, Mic, MicOff, VideoOff } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { Video, Mic, MicOff, VideoOff, Sparkles } from 'lucide-react';
 import { CountryFlag } from '../common/CountryFlag';
 import { SupportedLanguage } from '../../types/meeting';
+import { getUserSettings, saveUserSettings, subscribeUserSettings, VirtualBackgroundMode } from '../../utils/userSettings';
 
 export interface PreJoinCameraPreviewProps {
   videoRef: React.RefObject<HTMLVideoElement>;
@@ -24,6 +25,23 @@ export const PreJoinCameraPreview: React.FC<PreJoinCameraPreviewProps> = ({
   cameraOffText,
   subtitleBadgeText,
 }) => {
+  const [virtualBg, setVirtualBg] = useState<VirtualBackgroundMode>(() =>
+    getUserSettings().virtualBackground || 'none'
+  );
+
+  useEffect(() => {
+    return subscribeUserSettings((s) => {
+      setVirtualBg(s.virtualBackground || 'none');
+    });
+  }, []);
+
+  const handleCycleVirtualBg = () => {
+    const next: VirtualBackgroundMode =
+      virtualBg === 'none' ? 'blur_light' : virtualBg === 'blur_light' ? 'blur_deep' : 'none';
+    saveUserSettings({ virtualBackground: next });
+    setVirtualBg(next);
+  };
+
   return (
     <div className="h-32 sm:h-48 md:h-auto md:aspect-video bg-[#111112] rounded-xl border border-[#2e2e30] overflow-hidden relative flex items-center justify-center">
       {isCameraOn ? (
@@ -32,7 +50,12 @@ export const PreJoinCameraPreview: React.FC<PreJoinCameraPreviewProps> = ({
           autoPlay
           playsInline
           muted
-          className="w-full h-full object-cover scale-x-[-1]"
+          style={
+            virtualBg !== 'none'
+              ? { filter: virtualBg === 'blur_light' ? 'blur(6px)' : 'blur(14px)' }
+              : undefined
+          }
+          className="w-full h-full object-cover scale-x-[-1] transition-[filter] duration-300"
         />
       ) : (
         <div className="flex flex-col items-center justify-center gap-1.5 text-zinc-600">
@@ -47,7 +70,7 @@ export const PreJoinCameraPreview: React.FC<PreJoinCameraPreviewProps> = ({
         <span>{subtitleBadgeText}</span>
       </div>
 
-      {/* Mic / Camera toggle overlay */}
+      {/* Mic / Camera / Background Blur toggle overlay */}
       <div className="absolute bottom-2.5 md:bottom-3 left-1/2 -translate-x-1/2 flex items-center gap-2 bg-[#0f0f10]/90 px-2.5 py-1.5 md:px-3 md:py-2 rounded-full border border-[#2e2e30] shadow-lg">
         <button
           type="button"
@@ -72,6 +95,25 @@ export const PreJoinCameraPreview: React.FC<PreJoinCameraPreviewProps> = ({
           aria-label={isCameraOn ? 'Tắt camera' : 'Bật camera'}
         >
           {isCameraOn ? <Video className="w-4 h-4" /> : <VideoOff className="w-4 h-4" />}
+        </button>
+        <button
+          type="button"
+          onClick={handleCycleVirtualBg}
+          className={`w-11 h-11 rounded-full flex items-center justify-center transition-colors cursor-pointer ${
+            virtualBg !== 'none'
+              ? 'bg-sky-600 text-white hover:bg-sky-500 shadow-xs'
+              : 'bg-[#222224] text-zinc-400 hover:text-zinc-200 hover:bg-[#2a2a2c]'
+          }`}
+          title={
+            virtualBg === 'blur_light'
+              ? 'Làm mờ hậu cảnh: Nhẹ (Bấm để tăng mờ)'
+              : virtualBg === 'blur_deep'
+              ? 'Làm mờ hậu cảnh: Sâu (Bấm để tắt)'
+              : 'Làm mờ hậu cảnh: Tắt (Bấm để bật)'
+          }
+          aria-label="Chuyển chế độ làm mờ hậu cảnh"
+        >
+          <Sparkles className="w-4 h-4" />
         </button>
       </div>
     </div>

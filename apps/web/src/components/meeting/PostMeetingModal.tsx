@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { CheckCircle2, Copy, Download, FileDown, ListTodo, LogOut, Play, Sparkles, Video, X } from 'lucide-react';
+import { CheckCircle2, Copy, Download, FileDown, ListTodo, LogOut, Play, Sparkles, Video, X, Mail } from 'lucide-react';
 import { meetingApi, setCachedMeetingMinutes } from '../../api/meetingApi';
 import type { BrandingConfigDto } from '../../api/meetingApi';
 import type { SaveMeetingMinutesRequest } from '../../types/meeting';
@@ -191,6 +191,54 @@ export const PostMeetingModal: React.FC<PostMeetingModalProps> = ({
     }
   };
 
+  const handleEmailMinutes = () => {
+    const subject = `[LayaMeet] Biên bản cuộc họp ${meetingCode.toUpperCase()} - ${recap.executiveHighlights[0] || savePayload.title}`;
+    const lines = [
+      `Kính gửi Anh/Chị,`,
+      ``,
+      `Dưới đây là biên bản cuộc họp [${meetingCode.toUpperCase()}] được tổng hợp tự động bởi LayaMeet AI:`,
+      ``,
+      `════════════════════════════════════════════════════`,
+      `1. TÓM TẮT ĐIỀU HÀNH (EXECUTIVE SUMMARY)`,
+      `════════════════════════════════════════════════════`,
+      ...(recap.executiveHighlights.length
+        ? recap.executiveHighlights.map((h) => `• ${h}`)
+        : ['• Chưa có tóm tắt.']),
+      ``,
+      `════════════════════════════════════════════════════`,
+      `2. QUYẾT ĐỊNH ĐÃ CHỐT (DECISIONS MATRIX)`,
+      `════════════════════════════════════════════════════`,
+      ...(recap.decisions.length
+        ? recap.decisions.map((d) => `• ${d}`)
+        : ['• Chưa ghi nhận quyết định nào.']),
+      ``,
+      `════════════════════════════════════════════════════`,
+      `3. DANH SÁCH VIỆC CẦN LÀM (ACTION ITEMS)`,
+      `════════════════════════════════════════════════════`,
+      ...(recap.actionItems.length
+        ? recap.actionItems.map(
+            (a) =>
+              `• [ ] ${a.task}${a.owner ? ` (Phụ trách: ${a.owner})` : ''}${
+                a.deadline ? ` (Hạn chót: ${a.deadline})` : ''
+              }`,
+          )
+        : ['• Chưa có việc cần làm được giao.']),
+      ``,
+      `────────────────────────────────────────────────────`,
+      `Tra cứu toàn bộ biên bản và phụ đề song ngữ trực tuyến tại:`,
+      `${window.location.origin}/recap/${encodeURIComponent(meetingCode)}`,
+      `────────────────────────────────────────────────────`,
+      ``,
+      `Trân trọng,`,
+      `LayaMeet AI Assistant`,
+    ];
+
+    const body = lines.join('\n');
+    const mailtoUrl = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    window.location.href = mailtoUrl;
+    setStatus({ kind: 'success', message: 'Đã tạo thư gửi email biên bản cuộc họp thành công.' });
+  };
+
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm sm:p-6">
       <div
@@ -378,6 +426,16 @@ export const PostMeetingModal: React.FC<PostMeetingModalProps> = ({
                 <FileDown className="h-3.5 w-3.5 text-[#8ab4f8] shrink-0" />
                 <span className="sm:hidden">Xuất PDF</span>
                 <span className="hidden sm:inline">Xuất biên bản PDF</span>
+              </button>
+              <button
+                type="button"
+                onClick={handleEmailMinutes}
+                className="inline-flex items-center justify-center gap-1.5 rounded-full border border-[#5f6368] px-2.5 sm:px-3.5 py-2 sm:py-1.5 text-xs sm:text-sm font-medium text-zinc-200 hover:bg-[#303134] hover:text-white transition-colors whitespace-nowrap"
+                title="Gửi email biên bản cuộc họp"
+              >
+                <Mail className="h-3.5 w-3.5 text-[#8ab4f8] shrink-0" />
+                <span className="sm:hidden">Email</span>
+                <span className="hidden sm:inline">Gửi Email</span>
               </button>
               <button
                 type="button"

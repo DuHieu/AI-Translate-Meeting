@@ -1,6 +1,6 @@
 import React from 'react';
 import { ConnectionState } from 'livekit-client';
-import { ShieldCheck, Clock, Zap } from 'lucide-react';
+import { ShieldCheck, Clock, Zap, Lock } from 'lucide-react';
 import { NetworkQualityIndicator } from './NetworkQualityIndicator';
 import { LayaMeetLogo } from '../common/LayaMeetLogo';
 import { ThemeToggle } from '../common/ThemeToggle';
@@ -22,6 +22,7 @@ interface MeetingTopBarProps {
   numParticipants?: number;
   userDisplayName?: string;
   isOffline?: boolean;
+  isLocked?: boolean;
 }
 
 const FREE_MEETING_WARNING_SECONDS = 5 * 60;
@@ -49,6 +50,7 @@ export const MeetingTopBar: React.FC<MeetingTopBarProps> = ({
   numParticipants = 1,
   userDisplayName,
   isOffline = false,
+  isLocked = false,
 }) => {
   const getStatusInfo = () => {
     if (isOffline) {
@@ -153,6 +155,18 @@ export const MeetingTopBar: React.FC<MeetingTopBarProps> = ({
           >
             <span className="h-2 w-2 rounded-full bg-rose-500 animate-pulse" aria-hidden="true" />
             <span>REC</span>
+          </div>
+        )}
+
+        {isLocked && (
+          <div
+            role="status"
+            aria-label="Cuộc họp đang được khóa"
+            className="flex items-center gap-1.5 rounded-md border border-amber-500/30 bg-amber-500/10 px-2 py-1 text-[11px] sm:text-xs font-semibold text-amber-700 dark:text-amber-300"
+          >
+            <Lock className="h-3.5 w-3.5 text-amber-500 shrink-0" aria-hidden="true" />
+            <span className="hidden sm:inline">Đã khóa 🔒</span>
+            <span className="sm:hidden">Khóa</span>
           </div>
         )}
 

@@ -9,6 +9,7 @@ export type ByokProvider = 'openai' | 'deepl' | 'gemini' | 'groq' | 'deepseek' |
 export type TranslationTier = 'standard' | 'pro';
 export type ActionSyncPlatform = 'slack' | 'trello' | 'jira' | 'custom';
 export type AudioBoothVoiceGender = 'auto' | 'male' | 'female';
+export type VirtualBackgroundMode = 'none' | 'blur_light' | 'blur_deep';
 
 export interface UserMeetingSettings {
   nativeLanguage?: SupportedLanguage;
@@ -33,6 +34,8 @@ export interface UserMeetingSettings {
   actionSyncPlatform: ActionSyncPlatform;
   actionSyncWebhookUrl: string;
   showInterimSubtitles: boolean;
+  virtualBackground: VirtualBackgroundMode;
+  aiNoiseSuppression: boolean;
 }
 
 export const DEFAULT_USER_SETTINGS: UserMeetingSettings = {
@@ -58,6 +61,8 @@ export const DEFAULT_USER_SETTINGS: UserMeetingSettings = {
   actionSyncPlatform: 'slack',
   actionSyncWebhookUrl: '',
   showInterimSubtitles: true,
+  virtualBackground: 'none',
+  aiNoiseSuppression: true,
 };
 
 const STORAGE_KEY = 'layameet_user_settings';
@@ -91,6 +96,8 @@ export function getUserSettings(): UserMeetingSettings {
       audioBoothSpeedRate: typeof parsed.audioBoothSpeedRate === 'number' ? parsed.audioBoothSpeedRate : DEFAULT_USER_SETTINGS.audioBoothSpeedRate,
       audioChunkMs: parsed.audioChunkMs ?? DEFAULT_USER_SETTINGS.audioChunkMs,
       unlimitedFreeMeeting: parsed.unlimitedFreeMeeting ?? DEFAULT_USER_SETTINGS.unlimitedFreeMeeting,
+      virtualBackground: parsed.virtualBackground || DEFAULT_USER_SETTINGS.virtualBackground,
+      aiNoiseSuppression: parsed.aiNoiseSuppression ?? DEFAULT_USER_SETTINGS.aiNoiseSuppression,
     };
   } catch {
     return DEFAULT_USER_SETTINGS;

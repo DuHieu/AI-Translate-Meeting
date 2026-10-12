@@ -11,6 +11,8 @@ import {
   Video,
   Monitor,
   Sparkles,
+  MicOff,
+  Check,
   ExternalLink,
 } from 'lucide-react';
 
@@ -19,6 +21,9 @@ interface HostControlsPanelProps {
   isHost: boolean;
   onOpenAdmission?: () => void;
   meetingCode: string;
+  isLocked?: boolean;
+  onToggleLock?: (locked: boolean) => void;
+  onMuteAll?: () => void;
 }
 
 export const HostControlsPanel: React.FC<HostControlsPanelProps> = ({
@@ -26,6 +31,9 @@ export const HostControlsPanel: React.FC<HostControlsPanelProps> = ({
   isHost,
   onOpenAdmission,
   meetingCode: _meetingCode,
+  isLocked = false,
+  onToggleLock,
+  onMuteAll,
 }) => {
   const [accessMode, setAccessMode] = useState<'open' | 'trusted' | 'restricted'>('trusted');
   const [allowShareScreen, setAllowShareScreen] = useState(true);
@@ -34,6 +42,14 @@ export const HostControlsPanel: React.FC<HostControlsPanelProps> = ({
   const [allowTurnOnVideo, setAllowTurnOnVideo] = useState(true);
   const [allowActivities, setAllowActivities] = useState(true);
   const [allowThirdPartyAudio, setAllowThirdPartyAudio] = useState(false);
+  const [muteAllFeedback, setMuteAllFeedback] = useState(false);
+
+  const handleMuteAllClick = () => {
+    if (!onMuteAll) return;
+    onMuteAll();
+    setMuteAllFeedback(true);
+    window.setTimeout(() => setMuteAllFeedback(false), 2500);
+  };
 
   return (
     <aside
@@ -80,6 +96,92 @@ export const HostControlsPanel: React.FC<HostControlsPanelProps> = ({
             <ExternalLink className="w-4 h-4 text-sky-400" />
           </button>
         )}
+
+        {/* Host Quick Super-Actions (Meeting Lock & Hard Mute All) */}
+        <div className="space-y-3 pt-1">
+          <p className="text-xs font-semibold uppercase tracking-wider text-zinc-400">
+            Tác vụ điều phối tức thì
+          </p>
+
+          <div className="space-y-2.5">
+            {/* Hard Mute All Button */}
+            <button
+              type="button"
+              onClick={handleMuteAllClick}
+              disabled={!isHost || !onMuteAll}
+              className={`w-full p-3 rounded-2xl border text-xs font-semibold flex items-center justify-between transition cursor-pointer ${
+                muteAllFeedback
+                  ? 'bg-emerald-950/40 border-emerald-500/40 text-emerald-200'
+                  : 'bg-rose-950/30 hover:bg-rose-900/40 border-rose-500/30 text-rose-200'
+              }`}
+            >
+              <div className="flex items-center gap-2.5 text-left">
+                {muteAllFeedback ? (
+                  <Check className="w-4 h-4 text-emerald-400 shrink-0" />
+                ) : (
+                  <MicOff className="w-4 h-4 text-rose-400 shrink-0" />
+                )}
+                <div>
+                  <p className="font-semibold">
+                    {muteAllFeedback ? 'Đã tắt tiếng tất cả!' : 'Tắt tiếng tất cả người tham gia'}
+                  </p>
+                  <p className="text-[10px] text-zinc-400">
+                    {muteAllFeedback
+                      ? 'Lệnh tắt mic đã được gửi đến mọi người trong phòng'
+                      : 'Tắt mic của tất cả thành viên ngay lập tức để giữ yên lặng'}
+                  </p>
+                </div>
+              </div>
+              <span className="text-[10px] uppercase font-bold px-2 py-0.5 rounded bg-white/10 shrink-0 ml-2">
+                Mute All
+              </span>
+            </button>
+
+            {/* Lock Meeting Toggle */}
+            <div
+              className={`p-3 rounded-2xl border flex items-center justify-between transition ${
+                isLocked
+                  ? 'bg-amber-950/30 border-amber-500/40 text-amber-200'
+                  : 'bg-zinc-900/60 border-zinc-800 text-zinc-300'
+              }`}
+            >
+              <div className="flex items-center gap-2.5 min-w-0 pr-2">
+                <Lock className={`w-4 h-4 shrink-0 ${isLocked ? 'text-amber-400' : 'text-zinc-400'}`} />
+                <div>
+                  <p className="text-xs font-semibold">
+                    {isLocked ? 'Cuộc họp đang khóa 🔒' : 'Khóa cuộc họp'}
+                  </p>
+                  <p className="text-[10px] text-zinc-400">
+                    {isLocked
+                      ? 'Không ai có thể vào thêm cuộc họp cho đến khi mở khóa'
+                      : 'Ngăn người mới tham gia, kể cả có liên kết hoặc mã phòng'}
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                role="switch"
+                aria-checked={isLocked}
+                aria-label="Khóa cuộc họp"
+                disabled={!isHost || !onToggleLock}
+                onClick={() => onToggleLock?.(!isLocked)}
+                className="min-w-[44px] min-h-[44px] flex items-center justify-end p-1 -mr-1 cursor-pointer disabled:cursor-not-allowed shrink-0"
+              >
+                <div
+                  className={`w-10 h-6 flex items-center rounded-full p-1 transition-colors ${
+                    isLocked ? 'bg-amber-600' : 'bg-zinc-700'
+                  }`}
+                >
+                  <div
+                    className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform ${
+                      isLocked ? 'translate-x-4' : 'translate-x-0'
+                    }`}
+                  />
+                </div>
+              </button>
+            </div>
+          </div>
+        </div>
 
         {/* Access Mode Section */}
         <div className="space-y-3">

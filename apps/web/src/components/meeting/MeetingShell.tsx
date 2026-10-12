@@ -451,6 +451,25 @@ export const MeetingShell: React.FC<MeetingShellProps> = ({
     }
   }, [room, session.role]);
 
+  const [isMeetingLocked, setIsMeetingLocked] = useState(false);
+
+  const handleToggleMeetingLock = useCallback(async (locked: boolean) => {
+    if (!room || session.role !== 'host') return;
+    setIsMeetingLocked(locked);
+    try {
+      const data = new TextEncoder().encode(JSON.stringify({
+        type: 'ROOM_LOCK_STATUS',
+        isLocked: locked,
+        timestamp: Date.now(),
+      }));
+      if (room.localParticipant) {
+        await room.localParticipant.publishData(data, { reliable: true });
+      }
+    } catch (e) {
+      console.warn('Failed to broadcast ROOM_LOCK_STATUS data message', e);
+    }
+  }, [room, session.role]);
+
   const visibleKnockRequests = pendingAdmissions.filter(
     (req) => !dismissedKnockIds.includes(req.admissionId),
   );
@@ -808,6 +827,8 @@ export const MeetingShell: React.FC<MeetingShellProps> = ({
               void handleToggleMicRef.current?.();
             }
           }
+        } else if (record.type === 'ROOM_LOCK_STATUS' && typeof record.isLocked === 'boolean') {
+          setIsMeetingLocked(record.isLocked);
         } else if (isCollaborationDataMessage(data) && data.type === 'RAISE_HAND') {
           const participantId = participant?.identity || data.participantId;
           setRaisedHands((current) => {
@@ -934,12 +955,15 @@ export const MeetingShell: React.FC<MeetingShellProps> = ({
     }
   }, [isRoomConnected, localParticipant, raisedHands, room, session.identity]);
 
-  const buildAudioOptions = useCallback((): AudioCaptureOptions => ({
-    ...(session.audioDeviceId ? { deviceId: session.audioDeviceId } : {}),
-    autoGainControl: true,
-    echoCancellation: true,
-    noiseSuppression: true,
-  }), [session.audioDeviceId]);
+  const buildAudioOptions = useCallback((): AudioCaptureOptions => {
+    const settings = getUserSettings();
+    return {
+      ...(session.audioDeviceId ? { deviceId: session.audioDeviceId } : {}),
+      autoGainControl: true,
+      echoCancellation: true,
+      noiseSuppression: settings.aiNoiseSuppression ?? true,
+    };
+  }, [session.audioDeviceId]);
 
   const buildVideoOptions = useCallback((): VideoCaptureOptions => ({
     ...(session.videoDeviceId ? { deviceId: session.videoDeviceId } : {}),
@@ -1624,6 +1648,7 @@ export const MeetingShell: React.FC<MeetingShellProps> = ({
         timeRemainingSeconds={timeRemainingSeconds}
         onOpenUpgradeModal={handleOpenUpgradeModal}
         isOffline={!display.online}
+        isLocked={isMeetingLocked}
       />
 
       {/* Connecting / Reconnecting Status Banner */}
@@ -1743,6 +1768,9 @@ export const MeetingShell: React.FC<MeetingShellProps> = ({
             isHost={session.role === 'host'}
             onOpenAdmission={() => setActiveSidePanel('people')}
             meetingCode={session.meetingCode}
+            isLocked={isMeetingLocked}
+            onToggleLock={handleToggleMeetingLock}
+            onMuteAll={handleHostMuteAll}
           />
         )}
 

@@ -5,6 +5,7 @@ import { Mic, MicOff, User, Sparkles, Pin, PinOff, Hand } from 'lucide-react';
 import { PipelineStatusMessage } from '../../types/subtitle';
 import { getLanguageOption, SupportedLanguage } from '../../types/meeting';
 import { CountryFlag } from '../common/CountryFlag';
+import { getUserSettings, subscribeUserSettings, VirtualBackgroundMode } from '../../utils/userSettings';
 
 interface ParticipantTileProps {
   participant: Participant;
@@ -28,6 +29,17 @@ export const ParticipantTile: React.FC<ParticipantTileProps> = ({
 }) => {
   const isSpeaking = useIsSpeaking(participant) || participant.isSpeaking;
   const videoRef = useRef<HTMLVideoElement>(null);
+
+  const [virtualBg, setVirtualBg] = useState<VirtualBackgroundMode>(() =>
+    isLocal ? (getUserSettings().virtualBackground || 'none') : 'none'
+  );
+
+  useEffect(() => {
+    if (!isLocal) return;
+    return subscribeUserSettings((s) => {
+      setVirtualBg(s.virtualBackground || 'none');
+    });
+  }, [isLocal]);
 
 
   const [camPub, setCamPub] = useState<TrackPublication | undefined>(() =>
@@ -170,7 +182,12 @@ export const ParticipantTile: React.FC<ParticipantTileProps> = ({
           autoPlay
           playsInline
           muted={true}
-          className={`w-full h-full object-cover ${isLocal ? 'scale-x-[-1]' : ''}`}
+          style={
+            isLocal && virtualBg !== 'none'
+              ? { filter: virtualBg === 'blur_light' ? 'blur(6px)' : 'blur(14px)' }
+              : undefined
+          }
+          className={`w-full h-full object-cover transition-[filter] duration-300 ${isLocal ? 'scale-x-[-1]' : ''}`}
         />
       ) : (
         <div className="flex flex-col items-center justify-center space-y-3">

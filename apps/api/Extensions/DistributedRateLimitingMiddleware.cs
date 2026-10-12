@@ -14,7 +14,7 @@ public sealed class DistributedRateLimitingMiddleware
     private static readonly IReadOnlyDictionary<string, int> DefaultPolicyLimits = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase)
     {
         ["CreateMeeting"] = 10,
-        ["JoinAdmission"] = 30,
+        ["JoinAdmission"] = 120,
         ["HostAdmission"] = 120
     };
 

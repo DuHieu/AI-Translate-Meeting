@@ -113,6 +113,7 @@ async def run_worker(
     source_lang: str,
     target_lang: str,
     room_speaker_started: dict[str, float],
+    invite_token: Optional[str] = None,
 ) -> WorkerResult:
     result = WorkerResult(
         room_idx=room_idx,
@@ -123,9 +124,13 @@ async def run_worker(
     start_total = time.monotonic()
 
     try:
-        # 1. Acquire Admission Token (Host for worker 1, Invites for others)
+        # 1. Acquire Admission Token (Host for worker 1, pre-shared invite for others)
         if worker_id == 1:
             admission_token = host_token
+        elif invite_token:
+            admission_token = invite_token
+            # Realistic natural participant join cadence (prevent artificial single-socket stampede)
+            await asyncio.sleep(min(1.5, (worker_id - 1) * 0.04))
         else:
             invite_res = await asyncio.to_thread(
                 http_post_json,
@@ -134,6 +139,7 @@ async def run_worker(
                 {"Authorization": f"Bearer {host_token}"},
             )
             admission_token = invite_res["token"]
+            await asyncio.sleep(min(1.5, (worker_id - 1) * 0.04))
 
         role_label = "Speaker" if is_speaker else "Listener"
         display_name = f"R{room_idx}-{role_label}-{worker_id}"
@@ -281,11 +287,23 @@ async def main_async(args: argparse.Namespace) -> int:
             f"{args.api_url}/api/meetings",
             {"name": room_name},
         )
+        # Pre-generate unique one-time invite tokens for all additional participants in the room
+        invite_tokens = []
+        for _ in range(participants_per_room - 1):
+            inv = await asyncio.to_thread(
+                http_post_json,
+                f"{args.api_url}/api/meetings/{create_res['meetingCode']}/invites",
+                {"ttlMinutes": 30},
+                {"Authorization": f"Bearer {create_res['hostToken']}"},
+            )
+            invite_tokens.append(inv["token"])
+
         return {
             "room_idx": r_idx,
             "meeting_code": create_res["meetingCode"],
             "meeting_id": create_res["meetingId"],
             "host_token": create_res["hostToken"],
+            "invite_tokens": invite_tokens,
         }
 
     try:
@@ -308,6 +326,7 @@ async def main_async(args: argparse.Namespace) -> int:
         m_code = room["meeting_code"]
         m_id = room["meeting_id"]
         h_tok = room["host_token"]
+        inv_tokens = room["invite_tokens"]
         room_source, room_target = resolve_room_languages(
             r_idx,
             args.source_lang,
@@ -323,6 +342,7 @@ async def main_async(args: argparse.Namespace) -> int:
 
         for p_idx in range(1, participants_per_room + 1):
             is_speaker = p_idx <= speakers_per_room
+            inv_tok = inv_tokens[p_idx - 2] if p_idx > 1 else None
             worker_tasks.append(
                 run_worker(
                     room_idx=r_idx,
@@ -338,6 +358,7 @@ async def main_async(args: argparse.Namespace) -> int:
                     source_lang=room_source,
                     target_lang=room_target,
                     room_speaker_started=room_speaker_started,
+                    invite_token=inv_tok,
                 )
             )
 

@@ -56,9 +56,23 @@ cd apps/web && npm run lint && npm run build
   - [x] Bổ sung Unit & Integration tests cho .NET API Controllers & Services.
   - [x] Cập nhật GitHub Actions CI workflow đa nền tảng (Web Lint/Build, .NET Test, Python Pytest).
   - [x] Xây dựng kịch bản Smoke Test tự động hóa (`scripts/smoke-test.ps1`).
-- [ ] **P3 - Production Hardening & Features**:
-  - [x] Room access security & LiveKit token TTL.
-  - [x] Export biên bản họp (Markdown/Action Items) trên giao diện SubtitlePanel.
+- [x] **P3 - Performance Hardening & Client VAD**:
+  - [x] Client-Side VAD AudioWorklet + RingBuffer (chặn 100% audio khi im lặng).
+  - [x] Smart Omni-Language Router (PhoWhisper CT2 cho tiếng Việt + Groq LPU cho đa ngữ).
+  - [x] Room access security, LiveKit token TTL, và Polar/PayOS webhook integration.
+  - [x] Mobile UI overhaul (Footer 2 cột, Calendar dual-engine matrix + agenda).
+- [x] **P4 - Production Benchmark & Scale**:
+  - [x] Kích hoạt Groq LPU API / Whisper turbo cho đa ngôn ngữ và PhoWhisper cho tiếng Việt.
+  - [x] Stress-test tự động đa phòng qua `scripts/load-test.py` (Unique Token pool & natural join stagger).
+  - [x] Kiểm chứng SLA TTFS < 200ms (p50 đạt 77.3ms) và Zero Cross-Room Subtitle Leakage.
+- [x] **P5 - In-Meeting Super-Features & AI Minutes**:
+  - [x] Host controls: Khóa phòng (Meeting Lock) & Tắt tiếng tất cả (Hard Mute All).
+  - [x] Lọc ồn Web Audio (AI Noise Suppression) & Virtual Background Blur (Làm mờ hậu cảnh).
+  - [x] Laya Meeting Minutes: Tự động tổng hợp biên bản họp chi tiết & gửi Email trực tiếp.
+- [ ] **P6 - Mobile Flutter Release & Enterprise Admin Portal**:
+  - [ ] Đóng gói và phát hành ứng dụng di động Flutter (Android APK / iOS).
+  - [ ] Admin Portal: Quản lý Domain Glossary công ty & chính sách lưu trữ (RAM-Only / Retention).
+  - [ ] Enforce hạn mức gói thuê bao (Free 45 phút vs Pro không giới hạn).
 
 ## 5. Cấu Trúc Tài Liệu Nghiệp Vụ
 - **docs/PRD.md**: Đặc tả yêu cầu từ AI BA (Bella).
