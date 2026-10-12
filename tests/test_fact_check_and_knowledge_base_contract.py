@@ -42,12 +42,12 @@ def test_fact_check_ui_components_exist_and_conform() -> None:
     toast_content = toast_file.read_text(encoding="utf-8")
     assert "role=\"status\"" in toast_content
     assert "aria-live=\"polite\"" in toast_content
-    assert "Cảnh Báo Sai Lệch" in toast_content
-    assert "Đã Xác Thực" in toast_content
+    assert "C\u1ea3nh B\xe1o Sai L\u1ec7ch" in toast_content
+    assert "\u0110\xe3 X\xe1c Th\u1ef1c" in toast_content
 
     panel_content = panel_file.read_text(encoding="utf-8")
-    assert "Xác minh AI" in panel_content
-    assert "Kho Tri Thức" in panel_content
+    assert "X\xe1c minh AI" in panel_content
+    assert "Kho Tri Th\u1ee9c" in panel_content
     assert "timeline" in panel_content
     assert "discrepancies" in panel_content
 
