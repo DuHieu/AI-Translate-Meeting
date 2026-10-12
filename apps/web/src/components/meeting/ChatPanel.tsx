@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { X, Send, Paperclip, FileText } from 'lucide-react';
+import { X, Send, Paperclip, FileText, Sparkles, Quote } from 'lucide-react';
 import { ChatMessage } from '../../types/meeting';
 import { formatTimestamp } from '../../utils';
 import { MeetingLinkPreviewCard } from './MeetingLinkPreviewCard';
@@ -108,7 +108,50 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
         ) : (
           messages.map((msg) => {
             const isMe = msg.senderId === currentUserId;
+            const isAiBot = msg.isAiBot || msg.senderId === 'laya-ai-cohost';
             const links = extractLinksFromText(msg.text);
+
+            if (isAiBot) {
+              return (
+                <div key={msg.id} className="space-y-1.5 animate-fadeIn">
+                  <div className="flex items-center justify-between text-xs">
+                    <div className="flex items-center gap-1.5 text-sky-400 font-semibold">
+                      <div className="p-1 rounded-md bg-sky-500/20 text-sky-300">
+                        <Sparkles className="w-3.5 h-3.5" />
+                      </div>
+                      <span>Laya AI Co-Host</span>
+                      <span className="px-1.5 py-0.2 rounded text-[9px] font-mono bg-sky-500/10 text-sky-300 border border-sky-500/20">
+                        AI BOT
+                      </span>
+                    </div>
+                    <span className="text-[10px] text-zinc-400 font-mono">
+                      {formatTimestamp(msg.timestamp)}
+                    </span>
+                  </div>
+
+                  <div className="bg-gradient-to-br from-sky-950/40 via-zinc-900/80 to-indigo-950/30 border border-sky-500/30 rounded-2xl p-3.5 text-xs text-sky-100 shadow-md break-words leading-relaxed space-y-2.5">
+                    <p className="whitespace-pre-wrap">{msg.text}</p>
+
+                    {msg.citationHighlights && msg.citationHighlights.length > 0 && (
+                      <div className="pt-2 border-t border-sky-500/20 space-y-1.5">
+                        <div className="flex items-center gap-1 text-[10px] font-medium text-sky-400/90 uppercase tracking-wide">
+                          <Quote className="w-3 h-3" />
+                          <span>Dẫn chứng trích xuất từ cuộc họp:</span>
+                        </div>
+                        {msg.citationHighlights.map((citation, idx) => (
+                          <div
+                            key={idx}
+                            className="text-[11px] text-zinc-300 bg-black/40 rounded-lg px-2.5 py-1.5 border border-sky-500/10 italic"
+                          >
+                            "{citation}"
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            }
 
             return (
               <div key={msg.id} className="space-y-1">
@@ -164,6 +207,30 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
           </button>
         </div>
       )}
+
+      {/* AI Co-Host Quick Actions */}
+      <div className="px-3.5 py-2 bg-[#161822] border-t border-zinc-800/80 flex items-center gap-1.5 overflow-x-auto no-scrollbar">
+        <span className="text-[10px] font-semibold text-sky-400 flex items-center gap-1 shrink-0">
+          <Sparkles className="w-3 h-3 animate-pulse" />
+          Hỏi @Laya:
+        </span>
+        {[
+          '@Laya Tóm tắt 5 phút qua',
+          '@Laya Quyết định đã chốt?',
+          '@Laya Ai phụ trách task gì?',
+        ].map((prompt) => (
+          <button
+            key={prompt}
+            type="button"
+            onClick={() => {
+              setInputText(prompt);
+            }}
+            className="px-2.5 py-1 rounded-full text-[11px] bg-sky-950/40 hover:bg-sky-900/50 text-sky-300 border border-sky-500/20 whitespace-nowrap transition cursor-pointer shrink-0"
+          >
+            {prompt}
+          </button>
+        ))}
+      </div>
 
       {/* Message input */}
       <form onSubmit={handleSend} className="p-4 border-t border-zinc-800/80 bg-[#18191a]">

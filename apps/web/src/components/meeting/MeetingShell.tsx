@@ -63,9 +63,13 @@ import {
   RaiseHandDataMessage,
   ReactionDataMessage,
   SidecarPreferences,
+  SpeakerDynamicsStats,
   SupportedLanguage,
   isCollaborationDataMessage,
 } from '../../types/meeting';
+import type { SubtitleMessage } from '../../types/subtitle';
+import { toMeetingTranscript } from '../../utils/meetingMinutes';
+import { askMeetingMinutes } from '../../utils/minutesQa';
 import { classifyMediaError } from '../../utils/mediaErrors';
 import { meetingStorage } from '../../utils/meetingStorage';
 import { admissionStorage } from '../../utils/admissionStorage';
@@ -279,6 +283,7 @@ export const MeetingShell: React.FC<MeetingShellProps> = ({
   // Track in-flight toggles to prevent concurrent negotiations on PeerConnection
   const isMediaNegotiatingRef = useRef(false);
   const initialMediaPublishedRef = useRef(false);
+  const subtitleHistoryRef = useRef<SubtitleMessage[]>([]);
 
   const [layoutMode, setLayoutMode] = useState<LayoutMode>(() => {
     return (localStorage.getItem('meeting-layout-mode') as LayoutMode) || 'auto';
@@ -801,6 +806,7 @@ export const MeetingShell: React.FC<MeetingShellProps> = ({
           typeof record.text === 'string'
         ) {
           const chatText = record.text;
+          const isAiBot = Boolean(record.isAiBot);
           setUnreadChatCount((prev) => (activeSidePanelRef.current === 'chat' ? 0 : prev + 1));
           setChatMessages((prev) => [
             ...prev,
@@ -808,17 +814,25 @@ export const MeetingShell: React.FC<MeetingShellProps> = ({
               id: typeof record.id === 'string'
                 ? record.id
                 : `msg-${Date.now()}-${Math.random().toString(36).slice(2)}`,
-              senderId: participant?.identity || (
-                typeof record.senderId === 'string' ? record.senderId : 'unknown'
-              ),
-              senderName: participant?.name || (
-                typeof record.senderName === 'string' ? record.senderName : 'Người tham gia'
-              ),
+              senderId: isAiBot
+                ? 'laya-ai-cohost'
+                : (participant?.identity || (
+                  typeof record.senderId === 'string' ? record.senderId : 'unknown'
+                )),
+              senderName: isAiBot
+                ? (typeof record.senderName === 'string' ? record.senderName : 'Laya AI Co-Host')
+                : (participant?.name || (
+                  typeof record.senderName === 'string' ? record.senderName : 'Người tham gia'
+                )),
               text: chatText,
               timestamp: typeof record.timestamp === 'string'
                 ? record.timestamp
                 : new Date().toISOString(),
               attachment: parseChatAttachment(record.attachment),
+              isAiBot,
+              citationHighlights: Array.isArray(record.citationHighlights)
+                ? (record.citationHighlights as unknown[]).filter((c): c is string => typeof c === 'string')
+                : undefined,
             },
           ]);
         } else if (record.type === 'HOST_MUTE_ALL' || record.type === 'host_mute_all') {
@@ -879,11 +893,12 @@ export const MeetingShell: React.FC<MeetingShellProps> = ({
   const handleSendChatMessage = useCallback(
     async (text: string, attachment?: ChatMessage['attachment']) => {
       if (!room || (!text.trim() && !attachment)) return;
+      const trimmedText = text.trim();
       const msg: ChatMessage = {
         id: `msg-${Date.now()}-${Math.random().toString(36).slice(2)}`,
         senderId: session.participantId,
         senderName: session.displayName || 'You',
-        text: text.trim(),
+        text: trimmedText,
         timestamp: new Date().toISOString(),
         attachment,
       };
@@ -893,6 +908,53 @@ export const MeetingShell: React.FC<MeetingShellProps> = ({
         await room.localParticipant.publishData(payload, { reliable: true, topic: 'meeting-chat' });
       } catch (e) {
         console.error('Failed to publish chat message via LiveKit DataChannel', e);
+      }
+
+      // Check if message is addressed to @Laya AI Co-Host
+      if (trimmedText.toLowerCase().startsWith('@laya')) {
+        const query = trimmedText.replace(/^@laya\s*/i, '').trim();
+        const currentSubtitles = subtitleHistoryRef.current || [];
+        const transcript = toMeetingTranscript(currentSubtitles);
+
+        const recentFinalMessages = currentSubtitles.filter((m) => m.isFinal).slice(-15);
+        const highlights = recentFinalMessages.map(
+          (m) => `${m.participantName}: ${m.translatedText || m.originalText}`,
+        );
+
+        const result = askMeetingMinutes(query || 'Tóm tắt các quyết định chính?', transcript, {
+          executiveHighlights: highlights,
+          decisions: currentSubtitles
+            .filter((m) => m.tags?.includes('decision'))
+            .map((m) => m.translatedText || m.originalText),
+          actionItems: currentSubtitles
+            .filter((m) => m.tags?.includes('action_item'))
+            .map((m) => ({
+              task: m.translatedText || m.originalText,
+              owner: m.participantName || null,
+            })),
+        });
+
+        const citations = result.citations.map((c) => `[${c.speaker}] ${c.excerpt}`);
+        const aiMsg: ChatMessage = {
+          id: `msg-laya-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+          senderId: 'laya-ai-cohost',
+          senderName: 'Laya AI Co-Host',
+          text: result.answer,
+          timestamp: new Date().toISOString(),
+          isAiBot: true,
+          citationHighlights: citations.length > 0 ? citations : undefined,
+        };
+
+        // Delay slightly for natural co-host cadence (250ms)
+        setTimeout(async () => {
+          setChatMessages((prev) => [...prev, aiMsg]);
+          try {
+            const aiPayload = new TextEncoder().encode(JSON.stringify({ type: 'chat', ...aiMsg }));
+            await room.localParticipant.publishData(aiPayload, { reliable: true, topic: 'meeting-chat' });
+          } catch (err) {
+            console.error('Failed to broadcast Laya AI Co-Host message', err);
+          }
+        }, 250);
       }
     },
     [room, session.participantId, session.displayName]
@@ -1317,6 +1379,49 @@ export const MeetingShell: React.FC<MeetingShellProps> = ({
     [subtitleHistory],
   );
 
+  subtitleHistoryRef.current = subtitleHistory;
+
+  const speakerDynamicsStats = React.useMemo<SpeakerDynamicsStats>(() => {
+    const finalSubtitles = subtitleHistory.filter((s) => s.isFinal);
+    if (finalSubtitles.length === 0) {
+      return { totalTurns: 0, speakers: [] };
+    }
+
+    const speakerMap = new Map<string, { turns: number; chars: number }>();
+    let totalChars = 0;
+
+    for (const sub of finalSubtitles) {
+      const speaker = sub.participantName || 'Người phát biểu';
+      const chars = (sub.originalText || '').length || 1;
+      totalChars += chars;
+      const existing = speakerMap.get(speaker) || { turns: 0, chars: 0 };
+      speakerMap.set(speaker, { turns: existing.turns + 1, chars: existing.chars + chars });
+    }
+
+    const speakers = Array.from(speakerMap.entries())
+      .map(([name, data]) => {
+        const percentage = Math.round((data.chars / Math.max(1, totalChars)) * 100);
+        return {
+          participantName: name,
+          turnCount: data.turns,
+          percentage,
+          isMonopolizing: percentage >= 65 && speakerMap.size > 1,
+        };
+      })
+      .sort((a, b) => b.percentage - a.percentage);
+
+    const monopolizer = speakers.find((s) => s.isMonopolizing);
+    const monologueWarning = monopolizer
+      ? `Thành viên "${monopolizer.participantName}" đang chiếm ${monopolizer.percentage}% thời lượng hội thoại.`
+      : null;
+
+    return {
+      totalTurns: finalSubtitles.length,
+      monologueWarning,
+      speakers,
+    };
+  }, [subtitleHistory]);
+
   useEffect(() => {
     if (meetingEnded) setIsPostMeetingOpen(true);
   }, [meetingEnded]);
@@ -1737,6 +1842,7 @@ export const MeetingShell: React.FC<MeetingShellProps> = ({
             onDecideAdmission={handleDecideAdmission}
             onApproveAllAdmissions={handleApproveAllAdmissions}
             onMuteAll={handleHostMuteAll}
+            speakerDynamics={speakerDynamicsStats}
           />
         )}
 

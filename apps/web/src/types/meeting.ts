@@ -281,11 +281,26 @@ export interface ChatMessage {
   senderName: string;
   text: string;
   timestamp: string;
+  isAiBot?: boolean;
+  citationHighlights?: string[];
   attachment?: {
     name: string;
     size: number;
     summaryTranslation?: string;
   };
+}
+
+export interface SpeakerDynamicItem {
+  participantName: string;
+  turnCount: number;
+  percentage: number;
+  isMonopolizing?: boolean;
+}
+
+export interface SpeakerDynamicsStats {
+  totalTurns: number;
+  monologueWarning?: string | null;
+  speakers: SpeakerDynamicItem[];
 }
 
 export interface RaiseHandDataMessage {

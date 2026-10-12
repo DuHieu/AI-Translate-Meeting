@@ -98,10 +98,29 @@ export function askMeetingMinutes(
   recap: MinutesQaRecap,
 ): MinutesQaAnswer {
   const normalizedQuestion = normalize(question);
-  const isDecisionQuestion = /(quyet dinh|thong nhat|chot|decision|agreed)/.test(normalizedQuestion);
-  const isActionQuestion = /(ai phu trach|cong viec|viec can lam|action|owner|deadline)/.test(normalizedQuestion);
-  const isRiskQuestion = /(rui ro|van de|diem nghen|blocker|risk|issue)/.test(normalizedQuestion);
-  const isSummaryQuestion = /(tom tat|diem chinh|noi dung chinh|summary|highlight)/.test(normalizedQuestion);
+  const isDecisionQuestion = /(quyet dinh|thong nhat|chot|decision|agreed|decide|ket luan|ke hoach chot|決定|合意)/i.test(normalizedQuestion);
+  const isActionQuestion = /(ai phu trach|cong viec|viec can lam|action|owner|deadline|assign|who is responsible|task|nhiem vu|phan cong|担当|タスク|締切)/i.test(normalizedQuestion);
+  const isRiskQuestion = /(rui ro|van de|diem nghen|blocker|risk|issue|concern|impediment|kho khan|thach thuc|リスク|問題|懸念)/i.test(normalizedQuestion);
+  const isSummaryQuestion = /(tom tat|diem chinh|noi dung chinh|summary|highlight|recap|overview|dien bien|cuoc hop ve gi|要約|まとめ|概要)/i.test(normalizedQuestion);
+
+  // Check if query is asking what a specific person said (e.g. "Nam nói gì?", "What did Alice say?", "Tanakaさんの発言")
+  const speakerMatch = /(?:what did|ai noi|phat bieu|y kien cua|noi gi|ve gi ma|noi|nghe noi)\s+([a-zA-Z0-9_\s\u00C0-\u1EF9]+)/i.exec(question);
+  if (speakerMatch && speakerMatch[1]) {
+    const rawTargetSpeaker = normalize(speakerMatch[1].trim());
+    const speakerEntries = transcript.filter((t) => {
+      const normalizedSpeaker = normalize(t.participantName);
+      return normalizedSpeaker.includes(rawTargetSpeaker) || rawTargetSpeaker.includes(normalizedSpeaker);
+    });
+
+    if (speakerEntries.length > 0) {
+      const recent = speakerEntries.slice(-4);
+      const points = recent.map((item) => item.translatedText || item.originalText).join(' ');
+      return {
+        answer: `${speakerEntries[0].participantName} đã phát biểu ${speakerEntries.length} lần: "${points}"`,
+        citations: recent.map(toCitation),
+      };
+    }
+  }
 
   if (isDecisionQuestion) {
     const items = recap.decisions;

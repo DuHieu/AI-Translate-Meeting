@@ -33,7 +33,6 @@ import {
   Database,
   Trash2,
   Plus,
-  FileText,
   Lock,
   Upload,
   Download,

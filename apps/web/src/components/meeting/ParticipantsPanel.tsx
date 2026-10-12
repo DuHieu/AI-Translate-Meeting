@@ -17,8 +17,15 @@ import {
   Link2,
   Search,
   Hand,
+  BarChart3,
+  AlertTriangle,
 } from 'lucide-react';
-import { AdmissionRequest, getLanguageOption, SupportedLanguage } from '../../types/meeting';
+import {
+  AdmissionRequest,
+  getLanguageOption,
+  SpeakerDynamicsStats,
+  SupportedLanguage,
+} from '../../types/meeting';
 import { CountryFlag } from '../common/CountryFlag';
 
 interface ParticipantsPanelProps {
@@ -33,6 +40,7 @@ interface ParticipantsPanelProps {
   onDecideAdmission?: (admissionId: string, decision: 'approved' | 'rejected') => Promise<void> | void;
   onApproveAllAdmissions?: () => Promise<void> | void;
   onMuteAll?: () => void;
+  speakerDynamics?: SpeakerDynamicsStats;
 }
 
 const ParticipantRow: React.FC<{
@@ -100,10 +108,12 @@ export const ParticipantsPanel: React.FC<ParticipantsPanelProps> = ({
   onDecideAdmission,
   onApproveAllAdmissions,
   onMuteAll,
+  speakerDynamics,
 }) => {
   const [internalPendingAdmissions, setInternalPendingAdmissions] = useState<AdmissionRequest[]>([]);
   const [isWaitingGroupOpen, setIsWaitingGroupOpen] = useState(true);
   const [isInCallGroupOpen, setIsInCallGroupOpen] = useState(true);
+  const [isDynamicsOpen, setIsDynamicsOpen] = useState(true);
   const [copiedLink, setCopiedLink] = useState(false);
   const [copiedCode, setCopiedCode] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -438,6 +448,108 @@ export const ParticipantsPanel: React.FC<ParticipantsPanelProps> = ({
             </div>
           )}
         </div>
+
+        {/* ── GROUP 3: PHÂN BỔ THỜI GIAN PHÁT BIỂU (Speaker Dynamics) ─────── */}
+        {speakerDynamics && speakerDynamics.speakers.length > 0 && (
+          <div
+            data-testid="speaker-dynamics-group"
+            className="rounded-2xl bg-[#151619] border border-[#2a2a2e] overflow-hidden"
+          >
+            <button
+              type="button"
+              onClick={() => setIsDynamicsOpen((v) => !v)}
+              className="w-full flex items-center justify-between px-3.5 py-2.5 bg-[#191a1f] border-b border-[#26272b] text-xs font-bold uppercase tracking-wider text-zinc-400 hover:text-zinc-200 transition cursor-pointer"
+            >
+              <span className="flex items-center gap-2">
+                <BarChart3 className="w-3.5 h-3.5 text-sky-400" />
+                <span>Phân bổ phát biểu ({speakerDynamics.speakers.length})</span>
+              </span>
+              {isDynamicsOpen ? (
+                <ChevronUp className="w-3.5 h-3.5 text-zinc-500" />
+              ) : (
+                <ChevronDown className="w-3.5 h-3.5 text-zinc-500" />
+              )}
+            </button>
+
+            {isDynamicsOpen && (
+              <div className="p-3 space-y-3">
+                {/* Monologue Warning */}
+                {speakerDynamics.monologueWarning && (
+                  <div className="flex items-start gap-2 p-2 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 text-[11px] leading-snug">
+                    <AlertTriangle className="w-4 h-4 shrink-0 text-amber-400 mt-0.5" />
+                    <span>{speakerDynamics.monologueWarning}</span>
+                  </div>
+                )}
+
+                {/* Stacked Progress Bar */}
+                <div className="w-full h-2 rounded-full bg-zinc-800 overflow-hidden flex">
+                  {speakerDynamics.speakers.map((s, idx) => {
+                    const colors = [
+                      'bg-sky-500',
+                      'bg-indigo-500',
+                      'bg-emerald-500',
+                      'bg-amber-500',
+                      'bg-rose-500',
+                      'bg-purple-500',
+                    ];
+                    const color = colors[idx % colors.length];
+                    return (
+                      <div
+                        key={s.participantName}
+                        style={{ width: `${s.percentage}%` }}
+                        title={`${s.participantName}: ${s.percentage}%`}
+                        className={`h-full ${color}`}
+                      />
+                    );
+                  })}
+                </div>
+
+                {/* Speaker Breakdown List */}
+                <div className="space-y-2">
+                  {speakerDynamics.speakers.map((s, idx) => {
+                    const colors = [
+                      'text-sky-400',
+                      'text-indigo-400',
+                      'text-emerald-400',
+                      'text-amber-400',
+                      'text-rose-400',
+                      'text-purple-400',
+                    ];
+                    const barColors = [
+                      'bg-sky-500',
+                      'bg-indigo-500',
+                      'bg-emerald-500',
+                      'bg-amber-500',
+                      'bg-rose-500',
+                      'bg-purple-500',
+                    ];
+                    const color = colors[idx % colors.length];
+                    const barColor = barColors[idx % barColors.length];
+
+                    return (
+                      <div key={s.participantName} className="space-y-1">
+                        <div className="flex items-center justify-between text-[11px]">
+                          <span className={`font-medium truncate max-w-[170px] ${color}`}>
+                            {s.participantName}
+                          </span>
+                          <span className="text-zinc-400 font-mono text-[10px]">
+                            {s.percentage}% ({s.turnCount} lượt)
+                          </span>
+                        </div>
+                        <div className="w-full h-1.5 rounded-full bg-zinc-800 overflow-hidden">
+                          <div
+                            className={`h-full rounded-full ${barColor}`}
+                            style={{ width: `${s.percentage}%` }}
+                          />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </aside>
   );
