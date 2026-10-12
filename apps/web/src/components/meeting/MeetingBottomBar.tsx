@@ -50,7 +50,7 @@ interface MeetingBottomBarProps {
   spokenLanguage?: SupportedLanguage;
   targetLanguage?: SupportedLanguage;
   isPeoplePanelOpen?: boolean;
-  activeSidePanel?: 'none' | 'people' | 'chat' | 'activities' | 'host_controls' | 'subtitles';
+  activeSidePanel?: 'none' | 'people' | 'chat' | 'activities' | 'host_controls' | 'subtitles' | 'fact_check';
   onToggleChatPanel?: () => void;
   onToggleActivitiesPanel?: () => void;
   onToggleHostControlsPanel?: () => void;

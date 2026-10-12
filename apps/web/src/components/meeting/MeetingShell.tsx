@@ -51,6 +51,10 @@ import { FloatingSubtitleWidget } from './FloatingSubtitleWidget';
 import { ChatPanel } from './ChatPanel';
 import { ActivitiesPanel } from './ActivitiesPanel';
 import { HostControlsPanel } from './HostControlsPanel';
+import { FactCheckToast } from './FactCheckToast';
+import { FactCheckPanel } from './FactCheckPanel';
+import { evaluateSubtitleFactCheck } from '../../utils/factCheckEngine';
+import type { FactCheckEvent } from '../../utils/factCheckEngine';
 import { EmptyCallTimeoutModal } from './EmptyCallTimeoutModal';
 import { useSubtitle } from '../../hooks/useSubtitle';
 import { useAiReadiness } from '../../hooks/useAiReadiness';
@@ -322,8 +326,11 @@ export const MeetingShell: React.FC<MeetingShellProps> = ({
     null,
   );
 
-  type ActiveSidePanel = 'none' | 'people' | 'chat' | 'activities' | 'host_controls' | 'subtitles';
+  type ActiveSidePanel = 'none' | 'people' | 'chat' | 'activities' | 'host_controls' | 'subtitles' | 'fact_check';
   const [activeSidePanel, setActiveSidePanel] = useState<ActiveSidePanel>('none');
+  const [factCheckEvents, setFactCheckEvents] = useState<FactCheckEvent[]>([]);
+  const [activeToastEvent, setActiveToastEvent] = useState<FactCheckEvent | null>(null);
+  const processedFactCheckIdsRef = useRef<Set<string>>(new Set());
   const [pinnedParticipantId, setPinnedParticipantId] = useState<string | null>(null);
   const handleTogglePinParticipant = useCallback((participantId: string) => {
     setPinnedParticipantId((curr) => (curr === participantId ? null : participantId));
@@ -1402,6 +1409,25 @@ export const MeetingShell: React.FC<MeetingShellProps> = ({
   subtitleHistoryRef.current = subtitleHistory;
   getExportHistoryRef.current = getExportHistory;
 
+  useEffect(() => {
+    const finalSubtitles = subtitleHistory.filter((s) => s.isFinal);
+    if (finalSubtitles.length === 0) return;
+
+    const customGlossary = getUserSettings().customGlossary;
+    for (const sub of finalSubtitles) {
+      if (processedFactCheckIdsRef.current.has(sub.id)) continue;
+      processedFactCheckIdsRef.current.add(sub.id);
+
+      const event = evaluateSubtitleFactCheck(sub, customGlossary);
+      if (event) {
+        setFactCheckEvents((prev) => [event, ...prev]);
+        if (activeSidePanelRef.current !== 'fact_check') {
+          setActiveToastEvent(event);
+        }
+      }
+    }
+  }, [subtitleHistory]);
+
   const speakerDynamicsStats = React.useMemo<SpeakerDynamicsStats>(() => {
     if (activeSidePanel !== 'people') {
       return { totalTurns: 0, speakers: [] };
@@ -1848,6 +1874,7 @@ export const MeetingShell: React.FC<MeetingShellProps> = ({
             <nav className="meeting-panel-tabs" aria-label="Công cụ cuộc họp">
               {([
                 ['people', 'Mọi người'], ['chat', 'Chat'], ['subtitles', 'Trợ lý AI'],
+                ['fact_check', 'Xác minh AI'],
                 ['activities', 'Hoạt động'], ...(isHost ? [['host_controls', 'Chủ phòng']] : []),
               ] as [ActiveSidePanel, string][]).map(([id, label]) => (
                 <button type="button" key={id} aria-pressed={activeSidePanel === id} onClick={() => setActiveSidePanel(id)}>{label}</button>
@@ -1890,6 +1917,18 @@ export const MeetingShell: React.FC<MeetingShellProps> = ({
             isRecording={isRecording}
             onToggleAudioBooth={handleToggleAudioBooth}
             isAudioBoothActive={sidecarPreferences.audioBooth}
+            onOpenFactCheck={() => setActiveSidePanel('fact_check')}
+            factCheckCount={factCheckEvents.length}
+            hasDiscrepancies={factCheckEvents.some((e) => e.status === 'DISCREPANCY')}
+          />
+        )}
+
+        {activeSidePanel === 'fact_check' && (
+          <FactCheckPanel
+            events={factCheckEvents}
+            onClose={() => setActiveSidePanel('none')}
+            onSendToChat={(text) => handleSendChatMessage(text)}
+            onClearEvents={() => setFactCheckEvents([])}
           />
         )}
 
@@ -2247,6 +2286,13 @@ export const MeetingShell: React.FC<MeetingShellProps> = ({
         meetingCode={session.meetingCode}
         initialSourceTerm={glossaryTerms.source}
         initialTargetTerm={glossaryTerms.target}
+      />
+
+      {/* Real-time Fact-Check Toast Alert */}
+      <FactCheckToast
+        event={activeToastEvent}
+        onOpenPanel={() => setActiveSidePanel('fact_check')}
+        onDismiss={() => setActiveToastEvent(null)}
       />
 
       {/* Google Meet signature "Cuộc họp của bạn đã sẵn sàng" prompt */}

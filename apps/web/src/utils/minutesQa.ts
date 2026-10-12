@@ -1,4 +1,5 @@
 import type { MeetingActionItem, MeetingTranscriptEntry } from '../types/meeting';
+import { queryKnowledgeBase } from './factCheckEngine.ts';
 
 export interface MinutesQaRecap {
   executiveHighlights: string[];
@@ -115,6 +116,7 @@ export function askMeetingMinutes(
   const isActionQuestion = /(ai phu trach|cong viec|viec can lam|action|owner|deadline|assign|who is responsible|task|nhiem vu|phan cong|担当|タスク|締切)/i.test(normalizedQuestion);
   const isRiskQuestion = /(rui ro|van de|diem nghen|blocker|risk|issue|concern|impediment|kho khan|thach thuc|リスク|問題|懸念)/i.test(normalizedQuestion);
   const isSummaryQuestion = /(tom tat|diem chinh|noi dung chinh|summary|highlight|recap|overview|dien bien|cuoc hop ve gi|要約|まとめ|概要)/i.test(normalizedQuestion);
+  const isFactCheckQuestion = /(fact[\s\-_]*check|kiem tra|xac minh|doi chieu|thong so|chinh sach|sla|hoan tien|luu tru|thoi luong|ファクトチェック|検証|仕様)/i.test(normalizedQuestion);
 
   // Speaker queries: Suffix pattern ("Nam nói gì", "Alice đã nói gì", "Tanakaさんの発言")
   // or Prefix pattern ("What did Alice say?", "ý kiến của Nam", "nghe Nam nói")
@@ -185,6 +187,27 @@ export function askMeetingMinutes(
       answer: items.length ? items.join(' ') : 'Chưa có đủ dữ liệu để tóm tắt cuộc họp.',
       citations: citationsFor(items, transcript),
     };
+  }
+
+  if (isFactCheckQuestion) {
+    const kbResult = queryKnowledgeBase(question);
+    if (
+      kbResult.verifiedStatus !== 'UNVERIFIED' ||
+      /(fact[\s\-_]*check|kiem tra|xac minh|doi chieu|sla|hoan tien|luu tru|thoi luong)/i.test(normalizedQuestion)
+    ) {
+      return {
+        answer: kbResult.answer,
+        citations: kbResult.source
+          ? [
+              {
+                timestamp: new Date().toISOString(),
+                speaker: 'Cơ Sở Tri Thức Doanh Nghiệp',
+                excerpt: kbResult.source,
+              },
+            ]
+          : [],
+      };
+    }
   }
 
   const matches = rankTranscript(question, transcript);

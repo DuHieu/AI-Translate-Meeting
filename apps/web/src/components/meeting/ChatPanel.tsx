@@ -237,6 +237,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
           '@Laya Tóm tắt 5 phút qua',
           '@Laya Quyết định đã chốt?',
           '@Laya Ai phụ trách task gì?',
+          '@Laya Fact-check SLA & chính sách',
         ].map((prompt) => (
           <button
             key={prompt}

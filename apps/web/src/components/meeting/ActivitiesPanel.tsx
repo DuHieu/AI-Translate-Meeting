@@ -7,6 +7,7 @@ import {
   Sparkles,
   Headphones,
   ChevronRight,
+  ShieldCheck,
 } from 'lucide-react';
 
 interface ActivitiesPanelProps {
@@ -18,6 +19,9 @@ interface ActivitiesPanelProps {
   onToggleAudioBooth?: () => void;
   isAudioBoothActive?: boolean;
   onOpenWhiteboard?: () => void;
+  onOpenFactCheck?: () => void;
+  factCheckCount?: number;
+  hasDiscrepancies?: boolean;
 }
 
 export const ActivitiesPanel: React.FC<ActivitiesPanelProps> = ({
@@ -29,6 +33,9 @@ export const ActivitiesPanel: React.FC<ActivitiesPanelProps> = ({
   onToggleAudioBooth,
   isAudioBoothActive = false,
   onOpenWhiteboard,
+  onOpenFactCheck,
+  factCheckCount,
+  hasDiscrepancies,
 }) => {
   const [activeTab, setActiveTab] = useState<'tools' | 'addons'>('tools');
 
@@ -195,6 +202,45 @@ export const ActivitiesPanel: React.FC<ActivitiesPanelProps> = ({
                 }`}>
                   {isAudioBoothActive ? 'Bật' : 'Tắt'}
                 </span>
+              </button>
+            )}
+
+            {/* 6. Xác minh AI & Tri thức (Fact-Check) */}
+            {onOpenFactCheck && (
+              <button
+                type="button"
+                onClick={onOpenFactCheck}
+                className="w-full flex items-center justify-between p-3.5 rounded-2xl bg-zinc-900/80 hover:bg-zinc-800/80 border border-zinc-800/80 transition text-left cursor-pointer group"
+              >
+                <div className="flex items-center gap-3.5 min-w-0">
+                  <div className={`w-10 h-10 rounded-2xl border flex items-center justify-center shrink-0 ${
+                    hasDiscrepancies
+                      ? 'bg-amber-500/15 border-amber-500/30 text-amber-400'
+                      : 'bg-teal-500/15 border-teal-500/30 text-teal-400'
+                  }`}>
+                    <ShieldCheck className="w-5 h-5" />
+                  </div>
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-sm font-medium text-zinc-100 group-hover:text-white transition">
+                        Xác minh AI &amp; Tri thức
+                      </h3>
+                      {factCheckCount !== undefined && factCheckCount > 0 && (
+                        <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${
+                          hasDiscrepancies
+                            ? 'bg-amber-500/20 text-amber-300'
+                            : 'bg-teal-500/20 text-teal-300'
+                        }`}>
+                          {factCheckCount}
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-xs text-zinc-400 line-clamp-2 leading-snug">
+                      Đối soát SLA, chính sách &amp; thông số kỹ thuật tức thì
+                    </p>
+                  </div>
+                </div>
+                <ChevronRight className="w-4 h-4 text-zinc-500 group-hover:text-zinc-300 shrink-0 ml-2" />
               </button>
             )}
           </>
