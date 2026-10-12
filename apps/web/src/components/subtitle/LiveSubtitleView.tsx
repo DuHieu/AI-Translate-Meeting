@@ -75,7 +75,14 @@ export const LiveSubtitleView: React.FC<LiveSubtitleViewProps> = ({ history, sho
                   )}
                 </div>
               </div>
-              <p className="text-[15px] leading-6 text-zinc-100">{item.translatedText}</p>
+              <p
+                dir={item.direction || 'ltr'}
+                className={`text-[15px] leading-6 text-zinc-100 ${
+                  item.direction === 'rtl' ? 'text-right' : ''
+                }`}
+              >
+                {item.translatedText}
+              </p>
               {showOriginal && item.originalText && item.originalText !== item.translatedText && (
                 <p className="mt-1 text-xs italic leading-5 text-zinc-400">{item.originalText}</p>
               )}

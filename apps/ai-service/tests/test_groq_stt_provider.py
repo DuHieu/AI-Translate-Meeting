@@ -215,23 +215,39 @@ def _handler_with(cloud_stt, local_result: TranscriptResult) -> tuple[Transcribe
 
 
 @pytest.mark.asyncio
-async def test_handler_uses_groq_result_when_successful():
+async def test_handler_routes_non_vi_to_groq():
     cloud = MagicMock()
-    cloud.transcribe_audio_chunk = AsyncMock(return_value=("Xin chào cả nhóm", "vi", 0.93))
+    cloud.transcribe_audio_chunk = AsyncMock(return_value=("Hello team", "en", 0.93))
     handler, local_transcribe = _handler_with(
-        cloud, TranscriptResult(text="local", language="vi", is_final=True)
+        cloud, TranscriptResult(text="local", language="en", is_final=True)
     )
+
+    result = await handler._transcribe_audio(
+        _audio(), language="en", is_final=True, initial_prompt="p", meeting_id="m1"
+    )
+
+    assert result.text == "Hello team"
+    assert result.language == "en"
+    assert result.language_probability == 0.93
+    assert result.is_final is True
+    cloud.transcribe_audio_chunk.assert_awaited_once()
+    local_transcribe.assert_not_awaited()
+
+
+@pytest.mark.asyncio
+async def test_handler_routes_vietnamese_to_local_phowhisper():
+    cloud = MagicMock()
+    cloud.transcribe_audio_chunk = AsyncMock(return_value=("cloud vi", "vi", 0.9))
+    local_result = TranscriptResult(text="Xin chào cả nhóm", language="vi", is_final=True)
+    handler, local_transcribe = _handler_with(cloud, local_result)
 
     result = await handler._transcribe_audio(
         _audio(), language="vi", is_final=True, initial_prompt="p", meeting_id="m1"
     )
 
-    assert result.text == "Xin chào cả nhóm"
-    assert result.language == "vi"
-    assert result.language_probability == 0.93
-    assert result.is_final is True
-    cloud.transcribe_audio_chunk.assert_awaited_once()
-    local_transcribe.assert_not_awaited()
+    assert result is local_result
+    local_transcribe.assert_awaited_once()
+    cloud.transcribe_audio_chunk.assert_not_awaited()
 
 
 @pytest.mark.asyncio
@@ -242,16 +258,38 @@ async def test_handler_uses_groq_result_when_successful():
 async def test_handler_falls_back_to_local_when_groq_fails(error):
     cloud = MagicMock()
     cloud.transcribe_audio_chunk = AsyncMock(side_effect=error)
-    local_result = TranscriptResult(text="kết quả local", language="vi", is_final=True)
+    local_result = TranscriptResult(text="local english", language="en", is_final=True)
     handler, local_transcribe = _handler_with(cloud, local_result)
 
     result = await handler._transcribe_audio(
-        _audio(), language="vi", is_final=True, initial_prompt=None, meeting_id="m1"
+        _audio(), language="en", is_final=True, initial_prompt=None, meeting_id="m1"
     )
 
     assert result is local_result
     local_transcribe.assert_awaited_once()
     assert local_transcribe.await_args.kwargs["vad_filter"] is False
+
+
+@pytest.mark.asyncio
+async def test_handler_falls_back_to_groq_when_vi_local_fails():
+    cloud = MagicMock()
+    cloud.transcribe_audio_chunk = AsyncMock(return_value=("fallback vi", "vi", 0.88))
+    local_stt = MagicMock()
+    local_stt.transcribe = AsyncMock(side_effect=RuntimeError("phowhisper_down"))
+    handler = TranscribeWebSocketHandler(
+        stt=local_stt,
+        translator=MagicMock(),
+        cloud_stt=cloud,
+    )
+
+    result = await handler._transcribe_audio(
+        _audio(), language="vi", is_final=True, initial_prompt=None, meeting_id="m1"
+    )
+
+    assert result.text == "fallback vi"
+    assert result.language == "vi"
+    cloud.transcribe_audio_chunk.assert_awaited_once()
+    assert cloud.transcribe_audio_chunk.await_args.kwargs["source_lang"] == "vi"
 
 
 @pytest.mark.asyncio

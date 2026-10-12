@@ -26,7 +26,7 @@ class Settings(BaseSettings):
     PHOWHISPER_MODEL_PATH: str = os.getenv(
         "PHOWHISPER_MODEL_PATH", "diepho/PhoWhisper-base-ct2"
     )
-    # Cloud STT provider: "local" (faster-whisper on CPU) or "groq" (falls back to local on failure).
+    # Cloud STT: "local" or "groq" (OmniLanguageRouter: vi→PhoWhisper, others→Groq + fallbacks).
     # GROQ_API_KEY must never be logged.
     STT_PROVIDER: str = os.getenv("STT_PROVIDER", "local")
     GROQ_API_KEY: str = os.getenv("GROQ_API_KEY", "")

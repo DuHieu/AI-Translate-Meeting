@@ -111,6 +111,21 @@ export const SubtitleOverlay: React.FC<SubtitleOverlayProps> = ({
   const sourceLangOption = getLanguageOption(displaySubtitle?.sourceLanguage || 'vi');
   const targetLangOption = getLanguageOption(targetLanguage || displaySubtitle?.targetLanguage || 'ja');
   const secondaryFlagCode = isSelf ? targetLangOption.code : sourceLangOption.code;
+  const RTL_CODES = new Set(['ar', 'he', 'fa', 'ur']);
+  const bubbleDirection =
+    displaySubtitle?.direction ||
+    (RTL_CODES.has((displaySubtitle?.targetLanguage || targetLanguage || '').split('-')[0].toLowerCase())
+      ? 'rtl'
+      : 'ltr');
+  const primaryDir = isSelf
+    ? (RTL_CODES.has((displaySubtitle?.sourceLanguage || '').split('-')[0].toLowerCase()) ? 'rtl' : 'ltr')
+    : bubbleDirection;
+  const secondaryDir = isSelf ? bubbleDirection : (
+    RTL_CODES.has((displaySubtitle?.sourceLanguage || '').split('-')[0].toLowerCase()) ? 'rtl' : 'ltr'
+  );
+  const isDecision = Boolean(
+    displaySubtitle?.layaMetadata?.isDecision || displaySubtitle?.tags?.includes('decision'),
+  );
 
   return (
     <>
@@ -132,11 +147,19 @@ export const SubtitleOverlay: React.FC<SubtitleOverlayProps> = ({
 
           {displaySubtitle && (
             <div
-              className={`relative w-full rounded-2xl border px-3.5 py-2.5 sm:px-4 sm:py-3 text-left shadow-lg transition-all ${
+              data-dir={bubbleDirection}
+              dir={bubbleDirection}
+              className={`subtitle-bubble relative w-full rounded-2xl border px-3.5 py-2.5 sm:px-4 sm:py-3 shadow-lg transition-all ${
+                bubbleDirection === 'rtl' ? 'text-right' : 'text-left'
+              } ${
                 isRisk
                   ? 'border-rose-500 bg-zinc-950/95 ring-1 ring-rose-500/50'
-                  : `border-slate-800 ${bgOpacityClass}`
-              }`}
+                  : isDecision
+                  ? 'border-amber-400/60 bg-slate-950 ring-1 ring-amber-400/30'
+                  : !displaySubtitle.isFinal
+                  ? `border-dashed border-slate-600 ${bgOpacityClass}`
+                  : `border-solid border-slate-800 ${bgOpacityClass}`
+              } ${bubbleDirection === 'rtl' ? "font-['Segoe_UI','Tahoma','Noto_Sans_Arabic','Arial',sans-serif]" : ''}`}
             >
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                 {/* Speaker Flag Badge + Bilingual Subtitle Lines */}
@@ -163,9 +186,15 @@ export const SubtitleOverlay: React.FC<SubtitleOverlayProps> = ({
                     </span>
 
                     {!displaySubtitle.isFinal && (
-                      <span className="inline-flex items-center gap-1 text-[10px] text-amber-300/90 font-medium">
-                        <span className="h-1.5 w-1.5 rounded-full bg-amber-400 animate-ping" />
+                      <span className="inline-flex items-center gap-1 text-[10px] text-sky-300/90 font-medium">
+                        <span className="h-1.5 w-1.5 rounded-full bg-sky-400 animate-ping" />
                         Đang nói…
+                      </span>
+                    )}
+
+                    {isDecision && !isRisk && (
+                      <span className="inline-flex items-center gap-1 rounded-md bg-amber-500/15 border border-amber-400/40 px-2 py-0.5 text-[10px] font-semibold text-amber-300">
+                        <Sparkles className="h-3 w-3" /> Quyết định
                       </span>
                     )}
 
@@ -177,10 +206,11 @@ export const SubtitleOverlay: React.FC<SubtitleOverlayProps> = ({
                   </div>
 
                   <span
+                    dir={primaryDir}
                     className={`line-clamp-2 block leading-relaxed transition-opacity duration-150 ${fontSizeClass} ${
                       displaySubtitle.isFinal
-                        ? 'font-medium text-white'
-                        : 'italic text-zinc-300/85 animate-pulse'
+                        ? 'font-medium text-slate-50'
+                        : 'italic text-slate-400/90 animate-pulse'
                     }`}
                   >
                     {primaryText}
@@ -191,13 +221,19 @@ export const SubtitleOverlay: React.FC<SubtitleOverlayProps> = ({
                     settings.subtitleDisplayMode !== 'original_only' && (
                       isSelf
                         ? (
-                          <span className="flex items-center gap-1.5 truncate text-xs italic text-sky-400/80">
+                          <span
+                            dir={secondaryDir}
+                            className="flex items-center gap-1.5 truncate text-xs italic text-blue-400/90"
+                          >
                             <CountryFlag code={secondaryFlagCode} size="xs" />
                             <span>{secondaryText}</span>
                           </span>
                         )
                         : (shouldShowOriginal && settings.subtitleDisplayMode === 'bilingual' && (
-                          <span className="flex items-center gap-1.5 truncate text-xs italic text-zinc-400">
+                          <span
+                            dir={secondaryDir}
+                            className="flex items-center gap-1.5 truncate text-xs italic text-zinc-400"
+                          >
                             <CountryFlag code={secondaryFlagCode} size="xs" />
                             <span>{secondaryText}</span>
                           </span>

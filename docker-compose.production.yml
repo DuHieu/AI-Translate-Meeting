@@ -20,7 +20,7 @@ x-api-environment: &api-environment
   SessionToken__TokenTtlMinutes: "${SESSION_TOKEN_TTL_MINUTES:-60}"
   License__LicenseKey: "${LICENSE_KEY:-}"
   License__SigningKey: "${LICENSE_SIGNING_KEY:-}"
-  License__DefaultMaxRooms: "${DEFAULT_MAX_ROOMS:-3}"
+  License__DefaultMaxRooms: "${DEFAULT_MAX_ROOMS:-25}"
   License__DefaultMaxParticipants: "${DEFAULT_MAX_PARTICIPANTS:-15}"
   Security__EnforceProductionSecrets: "true"
   Cors__AllowedOrigins__0: "https://${APP_DOMAIN:?Set APP_DOMAIN}"

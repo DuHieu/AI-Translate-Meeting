@@ -1,3 +1,13 @@
-from app.speech.whisper_service import SpeechToTextService, TranscriptResult
+from app.speech.whisper_service import (
+    OmniLanguageRouter,
+    SpeechToTextService,
+    TranscriptResult,
+    get_cultural_initial_prompt,
+)
 
-__all__ = ["SpeechToTextService", "TranscriptResult"]
+__all__ = [
+    "OmniLanguageRouter",
+    "SpeechToTextService",
+    "TranscriptResult",
+    "get_cultural_initial_prompt",
+]

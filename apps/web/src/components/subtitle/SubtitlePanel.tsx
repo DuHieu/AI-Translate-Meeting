@@ -607,7 +607,16 @@ export const SubtitlePanel: React.FC<SubtitlePanelProps> = ({
                       <span className="text-[10px] text-zinc-400">{item.participantName}</span>
                     )}
                   </div>
-                  <p className="text-sm leading-5 text-zinc-200">{item.translatedText || item.originalText}</p>
+                  <p
+                    dir={item.direction || (['ar', 'he', 'fa', 'ur'].includes((item.targetLanguage || '').split('-')[0]) ? 'rtl' : 'ltr')}
+                    className={`text-sm leading-5 text-zinc-200 ${
+                      item.direction === 'rtl' || ['ar', 'he', 'fa', 'ur'].includes((item.targetLanguage || '').split('-')[0])
+                        ? 'text-right'
+                        : ''
+                    }`}
+                  >
+                    {item.translatedText || item.originalText}
+                  </p>
                 </article>
               );
             })}

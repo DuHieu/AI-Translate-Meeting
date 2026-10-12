@@ -5,7 +5,7 @@ import re
 import time
 import unicodedata
 from dataclasses import dataclass
-from typing import Optional, Union
+from typing import Any, Optional, Union
 import numpy as np
 
 from app.config.settings import settings
@@ -136,6 +136,213 @@ class WhisperReadiness:
     state: str
     load_duration_ms: float | None = None
     error_code: str | None = None
+
+
+# Dialect / domain priming prompts for Omni-Language STT (Sprint 2).
+CULTURAL_INITIAL_PROMPTS: dict[str, str] = {
+    "vi": (
+        "Cuộc họp trực tuyến: kế hoạch, dự án, triển khai, sprint, bug, deploy."
+    ),
+    "en": (
+        "Online meeting: roadmap, deliverables, milestones, architecture."
+    ),
+    "ja": (
+        "オンライン会議、プロジェクト進捗、仕様書、納期、確認事項。"
+    ),
+    "zh": (
+        "在线会议：项目进展、系统架构、排期、问题复盘。"
+    ),
+    "ar": (
+        "اجتماع عمل رسمي عبر الإنترنت، مناقشة المشاريع، التقرير، خطة العمل."
+    ),
+    "ko": (
+        "온라인 미팅: 스프린트, 개발 일정, 배포, 이슈 공유."
+    ),
+    "fr": (
+        "Réunion en ligne: feuille de route, livrables, jalons, architecture."
+    ),
+    "de": (
+        "Online-Meeting: Roadmap, Liefergegenstände, Meilensteine, Architektur."
+    ),
+    "es": (
+        "Reunión en línea: hoja de ruta, entregables, hitos, arquitectura."
+    ),
+}
+
+def normalize_language_code(language: Optional[str], fallback: str = "vi") -> str:
+    if not language or not isinstance(language, str):
+        return fallback
+    clean = language.strip().lower()
+    if clean in ("", "auto"):
+        return clean or "auto"
+    return clean.split("-", 1)[0]
+
+
+def get_cultural_initial_prompt(language: Optional[str]) -> Optional[str]:
+    """Returns the dialect/domain Whisper initial prompt for a language, if any."""
+    base = normalize_language_code(language, fallback="")
+    if base in ("", "auto"):
+        return None
+    return CULTURAL_INITIAL_PROMPTS.get(base)
+
+
+class OmniLanguageRouter:
+    """Language-aware STT router: Vietnamese → PhoWhisper; others → Groq LPU.
+
+    Fallback matrix (blueprint Sprint 1):
+    - Groq failure → local faster-whisper
+    - PhoWhisper / local VI failure → Groq + Vietnamese cultural prompt
+    """
+
+    def __init__(self, local_stt: "SpeechToTextService", cloud_stt: Optional[Any] = None):
+        self.local_stt = local_stt
+        self.cloud_stt = cloud_stt
+
+    @staticmethod
+    def is_vietnamese(language: Optional[str]) -> bool:
+        base = normalize_language_code(language, fallback="")
+        return base in ("vi", "vie", "vietnamese")
+
+    async def _local_transcribe(
+        self,
+        audio: Union[bytes, np.ndarray],
+        *,
+        language: str,
+        is_final: bool,
+        initial_prompt: Optional[str],
+    ) -> TranscriptResult:
+        try:
+            return await self.local_stt.transcribe(
+                audio,
+                language=language,
+                is_final=is_final,
+                initial_prompt=initial_prompt,
+                vad_filter=False,
+            )
+        except TypeError:
+            try:
+                return await self.local_stt.transcribe(
+                    audio,
+                    language=language,
+                    is_final=is_final,
+                    initial_prompt=initial_prompt,
+                )
+            except TypeError:
+                return await self.local_stt.transcribe(
+                    audio,
+                    language=language,
+                    is_final=is_final,
+                )
+
+    async def _cloud_transcribe(
+        self,
+        audio: np.ndarray,
+        *,
+        language: str,
+        is_final: bool,
+        prompt: Optional[str],
+    ) -> TranscriptResult:
+        if self.cloud_stt is None:
+            raise RuntimeError("cloud_stt_not_configured")
+        text, detected_lang, confidence = await self.cloud_stt.transcribe_audio_chunk(
+            audio,
+            source_lang=language,
+            prompt=prompt,
+        )
+        return TranscriptResult(
+            text=text,
+            language=detected_lang,
+            is_final=is_final,
+            language_probability=confidence,
+        )
+
+    async def transcribe(
+        self,
+        audio: Union[bytes, np.ndarray],
+        *,
+        language: str,
+        is_final: bool = True,
+        initial_prompt: Optional[str] = None,
+        meeting_id: str = "",
+    ) -> TranscriptResult:
+        lang = normalize_language_code(language, fallback="auto")
+        prompt = initial_prompt
+        if not prompt:
+            prompt = get_cultural_initial_prompt(lang if lang != "auto" else None)
+
+        # No cloud → always local (STT_PROVIDER=local).
+        if self.cloud_stt is None:
+            return await self._local_transcribe(
+                audio,
+                language=language,
+                is_final=is_final,
+                initial_prompt=prompt,
+            )
+
+        # Vietnamese: prefer local PhoWhisper CT2; fall back to Groq + VI prompt on errors.
+        if self.is_vietnamese(lang):
+            vi_prompt = prompt or get_cultural_initial_prompt("vi")
+            try:
+                return await self._local_transcribe(
+                    audio,
+                    language=language,
+                    is_final=is_final,
+                    initial_prompt=vi_prompt,
+                )
+            except asyncio.CancelledError:
+                raise
+            except Exception as ex:
+                logger.warning(
+                    "event=omni_router meeting_id=%s route=vi_local failed reason=%s falling_back=groq",
+                    meeting_id,
+                    type(ex).__name__,
+                )
+            try:
+                audio_np = audio if isinstance(audio, np.ndarray) else np.asarray(audio, dtype=np.float32)
+                return await self._cloud_transcribe(
+                    audio_np,
+                    language="vi",
+                    is_final=is_final,
+                    prompt=vi_prompt,
+                )
+            except asyncio.CancelledError:
+                raise
+            except Exception as ex:
+                logger.warning(
+                    "event=omni_router meeting_id=%s route=vi_groq_fallback failed reason=%s",
+                    meeting_id,
+                    type(ex).__name__,
+                )
+                return TranscriptResult(
+                    text="",
+                    language="vi",
+                    is_final=is_final,
+                    language_probability=0.0,
+                )
+
+        # International languages (and auto): Groq LPU first, local faster-whisper fallback.
+        try:
+            audio_np = audio if isinstance(audio, np.ndarray) else np.asarray(audio, dtype=np.float32)
+            return await self._cloud_transcribe(
+                audio_np,
+                language=language,
+                is_final=is_final,
+                prompt=prompt,
+            )
+        except asyncio.CancelledError:
+            raise
+        except Exception as ex:
+            logger.warning(
+                "event=omni_router meeting_id=%s route=groq failed reason=%s falling_back=local",
+                meeting_id,
+                type(ex).__name__,
+            )
+            return await self._local_transcribe(
+                audio,
+                language=language,
+                is_final=is_final,
+                initial_prompt=prompt,
+            )
 
 
 def resolve_device_and_compute_type(

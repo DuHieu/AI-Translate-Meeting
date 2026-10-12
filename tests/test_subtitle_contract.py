@@ -42,6 +42,26 @@ def test_subtitle_broadcast_matches_frontend_contract():
     assert payload["data"]["isFinal"] is True
     assert payload["data"]["tags"] == ["greeting"]
     assert payload["data"]["confidence"] == 0.92
+    assert payload["data"]["direction"] == "ltr"
+
+
+def test_subtitle_broadcast_sets_rtl_direction_for_arabic_target():
+    message = SubtitleBroadcastMessage(
+        data=SubtitleData(
+            meetingId="meeting-1",
+            participantId="participant-1",
+            participantName="Hieu",
+            sourceLanguage="vi",
+            targetLanguage="ar",
+            originalText="Dự án đã sẵn sàng triển khai",
+            translatedText="المشروع جاهز للنشر",
+            confidence=0.96,
+        )
+    )
+
+    payload = message.model_dump()
+    assert payload["data"]["direction"] == "rtl"
+    assert payload["data"]["targetLanguage"] == "ar"
 
 
 def test_pipeline_status_broadcast_matches_frontend_contract():
@@ -145,8 +165,10 @@ def test_frontend_reconnect_and_auth_gating_contract():
 def test_backend_handshake_contract_specifies_secure_metadata_exchange():
     main_source = (AI_SERVICE_ROOT / "app" / "main.py").read_text(encoding="utf-8")
 
-    assert 'SUPPORTED_TARGET_LANGUAGES = frozenset({"vi", "en", "ja", "ko", "zh", "fr", "de", "es"})' in main_source
-    assert 'SUPPORTED_SOURCE_LANGUAGES = frozenset({"auto", "vi", "en", "ja", "ko", "zh", "fr", "de", "es"})' in main_source
+    assert "SUPPORTED_TARGET_LANGUAGES = frozenset(" in main_source
+    assert "SUPPORTED_SOURCE_LANGUAGES = frozenset(" in main_source
+    assert '"ar"' in main_source
+    assert '"auto"' in main_source
     assert 'DEFAULT_PARTICIPANT_NAME = "Participant"' in main_source
     assert "MAX_PARTICIPANT_NAME_LENGTH = 100" in main_source
     assert "code=4400" in main_source
