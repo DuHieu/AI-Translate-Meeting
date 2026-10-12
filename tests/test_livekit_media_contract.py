@@ -51,7 +51,8 @@ def test_prejoin_clears_device_permission_error_when_media_is_disabled():
 
 
 def test_subtitle_audio_chunks_match_realtime_latency_contract():
-    subtitle_hook = WEB_SRC / "hooks" / "useSubtitle.ts"
-    source = subtitle_hook.read_text(encoding="utf-8")
+    capture = (WEB_SRC / "hooks" / "subtitleAudioCapture.ts").read_text(encoding="utf-8")
+    hook = (WEB_SRC / "hooks" / "useSubtitle.ts").read_text(encoding="utf-8")
 
-    assert "const AUDIO_CHUNK_MS = 350;" in source
+    assert "export const AUDIO_CHUNK_MS = 350;" in capture
+    assert "startSubtitleAudioCapture" in hook

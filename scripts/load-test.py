@@ -404,13 +404,35 @@ async def main_async(args: argparse.Namespace) -> int:
             "timestamp": int(time.time()),
             "rooms": rooms_count,
             "participants_per_room": participants_per_room,
+            "speakers_per_room": speakers_per_room,
             "total_participants": total_participants,
+            "total_speakers": total_speakers,
+            "total_listeners": total_listeners,
             "successful_sessions": len(successful),
             "failed_sessions": len(failed),
             "cross_room_leakage_count": len(leaked),
+            "zero_cross_room_leakage": len(leaked) == 0,
+            "audio_chunks_streamed": sum(r.chunks_sent for r in results),
+            "subtitles_received": sum(r.subtitles_received for r in results),
             "total_wall_time_sec": total_time,
+            "omni_lang_mix": bool(args.omni_lang_mix),
+            "ttfs_min_ms": min(ttfs_values) if ttfs_values else None,
             "ttfs_p50_ms": statistics.median(ttfs_values) if ttfs_values else None,
-            "ttfs_p95_ms": (statistics.quantiles(ttfs_values, n=20)[-1] if len(ttfs_values) >= 20 else max(ttfs_values)) if ttfs_values else None,
+            "ttfs_p95_ms": (
+                statistics.quantiles(ttfs_values, n=20)[-1]
+                if len(ttfs_values) >= 20
+                else (max(ttfs_values) if ttfs_values else None)
+            ),
+            "ttfs_max_ms": max(ttfs_values) if ttfs_values else None,
+            "speaker_ttfs_p50_ms": statistics.median(speaker_ttfs) if speaker_ttfs else None,
+            "listener_ttfs_p50_ms": statistics.median(listener_ttfs) if listener_ttfs else None,
+            "ttfs_p50_target_ms": float(args.ttfs_p50_target_ms),
+            "sla_passed": bool(
+                ttfs_values
+                and statistics.median(ttfs_values) <= float(args.ttfs_p50_target_ms)
+                and len(failed) == 0
+                and len(leaked) == 0
+            ),
         }
         out_path = Path(args.output_json)
         out_path.parent.mkdir(parents=True, exist_ok=True)
@@ -449,8 +471,8 @@ def main():
     parser.add_argument(
         "--ttfs-p50-target-ms",
         type=float,
-        default=250.0,
-        help="SLA threshold for TTFS median in milliseconds (blueprint: 250)",
+        default=200.0,
+        help="SLA threshold for TTFS median in milliseconds (production plan: 200)",
     )
     parser.add_argument("--output-json", default="", help="Optional JSON file path to save benchmark telemetry")
 

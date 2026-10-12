@@ -82,3 +82,43 @@ async def test_omni_router_without_cloud_always_local():
 
     assert result.text == "only local"
     local.transcribe.assert_awaited_once()
+
+
+def test_to_float32_mono_decodes_int16_pcm_bytes():
+    samples = np.array([0, 16384, -16384, 32767], dtype="<i2")
+    raw = samples.tobytes()
+
+    decoded = OmniLanguageRouter._to_float32_mono(raw)
+
+    assert decoded.dtype == np.float32
+    assert decoded.shape == (4,)
+    np.testing.assert_allclose(decoded[0], 0.0, atol=1e-6)
+    np.testing.assert_allclose(decoded[1], 0.5, atol=1e-3)
+    np.testing.assert_allclose(decoded[2], -0.5, atol=1e-3)
+    np.testing.assert_allclose(decoded[3], 32767 / 32768.0, atol=1e-5)
+
+
+def test_to_float32_mono_rejects_odd_length_bytes():
+    with pytest.raises(TypeError, match="int16 PCM"):
+        OmniLanguageRouter._to_float32_mono(b"\x00\x01\x02")
+
+
+@pytest.mark.asyncio
+async def test_omni_router_groq_path_accepts_int16_pcm_bytes():
+    local = MagicMock()
+    local.transcribe = AsyncMock(
+        side_effect=AssertionError("local must not run for successful groq path")
+    )
+    cloud = MagicMock()
+    cloud.transcribe_audio_chunk = AsyncMock(return_value=("hello", "en", 0.91))
+    router = OmniLanguageRouter(local_stt=local, cloud_stt=cloud)
+
+    pcm_bytes = (np.array([1000, -1000, 2000], dtype="<i2")).tobytes()
+    result = await router.transcribe(pcm_bytes, language="en", is_final=True, meeting_id="m")
+
+    assert result.text == "hello"
+    cloud.transcribe_audio_chunk.assert_awaited_once()
+    sent = cloud.transcribe_audio_chunk.await_args.args[0]
+    assert isinstance(sent, np.ndarray)
+    assert sent.dtype == np.float32
+    np.testing.assert_allclose(sent[0], 1000 / 32768.0, atol=1e-5)

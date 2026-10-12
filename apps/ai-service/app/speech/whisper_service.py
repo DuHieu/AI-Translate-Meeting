@@ -203,6 +203,24 @@ class OmniLanguageRouter:
         base = normalize_language_code(language, fallback="")
         return base in ("vi", "vie", "vietnamese")
 
+    @staticmethod
+    def _to_float32_mono(audio: Union[bytes, bytearray, memoryview, np.ndarray]) -> np.ndarray:
+        """Normalize router audio to mono float32 in [-1, 1] for Groq WAV encoding."""
+        if isinstance(audio, np.ndarray):
+            arr = np.asarray(audio, dtype=np.float32)
+            return arr.reshape(-1) if arr.ndim > 1 else arr
+
+        if isinstance(audio, (bytes, bytearray, memoryview)):
+            raw = bytes(audio)
+            if len(raw) == 0:
+                return np.zeros(0, dtype=np.float32)
+            if len(raw) % 2 != 0:
+                raise TypeError("audio bytes must be little-endian int16 PCM (even length)")
+            pcm = np.frombuffer(raw, dtype="<i2")
+            return pcm.astype(np.float32) / 32768.0
+
+        raise TypeError(f"unsupported audio type for OmniLanguageRouter: {type(audio)!r}")
+
     async def _local_transcribe(
         self,
         audio: Union[bytes, np.ndarray],
@@ -298,9 +316,8 @@ class OmniLanguageRouter:
                     type(ex).__name__,
                 )
             try:
-                audio_np = audio if isinstance(audio, np.ndarray) else np.asarray(audio, dtype=np.float32)
                 return await self._cloud_transcribe(
-                    audio_np,
+                    self._to_float32_mono(audio),
                     language="vi",
                     is_final=is_final,
                     prompt=vi_prompt,
@@ -322,9 +339,8 @@ class OmniLanguageRouter:
 
         # International languages (and auto): Groq LPU first, local faster-whisper fallback.
         try:
-            audio_np = audio if isinstance(audio, np.ndarray) else np.asarray(audio, dtype=np.float32)
             return await self._cloud_transcribe(
-                audio_np,
+                self._to_float32_mono(audio),
                 language=language,
                 is_final=is_final,
                 prompt=prompt,

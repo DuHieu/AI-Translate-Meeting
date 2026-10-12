@@ -10,23 +10,37 @@ def read(relative_path: str) -> str:
 
 
 def test_subtitle_hook_streams_vad_gated_16khz_pcm_with_browser_fallback():
-    source = read("hooks/useSubtitle.ts")
+    hook = read("hooks/useSubtitle.ts")
+    capture = read("hooks/subtitleAudioCapture.ts")
+    worklet = (
+        ROOT / "apps" / "web" / "public" / "audio-processors" / "vad-processor.js"
+    ).read_text(encoding="utf-8")
 
-    assert "const AUDIO_CHUNK_MS = 350;" in source
-    assert "createScriptProcessor" in source
-    assert "16000" in source
-    assert "Int16Array" in source
-    assert "getUserSettings().vadSensitivity" in source
-    assert "low: 0.003" in source
-    assert "medium: 0.006" in source
-    assert "high: 0.011" in source
-    assert "const hangoverChunks = 3" in source
-    assert "webkitSpeechRecognition" in source
-    assert "continuous = true" in source
-    assert "interimResults = true" in source
-    assert "subtitleWsService.sendSpeechText" in source
-    assert "new MediaRecorder" in source
-    assert "[isMicOn, isAiReady, audioTrack]" in source
+    assert "startSubtitleAudioCapture" in hook
+    assert "isSpeaking" in hook
+    assert "[isMicOn, isAiReady, audioTrack]" in hook
+    assert "subtitleWsService.sendSpeechText" in hook
+
+    assert "export const AUDIO_CHUNK_MS = 350;" in capture
+    assert "audioWorklet.addModule" in capture
+    assert "vad-audio-processor" in capture
+    assert "createScriptProcessor" in capture  # legacy fallback for older browsers
+    assert "16000" in capture
+    assert "Int16Array" in capture
+    assert "getUserSettings().vadSensitivity" in capture
+    assert "low: 0.003" in capture
+    assert "medium: 0.006" in capture
+    assert "high: 0.011" in capture
+    assert "VAD_HANGOVER_CHUNKS = 2" in capture
+    assert "webkitSpeechRecognition" in capture
+    assert "continuous = true" in capture
+    assert "interimResults = true" in capture
+    assert "new MediaRecorder" in capture
+
+    assert "registerProcessor('vad-audio-processor'" in worklet
+    assert "SPEECH_CHUNK" in worklet
+    assert "SILENCE_HEARTBEAT" in worklet
+    assert "5600" in worklet
 
 
 def test_tts_loads_matching_voice_and_resumes_before_speaking():
@@ -68,3 +82,10 @@ def test_live_subtitle_has_accessible_speaker_button_without_prohibited_identifi
     assert "handleReplay" not in source
     assert "Search" not in source
     assert "Cuộn xuống mới nhất" not in source
+
+
+def test_meeting_mic_speaking_indicator_uses_vad_not_livekit_or():
+    shell = read("components/meeting/MeetingShell.tsx")
+    assert "isSpeaking: isVadSpeaking" in shell
+    assert "isSpeaking={isVadSpeaking}" in shell
+    assert "isVadSpeaking || isLocalSpeaking" not in shell

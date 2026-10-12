@@ -1275,6 +1275,7 @@ export const MeetingShell: React.FC<MeetingShellProps> = ({
     history: subtitleHistory,
     getExportHistory,
     pipelineStatuses,
+    isSpeaking: isVadSpeaking,
   } = useSubtitle(
     session.meetingId,
     session.participantId,
@@ -1782,7 +1783,7 @@ export const MeetingShell: React.FC<MeetingShellProps> = ({
       <MeetingBottomBar
         meetingCode={session.meetingCode}
         isMicOn={localMediaState.micEnabled}
-        isSpeaking={isLocalSpeaking}
+        isSpeaking={isVadSpeaking}
         isCameraOn={localMediaState.cameraEnabled}
         isScreenSharing={localMediaState.screenShareEnabled}
         microphoneTrack={localAudioTrack}
