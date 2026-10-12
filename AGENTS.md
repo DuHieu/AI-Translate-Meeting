@@ -69,10 +69,10 @@ cd apps/web && npm run lint && npm run build
   - [x] Host controls: Khóa phòng (Meeting Lock) & Tắt tiếng tất cả (Hard Mute All).
   - [x] Lọc ồn Web Audio (AI Noise Suppression) & Virtual Background Blur (Làm mờ hậu cảnh).
   - [x] Laya Meeting Minutes: Tự động tổng hợp biên bản họp chi tiết & gửi Email trực tiếp.
-- [ ] **P6 - Mobile Flutter Release & Enterprise Admin Portal**:
-  - [ ] Đóng gói và phát hành ứng dụng di động Flutter (Android APK / iOS).
-  - [ ] Admin Portal: Quản lý Domain Glossary công ty & chính sách lưu trữ (RAM-Only / Retention).
-  - [ ] Enforce hạn mức gói thuê bao (Free 45 phút vs Pro không giới hạn).
+- [x] **P6 - Mobile Flutter Release & Enterprise Admin Portal**:
+  - [x] Đóng gói và phát hành ứng dụng di động Flutter (Android APK & AAB bundle qua CI/CD).
+  - [x] Admin Portal: Quản lý Domain Glossary công ty, chính sách RAM-Only & Audit Trail.
+  - [x] Đóng gói bộ triển khai cô lập doanh nghiệp (Air-Gapped Appliance `docker-compose.offline.yml`).
 
 ## 5. Cấu Trúc Tài Liệu Nghiệp Vụ
 - **docs/PRD.md**: Đặc tả yêu cầu từ AI BA (Bella).

@@ -1,0 +1,154 @@
+# =============================================================================
+# LayaMeet Enterprise Air-Gapped Appliance (docker-compose.offline.yml)
+# Completely isolated, self-hosted deployment for on-premise, banking,
+# defense, and enterprise environments with ZERO outbound internet access.
+# =============================================================================
+
+version: '3.8'
+
+services:
+  # ── 1. Relational Database ────────────────────────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    container_name: layameet_offline_postgres
+    restart: always
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-ai_translate_meeting}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_offline_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-ai_translate_meeting}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - layameet_internal
+
+  # ── 2. In-Memory Distributed Cache & State ───────────────────────────────
+  redis:
+    image: redis:7-alpine
+    container_name: layameet_offline_redis
+    restart: always
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_offline_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - layameet_internal
+
+  # ── 3. WebRTC SFU Server (LiveKit Isolated) ───────────────────────────────
+  livekit:
+    image: livekit/livekit-server:v1.13.7
+    container_name: layameet_offline_livekit
+    command:
+      - --config
+      - /etc/livekit.yaml
+      - --keys
+      - "${LIVEKIT_API_KEY:-devkey}: ${LIVEKIT_API_SECRET:-secret1234567890abcdef}"
+    restart: always
+    ports:
+      - "7880:7880"
+      - "7881:7881"
+      - "7882:7882/udp"
+    volumes:
+      - ./infra/livekit/livekit.yaml:/etc/livekit.yaml
+    healthcheck:
+      test: ["CMD-SHELL", "wget --spider -q http://127.0.0.1:7880 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+    networks:
+      - layameet_internal
+
+  # ── 4. Core Backend API (.NET 8 Air-Gapped) ───────────────────────────────
+  api:
+    build:
+      context: ./apps/api
+      dockerfile: Dockerfile
+    container_name: layameet_offline_api
+    restart: always
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - AIR_GAPPED_MODE=true
+      - ConnectionStrings__DefaultConnection=Host=postgres;Port=5432;Database=${POSTGRES_DB:-ai_translate_meeting};Username=${POSTGRES_USER:-postgres};Password=${POSTGRES_PASSWORD:-postgres}
+      - LiveKit__Url=http://livekit:7880
+      - LiveKit__ApiKey=${LIVEKIT_API_KEY:-devkey}
+      - LiveKit__ApiSecret=${LIVEKIT_API_SECRET:-secret1234567890abcdef}
+      - LiveKit__PublicUrl=ws://localhost:7880
+      - Redis__ConnectionString=redis:6379
+      - RateLimiting__Enabled=true
+      - Security__AllowAnonymousInvites=true
+    ports:
+      - "5000:5000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      livekit:
+        condition: service_healthy
+    networks:
+      - layameet_internal
+
+  # ── 5. AI Service (100% Local STT & Machine Translation) ─────────────────
+  ai-service:
+    build:
+      context: ./apps/ai-service
+      dockerfile: Dockerfile
+    container_name: layameet_offline_ai
+    restart: always
+    environment:
+      - AIR_GAPPED_MODE=true
+      - OFFLINE_MODE=true
+      - STT_ENGINE=phowhisper
+      - WHISPER_MODEL=base
+      - GROQ_API_KEY=
+      - OPENAI_API_KEY=
+      - REDIS_URL=redis://redis:6379/0
+      - LIVEKIT_URL=http://livekit:7880
+      - LIVEKIT_API_KEY=${LIVEKIT_API_KEY:-devkey}
+      - LIVEKIT_API_SECRET=${LIVEKIT_API_SECRET:-secret1234567890abcdef}
+      - VAD_ENABLED=true
+      - AUDIO_CHUNK_DURATION_MS=350
+    ports:
+      - "8000:8000"
+    depends_on:
+      redis:
+        condition: service_healthy
+      livekit:
+        condition: service_healthy
+    networks:
+      - layameet_internal
+
+  # ── 6. Web Frontend (Pre-rendered Static Single-Page App) ────────────────
+  web:
+    build:
+      context: ./apps/web
+      dockerfile: Dockerfile
+    container_name: layameet_offline_web
+    restart: always
+    ports:
+      - "3000:80"
+    depends_on:
+      - api
+      - ai-service
+    networks:
+      - layameet_internal
+
+networks:
+  layameet_internal:
+    driver: bridge
+
+volumes:
+  postgres_offline_data:
+  redis_offline_data:

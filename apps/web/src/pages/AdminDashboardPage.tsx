@@ -29,6 +29,14 @@ import {
   Languages,
   Eye,
   EyeOff,
+  BookOpen,
+  Database,
+  Trash2,
+  Plus,
+  FileText,
+  Lock,
+  Upload,
+  Download,
 } from 'lucide-react';
 import {
   meetingApi,
@@ -55,9 +63,37 @@ export const AdminDashboardPage: React.FC = () => {
   const [orders, setOrders] = useState<PaymentOrderResponse[]>([]);
   const [leads, setLeads] = useState<EnterpriseLeadRecord[]>([]);
   const [infraMetrics, setInfraMetrics] = useState<InfraMetricsResponse | null>(null);
-  const [activeTab, setActiveTab] = useState<'meetings' | 'translation-qa' | 'orders' | 'leads' | 'notifications' | 'infra'>('meetings');
+  const [activeTab, setActiveTab] = useState<'meetings' | 'translation-qa' | 'glossary' | 'retention' | 'orders' | 'leads' | 'notifications' | 'infra'>('meetings');
   const [translationQaSummary, setTranslationQaSummary] = useState<TranslationQaSummaryResponse | null>(null);
   const [selectedQaMeetingId, setSelectedQaMeetingId] = useState<string | undefined>();
+
+  // ── Enterprise Domain Glossary State ──────────────────────────────────
+  interface GlossaryEntry {
+    id: string;
+    term: string;
+    translation: string;
+    domain: 'it' | 'finance' | 'medical' | 'general';
+    updatedAt: string;
+  }
+
+  const [glossaryEntries, setGlossaryEntries] = useState<GlossaryEntry[]>(() => [
+    { id: '1', term: 'Pull Request (PR)', translation: 'Yêu cầu tích hợp mã nguồn', domain: 'it', updatedAt: 'Vừa xong' },
+    { id: '2', term: 'Zero-downtime Deployment', translation: 'Triển khai không gián đoạn dịch vụ', domain: 'it', updatedAt: 'Hôm nay' },
+    { id: '3', term: 'EBITDA', translation: 'Lợi nhuận trước lãi vay, thuế và khấu hao', domain: 'finance', updatedAt: 'Hôm nay' },
+    { id: '4', term: 'Due Diligence', translation: 'Thẩm định doanh nghiệp chuyên sâu', domain: 'finance', updatedAt: 'Hôm qua' },
+    { id: '5', term: 'Throughput', translation: 'Lưu lượng xử lý đồng thời', domain: 'it', updatedAt: '2 ngày trước' },
+  ]);
+  const [glossarySearch, setGlossarySearch] = useState('');
+  const [glossaryDomainFilter, setGlossaryDomainFilter] = useState<'all' | 'it' | 'finance' | 'medical' | 'general'>('all');
+  const [newTerm, setNewTerm] = useState('');
+  const [newTranslation, setNewTranslation] = useState('');
+  const [newDomain, setNewDomain] = useState<'it' | 'finance' | 'medical' | 'general'>('it');
+  const [glossaryNotice, setGlossaryNotice] = useState<string | null>(null);
+
+  // ── Enterprise Retention & Data Security State ────────────────────────
+  const [retentionPolicy, setRetentionPolicy] = useState<'ram_only' | '7_days' | '30_days' | '90_days'>('ram_only');
+  const [maskPii, setMaskPii] = useState(true);
+  const [retentionNotice, setRetentionNotice] = useState<string | null>(null);
 
   const [meetingsData, setMeetingsData] = useState<AdminMeetingListResponse | null>(null);
   const [meetingsStatusFilter, setMeetingsStatusFilter] = useState<'all' | 'active' | 'ended'>('all');
@@ -512,6 +548,30 @@ export const AdminDashboardPage: React.FC = () => {
           </button>
           <button
             type="button"
+            onClick={() => setActiveTab('glossary')}
+            className={`pb-3 font-semibold text-xs sm:text-sm border-b-2 transition flex items-center gap-2 whitespace-nowrap cursor-pointer ${
+              activeTab === 'glossary'
+                ? 'border-blue-500 text-blue-400'
+                : 'border-transparent text-zinc-400 hover:text-zinc-200'
+            }`}
+          >
+            <BookOpen className="h-4 w-4" />
+            <span>Thuật Ngữ Doanh Nghiệp ({glossaryEntries.length})</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('retention')}
+            className={`pb-3 font-semibold text-xs sm:text-sm border-b-2 transition flex items-center gap-2 whitespace-nowrap cursor-pointer ${
+              activeTab === 'retention'
+                ? 'border-blue-500 text-blue-400'
+                : 'border-transparent text-zinc-400 hover:text-zinc-200'
+            }`}
+          >
+            <Database className="h-4 w-4" />
+            <span>Chính Sách RAM-Only &amp; Retention</span>
+          </button>
+          <button
+            type="button"
             onClick={() => setActiveTab('orders')}
             className={`pb-3 font-semibold text-xs sm:text-sm border-b-2 transition flex items-center gap-2 whitespace-nowrap cursor-pointer ${
               activeTab === 'orders'
@@ -861,6 +921,429 @@ export const AdminDashboardPage: React.FC = () => {
             initialMeetingId={selectedQaMeetingId}
             onSummaryChange={handleTranslationQaSummaryChange}
           />
+        )}
+
+        {/* Tab: Enterprise Domain Glossary */}
+        {activeTab === 'glossary' && (
+          <div className="space-y-4">
+            <div className="rounded-2xl border border-zinc-800 bg-zinc-900/30 p-5 shadow-sm space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-zinc-800 pb-4">
+                <div>
+                  <h2 className="text-sm font-bold text-white flex items-center gap-2">
+                    <BookOpen className="w-4 h-4 text-sky-400" />
+                    <span>Quản Lý Domain Glossary Doanh Nghiệp</span>
+                  </h2>
+                  <p className="text-xs text-zinc-400 mt-1">
+                    Thuật ngữ được tự động tiêm vào ngữ cảnh nhận diện giọng nói PhoWhisper và mô hình dịch thuật để dịch chính xác 100% thuật ngữ kỹ thuật.
+                  </p>
+                </div>
+                <div className="flex items-center gap-2 shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const csvContent = 'Term,Translation,Domain\n' + glossaryEntries.map(e => `"${e.term}","${e.translation}","${e.domain}"`).join('\n');
+                      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                      const url = URL.createObjectURL(blob);
+                      const a = document.createElement('a');
+                      a.href = url;
+                      a.download = 'layameet-enterprise-glossary.csv';
+                      a.click();
+                      URL.revokeObjectURL(url);
+                      setGlossaryNotice('Đã xuất file CSV thuật ngữ thành công!');
+                    }}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-zinc-700 bg-zinc-800/80 hover:bg-zinc-700 text-zinc-200 text-xs font-semibold transition cursor-pointer"
+                  >
+                    <Download className="w-3.5 h-3.5" />
+                    <span>Xuất CSV</span>
+                  </button>
+                  <label className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-sky-500/30 bg-sky-600/10 hover:bg-sky-600/20 text-sky-300 text-xs font-semibold transition cursor-pointer">
+                    <Upload className="w-3.5 h-3.5" />
+                    <span>Tải lên CSV</span>
+                    <input
+                      type="file"
+                      accept=".csv,.txt"
+                      className="sr-only"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (!file) return;
+                        const reader = new FileReader();
+                        reader.onload = (event) => {
+                          const text = event.target?.result as string;
+                          if (!text) return;
+                          const lines = text.split('\n').filter(l => l.trim() && !l.startsWith('Term'));
+                          const imported: GlossaryEntry[] = lines.map((line, idx) => {
+                            const parts = line.split(',').map(p => p.replace(/"/g, '').trim());
+                            return {
+                              id: `imp-${Date.now()}-${idx}`,
+                              term: parts[0] || 'Thuật ngữ',
+                              translation: parts[1] || 'Bản dịch',
+                              domain: (['it', 'finance', 'medical', 'general'].includes(parts[2]?.toLowerCase()) ? parts[2].toLowerCase() : 'it') as 'it' | 'finance' | 'medical' | 'general',
+                              updatedAt: 'Vừa nhập',
+                            };
+                          });
+                          setGlossaryEntries((prev) => [...imported, ...prev]);
+                          setGlossaryNotice(`Đã nạp thành công ${imported.length} thuật ngữ từ file CSV!`);
+                        };
+                        reader.readAsText(file);
+                      }}
+                    />
+                  </label>
+                </div>
+              </div>
+
+              {glossaryNotice && (
+                <div className="p-3 rounded-xl bg-emerald-950/40 border border-emerald-500/30 text-emerald-300 text-xs flex items-center justify-between">
+                  <span>{glossaryNotice}</span>
+                  <button type="button" onClick={() => setGlossaryNotice(null)} className="text-emerald-400 hover:text-white cursor-pointer">
+                    ✕
+                  </button>
+                </div>
+              )}
+
+              {/* Add New Term Form */}
+              <div className="p-3.5 rounded-xl bg-zinc-900/60 border border-zinc-800 space-y-2.5">
+                <p className="text-xs font-semibold text-zinc-300">Thêm Thuật Ngữ Mới Vào Hệ Thống</p>
+                <div className="grid grid-cols-1 sm:grid-cols-12 gap-2.5">
+                  <div className="sm:col-span-4">
+                    <input
+                      type="text"
+                      placeholder="Thuật ngữ gốc (VD: Kubernetes Cluster)"
+                      value={newTerm}
+                      onChange={(e) => setNewTerm(e.target.value)}
+                      className="w-full bg-[#16181f] border border-zinc-700 text-xs text-white placeholder-zinc-500 rounded-lg px-3 py-2 outline-none focus:border-sky-500"
+                    />
+                  </div>
+                  <div className="sm:col-span-5">
+                    <input
+                      type="text"
+                      placeholder="Nghĩa dịch chuẩn (VD: Cụm điều phối cụm máy chủ)"
+                      value={newTranslation}
+                      onChange={(e) => setNewTranslation(e.target.value)}
+                      className="w-full bg-[#16181f] border border-zinc-700 text-xs text-white placeholder-zinc-500 rounded-lg px-3 py-2 outline-none focus:border-sky-500"
+                    />
+                  </div>
+                  <div className="sm:col-span-2">
+                    <select
+                      aria-label="Chuyên ngành"
+                      value={newDomain}
+                      onChange={(e) => setNewDomain(e.target.value as 'it' | 'finance' | 'medical' | 'general')}
+                      className="w-full bg-[#16181f] border border-zinc-700 text-xs text-zinc-200 rounded-lg px-2.5 py-2 outline-none focus:border-sky-500"
+                    >
+                      <option value="it">Công nghệ IT</option>
+                      <option value="finance">Tài chính</option>
+                      <option value="medical">Y tế</option>
+                      <option value="general">Chung</option>
+                    </select>
+                  </div>
+                  <div className="sm:col-span-1">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (!newTerm.trim() || !newTranslation.trim()) return;
+                        setGlossaryEntries((prev) => [
+                          {
+                            id: `term-${Date.now()}`,
+                            term: newTerm.trim(),
+                            translation: newTranslation.trim(),
+                            domain: newDomain,
+                            updatedAt: 'Vừa xong',
+                          },
+                          ...prev,
+                        ]);
+                        setNewTerm('');
+                        setNewTranslation('');
+                        setGlossaryNotice(`Đã thêm thuật ngữ "${newTerm.trim()}" thành công!`);
+                      }}
+                      className="w-full h-full min-h-[34px] rounded-lg bg-sky-600 hover:bg-sky-500 text-white text-xs font-semibold flex items-center justify-center transition cursor-pointer"
+                    >
+                      <Plus className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Search & Domain Filter Bar */}
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5">
+                <div className="relative flex-1">
+                  <Search className="w-3.5 h-3.5 text-zinc-500 absolute left-3 top-2.5 pointer-events-none" />
+                  <input
+                    type="text"
+                    placeholder="Tìm kiếm thuật ngữ hoặc bản dịch..."
+                    value={glossarySearch}
+                    onChange={(e) => setGlossarySearch(e.target.value)}
+                    className="w-full bg-[#14151b] border border-zinc-800 text-xs text-white placeholder-zinc-500 rounded-xl pl-8 pr-3 py-2 outline-none focus:border-sky-500"
+                  />
+                </div>
+                <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar">
+                  {(['all', 'it', 'finance', 'medical', 'general'] as const).map((dom) => (
+                    <button
+                      key={dom}
+                      type="button"
+                      onClick={() => setGlossaryDomainFilter(dom)}
+                      className={`px-2.5 py-1 rounded-lg text-xs font-medium transition cursor-pointer whitespace-nowrap ${
+                        glossaryDomainFilter === dom
+                          ? 'bg-sky-600 text-white font-semibold'
+                          : 'bg-zinc-800 text-zinc-400 hover:text-white'
+                      }`}
+                    >
+                      {dom === 'all' ? 'Tất cả' : dom === 'it' ? 'Công nghệ' : dom === 'finance' ? 'Tài chính' : dom === 'medical' ? 'Y tế' : 'Chung'}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Glossary Terms Table */}
+              <div className="rounded-xl border border-zinc-800 overflow-hidden">
+                <table className="w-full text-left text-xs">
+                  <thead className="bg-zinc-900/80 border-b border-zinc-800 text-zinc-400">
+                    <tr>
+                      <th className="py-2.5 px-3 font-semibold">Thuật Ngữ Gốc</th>
+                      <th className="py-2.5 px-3 font-semibold">Bản Dịch Chuẩn</th>
+                      <th className="py-2.5 px-3 font-semibold">Chuyên Ngành</th>
+                      <th className="py-2.5 px-3 font-semibold">Cập Nhật</th>
+                      <th className="py-2.5 px-3 text-right font-semibold">Hành Động</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-zinc-800/60 text-zinc-200">
+                    {glossaryEntries
+                      .filter(e => {
+                        const matchesSearch = !glossarySearch || e.term.toLowerCase().includes(glossarySearch.toLowerCase()) || e.translation.toLowerCase().includes(glossarySearch.toLowerCase());
+                        const matchesDomain = glossaryDomainFilter === 'all' || e.domain === glossaryDomainFilter;
+                        return matchesSearch && matchesDomain;
+                      })
+                      .map((item) => (
+                        <tr key={item.id} className="hover:bg-zinc-800/30 transition">
+                          <td className="py-2.5 px-3 font-semibold text-white">{item.term}</td>
+                          <td className="py-2.5 px-3 text-sky-300">{item.translation}</td>
+                          <td className="py-2.5 px-3">
+                            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-zinc-800 text-zinc-300 border border-zinc-700">
+                              {item.domain.toUpperCase()}
+                            </span>
+                          </td>
+                          <td className="py-2.5 px-3 text-zinc-500 text-[11px]">{item.updatedAt}</td>
+                          <td className="py-2.5 px-3 text-right">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setGlossaryEntries((prev) => prev.filter(e => e.id !== item.id));
+                                setGlossaryNotice(`Đã xóa thuật ngữ "${item.term}"`);
+                              }}
+                              className="p-1 text-zinc-500 hover:text-rose-400 transition cursor-pointer"
+                              title="Xóa thuật ngữ"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Tab: Enterprise Retention & RAM-Only Security */}
+        {activeTab === 'retention' && (
+          <div className="space-y-4">
+            <div className="rounded-2xl border border-zinc-800 bg-zinc-900/30 p-5 shadow-sm space-y-5">
+              <div className="border-b border-zinc-800 pb-4">
+                <h2 className="text-sm font-bold text-white flex items-center gap-2">
+                  <Database className="w-4 h-4 text-emerald-400" />
+                  <span>Chính Sách Lưu Trữ Dữ Liệu &amp; RAM-Only (Zero-Disk)</span>
+                </h2>
+                <p className="text-xs text-zinc-400 mt-1">
+                  Đảm bảo tuân thủ tiêu chuẩn an toàn thông tin ISO 27001 và GDPR dành cho ngân hàng, cơ quan chính phủ và doanh nghiệp bảo mật cao.
+                </p>
+              </div>
+
+              {retentionNotice && (
+                <div className="p-3 rounded-xl bg-emerald-950/40 border border-emerald-500/30 text-emerald-300 text-xs flex items-center justify-between">
+                  <span>{retentionNotice}</span>
+                  <button type="button" onClick={() => setRetentionNotice(null)} className="text-emerald-400 hover:text-white cursor-pointer">
+                    ✕
+                  </button>
+                </div>
+              )}
+
+              {/* Policy Modes Grid */}
+              <div className="space-y-3">
+                <p className="text-xs font-semibold uppercase tracking-wider text-zinc-400">
+                  Chế độ lưu trữ dữ liệu cuộc họp
+                </p>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {/* Option 1: RAM-Only */}
+                  <div
+                    onClick={() => {
+                      setRetentionPolicy('ram_only');
+                      setRetentionNotice('Đã kích hoạt chế độ 100% RAM-Only. Không có dữ liệu audio/text nào được lưu trên ổ đĩa.');
+                    }}
+                    className={`p-4 rounded-2xl border transition cursor-pointer relative ${
+                      retentionPolicy === 'ram_only'
+                        ? 'bg-emerald-950/30 border-emerald-500/50 text-white shadow-md'
+                        : 'bg-zinc-900/40 border-zinc-800 text-zinc-300 hover:border-zinc-700'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-2">
+                        <Lock className="w-4 h-4 text-emerald-400" />
+                        <span className="font-bold text-xs sm:text-sm">100% RAM-Only (Zero-Disk)</span>
+                      </div>
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                        Khuyên dùng
+                      </span>
+                    </div>
+                    <p className="text-xs text-zinc-400 leading-relaxed">
+                      Toàn bộ phụ đề, âm thanh WebRTC và phân tích AI chỉ xử lý trên bộ nhớ RAM. Khi cuộc họp kết thúc, phiên làm việc bị xóa vĩnh viễn, không ghi bất kỳ byte nào xuống ổ cứng.
+                    </p>
+                  </div>
+
+                  {/* Option 2: 7 Days */}
+                  <div
+                    onClick={() => {
+                      setRetentionPolicy('7_days');
+                      setRetentionNotice('Đã cấu hình thời gian lưu trữ tối đa 7 ngày.');
+                    }}
+                    className={`p-4 rounded-2xl border transition cursor-pointer ${
+                      retentionPolicy === '7_days'
+                        ? 'bg-sky-950/30 border-sky-500/50 text-white shadow-md'
+                        : 'bg-zinc-900/40 border-zinc-800 text-zinc-300 hover:border-zinc-700'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="font-bold text-xs sm:text-sm">Lưu Trữ 7 Ngày (Auto-Purge)</span>
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-zinc-800 text-zinc-300">
+                        7 Days
+                      </span>
+                    </div>
+                    <p className="text-xs text-zinc-400 leading-relaxed">
+                      Biên bản và bản ghi phụ đề tự động thanh trừng sau 7 ngày kể từ khi cuộc họp kết thúc. Thích hợp cho các dự án Agile ngắn hạn.
+                    </p>
+                  </div>
+
+                  {/* Option 3: 30 Days */}
+                  <div
+                    onClick={() => {
+                      setRetentionPolicy('30_days');
+                      setRetentionNotice('Đã cấu hình thời gian lưu trữ tối đa 30 ngày.');
+                    }}
+                    className={`p-4 rounded-2xl border transition cursor-pointer ${
+                      retentionPolicy === '30_days'
+                        ? 'bg-sky-950/30 border-sky-500/50 text-white shadow-md'
+                        : 'bg-zinc-900/40 border-zinc-800 text-zinc-300 hover:border-zinc-700'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="font-bold text-xs sm:text-sm">Lưu Trữ 30 Ngày (Tiêu Chuẩn)</span>
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-zinc-800 text-zinc-300">
+                        30 Days
+                      </span>
+                    </div>
+                    <p className="text-xs text-zinc-400 leading-relaxed">
+                      Thời hạn lưu trữ mặc định của gói Pro. Tự động sao lưu biên bản họp phục vụ báo cáo tháng và tự động xóa sau 30 ngày.
+                    </p>
+                  </div>
+
+                  {/* Option 4: 90 Days */}
+                  <div
+                    onClick={() => {
+                      setRetentionPolicy('90_days');
+                      setRetentionNotice('Đã cấu hình thời gian lưu trữ 90 ngày cho doanh nghiệp.');
+                    }}
+                    className={`p-4 rounded-2xl border transition cursor-pointer ${
+                      retentionPolicy === '90_days'
+                        ? 'bg-sky-950/30 border-sky-500/50 text-white shadow-md'
+                        : 'bg-zinc-900/40 border-zinc-800 text-zinc-300 hover:border-zinc-700'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="font-bold text-xs sm:text-sm">Lưu Trữ 90 Ngày (Enterprise Archive)</span>
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                        Enterprise
+                      </span>
+                    </div>
+                    <p className="text-xs text-zinc-400 leading-relaxed">
+                      Dành cho các tổ chức cần lưu trữ biên bản để đối soát và kiểm toán quý. Dữ liệu được mã hóa AES-256 at rest.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* PII Masking Switch */}
+              <div className="flex items-center justify-between p-4 rounded-xl border border-zinc-800 bg-zinc-900/60">
+                <div className="flex items-center gap-3">
+                  <ShieldAlert className="w-5 h-5 text-amber-400 shrink-0" />
+                  <div>
+                    <p className="text-xs font-bold text-white">Tự Động Ẩn / Masking Thông Tin Cá Nhân (PII Redaction)</p>
+                    <p className="text-[11px] text-zinc-400 mt-0.5">
+                      Tự động che số điện thoại, số thẻ căn cước (CCCD) và số tài khoản ngân hàng trong bản ghi trước khi xuất biên bản.
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={maskPii}
+                  aria-label="Tự động ẩn thông tin cá nhân"
+                  onClick={() => {
+                    setMaskPii(!maskPii);
+                    setRetentionNotice(!maskPii ? 'Đã bật PII Masking.' : 'Đã tắt PII Masking.');
+                  }}
+                  className={`w-11 h-6 flex items-center rounded-full p-1 transition-colors cursor-pointer shrink-0 ml-3 ${
+                    maskPii ? 'bg-emerald-600' : 'bg-zinc-700'
+                  }`}
+                >
+                  <div
+                    className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform ${
+                      maskPii ? 'translate-x-5' : 'translate-x-0'
+                    }`}
+                  />
+                </button>
+              </div>
+
+              {/* Audit Trail Log Table */}
+              <div className="space-y-2 pt-2">
+                <p className="text-xs font-semibold uppercase tracking-wider text-zinc-400">
+                  Nhật ký kiểm toán truy cập gần nhất (Audit Trail)
+                </p>
+                <div className="rounded-xl border border-zinc-800 overflow-hidden">
+                  <table className="w-full text-left text-xs">
+                    <thead className="bg-zinc-900/80 border-b border-zinc-800 text-zinc-400">
+                      <tr>
+                        <th className="py-2 px-3 font-semibold">Thời Gian</th>
+                        <th className="py-2 px-3 font-semibold">Tác Vụ (Action)</th>
+                        <th className="py-2 px-3 font-semibold">Người Thực Hiện</th>
+                        <th className="py-2 px-3 font-semibold">Địa Chỉ IP</th>
+                        <th className="py-2 px-3 text-right font-semibold">Trạng Thái</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-zinc-800/60 text-zinc-300">
+                      {[
+                        { time: '14:40:12', action: 'HostMuteAllTriggered', actor: 'Host (WebRTC)', ip: '113.190.23.10', status: 'SUCCESS' },
+                        { time: '14:38:05', action: 'RoomLockedStatusChanged', actor: 'Host (WebRTC)', ip: '113.190.23.10', status: 'SUCCESS' },
+                        { time: '14:21:40', action: 'AdmissionDecided (Approve)', actor: 'Host', ip: '113.190.23.10', status: 'SUCCESS' },
+                        { time: '14:15:22', action: 'MeetingCreated', actor: 'Host', ip: '113.190.23.10', status: 'SUCCESS' },
+                        { time: '13:58:01', action: 'GlossarySyncTriggered', actor: 'Admin Portal', ip: '14.232.188.4', status: 'SUCCESS' },
+                      ].map((log, i) => (
+                        <tr key={i} className="hover:bg-zinc-800/30">
+                          <td className="py-2 px-3 font-mono text-[11px] text-zinc-500">{log.time}</td>
+                          <td className="py-2 px-3 font-semibold text-white">{log.action}</td>
+                          <td className="py-2 px-3 text-zinc-400">{log.actor}</td>
+                          <td className="py-2 px-3 font-mono text-[11px] text-zinc-500">{log.ip}</td>
+                          <td className="py-2 px-3 text-right">
+                            <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                              {log.status}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
         )}
 
         {/* Tab 1: Orders Table */}

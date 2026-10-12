@@ -78,10 +78,14 @@ jobs:
       - name: Test
         run: flutter test
 
-      - name: Build App Bundle
+      - name: Build App Bundle & Release APK
         shell: bash
         run: |
           flutter build appbundle --release \
+            --dart-define=API_BASE_URL="${API_BASE_URL}" \
+            --dart-define=LIVEKIT_URL="${LIVEKIT_URL}" \
+            --dart-define=SUBTITLE_WS_URL="${SUBTITLE_WS_URL}"
+          flutter build apk --release \
             --dart-define=API_BASE_URL="${API_BASE_URL}" \
             --dart-define=LIVEKIT_URL="${LIVEKIT_URL}" \
             --dart-define=SUBTITLE_WS_URL="${SUBTITLE_WS_URL}"
@@ -90,4 +94,10 @@ jobs:
         with:
           name: layameet-android-release-aab
           path: apps/mobile/build/app/outputs/bundle/release/app-release.aab
+          retention-days: 14
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: layameet-android-release-apk
+          path: apps/mobile/build/app/outputs/flutter-apk/app-release.apk
           retention-days: 14
