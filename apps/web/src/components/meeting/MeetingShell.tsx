@@ -280,10 +280,20 @@ export const MeetingShell: React.FC<MeetingShellProps> = ({
   const aiReadiness = useAiReadiness();
 
 
-  // Track in-flight toggles to prevent concurrent negotiations on PeerConnection
   const isMediaNegotiatingRef = useRef(false);
   const initialMediaPublishedRef = useRef(false);
   const subtitleHistoryRef = useRef<SubtitleMessage[]>([]);
+  const getExportHistoryRef = useRef<(() => SubtitleMessage[]) | null>(null);
+  const layaTimerRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (layaTimerRef.current !== null) {
+        window.clearTimeout(layaTimerRef.current);
+        layaTimerRef.current = null;
+      }
+    };
+  }, []);
 
   const [layoutMode, setLayoutMode] = useState<LayoutMode>(() => {
     return (localStorage.getItem('meeting-layout-mode') as LayoutMode) || 'auto';
@@ -815,12 +825,14 @@ export const MeetingShell: React.FC<MeetingShellProps> = ({
                 ? record.id
                 : `msg-${Date.now()}-${Math.random().toString(36).slice(2)}`,
               senderId: isAiBot
-                ? 'laya-ai-cohost'
+                ? `laya-ai-cohost:${participant?.identity || (typeof record.senderId === 'string' ? record.senderId : 'peer')}`
                 : (participant?.identity || (
                   typeof record.senderId === 'string' ? record.senderId : 'unknown'
                 )),
               senderName: isAiBot
-                ? (typeof record.senderName === 'string' ? record.senderName : 'Laya AI Co-Host')
+                ? (participant?.name
+                  ? `Laya AI Co-Host (qua ${participant.name})`
+                  : (typeof record.senderName === 'string' ? record.senderName : 'Laya AI Co-Host'))
                 : (participant?.name || (
                   typeof record.senderName === 'string' ? record.senderName : 'Người tham gia'
                 )),
@@ -913,7 +925,9 @@ export const MeetingShell: React.FC<MeetingShellProps> = ({
       // Check if message is addressed to @Laya AI Co-Host
       if (trimmedText.toLowerCase().startsWith('@laya')) {
         const query = trimmedText.replace(/^@laya\s*/i, '').trim();
-        const currentSubtitles = subtitleHistoryRef.current || [];
+        const currentSubtitles = getExportHistoryRef.current
+          ? getExportHistoryRef.current()
+          : (subtitleHistoryRef.current || []);
         const transcript = toMeetingTranscript(currentSubtitles);
 
         const recentFinalMessages = currentSubtitles.filter((m) => m.isFinal).slice(-15);
@@ -924,10 +938,10 @@ export const MeetingShell: React.FC<MeetingShellProps> = ({
         const result = askMeetingMinutes(query || 'Tóm tắt các quyết định chính?', transcript, {
           executiveHighlights: highlights,
           decisions: currentSubtitles
-            .filter((m) => m.tags?.includes('decision'))
+            .filter((m) => m.isFinal && m.tags?.includes('decision'))
             .map((m) => m.translatedText || m.originalText),
           actionItems: currentSubtitles
-            .filter((m) => m.tags?.includes('action_item'))
+            .filter((m) => m.isFinal && m.tags?.includes('action_item'))
             .map((m) => ({
               task: m.translatedText || m.originalText,
               owner: m.participantName || null,
@@ -935,18 +949,24 @@ export const MeetingShell: React.FC<MeetingShellProps> = ({
         });
 
         const citations = result.citations.map((c) => `[${c.speaker}] ${c.excerpt}`);
+        const callerName = session.displayName || 'Bạn';
         const aiMsg: ChatMessage = {
           id: `msg-laya-${Date.now()}-${Math.random().toString(36).slice(2)}`,
           senderId: 'laya-ai-cohost',
-          senderName: 'Laya AI Co-Host',
+          senderName: `Laya AI Co-Host (qua ${callerName})`,
           text: result.answer,
           timestamp: new Date().toISOString(),
           isAiBot: true,
           citationHighlights: citations.length > 0 ? citations : undefined,
         };
 
-        // Delay slightly for natural co-host cadence (250ms)
-        setTimeout(async () => {
+        // Delay slightly for natural co-host cadence (250ms), guarded against unmount/disconnection
+        if (layaTimerRef.current !== null) {
+          window.clearTimeout(layaTimerRef.current);
+        }
+        layaTimerRef.current = window.setTimeout(async () => {
+          layaTimerRef.current = null;
+          if (!room || room.state !== ConnectionState.Connected || !room.localParticipant) return;
           setChatMessages((prev) => [...prev, aiMsg]);
           try {
             const aiPayload = new TextEncoder().encode(JSON.stringify({ type: 'chat', ...aiMsg }));
@@ -1380,8 +1400,13 @@ export const MeetingShell: React.FC<MeetingShellProps> = ({
   );
 
   subtitleHistoryRef.current = subtitleHistory;
+  getExportHistoryRef.current = getExportHistory;
 
   const speakerDynamicsStats = React.useMemo<SpeakerDynamicsStats>(() => {
+    if (activeSidePanel !== 'people') {
+      return { totalTurns: 0, speakers: [] };
+    }
+
     const finalSubtitles = subtitleHistory.filter((s) => s.isFinal);
     if (finalSubtitles.length === 0) {
       return { totalTurns: 0, speakers: [] };
@@ -1420,7 +1445,7 @@ export const MeetingShell: React.FC<MeetingShellProps> = ({
       monologueWarning,
       speakers,
     };
-  }, [subtitleHistory]);
+  }, [subtitleHistory, activeSidePanel]);
 
   useEffect(() => {
     if (meetingEnded) setIsPostMeetingOpen(true);

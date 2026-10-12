@@ -22,8 +22,8 @@ def test_ask_meeting_minutes_multilingual_and_speaker_search() -> None:
     assert "isActionQuestion" in minutes_qa
     assert "isRiskQuestion" in minutes_qa
     assert "isSummaryQuestion" in minutes_qa
-    assert "speakerMatch" in minutes_qa
-    assert "speakerEntries" in minutes_qa
+    assert "suffixMatch" in minutes_qa
+    assert "prefixMatch" in minutes_qa
 
 
 def test_chat_panel_renders_ai_cohost_and_prompts() -> None:
@@ -53,3 +53,19 @@ def test_participants_panel_renders_speaker_dynamics() -> None:
     assert "speaker-dynamics-group" in panel
     assert "Phân bổ phát biểu" in panel
     assert "monologueWarning" in panel
+
+
+def test_ask_meeting_minutes_runtime_execution() -> None:
+    import subprocess
+    cmd = ["node", "--experimental-strip-types", "scripts/test-minutes-qa.ts"]
+    proc = subprocess.run(
+        cmd,
+        cwd=str(ROOT / "apps" / "web"),
+        capture_output=True,
+        text=True,
+        stdin=subprocess.DEVNULL,
+        shell=True,
+    )
+    assert proc.returncode == 0, f"Runtime tests failed: {proc.stderr}\n{proc.stdout}"
+    assert "ALL 13 runtime behavioral checks for askMeetingMinutes PASSED!" in proc.stdout
+

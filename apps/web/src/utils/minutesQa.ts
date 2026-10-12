@@ -34,13 +34,26 @@ function normalize(value: string): string {
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')
     .toLowerCase()
-    .replace(/[^a-z0-9\s]/g, ' ')
+    .replace(/[^\p{L}\p{N}\s]/gu, ' ')
     .replace(/\s+/g, ' ')
     .trim();
 }
 
 function tokens(value: string): string[] {
-  return normalize(value).split(' ').filter((token) => token.length > 2 && !STOP_WORDS.has(token));
+  const norm = normalize(value);
+  const spaceTokens = norm.split(' ').filter((token) => token.length > 2 && !STOP_WORDS.has(token));
+
+  // For CJK characters (Japanese, Chinese), generate bigrams for substring ranking
+  const cjkChars = norm.replace(/[\s\x20-\x7E]/g, '');
+  if (cjkChars.length >= 2) {
+    for (let i = 0; i < cjkChars.length - 1; i++) {
+      spaceTokens.push(cjkChars.slice(i, i + 2));
+    }
+  } else if (cjkChars.length === 1) {
+    spaceTokens.push(cjkChars);
+  }
+
+  return spaceTokens;
 }
 
 function transcriptText(item: MeetingTranscriptEntry): string {
@@ -52,7 +65,7 @@ function rankTranscript(
   transcript: MeetingTranscriptEntry[],
 ): MeetingTranscriptEntry[] {
   const queryTokens = tokens(query);
-  if (queryTokens.length === 0) return transcript.slice(0, 3);
+  if (queryTokens.length === 0) return [];
 
   return transcript
     .map((item, index) => {
@@ -103,22 +116,28 @@ export function askMeetingMinutes(
   const isRiskQuestion = /(rui ro|van de|diem nghen|blocker|risk|issue|concern|impediment|kho khan|thach thuc|リスク|問題|懸念)/i.test(normalizedQuestion);
   const isSummaryQuestion = /(tom tat|diem chinh|noi dung chinh|summary|highlight|recap|overview|dien bien|cuoc hop ve gi|要約|まとめ|概要)/i.test(normalizedQuestion);
 
-  // Check if query is asking what a specific person said (e.g. "Nam nói gì?", "What did Alice say?", "Tanakaさんの発言")
-  const speakerMatch = /(?:what did|ai noi|phat bieu|y kien cua|noi gi|ve gi ma|noi|nghe noi)\s+([a-zA-Z0-9_\s\u00C0-\u1EF9]+)/i.exec(question);
-  if (speakerMatch && speakerMatch[1]) {
-    const rawTargetSpeaker = normalize(speakerMatch[1].trim());
-    const speakerEntries = transcript.filter((t) => {
-      const normalizedSpeaker = normalize(t.participantName);
-      return normalizedSpeaker.includes(rawTargetSpeaker) || rawTargetSpeaker.includes(normalizedSpeaker);
-    });
+  // Speaker queries: Suffix pattern ("Nam nói gì", "Alice đã nói gì", "Tanakaさんの発言")
+  // or Prefix pattern ("What did Alice say?", "ý kiến của Nam", "nghe Nam nói")
+  const suffixMatch = /([\p{L}\p{N}_]+)\s*(?:nói gì|đã nói gì|phát biểu gì|da noi|noi gi|さんの発言|の発言)/iu.exec(question);
+  const prefixMatch = /(?:what did|ý kiến của|y kien cua|nghe)\s+([\p{L}\p{N}_]+)(?:\s+say|\s+nói)?/iu.exec(question);
+  const speakerCandidate = suffixMatch?.[1] || prefixMatch?.[1];
 
-    if (speakerEntries.length > 0) {
-      const recent = speakerEntries.slice(-4);
-      const points = recent.map((item) => item.translatedText || item.originalText).join(' ');
-      return {
-        answer: `${speakerEntries[0].participantName} đã phát biểu ${speakerEntries.length} lần: "${points}"`,
-        citations: recent.map(toCitation),
-      };
+  if (speakerCandidate) {
+    const rawTargetSpeaker = normalize(speakerCandidate);
+    if (rawTargetSpeaker.length >= 2 && !STOP_WORDS.has(rawTargetSpeaker)) {
+      const speakerEntries = transcript.filter((t) => {
+        const normalizedSpeaker = normalize(t.participantName);
+        return normalizedSpeaker.includes(rawTargetSpeaker) || rawTargetSpeaker.includes(normalizedSpeaker);
+      });
+
+      if (speakerEntries.length > 0) {
+        const recent = speakerEntries.slice(-4);
+        const points = recent.map((item) => item.translatedText || item.originalText).join(' ');
+        return {
+          answer: `${speakerEntries[0].participantName} đã phát biểu ${speakerEntries.length} lần: "${points}"`,
+          citations: recent.map(toCitation),
+        };
+      }
     }
   }
 

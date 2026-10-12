@@ -13,6 +13,93 @@ interface ChatPanelProps {
   isHost?: boolean;
 }
 
+interface ChatMessageRowProps {
+  msg: ChatMessage;
+  isMe: boolean;
+}
+
+const ChatMessageRow: React.FC<ChatMessageRowProps> = React.memo(({ msg, isMe }) => {
+  const isAiBot = msg.isAiBot || msg.senderId.startsWith('laya-ai-cohost');
+  const links = React.useMemo(() => extractLinksFromText(msg.text), [msg.text]);
+
+  if (isAiBot) {
+    return (
+      <div className="space-y-1.5 animate-fadeIn">
+        <div className="flex items-center justify-between text-xs">
+          <div className="flex items-center gap-1.5 text-sky-400 font-semibold">
+            <div className="p-1 rounded-md bg-sky-500/20 text-sky-300">
+              <Sparkles className="w-3.5 h-3.5" />
+            </div>
+            <span>{msg.senderName || 'Laya AI Co-Host'}</span>
+            <span className="px-1.5 py-0.2 rounded text-[9px] font-mono bg-sky-500/10 text-sky-300 border border-sky-500/20">
+              AI BOT
+            </span>
+          </div>
+          <span className="text-[10px] text-zinc-400 font-mono">
+            {formatTimestamp(msg.timestamp)}
+          </span>
+        </div>
+
+        <div className="bg-gradient-to-br from-sky-950/40 via-zinc-900/80 to-indigo-950/30 border border-sky-500/30 rounded-2xl p-3.5 text-xs text-sky-100 shadow-md break-words leading-relaxed space-y-2.5">
+          <p className="whitespace-pre-wrap">{msg.text}</p>
+
+          {msg.citationHighlights && msg.citationHighlights.length > 0 && (
+            <div className="pt-2 border-t border-sky-500/20 space-y-1.5">
+              <div className="flex items-center gap-1 text-[10px] font-medium text-sky-400/90 uppercase tracking-wide">
+                <Quote className="w-3 h-3" />
+                <span>Dẫn chứng trích xuất từ cuộc họp:</span>
+              </div>
+              {msg.citationHighlights.map((citation, idx) => (
+                <div
+                  key={`${msg.id}-cit-${idx}`}
+                  className="text-[11px] text-zinc-300 bg-black/40 rounded-lg px-2.5 py-1.5 border border-sky-500/10 italic"
+                >
+                  "{citation}"
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-1">
+      <div className="flex items-center justify-between text-xs">
+        <span className={`font-semibold ${isMe ? 'text-sky-400' : 'text-zinc-300'}`}>
+          {isMe ? 'Bạn' : msg.senderName}
+        </span>
+        <span className="text-[10px] text-zinc-400 font-mono">
+          {formatTimestamp(msg.timestamp)}
+        </span>
+      </div>
+
+      <div className="bg-zinc-800/70 border border-zinc-700/50 rounded-2xl p-3 text-xs text-zinc-200 break-words leading-relaxed">
+        {msg.text}
+
+        {msg.attachment && (
+          <div className="mt-2.5 p-2 rounded-xl bg-zinc-900/70 border border-zinc-700/60 flex items-center gap-2">
+            <FileText className="w-4 h-4 text-sky-400 shrink-0" />
+            <div className="min-w-0 flex-1">
+              <p className="text-xs font-medium text-zinc-200 truncate">{msg.attachment.name}</p>
+              <p className="text-[10px] text-zinc-400">{(msg.attachment.size / 1024).toFixed(1)} KB</p>
+            </div>
+          </div>
+        )}
+
+        {links.map((link, idx) => (
+          <div key={`${msg.id}-link-${idx}-${link.url}`} className="mt-2">
+            <MeetingLinkPreviewCard url={link.url} />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+});
+
+ChatMessageRow.displayName = 'ChatMessageRow';
+
 export const ChatPanel: React.FC<ChatPanelProps> = ({
   onClose,
   messages,
@@ -24,6 +111,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
   const [allowChat, setAllowChat] = useState(true);
   const [pendingAttachment, setPendingAttachment] = useState<ChatMessage['attachment']>();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const messageInputRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -106,86 +194,13 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
             Chưa có tin nhắn nào trong cuộc gọi này.
           </div>
         ) : (
-          messages.map((msg) => {
-            const isMe = msg.senderId === currentUserId;
-            const isAiBot = msg.isAiBot || msg.senderId === 'laya-ai-cohost';
-            const links = extractLinksFromText(msg.text);
-
-            if (isAiBot) {
-              return (
-                <div key={msg.id} className="space-y-1.5 animate-fadeIn">
-                  <div className="flex items-center justify-between text-xs">
-                    <div className="flex items-center gap-1.5 text-sky-400 font-semibold">
-                      <div className="p-1 rounded-md bg-sky-500/20 text-sky-300">
-                        <Sparkles className="w-3.5 h-3.5" />
-                      </div>
-                      <span>Laya AI Co-Host</span>
-                      <span className="px-1.5 py-0.2 rounded text-[9px] font-mono bg-sky-500/10 text-sky-300 border border-sky-500/20">
-                        AI BOT
-                      </span>
-                    </div>
-                    <span className="text-[10px] text-zinc-400 font-mono">
-                      {formatTimestamp(msg.timestamp)}
-                    </span>
-                  </div>
-
-                  <div className="bg-gradient-to-br from-sky-950/40 via-zinc-900/80 to-indigo-950/30 border border-sky-500/30 rounded-2xl p-3.5 text-xs text-sky-100 shadow-md break-words leading-relaxed space-y-2.5">
-                    <p className="whitespace-pre-wrap">{msg.text}</p>
-
-                    {msg.citationHighlights && msg.citationHighlights.length > 0 && (
-                      <div className="pt-2 border-t border-sky-500/20 space-y-1.5">
-                        <div className="flex items-center gap-1 text-[10px] font-medium text-sky-400/90 uppercase tracking-wide">
-                          <Quote className="w-3 h-3" />
-                          <span>Dẫn chứng trích xuất từ cuộc họp:</span>
-                        </div>
-                        {msg.citationHighlights.map((citation, idx) => (
-                          <div
-                            key={idx}
-                            className="text-[11px] text-zinc-300 bg-black/40 rounded-lg px-2.5 py-1.5 border border-sky-500/10 italic"
-                          >
-                            "{citation}"
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              );
-            }
-
-            return (
-              <div key={msg.id} className="space-y-1">
-                <div className="flex items-center justify-between text-xs">
-                  <span className={`font-semibold ${isMe ? 'text-sky-400' : 'text-zinc-300'}`}>
-                    {isMe ? 'Bạn' : msg.senderName}
-                  </span>
-                  <span className="text-[10px] text-zinc-400 font-mono">
-                    {formatTimestamp(msg.timestamp)}
-                  </span>
-                </div>
-
-                <div className="bg-zinc-800/70 border border-zinc-700/50 rounded-2xl p-3 text-xs text-zinc-200 break-words leading-relaxed">
-                  {msg.text}
-
-                  {msg.attachment && (
-                    <div className="mt-2.5 p-2 rounded-xl bg-zinc-900/70 border border-zinc-700/60 flex items-center gap-2">
-                      <FileText className="w-4 h-4 text-sky-400 shrink-0" />
-                      <div className="min-w-0 flex-1">
-                        <p className="text-xs font-medium text-zinc-200 truncate">{msg.attachment.name}</p>
-                        <p className="text-[10px] text-zinc-400">{(msg.attachment.size / 1024).toFixed(1)} KB</p>
-                      </div>
-                    </div>
-                  )}
-
-                  {links.map((link) => (
-                    <div key={link.url} className="mt-2">
-                      <MeetingLinkPreviewCard url={link.url} />
-                    </div>
-                  ))}
-                </div>
-              </div>
-            );
-          })
+          messages.map((msg) => (
+            <ChatMessageRow
+              key={msg.id}
+              msg={msg}
+              isMe={msg.senderId === currentUserId}
+            />
+          ))
         )}
         <div ref={messagesEndRef} />
       </div>
@@ -209,7 +224,11 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
       )}
 
       {/* AI Co-Host Quick Actions */}
-      <div className="px-3.5 py-2 bg-[#161822] border-t border-zinc-800/80 flex items-center gap-1.5 overflow-x-auto no-scrollbar">
+      <div
+        role="region"
+        aria-label="Gợi ý câu hỏi cho trợ lý AI"
+        className="px-3.5 py-2 bg-[#161822] border-t border-zinc-800/80 flex items-center gap-1.5 overflow-x-auto no-scrollbar"
+      >
         <span className="text-[10px] font-semibold text-sky-400 flex items-center gap-1 shrink-0">
           <Sparkles className="w-3 h-3 animate-pulse" />
           Hỏi @Laya:
@@ -222,10 +241,12 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
           <button
             key={prompt}
             type="button"
+            disabled={!allowChat && !isHost}
             onClick={() => {
               setInputText(prompt);
+              messageInputRef.current?.focus();
             }}
-            className="px-2.5 py-1 rounded-full text-[11px] bg-sky-950/40 hover:bg-sky-900/50 text-sky-300 border border-sky-500/20 whitespace-nowrap transition cursor-pointer shrink-0"
+            className="px-2.5 py-1 rounded-full text-[11px] bg-sky-950/40 hover:bg-sky-900/50 text-sky-300 border border-sky-500/20 whitespace-nowrap transition cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
           >
             {prompt}
           </button>
@@ -253,6 +274,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
           </button>
 
           <input
+            ref={messageInputRef}
             type="text"
             aria-label="Gửi tin nhắn"
             value={inputText}

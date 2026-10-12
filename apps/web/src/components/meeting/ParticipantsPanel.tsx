@@ -482,7 +482,11 @@ export const ParticipantsPanel: React.FC<ParticipantsPanelProps> = ({
                 )}
 
                 {/* Stacked Progress Bar */}
-                <div className="w-full h-2 rounded-full bg-zinc-800 overflow-hidden flex">
+                <div
+                  role="img"
+                  aria-label="Biểu đồ phân bổ thời lượng phát biểu"
+                  className="w-full h-2 rounded-full bg-zinc-800 overflow-hidden flex"
+                >
                   {speakerDynamics.speakers.map((s, idx) => {
                     const colors = [
                       'bg-sky-500',
@@ -498,7 +502,7 @@ export const ParticipantsPanel: React.FC<ParticipantsPanelProps> = ({
                         key={s.participantName}
                         style={{ width: `${s.percentage}%` }}
                         title={`${s.participantName}: ${s.percentage}%`}
-                        className={`h-full ${color}`}
+                        className={`h-full ${color} border-r border-zinc-900 last:border-r-0`}
                       />
                     );
                   })}
