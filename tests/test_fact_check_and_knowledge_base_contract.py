@@ -84,7 +84,6 @@ def test_fact_check_engine_runtime_execution() -> None:
         capture_output=True,
         text=True,
         stdin=subprocess.DEVNULL,
-        shell=True,
     )
     assert proc.returncode == 0, f"Runtime tests failed: {proc.stderr}\n{proc.stdout}"
     assert "ALL 13 runtime behavioral tests for factCheckEngine PASSED!" in proc.stdout

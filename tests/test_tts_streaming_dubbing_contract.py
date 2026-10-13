@@ -61,7 +61,6 @@ def test_frontend_clause_stream_buffer_runtime_execution() -> None:
         capture_output=True,
         text=True,
         stdin=subprocess.DEVNULL,
-        shell=True,
     )
     assert proc.returncode == 0, f"Runtime tests failed: {proc.stderr}\n{proc.stdout}"
     assert "ALL 5 runtime checks for ClauseStreamBuffer PASSED!" in proc.stdout
