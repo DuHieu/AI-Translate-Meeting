@@ -52,7 +52,7 @@ export const DEFAULT_USER_SETTINGS: UserMeetingSettings = {
   translationTier: 'standard',
   glossaryDomain: 'general',
   customGlossary: {},
-  vadSensitivity: 'low',
+  vadSensitivity: 'medium',
   audioDuckingEnabled: true,
   audioBoothVoiceGender: 'auto',
   audioBoothSpeedRate: 1.0,

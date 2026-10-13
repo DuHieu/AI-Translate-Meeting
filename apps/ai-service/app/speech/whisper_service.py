@@ -62,6 +62,37 @@ _LANGUAGE_KEYWORDS: dict[str, set[str]] = {
     },
 }
 
+_HALLUCINATION_REGEXES: list[re.Pattern] = [
+    re.compile(r"\b(cuộc kháng chiến|kháng chiến tháng)\b", re.IGNORECASE),
+    re.compile(r"\b(cảm ơn (các bạn|quý vị|mọi người) đã (theo dõi|lắng nghe|xem|ủng hộ))\b", re.IGNORECASE),
+    re.compile(r"\b(hãy đăng ký kênh|đăng ký kênh|subscribe|like và share|bấm chuông)\b", re.IGNORECASE),
+    re.compile(r"\b(phụ đề được thực hiện bởi|biên dịch bởi|thuyết minh bởi)\b", re.IGNORECASE),
+    re.compile(r"\b(hẹn gặp lại (các bạn|quý vị) trong (các|những) video tiếp theo)\b", re.IGNORECASE),
+    re.compile(r"\b(thank you for (watching|listening))\b", re.IGNORECASE),
+    re.compile(r"\b(please subscribe|subscribe to (my|the) channel)\b", re.IGNORECASE),
+    re.compile(r"\b(subtitles by|transcribed by)\b", re.IGNORECASE),
+    re.compile(r"(ご視聴ありがとうございました|チャンネル登録|高評価をお願いします)"),
+]
+
+
+def is_whisper_hallucination(text: str) -> bool:
+    """Detects repetitive autoregressive loops and YouTube/historical Whisper hallucination patterns."""
+    if not text:
+        return False
+    clean = text.strip()
+    for pattern in _HALLUCINATION_REGEXES:
+        if pattern.search(clean):
+            return True
+    words = clean.lower().split()
+    if 4 <= len(words) < 25:
+        bigrams = [f"{words[i]} {words[i+1]}" for i in range(len(words) - 1)]
+        seen: set[str] = set()
+        for bg in bigrams:
+            if bg in seen:
+                return True
+            seen.add(bg)
+    return False
+
 
 def _latin_words(text: str) -> set[str]:
     normalized = unicodedata.normalize("NFKD", text.casefold())
@@ -228,6 +259,7 @@ class OmniLanguageRouter:
         language: str,
         is_final: bool,
         initial_prompt: Optional[str],
+        vad_filter: bool = False,
     ) -> TranscriptResult:
         try:
             return await self.local_stt.transcribe(
@@ -235,7 +267,7 @@ class OmniLanguageRouter:
                 language=language,
                 is_final=is_final,
                 initial_prompt=initial_prompt,
-                vad_filter=False,
+                vad_filter=vad_filter,
             )
         except TypeError:
             try:
@@ -295,6 +327,7 @@ class OmniLanguageRouter:
                 language=language,
                 is_final=is_final,
                 initial_prompt=prompt,
+                vad_filter=getattr(settings, "WHISPER_VAD_FILTER", True),
             )
 
         # Vietnamese: prefer local PhoWhisper CT2; fall back to Groq + VI prompt on errors.
@@ -306,6 +339,7 @@ class OmniLanguageRouter:
                     language=language,
                     is_final=is_final,
                     initial_prompt=vi_prompt,
+                    vad_filter=getattr(settings, "WHISPER_VAD_FILTER", True),
                 )
             except asyncio.CancelledError:
                 raise
@@ -751,6 +785,9 @@ class SpeechToTextService:
                     valid_parts.append(seg_text)
 
             full_text = " ".join(valid_parts).strip()
+            if is_whisper_hallucination(full_text):
+                logger.debug("Filtered out Whisper hallucination: %r", full_text)
+                full_text = ""
 
             detected_lang = info.language if info and info.language else (language or "vi")
             lang_prob = getattr(info, "language_probability", 0.0) if info else 0.0

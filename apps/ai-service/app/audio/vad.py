@@ -23,4 +23,10 @@ class VoiceActivityDetector:
         if audio_data is None or len(audio_data) == 0:
             return False
         energy, rms = self.calculate_energy(audio_data)
-        return rms > self.rms_threshold or energy > self.energy_threshold
+        if rms <= self.rms_threshold and energy <= self.energy_threshold:
+            return False
+        # Human speech exhibits dynamic peaks; reject flat stationary background hiss
+        peak = float(np.max(np.abs(audio_data)))
+        if peak < self.rms_threshold * 1.4:
+            return False
+        return True

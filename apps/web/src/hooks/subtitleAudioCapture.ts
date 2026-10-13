@@ -146,8 +146,16 @@ export function startSubtitleAudioCapture(
   const sendPcmWithVad = (pcm: Int16Array, rms: number) => {
     if (!subtitleWsService.isConnected() || isRecognitionBlocking()) return;
 
+    let maxAbs = 0;
+    for (let i = 0; i < pcm.length; i++) {
+      const v = Math.abs(pcm[i]);
+      if (v > maxAbs) maxAbs = v;
+    }
+    const peak = maxAbs / 32768;
+    const isVoiced = rms > vadThreshold && peak >= Math.max(0.022, vadThreshold * 1.5);
+
     const buffer = pcm.buffer.slice(pcm.byteOffset, pcm.byteOffset + pcm.byteLength) as ArrayBuffer;
-    if (rms > vadThreshold) {
+    if (isVoiced) {
       if (!speechActive) {
         preRollChunks.forEach((chunk) => subtitleWsService.sendAudioChunk(chunk));
         preRollChunks = [];

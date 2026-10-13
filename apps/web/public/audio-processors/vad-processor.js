@@ -12,7 +12,7 @@ class VadAudioProcessor extends AudioWorkletProcessor {
     this.isSpeaking = false;
     this.silenceHangover = 0;
     this.maxHangover = 2;
-    this.rmsThreshold = 0.006;
+    this.rmsThreshold = 0.015;
     this.preRoll = [];
     this.maxPreRoll = 2;
     this.resampleFrac = 0;
@@ -77,8 +77,11 @@ class VadAudioProcessor extends AudioWorkletProcessor {
   _analyze(frame) {
     let sumSq = 0;
     let zeroCrossings = 0;
+    let peak = 0;
     for (let i = 0; i < frame.length; i++) {
       const sample = frame[i];
+      const absSample = Math.abs(sample);
+      if (absSample > peak) peak = absSample;
       sumSq += sample * sample;
       if (i > 0 && (sample >= 0) !== (frame[i - 1] >= 0)) {
         zeroCrossings += 1;
@@ -86,8 +89,9 @@ class VadAudioProcessor extends AudioWorkletProcessor {
     }
     const rms = Math.sqrt(sumSq / frame.length);
     const zcr = zeroCrossings / frame.length;
-    // Enough energy for speech; reject hiss-like ultra-high ZCR.
-    return rms > this.rmsThreshold && zcr < 0.4;
+    // Speech requires energy above threshold, dynamic crest factor (peak > 1.5x RMS),
+    // and zero-crossing rate within speech range (0.015 to 0.38)
+    return rms > this.rmsThreshold && peak > (rms * 1.5) && zcr >= 0.015 && zcr < 0.38;
   }
 
   _floatToInt16Buffer(frame) {

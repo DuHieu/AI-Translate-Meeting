@@ -7,7 +7,7 @@ import pytest
 from app.audio.vad import VoiceActivityDetector
 from app.config.settings import settings
 from app.schemas.subtitle import SubtitleBroadcastMessage
-from app.speech.whisper_service import SpeechToTextService, detect_text_language
+from app.speech.whisper_service import SpeechToTextService, detect_text_language, is_whisper_hallucination
 from app.translation.glossary import GlossaryManager
 from app.translation.contextual_provider import ContextualTranslationProvider
 from app.translation.local_provider import LocalTranslationProvider
@@ -210,3 +210,22 @@ async def test_solo_speaker_pivots_from_target_language_back_to_configured_sourc
     assert result.data.sourceLanguage == "vi"
     assert result.data.targetLanguage == "ja"
     assert result.data.translatedText == "vi->ja:Cảm ơn mọi người."
+
+
+def test_is_whisper_hallucination_detects_ambient_loops():
+    # User-reported hallucination on ambient noise
+    noise_loop = "ông không chỉ là tháng hai năm nay không tham gia cuộc kháng chiến tháng hai."
+    assert is_whisper_hallucination(noise_loop) is True
+
+    # Standard YouTube training artifacts
+    assert is_whisper_hallucination("Cảm ơn các bạn đã theo dõi video.") is True
+    assert is_whisper_hallucination("Thank you for watching!") is True
+    assert is_whisper_hallucination("Please subscribe to my channel.") is True
+    assert is_whisper_hallucination("ご視聴ありがとうございました") is True
+
+    # Real meeting speech must NOT be flagged as hallucination
+    assert is_whisper_hallucination("Cảm ơn mọi người.") is False
+    assert is_whisper_hallucination("Xin chào, chúng ta bắt đầu cuộc họp nhé.") is False
+    assert is_whisper_hallucination("Can everyone hear me clearly?") is False
+    assert is_whisper_hallucination("Let's review the sprint deliverables.") is False
+

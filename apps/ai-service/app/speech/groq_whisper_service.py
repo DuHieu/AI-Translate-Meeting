@@ -9,7 +9,7 @@ import httpx
 import numpy as np
 
 from app.config.settings import settings
-from app.speech.whisper_service import detect_text_language
+from app.speech.whisper_service import detect_text_language, is_whisper_hallucination
 
 logger = logging.getLogger("ai_service.groq_stt")
 
@@ -202,9 +202,12 @@ class GroqSpeechToTextService:
         detected_lang = requested_lang or _normalize_language(payload.get("language")) or fallback_lang
 
         if text:
-            text_lang, text_confidence = detect_text_language(text, detected_lang)
-            if text_confidence >= 0.85:
-                detected_lang = text_lang
-                confidence = max(confidence, text_confidence)
+            if is_whisper_hallucination(text):
+                text = ""
+            else:
+                text_lang, text_confidence = detect_text_language(text, detected_lang)
+                if text_confidence >= 0.85:
+                    detected_lang = text_lang
+                    confidence = max(confidence, text_confidence)
 
         return text, detected_lang, max(0.0, min(1.0, confidence))

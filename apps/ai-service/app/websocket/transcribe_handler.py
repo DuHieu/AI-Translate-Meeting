@@ -382,6 +382,22 @@ class TranscribeWebSocketHandler:
                         # Cap maximum utterance buffer at configured duration (default 7.0s) for safety finalization
                         max_buffer_seconds = getattr(settings, "WHISPER_MAX_BUFFER_SECONDS", 7.0)
                         if curr_duration >= max_buffer_seconds:
+                            full_pcm = np.concatenate(audio_buffer) if audio_buffer else chunk_pcm
+                            buf_rms = float(np.sqrt(np.mean(full_pcm ** 2)))
+                            buf_peak = float(np.max(np.abs(full_pcm)))
+                            min_rms = getattr(settings, "WHISPER_MIN_SPEECH_RMS", 0.008)
+                            min_peak = getattr(settings, "WHISPER_MIN_SPEECH_PEAK", 0.022)
+                            if buf_rms < min_rms or buf_peak < min_peak:
+                                logger.debug(
+                                    "Dropped ambient noise buffer cap meeting=%s dur=%.1fs rms=%.4f peak=%.4f",
+                                    meeting_id, curr_duration, buf_rms, buf_peak
+                                )
+                                audio_buffer.clear()
+                                pre_roll_buffer.clear()
+                                silence_chunks = 0
+                                utterance_t0 = None
+                                await _finish_overlap_tracking()
+                                continue
                             is_final = True
                         else:
                             continue
