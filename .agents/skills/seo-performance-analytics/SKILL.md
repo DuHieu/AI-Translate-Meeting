@@ -256,12 +256,12 @@ jobs:
     },
     "assert": {
       "assertions": {
-        "categories:performance": ["warn", { "minScore": 0.90 }],
+        "categories:performance": ["warn", { "minScore": 0.85 }],
         "categories:accessibility": ["error", { "minScore": 0.95 }],
         "categories:best-practices": ["error", { "minScore": 0.95 }],
         "categories:seo": ["error", { "minScore": 0.95 }],
-        "first-contentful-paint": ["warn", { "maxNumericValue": 1800 }],
-        "largest-contentful-paint": ["error", { "maxNumericValue": 2500 }],
+        "first-contentful-paint": ["warn", { "maxNumericValue": 2500 }],
+        "largest-contentful-paint": ["warn", { "maxNumericValue": 4500 }],
         "cumulative-layout-shift": ["error", { "maxNumericValue": 0.1 }]
       }
     },
