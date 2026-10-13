@@ -266,7 +266,7 @@ class TranscribeWebSocketHandler:
                     else:
                         active_initial_prompt = truncated
 
-            active_translation_tier = "standard"
+            active_translation_tier = getattr(settings, "DEFAULT_TRANSLATION_TIER", "pro")
             active_byok_enabled = False
             active_byok_provider = "openai"
             active_byok_api_key = ""
@@ -1121,7 +1121,7 @@ class TranscribeWebSocketHandler:
         unique_targets: set[str],
         meeting_domain: str,
         provider_version: str,
-        active_translation_tier: str = "standard",
+        active_translation_tier: str = "pro",
         active_byok_enabled: bool = False,
         active_byok_provider: str = "openai",
         active_byok_api_key: str = "",

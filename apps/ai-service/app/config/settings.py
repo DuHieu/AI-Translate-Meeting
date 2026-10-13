@@ -84,6 +84,7 @@ class Settings(BaseSettings):
     PRO_GRACEFUL_DOWNGRADE_ENABLED: bool = os.getenv(
         "PRO_GRACEFUL_DOWNGRADE_ENABLED", "true"
     ).lower() in ("true", "1", "yes")
+    DEFAULT_TRANSLATION_TIER: str = os.getenv("DEFAULT_TRANSLATION_TIER", "pro")
 
     # Groq — OpenAI-compatible, ~200ms latency, ideal for real-time
     PRO_GROQ_API_KEY: str = os.getenv("PRO_GROQ_API_KEY", "")
