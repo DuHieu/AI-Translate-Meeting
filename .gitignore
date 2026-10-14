@@ -66,6 +66,7 @@ screenshot_*.png
 debug_*.png
 *.png
 !apps/web/public/*.png
+!apps/mobile/**/*.png
 
 # Local database backups
 backups/
