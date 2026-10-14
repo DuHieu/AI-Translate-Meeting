@@ -125,6 +125,7 @@ services:
       WHISPER_DEVICE: "${WHISPER_DEVICE:-cpu}"
       WHISPER_COMPUTE_TYPE: "${WHISPER_COMPUTE_TYPE:-int8}"
       WHISPER_PRELOAD: "true"
+      WHISPER_INITIAL_PROMPT: "${WHISPER_INITIAL_PROMPT:-Cuộc họp trực tuyến. Chúng tôi trao đổi về công việc, kế hoạch, tiến độ dự án, báo cáo, giải pháp, PR, sprint, bug, deploy.}"
       STT_PROVIDER: "${STT_PROVIDER:-local}"
       GROQ_API_KEY: "${GROQ_API_KEY:-}"
       GROQ_STT_MODEL: "${GROQ_STT_MODEL:-whisper-large-v3-turbo}"
