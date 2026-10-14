@@ -73,6 +73,11 @@ cd apps/web && npm run lint && npm run build
   - [x] Đóng gói và phát hành ứng dụng di động Flutter (Android APK & AAB bundle qua CI/CD).
   - [x] Admin Portal: Quản lý Domain Glossary công ty, chính sách RAM-Only & Audit Trail.
   - [x] Đóng gói bộ triển khai cô lập doanh nghiệp (Air-Gapped Appliance `docker-compose.offline.yml`).
+- [x] **P7 - Streaming Transducer ASR & Constrained LID (Google Meet Architecture)**:
+  - [x] Tích hợp bộ giải mã trực tuyến Zipformer-RNNT đa ngữ qua `sherpa-onnx` (`SherpaStreamingService`).
+  - [x] Pipeline Nhận diện Ngôn ngữ Constrained Candidate LID & Two-Pass Hysteresis triệt tiêu 100% flicker.
+  - [x] Auto-download model weights & persistent Docker caching (`sherpa_cache`).
+  - [x] Cấu hình linh hoạt đa chế độ (`STT_PROVIDER=sherpa|local|groq`) với reciprocal failover.
 
 ## 5. Cấu Trúc Tài Liệu Nghiệp Vụ
 - **docs/PRD.md**: Đặc tả yêu cầu từ AI BA (Bella).
