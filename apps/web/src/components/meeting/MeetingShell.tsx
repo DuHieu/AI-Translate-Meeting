@@ -81,7 +81,7 @@ import { generateMeetingRecap } from '../../utils/aiRecapEngine';
 import { DEFAULT_BRANDING_CONFIG, meetingApi } from '../../api/meetingApi';
 import type { BrandingConfigDto } from '../../api/meetingApi';
 import { saveRecording } from '../../utils/recordingStorage';
-import { BellRing, Mic } from 'lucide-react';
+import { BellRing, Mic, Users, MessageSquare, Sparkles, ShieldAlert, Shapes, Shield } from 'lucide-react';
 import { CountryFlag } from '../common/CountryFlag';
 import { getUserSettings, subscribeUserSettings, saveUserSettings, AudioTrackMode } from '../../utils/userSettings';
 import { audioDuckingRegistry } from '../../utils/audioDuckingRegistry';
@@ -1887,13 +1887,32 @@ export const MeetingShell: React.FC<MeetingShellProps> = ({
         {activeSidePanel !== 'none' && (
           <AdaptiveDialog docked label="Công cụ cuộc họp" onClose={() => setActiveSidePanel('none')} className="meeting-panel">
             <nav className="meeting-panel-tabs" aria-label="Công cụ cuộc họp">
-              {([
-                ['people', 'Mọi người'], ['chat', 'Chat'], ['subtitles', 'Trợ lý AI'],
-                ['fact_check', 'Xác minh AI'],
-                ['activities', 'Hoạt động'], ...(isHost ? [['host_controls', 'Chủ phòng']] : []),
-              ] as [ActiveSidePanel, string][]).map(([id, label]) => (
-                <button type="button" key={id} aria-pressed={activeSidePanel === id} onClick={() => setActiveSidePanel(id)}>{label}</button>
-              ))}
+              {[
+                { id: 'people' as ActiveSidePanel, label: 'Mọi người', icon: <Users className="w-3.5 h-3.5 shrink-0" />, count: participants.length },
+                { id: 'chat' as ActiveSidePanel, label: 'Chat', icon: <MessageSquare className="w-3.5 h-3.5 shrink-0" />, count: unreadChatCount || undefined },
+                { id: 'subtitles' as ActiveSidePanel, label: 'Trợ lý AI', icon: <Sparkles className="w-3.5 h-3.5 shrink-0" /> },
+                { id: 'fact_check' as ActiveSidePanel, label: 'Xác minh AI', icon: <ShieldAlert className="w-3.5 h-3.5 shrink-0" />, count: factCheckEvents.length || undefined },
+                { id: 'activities' as ActiveSidePanel, label: 'Hoạt động', icon: <Shapes className="w-3.5 h-3.5 shrink-0" /> },
+                ...(isHost ? [{ id: 'host_controls' as ActiveSidePanel, label: 'Chủ phòng', icon: <Shield className="w-3.5 h-3.5 shrink-0" />, count: pendingAdmissions.length || undefined }] : []),
+              ].map((tab) => {
+                const isActive = activeSidePanel === tab.id;
+                return (
+                  <button
+                    type="button"
+                    key={tab.id}
+                    aria-pressed={isActive}
+                    onClick={() => setActiveSidePanel(tab.id)}
+                    title={tab.label}
+                    className={isActive ? 'is-active' : ''}
+                  >
+                    {tab.icon}
+                    <span>{tab.label}</span>
+                    {typeof tab.count === 'number' && tab.count > 0 && (
+                      <span className="tab-badge">{tab.count}</span>
+                    )}
+                  </button>
+                );
+              })}
             </nav>
             <div className="meeting-panel-body">
         {activeSidePanel === 'people' && (

@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
-import { Mic, MicOff, Video, VideoOff, Monitor, PhoneOff, Users, Settings, Grid, Subtitles, Headphones, Hand, CircleDot, Tv2, MoreHorizontal, MessageSquare, Shapes, Shield, Languages, X, UserPlus, ListTodo, FileText, Sparkles, Info } from 'lucide-react';
+import { Mic, MicOff, Video, VideoOff, Monitor, PhoneOff, Users, Settings, Grid, Subtitles, Headphones, Hand, CircleDot, Tv2, MoreHorizontal, MessageSquare, Shapes, Shield, Languages, X, ListTodo, FileText, Sparkles, Info } from 'lucide-react';
 import { LocalAudioTrack } from 'livekit-client';
-import { ttsEngine } from '../../utils/speechSynthesis';
 import { AdaptiveDialog } from '../common/AdaptiveDialog';
 import { AudioDeviceMenu } from './AudioDeviceMenu';
 import { VideoDeviceMenu } from './VideoDeviceMenu';
@@ -68,7 +67,6 @@ interface MeetingBottomBarProps {
 export const MeetingBottomBar: React.FC<MeetingBottomBarProps> = (props) => {
   const { isMicOn, isCameraOn, isConnected = true, isConnecting, onToggleMic, onToggleCamera, onToggleSubtitlePanel, onToggleRaiseHand, onPushToTalk } = props;
   const [menu, setMenu] = useState<'none' | 'more' | 'audio' | 'video'>('none');
-  const [isTtsEnabled, setIsTtsEnabled] = useState(ttsEngine.options.enabled);
   const [capabilityNotice, setCapabilityNotice] = useState<string | null>(null);
   const { isFloatingSubtitleEnabled, isRecording = false } = props;
   useKeyboardShortcuts({ onToggleMic, onToggleCamera, onToggleCaptions: onToggleSubtitlePanel, onToggleRaiseHand, isMicOn, onPushToTalk });
@@ -129,8 +127,12 @@ export const MeetingBottomBar: React.FC<MeetingBottomBarProps> = (props) => {
   const menuAction = (label: string, icon: React.ReactNode, callback: () => void, active?: boolean, disabled = false) => (
     <button type="button" className="meeting-menu-action" aria-label={label} aria-pressed={active} disabled={disabled} onClick={callback}>
       <span className="shrink-0 text-sky-400">{icon}</span>
-      <span className="truncate flex-1">{label}</span>
-      {active && <span className="ml-auto text-sky-300 font-medium text-xs shrink-0">Đang bật</span>}
+      <span className="truncate flex-1 text-left">{label}</span>
+      {active && (
+        <span className="ml-auto px-1.5 py-0.5 rounded-md bg-sky-500/20 text-sky-300 font-semibold text-[10px] tracking-wide shrink-0 border border-sky-500/40">
+          BẬT
+        </span>
+      )}
     </button>
   );
 
@@ -185,7 +187,7 @@ export const MeetingBottomBar: React.FC<MeetingBottomBarProps> = (props) => {
             isCameraOn ? 'Tắt camera (Ctrl+E)' : 'Bật camera (Ctrl+E)',
           )}
           {control('Phụ đề', <Subtitles />, onToggleSubtitlePanel, props.isCaptionsActive, false, false, null, 'Bật/Tắt phụ đề AI trực tiếp (C)')}
-          {control('Ngôn ngữ', <Languages />, props.onOpenLanguage, false, false, false, null, 'Đổi ngôn ngữ nhận phụ đề & dịch thuật')}
+          {control(props.isHandRaised ? 'Hạ tay' : 'Giơ tay', <Hand />, props.onToggleRaiseHand, props.isHandRaised, !isConnected, false, null, props.isHandRaised ? 'Hạ tay phát biểu' : 'Giơ tay phát biểu')}
           {control('Thêm', <MoreHorizontal />, () => setMenu('more'), menu === 'more', false, false, props.unreadChatCount || null, 'Tùy chọn khác')}
           {control('Rời', <PhoneOff />, props.onLeaveRoom, false, false, true, null, 'Rời phòng họp')}
         </div>
@@ -258,11 +260,10 @@ export const MeetingBottomBar: React.FC<MeetingBottomBarProps> = (props) => {
             <div className="meeting-menu-grid">
               {menuAction(`Mọi người (${props.numParticipants})`, <Users />, action(props.onOpenPeoplePanel))}
               {menuAction(`Chat${props.unreadChatCount ? ` (${props.unreadChatCount} mới)` : ''}`, <MessageSquare />, action(props.onToggleChatPanel))}
-              {menuAction('Action Items', <ListTodo />, action(props.onOpenActions))}
+              {menuAction('Action Items & Quyết định', <ListTodo />, action(props.onOpenActions))}
               {props.onOpenCopilot && menuAction('Hỏi AI Copilot (Ctrl+K)', <Sparkles />, action(props.onOpenCopilot))}
-              {menuAction('Tóm tắt', <FileText />, action(props.onOpenRecap))}
+              {menuAction('Tóm tắt cuộc họp', <FileText />, action(props.onOpenRecap))}
               {menuAction('Thông tin cuộc họp', <FileText />, action(props.onOpenMeetingInfo))}
-              {menuAction('Mời người', <UserPlus />, action(props.onOpenPeoplePanel))}
               {menuAction('Lịch sử phụ đề & xuất', <Subtitles />, action(props.onOpenSubtitleHistory))}
             </div>
           </div>
@@ -274,10 +275,17 @@ export const MeetingBottomBar: React.FC<MeetingBottomBarProps> = (props) => {
               {menuAction(props.isScreenSharing ? 'Dừng chia sẻ màn hình' : 'Chia sẻ màn hình', <Monitor />, shareScreen, props.isScreenSharing, !isConnected)}
               {menuAction('Microphone & loa', <Mic />, () => setMenu('audio'))}
               {menuAction('Chọn camera', <Video />, () => setMenu('video'))}
-              {menuAction('Phiên dịch âm thanh (TTS)', <Headphones />, () => { const next = !isTtsEnabled; setIsTtsEnabled(next); ttsEngine.updateSettings({ enabled: next }); }, isTtsEnabled)}
-              {props.onToggleAudioBooth && menuAction('Cabin phiên dịch (Audio Booth — Ducking -18dB)', <Headphones />, action(props.onToggleAudioBooth), props.isAudioBoothActive)}
-              {props.onOpenAudioTrackSelector && menuAction(`Kênh âm thanh đa luồng (${props.audioTrackMode === 'translated_only' ? 'Chỉ nghe dịch' : props.audioTrackMode === 'original' ? 'Âm thanh gốc' : 'Âm thanh kép Ducking'})`, <Headphones />, action(props.onOpenAudioTrackSelector), props.audioTrackMode !== 'original')}
-              {menuAction(props.isHandRaised ? 'Hạ tay' : 'Giơ tay', <Hand />, action(onToggleRaiseHand), props.isHandRaised, !isConnected)}
+              {props.onOpenAudioTrackSelector ? (
+                menuAction(
+                  `Kênh âm thanh (Audio Booth — Ducking -18dB)`,
+                  <Headphones />,
+                  action(props.onOpenAudioTrackSelector),
+                  props.audioTrackMode !== 'original' || props.isAudioBoothActive
+                )
+              ) : props.onToggleAudioBooth ? (
+                menuAction('Kênh âm thanh (Audio Booth — Ducking -18dB)', <Headphones />, action(props.onToggleAudioBooth), props.isAudioBoothActive)
+              ) : null}
+              {props.onOpenLanguage && menuAction(`Đổi ngôn ngữ nhận phụ đề`, <Languages />, action(props.onOpenLanguage))}
               {props.isRecordingEnabled && props.onToggleRecording && menuAction(props.isRecording ? 'Dừng ghi hình cuộc họp' : 'Ghi hình cuộc họp', <CircleDot />, () => {
                 if (!navigator.mediaDevices?.getDisplayMedia) setCapabilityNotice('Ghi hình cần quyền chia sẻ màn hình trên máy tính. Hãy mở cùng phòng trên PC; trên điện thoại bạn có thể xuất phụ đề và biên bản từ Trợ lý AI.');
                 else action(props.onToggleRecording)();
@@ -287,7 +295,7 @@ export const MeetingBottomBar: React.FC<MeetingBottomBarProps> = (props) => {
               {menuAction('Đổi bố cục hiển thị', <Grid />, action(props.onOpenLayoutMenu))}
               {menuAction('Cài đặt âm thanh & AI', <Settings />, action(props.onOpenSettings))}
               {props.onToggleActivitiesPanel && menuAction('Hoạt động', <Shapes />, action(props.onToggleActivitiesPanel))}
-              {props.isHost && props.onToggleHostControlsPanel && menuAction(`Bộ điều khiển của người tổ chức${props.pendingAdmissionsCount ? ` (${props.pendingAdmissionsCount} chờ duyệt)` : ''}`, <Shield />, action(props.onToggleHostControlsPanel))}
+              {props.isHost && props.onToggleHostControlsPanel && menuAction(`Bộ điều khiển chủ phòng${props.pendingAdmissionsCount ? ` (${props.pendingAdmissionsCount} chờ)` : ''}`, <Shield />, action(props.onToggleHostControlsPanel))}
             </div>
           </div>
 

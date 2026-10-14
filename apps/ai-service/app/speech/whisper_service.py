@@ -263,6 +263,7 @@ class OmniLanguageRouter:
         is_final: bool,
         initial_prompt: Optional[str],
         vad_filter: bool = False,
+        candidate_languages: Optional[list[str]] = None,
     ) -> TranscriptResult:
         try:
             return await self.local_stt.transcribe(
@@ -271,6 +272,7 @@ class OmniLanguageRouter:
                 is_final=is_final,
                 initial_prompt=initial_prompt,
                 vad_filter=vad_filter,
+                candidate_languages=candidate_languages,
             )
         except TypeError:
             try:
@@ -279,6 +281,7 @@ class OmniLanguageRouter:
                     language=language,
                     is_final=is_final,
                     initial_prompt=initial_prompt,
+                    vad_filter=vad_filter,
                 )
             except TypeError:
                 return await self.local_stt.transcribe(
@@ -317,6 +320,7 @@ class OmniLanguageRouter:
         is_final: bool = True,
         initial_prompt: Optional[str] = None,
         meeting_id: str = "",
+        candidate_languages: Optional[list[str]] = None,
     ) -> TranscriptResult:
         lang = normalize_language_code(language, fallback="auto")
         prompt = initial_prompt
@@ -331,6 +335,7 @@ class OmniLanguageRouter:
                 is_final=is_final,
                 initial_prompt=prompt,
                 vad_filter=getattr(settings, "WHISPER_VAD_FILTER", True),
+                candidate_languages=candidate_languages,
             )
 
         # Vietnamese: prefer local PhoWhisper CT2; fall back to Groq + VI prompt on errors.
@@ -395,6 +400,7 @@ class OmniLanguageRouter:
                 language=language,
                 is_final=is_final,
                 initial_prompt=prompt,
+                candidate_languages=candidate_languages,
             )
 
 
@@ -681,6 +687,7 @@ class SpeechToTextService:
         initial_prompt: Optional[str] = None,
         vad_filter: Optional[bool] = None,
         beam_size: Optional[int] = None,
+        candidate_languages: Optional[list[str]] = None,
     ) -> TranscriptResult:
         audio_data: Union[np.ndarray, io.BytesIO]
         if isinstance(audio_input, np.ndarray):
@@ -711,11 +718,25 @@ class SpeechToTextService:
 
         is_auto = (language is None or language.strip().lower() in ("auto", ""))
         whisper_lang = None if is_auto else language.strip().lower()
+        fast_lid_prob = 0.0
+
+        if is_auto and candidate_languages:
+            try:
+                # Fast constrained LID via Whisper encoder Mel spectrogram (inspired by Google Translate / Meet)
+                fast_lang, fast_prob = self.detect_language_sync(
+                    audio_data, candidate_languages=candidate_languages
+                )
+                if fast_lang and fast_prob > 0:
+                    whisper_lang = fast_lang
+                    fast_lid_prob = fast_prob
+            except Exception as ex:
+                logger.debug("Fast constrained LID in _transcribe_sync fallback: %s", ex)
+
         active_model = self._select_model(whisper_lang)
         default_prompt = getattr(settings, "WHISPER_INITIAL_PROMPT", None)
 
         prompt = initial_prompt if initial_prompt is not None else default_prompt
-        if is_auto and prompt and default_prompt and prompt.strip() == default_prompt.strip():
+        if is_auto and not whisper_lang and prompt and default_prompt and prompt.strip() == default_prompt.strip():
             prompt = None
 
         if whisper_lang and (prompt is None or (default_prompt and prompt.strip() == default_prompt.strip())):
@@ -794,8 +815,10 @@ class SpeechToTextService:
                 logger.debug("Filtered out Whisper hallucination: %r", full_text)
                 full_text = ""
 
-            detected_lang = info.language if info and info.language else (language or "vi")
-            lang_prob = getattr(info, "language_probability", 0.0) if info else 0.0
+            detected_lang = info.language if info and info.language else (whisper_lang or language or "vi")
+            lang_prob = getattr(info, "language_probability", 0.0) if info else fast_lid_prob
+            if is_auto and fast_lid_prob > 0:
+                lang_prob = max(lang_prob, fast_lid_prob)
 
             # Text-level LID corrects short-utterance Whisper guesses and forced-language drift.
             # Threshold lowered from 0.85 → 0.72: Vietnamese diacritics in transcript text are
@@ -824,6 +847,7 @@ class SpeechToTextService:
         initial_prompt: Optional[str] = None,
         vad_filter: Optional[bool] = None,
         beam_size: Optional[int] = None,
+        candidate_languages: Optional[list[str]] = None,
     ) -> TranscriptResult:
         """Asynchronously transcribes audio chunk using faster-whisper without blocking event loop."""
         if audio is None or len(audio) == 0:
@@ -850,4 +874,5 @@ class SpeechToTextService:
                 initial_prompt,
                 vad_filter,
                 beam_size,
+                candidate_languages,
             )

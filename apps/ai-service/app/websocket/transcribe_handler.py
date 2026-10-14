@@ -283,6 +283,19 @@ class TranscribeWebSocketHandler:
             session_spoken_lang: str = (
                 "vi" if source_language.lower() == "auto" else source_language
             )
+            # Constrained candidate languages for streaming LID (Google Translate / Meet style)
+            candidate_set: set[str] = {"vi", "en"}
+            if target_language:
+                clean_target = target_language.strip().lower().split("-", 1)[0]
+                if clean_target and clean_target not in ("", "auto"):
+                    candidate_set.add(clean_target)
+            if source_language and source_language.strip().lower() not in ("", "auto"):
+                clean_src = source_language.strip().lower().split("-", 1)[0]
+                candidate_set.add(clean_src)
+            candidate_languages: list[str] = list(candidate_set)
+
+            session_locked_lang: str = session_spoken_lang
+            consecutive_other_lang_hits: int = 0
             webm_header_bytes: bytes | None = None
 
             while True:
@@ -427,36 +440,62 @@ class TranscribeWebSocketHandler:
                     # 3. Faster-Whisper Real-time Transcription with initial_prompt & dynamic LID
                     t_stt_start = time.perf_counter()
                     full_audio = np.concatenate(audio_buffer) if audio_buffer else chunk_pcm
-                    effective_stt_lang = (
-                        "auto" if source_language.lower() == "auto" else source_language
-                    )
+                    # Two-Pass Streaming Decoding & Constrained Candidate LID:
+                    # - Interim pass (partial): decode using session_locked_lang to eliminate flickering and keep TTFS < 150ms.
+                    # - Final commit pass: run candidate-constrained auto LID on full utterance.
+                    if source_language.lower() == "auto":
+                        effective_stt_lang = "auto" if is_final else session_locked_lang
+                    else:
+                        effective_stt_lang = source_language
+
                     transcript = await self._transcribe_audio(
                         full_audio,
                         language=effective_stt_lang,
                         is_final=is_final,
                         initial_prompt=active_initial_prompt,
                         meeting_id=meeting_id,
+                        candidate_languages=candidate_languages if (source_language.lower() == "auto" and is_final) else None,
                     )
                     t_stt_end = time.perf_counter()
                     last_interim_time = t_stt_end
                     stt_latency_ms = (t_stt_end - t_stt_start) * 1000
 
                     text = transcript.text.strip()
-                    lang = transcript.language or session_spoken_lang
+                    lang = transcript.language or session_locked_lang
                     segment_stt_confidence = getattr(
                         transcript, "language_probability", 0.88
                     )
 
-                    # Dynamic spoken language smoothing & speaker-anchored profile update
+                    # Dynamic spoken language smoothing & sticky speaker profile update (Hysteresis)
                     if source_language.lower() == "auto":
-                        lang_prob = getattr(transcript, "language_probability", 0.0)
-                        if is_final or lang_prob >= 0.45 or len(audio_buffer) >= 3:
-                            session_spoken_lang = lang
-                            await self.connection_manager.update_speaker_language(
-                                meeting_id, participant_id, lang
-                            )
-                        else:
-                            lang = session_spoken_lang
+                        candidate_lang = transcript.language or session_locked_lang
+                        candidate_prob = getattr(transcript, "language_probability", 0.0)
+
+                        if text:
+                            text_lang, text_conf = detect_text_language(text, candidate_lang)
+                            if text_conf >= 0.85:
+                                candidate_lang = text_lang
+                                candidate_prob = max(candidate_prob, text_conf)
+
+                        if is_final:
+                            if candidate_lang != session_locked_lang:
+                                if candidate_prob >= 0.80:
+                                    consecutive_other_lang_hits += 1
+                                    audio_duration_samples = len(full_audio) if isinstance(full_audio, np.ndarray) else 0
+                                    # Switch locked language only on 2 consecutive hits or long utterance >= 1.5s (24000 samples @ 16kHz)
+                                    if consecutive_other_lang_hits >= 2 or audio_duration_samples >= 24000:
+                                        session_locked_lang = candidate_lang
+                                        consecutive_other_lang_hits = 0
+                                        await self.connection_manager.update_speaker_language(
+                                            meeting_id, participant_id, session_locked_lang
+                                        )
+                                else:
+                                    consecutive_other_lang_hits = 0
+                            else:
+                                consecutive_other_lang_hits = 0
+
+                        lang = session_locked_lang
+                        session_spoken_lang = session_locked_lang
                     else:
                         lang = source_language
                         session_spoken_lang = source_language
@@ -1063,6 +1102,7 @@ class TranscribeWebSocketHandler:
         is_final: bool,
         initial_prompt: str | None,
         meeting_id: str,
+        candidate_languages: list[str] | None = None,
     ) -> TranscriptResult:
         """Omni-Language router: vi → PhoWhisper; others → Groq; with reciprocal fallbacks."""
         return await self.omni_router.transcribe(
@@ -1071,6 +1111,7 @@ class TranscribeWebSocketHandler:
             is_final=is_final,
             initial_prompt=initial_prompt,
             meeting_id=meeting_id,
+            candidate_languages=candidate_languages,
         )
 
     async def _broadcast_pipeline_status(

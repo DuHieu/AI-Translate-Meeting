@@ -271,33 +271,49 @@ export const SubtitleOverlay: React.FC<SubtitleOverlayProps> = ({
                     type="button"
                     onClick={() => setIsLangMenuOpen((v) => !v)}
                     className="flex items-center gap-1.5 bg-slate-800/90 hover:bg-slate-800 border border-slate-700/80 rounded-full px-2.5 py-1 text-xs text-zinc-200 transition cursor-pointer"
+                    aria-expanded={isLangMenuOpen}
+                    aria-haspopup="listbox"
+                    aria-label="Chọn ngôn ngữ dịch phụ đề"
                   >
                     <CountryFlag code={targetLangOption.code} size="xs" />
                     <span className="font-medium">{targetLangOption.nativeName}</span>
-                    <ChevronDown className="w-3.5 h-3.5 text-zinc-400" />
+                    <ChevronDown className={`w-3.5 h-3.5 text-zinc-400 transition-transform ${isLangMenuOpen ? 'rotate-180' : ''}`} />
                   </button>
                   {isLangMenuOpen && (
-                    <div className="absolute bottom-10 left-0 bg-slate-900 border border-slate-800 rounded-2xl p-1.5 shadow-2xl z-50 w-52 max-h-64 overflow-y-auto space-y-1">
-                      {SUPPORTED_LANGUAGES_LIST.map((lang) => (
-                        <button
-                          key={lang.code}
-                          type="button"
-                          onClick={() => {
-                            onTargetLanguageChange?.(lang.code);
-                            setIsLangMenuOpen(false);
-                          }}
-                          className={`w-full flex items-center gap-2 px-3 py-2 text-xs rounded-xl transition cursor-pointer ${
-                            (targetLanguage || displaySubtitle?.targetLanguage) === lang.code
-                              ? 'bg-sky-500/20 text-sky-300 font-semibold'
-                              : 'text-zinc-200 hover:bg-slate-800'
-                          }`}
-                        >
-                          <CountryFlag code={lang.code} size="xs" />
-                          <span>{lang.nativeName}</span>
-                          <span className="ml-auto text-[10px] text-zinc-400 font-mono uppercase">{lang.code}</span>
-                        </button>
-                      ))}
-                    </div>
+                    <>
+                      <div
+                        className="fixed inset-0 z-40 bg-transparent"
+                        onClick={() => setIsLangMenuOpen(false)}
+                        aria-hidden="true"
+                      />
+                      <div
+                        role="listbox"
+                        aria-label="Danh sách ngôn ngữ dịch"
+                        className="absolute bottom-full mb-2 left-0 bg-slate-900 border border-slate-800 rounded-2xl p-1.5 shadow-2xl z-50 w-52 max-w-[calc(100vw-32px)] max-h-64 overflow-y-auto space-y-1 overscroll-contain"
+                      >
+                        {SUPPORTED_LANGUAGES_LIST.map((lang) => (
+                          <button
+                            key={lang.code}
+                            type="button"
+                            role="option"
+                            aria-selected={(targetLanguage || displaySubtitle?.targetLanguage) === lang.code}
+                            onClick={() => {
+                              onTargetLanguageChange?.(lang.code);
+                              setIsLangMenuOpen(false);
+                            }}
+                            className={`w-full flex items-center gap-2 px-3 py-2 text-xs rounded-xl transition cursor-pointer ${
+                              (targetLanguage || displaySubtitle?.targetLanguage) === lang.code
+                                ? 'bg-sky-500/20 text-sky-300 font-semibold'
+                                : 'text-zinc-200 hover:bg-slate-800'
+                            }`}
+                          >
+                            <CountryFlag code={lang.code} size="xs" />
+                            <span>{lang.nativeName}</span>
+                            <span className="ml-auto text-[10px] text-zinc-400 font-mono uppercase">{lang.code}</span>
+                          </button>
+                        ))}
+                      </div>
+                    </>
                   )}
                 </div>
 
@@ -313,6 +329,7 @@ export const SubtitleOverlay: React.FC<SubtitleOverlayProps> = ({
                       : 'bg-slate-800/80 border-slate-700/80 text-zinc-400 hover:text-zinc-200'
                   }`}
                   title="Bật / tắt hiển thị song ngữ"
+                  aria-pressed={settings.subtitleDisplayMode === 'bilingual'}
                 >
                   Song ngữ
                 </button>
@@ -330,15 +347,6 @@ export const SubtitleOverlay: React.FC<SubtitleOverlayProps> = ({
                   className="px-2 py-1 rounded-full hover:bg-zinc-800 text-zinc-300 hover:text-white transition cursor-pointer font-bold text-xs"
                 >
                   <span className="font-mono tracking-tighter">TT</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={onOpenSettings}
-                  title="Cài đặt phụ đề"
-                  className="p-1 rounded-full hover:bg-zinc-800 text-zinc-400 hover:text-white transition cursor-pointer"
-                >
-                  <SettingsIcon className="w-3.5 h-3.5" />
                 </button>
               </div>
             </div>

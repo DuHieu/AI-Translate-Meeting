@@ -337,10 +337,12 @@ input:not([type="checkbox"]):not([type="radio"]), select, textarea { font-size: 
 .meeting-language-dialog .adaptive-dialog__content { padding: 0 16px 24px; }
 .meeting-panel { height: var(--app-height); }
 .meeting-panel .adaptive-dialog__content { display: flex; flex-direction: column; flex: 1; overflow: hidden; }
-.meeting-panel-tabs { display: flex; align-items: center; justify-content: space-between; gap: 4px; padding: 6px; flex-shrink: 0; overflow-x: hidden; background: #10121b; border-bottom: 1px solid rgba(255, 255, 255, 0.08); }
-.meeting-panel-tabs button { flex: 1 1 0px; min-height: 44px; min-width: 0; padding: 6px 4px; white-space: nowrap; font-size: 12.5px; font-weight: 500; border-radius: 10px; color: #cbd5e1; text-align: center; overflow: hidden; text-overflow: ellipsis; transition: background 150ms ease, color 150ms ease; }
+.meeting-panel-tabs { display: flex; align-items: center; gap: 6px; padding: 8px 10px; flex-shrink: 0; overflow-x: auto; scrollbar-width: none; -ms-overflow-style: none; background: #10121b; border-bottom: 1px solid rgba(255, 255, 255, 0.08); }
+.meeting-panel-tabs::-webkit-scrollbar { display: none; }
+.meeting-panel-tabs button { flex-shrink: 0; min-height: 38px; padding: 6px 12px; white-space: nowrap; font-size: 13px; font-weight: 500; border-radius: 10px; color: #94a3b8; display: inline-flex; align-items: center; gap: 6px; border: 1px solid transparent; transition: all 150ms ease; }
 .meeting-panel-tabs button:hover { background: rgba(255, 255, 255, 0.06); color: #f8fafc; }
-.meeting-panel-tabs button[aria-pressed="true"] { background: #c2e7ff; color: #001d35; font-weight: 600; }
+.meeting-panel-tabs button[aria-pressed="true"], .meeting-panel-tabs button.is-active { background: rgba(14, 165, 233, 0.15); color: #38bdf8; border-color: rgba(56, 189, 248, 0.35); font-weight: 600; }
+.meeting-panel-tabs .tab-badge { padding: 1px 6px; font-size: 10px; font-weight: 700; border-radius: 9999px; background: #0284c7; color: #ffffff; line-height: 1.2; }
 .meeting-panel-body { flex: 1; min-height: 0; overflow: hidden; }
 .meeting-panel-content { position: static; }
 :is(.meeting-panel, .meeting-device-dialog, .meeting-settings-dialog, .prejoin-settings-dialog) button:not(.sheet-handle):not(.meeting-panel-tabs button) { min-height: 44px; min-width: 44px; }
@@ -397,8 +399,9 @@ button:has(> svg:only-child) { display: inline-flex; align-items: center; justif
     white-space: nowrap;
   }
   .meeting-code { display: block; min-width: 80px; color: #e2e8f0; font-family: monospace; }
-  .meeting-desktop-controls { display: flex; gap: 8px; margin-left: auto; }
-  .meeting-desktop-controls .meeting-primary-control { min-width: 100px; }
+  .meeting-desktop-controls { display: flex; gap: 8px; margin-left: auto; align-items: center; }
+  .meeting-desktop-controls .meeting-primary-control { min-width: 44px; width: 44px; height: 44px; padding: 0; border-radius: 9999px; justify-content: center; }
+  .meeting-desktop-controls .meeting-control-label { display: none; }
   .adaptive-dialog,
   .adaptive-dialog:is(.meeting-panel, .calendar-dialog, .meeting-settings-dialog) { border-radius: 16px; height: auto; max-height:calc(var(--app-height) - 16px); top: calc(var(--viewport-top) + var(--app-height) / 2); bottom: auto; transform: translateY(-50%); }
   .adaptive-dialog--docked,
