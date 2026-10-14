@@ -134,6 +134,9 @@ services:
       - PRO_QWEN_API_KEY=${PRO_QWEN_API_KEY:-}
       - PRO_QWEN_BASE_URL=${PRO_QWEN_BASE_URL:-https://dashscope-intl.aliyuncs.com/compatible-mode/v1}
       - PRO_QWEN_MODEL=${PRO_QWEN_MODEL:-qwen-mt-turbo}
+      - PRO_BYTEPLUS_API_KEY=${PRO_BYTEPLUS_API_KEY:-}
+      - PRO_BYTEPLUS_BASE_URL=${PRO_BYTEPLUS_BASE_URL:-https://ark.ap-southeast.bytepluses.com/api/v3}
+      - PRO_BYTEPLUS_MODEL=${PRO_BYTEPLUS_MODEL:-doubao-pro-32k}
       - PRO_OPENAI_API_KEY=${PRO_OPENAI_API_KEY:-}
       - PRO_OPENAI_MODEL=${PRO_OPENAI_MODEL:-gpt-4o-mini}
       - PRO_GEMINI_API_KEY=${PRO_GEMINI_API_KEY:-}

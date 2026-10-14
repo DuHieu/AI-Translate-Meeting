@@ -12,10 +12,10 @@ from app.translation.pii_firewall import TwoWayPiiFirewall
 logger = logging.getLogger(__name__)
 
 
-SUPPORTED_PREMIUM_PROVIDERS = ("openai", "gemini", "deepl", "groq", "deepseek", "qwen")
+SUPPORTED_PREMIUM_PROVIDERS = ("openai", "gemini", "deepl", "groq", "deepseek", "qwen", "byteplus")
 
 # Providers that use OpenAI-compatible /v1/chat/completions endpoints
-_OPENAI_COMPATIBLE_PROVIDERS = frozenset({"openai", "groq", "deepseek", "qwen"})
+_OPENAI_COMPATIBLE_PROVIDERS = frozenset({"openai", "groq", "deepseek", "qwen", "byteplus"})
 
 # Asian language codes — prefer Qwen-MT for these pairs
 _ASIAN_LANGS = frozenset({"vi", "zh", "ja", "ko"})
@@ -23,6 +23,18 @@ _ASIAN_LANGS = frozenset({"vi", "zh", "ja", "ko"})
 
 # Specialized AI Model Catalog across Machine Translation, STT, and TTS
 SPECIALIZED_MODEL_CATALOG: list[dict[str, Any]] = [
+    {
+        "provider": "byteplus",
+        "model_name": "Doubao-pro / Doubao-lite (ModelArk)",
+        "category": "MT",
+        "specialization": "ByteDance Doubao Singapore Low-Latency MT",
+        "latency_ms_avg": 120,
+        "cost_input_per_m": 0.11,
+        "cost_output_per_m": 0.28,
+        "bleu_tier": "S+",
+        "recommended_pairs": ["vi-ja", "ja-vi", "vi-zh", "zh-vi", "vi-en", "en-vi"],
+        "description": "Mô hình Doubao của ByteDance đặt tại cụm Singapore, độ trễ cực thấp (~120ms) và chất lượng dịch thuật ngữ điệu Á Đông vượt trội.",
+    },
     {
         "provider": "qwen",
         "model_name": "qwen-mt-turbo",
@@ -153,12 +165,12 @@ def auto_select_engine(
     is_asian_pair = sl in _ASIAN_LANGS or tl in _ASIAN_LANGS
 
     if mode == "cost_saving":
-        for p in ("gemini", "deepseek", "qwen", "openai", "groq", "deepl"):
+        for p in ("gemini", "deepseek", "byteplus", "qwen", "openai", "groq", "deepl"):
             if p in available_providers:
                 return p
 
     elif mode == "ultra_fast":
-        for p in ("groq", "gemini", "qwen", "deepl", "deepseek", "openai"):
+        for p in ("byteplus", "groq", "gemini", "qwen", "deepl", "deepseek", "openai"):
             if p in available_providers:
                 return p
 
@@ -167,14 +179,14 @@ def auto_select_engine(
             return "qwen"
         if not is_asian_pair and "deepl" in available_providers:
             return "deepl"
-        for p in ("qwen", "deepl", "deepseek", "gemini", "openai", "groq"):
+        for p in ("byteplus", "qwen", "deepl", "deepseek", "gemini", "openai", "groq"):
             if p in available_providers:
                 return p
 
     # Default 'balanced' (Strictly preserves existing unit test contract)
     if is_asian_pair and "qwen" in available_providers:
         return "qwen"
-    for preferred in ("groq", "openai", "deepseek", "deepl", "gemini"):
+    for preferred in ("byteplus", "groq", "openai", "deepseek", "deepl", "gemini"):
         if preferred in available_providers:
             return preferred
     return "openai"
@@ -228,6 +240,8 @@ class PremiumTranslationProvider:
             providers.append("deepseek")
         if settings.PRO_QWEN_API_KEY.strip():
             providers.append("qwen")
+        if settings.PRO_BYTEPLUS_API_KEY.strip():
+            providers.append("byteplus")
         return providers
 
     def resolve_active_credentials(
@@ -255,6 +269,7 @@ class PremiumTranslationProvider:
             "groq": settings.PRO_GROQ_API_KEY.strip(),
             "deepseek": settings.PRO_DEEPSEEK_API_KEY.strip(),
             "qwen": settings.PRO_QWEN_API_KEY.strip(),
+            "byteplus": settings.PRO_BYTEPLUS_API_KEY.strip(),
         }
         available_server_providers = [p for p, k in server_keys.items() if k]
         if not available_server_providers:
@@ -312,6 +327,7 @@ class PremiumTranslationProvider:
         server_keys = {
             "groq": settings.PRO_GROQ_API_KEY.strip(),
             "qwen": settings.PRO_QWEN_API_KEY.strip(),
+            "byteplus": settings.PRO_BYTEPLUS_API_KEY.strip(),
             "deepseek": settings.PRO_DEEPSEEK_API_KEY.strip(),
             "openai": settings.PRO_OPENAI_API_KEY.strip(),
             "gemini": settings.PRO_GEMINI_API_KEY.strip(),
@@ -430,6 +446,12 @@ class PremiumTranslationProvider:
                 f"{settings.PRO_QWEN_BASE_URL.rstrip('/')}/chat/completions",
                 settings.PRO_QWEN_MODEL,
                 "qwen",
+            )
+        if provider == "byteplus":
+            return (
+                f"{settings.PRO_BYTEPLUS_BASE_URL.rstrip('/')}/chat/completions",
+                settings.PRO_BYTEPLUS_MODEL,
+                "byteplus",
             )
         # Default: openai (preserves literal "https://api.openai.com/v1/chat/completions")
         return (

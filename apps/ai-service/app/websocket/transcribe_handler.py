@@ -498,7 +498,9 @@ class TranscribeWebSocketHandler:
                             requested_provider = parsed.get("byokProvider")
                             if isinstance(requested_provider, str):
                                 normalized_provider = requested_provider.strip().lower()
-                                if normalized_provider in ("openai", "gemini", "deepl"):
+                                if normalized_provider in (
+                                    "openai", "gemini", "deepl", "groq", "deepseek", "qwen", "byteplus"
+                                ):
                                     active_byok_provider = normalized_provider
                             requested_key = parsed.get("byokApiKey")
                             if isinstance(requested_key, str):

@@ -101,6 +101,13 @@ class Settings(BaseSettings):
     PRO_QWEN_BASE_URL: str = os.getenv("PRO_QWEN_BASE_URL", "https://dashscope.aliyuncs.com/compatible-mode/v1")
     PRO_QWEN_MODEL: str = os.getenv("PRO_QWEN_MODEL", "qwen-mt-turbo")
 
+    # BytePlus ModelArk — Doubao / Skylark, Singapore datacenter (~50ms latency)
+    PRO_BYTEPLUS_API_KEY: str = os.getenv("PRO_BYTEPLUS_API_KEY", "")
+    PRO_BYTEPLUS_BASE_URL: str = os.getenv(
+        "PRO_BYTEPLUS_BASE_URL", "https://ark.ap-southeast.bytepluses.com/api/v3"
+    )
+    PRO_BYTEPLUS_MODEL: str = os.getenv("PRO_BYTEPLUS_MODEL", "doubao-pro-32k")
+
     TRANSLATION_GLOSSARY_PATH: str = os.getenv("TRANSLATION_GLOSSARY_PATH", "")
     TRANSLATION_GLOSSARY_VERSION: str = os.getenv("TRANSLATION_GLOSSARY_VERSION", "1.0.0")
 

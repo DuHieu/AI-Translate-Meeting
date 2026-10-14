@@ -241,6 +241,13 @@ async def test_contextual_provider_falls_back_when_premium_api_fails():
             "https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions",
             "Qwen translation",
         ),
+        (
+            "byteplus",
+            "bp-byteplus-test-key",
+            {"choices": [{"message": {"content": "BytePlus Doubao translation"}}]},
+            "https://ark.ap-southeast.bytepluses.com/api/v3/chat/completions",
+            "BytePlus Doubao translation",
+        ),
     ],
 )
 async def test_premium_provider_calls_real_http_contract_without_key_in_url(
