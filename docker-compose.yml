@@ -106,6 +106,11 @@ services:
       - WHISPER_CPU_THREADS=${WHISPER_CPU_THREADS:-4}
       - WHISPER_PRELOAD=${WHISPER_PRELOAD:-true}
       - STT_PROVIDER=${STT_PROVIDER:-local}
+      - SHERPA_ENABLED=${SHERPA_ENABLED:-true}
+      - SHERPA_MODEL_DIR=${SHERPA_MODEL_DIR:-/root/.cache/sherpa-onnx/models/sherpa-onnx-streaming-zipformer-ar_en_id_ja_ru_th_vi_zh-2025-02-10}
+      - SHERPA_MODEL_REPO=${SHERPA_MODEL_REPO:-csukuangfj/sherpa-onnx-streaming-zipformer-ar_en_id_ja_ru_th_vi_zh-2025-02-10}
+      - SHERPA_CPU_THREADS=${SHERPA_CPU_THREADS:-2}
+      - SHERPA_AUTO_DOWNLOAD=${SHERPA_AUTO_DOWNLOAD:-true}
       - GROQ_API_KEY=${GROQ_API_KEY:-}
       - GROQ_STT_MODEL=${GROQ_STT_MODEL:-whisper-large-v3-turbo}
       - GROQ_STT_TIMEOUT_SECONDS=${GROQ_STT_TIMEOUT_SECONDS:-3.0}
@@ -157,6 +162,7 @@ services:
       - "8000:8000"
     volumes:
       - whisper_cache:/root/.cache/huggingface
+      - sherpa_cache:/root/.cache/sherpa-onnx
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health/ready', timeout=3)"]
       interval: 10s
@@ -215,3 +221,4 @@ volumes:
   postgres_data:
   laya_cache:
   whisper_cache:
+  sherpa_cache:

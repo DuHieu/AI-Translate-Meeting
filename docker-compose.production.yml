@@ -128,6 +128,11 @@ services:
       WHISPER_PRELOAD: "true"
       WHISPER_INITIAL_PROMPT: "${WHISPER_INITIAL_PROMPT:-Cuộc họp trực tuyến. Chúng tôi trao đổi về công việc, kế hoạch, tiến độ dự án, báo cáo, giải pháp, PR, sprint, bug, deploy.}"
       STT_PROVIDER: "${STT_PROVIDER:-local}"
+      SHERPA_ENABLED: "${SHERPA_ENABLED:-true}"
+      SHERPA_MODEL_DIR: "${SHERPA_MODEL_DIR:-/root/.cache/sherpa-onnx/models/sherpa-onnx-streaming-zipformer-ar_en_id_ja_ru_th_vi_zh-2025-02-10}"
+      SHERPA_MODEL_REPO: "${SHERPA_MODEL_REPO:-csukuangfj/sherpa-onnx-streaming-zipformer-ar_en_id_ja_ru_th_vi_zh-2025-02-10}"
+      SHERPA_CPU_THREADS: "${SHERPA_CPU_THREADS:-2}"
+      SHERPA_AUTO_DOWNLOAD: "${SHERPA_AUTO_DOWNLOAD:-true}"
       GROQ_API_KEY: "${GROQ_API_KEY:-}"
       GROQ_STT_MODEL: "${GROQ_STT_MODEL:-whisper-large-v3-turbo}"
       GROQ_STT_TIMEOUT_SECONDS: "${GROQ_STT_TIMEOUT_SECONDS:-3.0}"
@@ -172,6 +177,7 @@ services:
       POLAR_SERVER: "${POLAR_SERVER:-production}"
     volumes:
       - whisper_cache:/root/.cache/huggingface
+      - sherpa_cache:/root/.cache/sherpa-onnx
     networks:
       backend:
         ipv4_address: 172.30.0.30
@@ -252,6 +258,7 @@ volumes:
   postgres_data:
   redis_data:
   whisper_cache:
+  sherpa_cache:
   laya_cache:
   caddy_data:
   caddy_config:
