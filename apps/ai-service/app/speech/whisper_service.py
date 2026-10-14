@@ -228,9 +228,15 @@ class OmniLanguageRouter:
     - PhoWhisper / local VI failure → Groq + Vietnamese cultural prompt
     """
 
-    def __init__(self, local_stt: "SpeechToTextService", cloud_stt: Optional[Any] = None):
+    def __init__(
+        self,
+        local_stt: "SpeechToTextService",
+        cloud_stt: Optional[Any] = None,
+        sherpa_stt: Optional[Any] = None,
+    ):
         self.local_stt = local_stt
         self.cloud_stt = cloud_stt
+        self.sherpa_stt = sherpa_stt
 
     @staticmethod
     def is_vietnamese(language: Optional[str]) -> bool:
@@ -312,6 +318,23 @@ class OmniLanguageRouter:
             language_probability=confidence,
         )
 
+    async def _sherpa_transcribe(
+        self,
+        audio: Union[bytes, np.ndarray],
+        *,
+        language: str,
+        is_final: bool,
+        candidate_languages: Optional[list[str]] = None,
+    ) -> TranscriptResult:
+        if self.sherpa_stt is None:
+            raise RuntimeError("sherpa_stt_not_configured")
+        return await self.sherpa_stt.transcribe(
+            audio,
+            language=language,
+            is_final=is_final,
+            candidate_languages=candidate_languages,
+        )
+
     async def transcribe(
         self,
         audio: Union[bytes, np.ndarray],
@@ -326,6 +349,28 @@ class OmniLanguageRouter:
         prompt = initial_prompt
         if not prompt:
             prompt = get_cultural_initial_prompt(lang if lang != "auto" else None)
+
+        provider = getattr(settings, "STT_PROVIDER", "local").strip().lower()
+
+        # Primary route: Sherpa-ONNX streaming Zipformer-RNNT (Method 2: $0 cost, low-latency transducer)
+        if provider == "sherpa" and self.sherpa_stt is not None:
+            try:
+                res = await self._sherpa_transcribe(
+                    audio,
+                    language=language,
+                    is_final=is_final,
+                    candidate_languages=candidate_languages,
+                )
+                if res.text or not is_final:
+                    return res
+            except asyncio.CancelledError:
+                raise
+            except Exception as ex:
+                logger.warning(
+                    "event=omni_router meeting_id=%s route=sherpa failed reason=%s falling_back=local",
+                    meeting_id,
+                    type(ex).__name__,
+                )
 
         # No cloud → always local (STT_PROVIDER=local).
         if self.cloud_stt is None:

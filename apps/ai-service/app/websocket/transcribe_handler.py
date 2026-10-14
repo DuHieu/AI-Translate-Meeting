@@ -23,6 +23,7 @@ from app.schemas.subtitle import (
     SubtitleData,
 )
 from app.speech.groq_whisper_service import GroqSpeechToTextService
+from app.speech.sherpa_service import SherpaStreamingService
 from app.speech.whisper_service import (
     OmniLanguageRouter,
     SpeechToTextService,
@@ -114,6 +115,7 @@ class TranscribeWebSocketHandler:
         quality_filter: SpeechQualityFilter | None = None,
         moderation_filter: ContentModerationFilter | None = None,
         cloud_stt: GroqSpeechToTextService | None = None,
+        sherpa_stt: SherpaStreamingService | None = None,
     ):
         self.stt = stt or SpeechToTextService()
         if cloud_stt is not None:
@@ -124,7 +126,23 @@ class TranscribeWebSocketHandler:
             if settings.STT_PROVIDER.strip().lower() == "groq":
                 logger.warning("STT_PROVIDER=groq but GROQ_API_KEY is empty; using local faster-whisper")
             self.cloud_stt = None
-        self.omni_router = OmniLanguageRouter(local_stt=self.stt, cloud_stt=self.cloud_stt)
+
+        if sherpa_stt is not None:
+            self.sherpa_stt = sherpa_stt
+        elif getattr(settings, "SHERPA_ENABLED", False) or settings.STT_PROVIDER.strip().lower() == "sherpa":
+            try:
+                self.sherpa_stt = SherpaStreamingService()
+            except Exception as ex:
+                logger.warning("Failed to initialize SherpaStreamingService: %s", ex)
+                self.sherpa_stt = None
+        else:
+            self.sherpa_stt = None
+
+        self.omni_router = OmniLanguageRouter(
+            local_stt=self.stt,
+            cloud_stt=self.cloud_stt,
+            sherpa_stt=self.sherpa_stt,
+        )
         self.glossary_manager = glossary_manager or GlossaryManager()
         self.cache = cache or TranslationCache()
         self.context_manager = context_manager or MeetingContextManager()

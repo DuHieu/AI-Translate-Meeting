@@ -43,6 +43,12 @@ async def lifespan(application: FastAPI):
             name="whisper-model-preload",
         )
         application.state.whisper_preload_task = preload_task
+    elif settings.STT_PROVIDER.strip().lower() == "sherpa" and ws_handler.sherpa_stt is not None:
+        preload_task = asyncio.create_task(
+            ws_handler.sherpa_stt.preload(),
+            name="sherpa-model-preload",
+        )
+        application.state.sherpa_preload_task = preload_task
 
     try:
         yield

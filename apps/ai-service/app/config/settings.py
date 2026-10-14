@@ -26,7 +26,7 @@ class Settings(BaseSettings):
     PHOWHISPER_MODEL_PATH: str = os.getenv(
         "PHOWHISPER_MODEL_PATH", "diepho/PhoWhisper-base-ct2"
     )
-    # Cloud STT: "local" or "groq" (OmniLanguageRouter: vi→PhoWhisper, others→Groq + fallbacks).
+    # STT Provider: "local" (faster-whisper/PhoWhisper), "sherpa" (streaming zipformer-rnnt), or "groq"
     # GROQ_API_KEY must never be logged.
     STT_PROVIDER: str = os.getenv("STT_PROVIDER", "local")
     GROQ_API_KEY: str = os.getenv("GROQ_API_KEY", "")
@@ -36,6 +36,20 @@ class Settings(BaseSettings):
         "WHISPER_INITIAL_PROMPT",
         "Cuộc họp trực tuyến. Chúng tôi trao đổi về công việc, kế hoạch, tiến độ dự án, báo cáo, giải pháp, PR, sprint, bug, deploy.",
     )
+
+    # Sherpa-ONNX Streaming Conformer/Zipformer Transducer
+    SHERPA_ENABLED: bool = os.getenv("SHERPA_ENABLED", "true").lower() in ("true", "1", "yes")
+    SHERPA_MODEL_DIR: str = os.getenv(
+        "SHERPA_MODEL_DIR",
+        "models/sherpa-onnx-streaming-zipformer-ar_en_id_ja_ru_th_vi_zh-2025-02-10",
+    )
+    SHERPA_MODEL_REPO: str = os.getenv(
+        "SHERPA_MODEL_REPO",
+        "csukuangfj/sherpa-onnx-streaming-zipformer-ar_en_id_ja_ru_th_vi_zh-2025-02-10",
+    )
+    SHERPA_CPU_THREADS: int = int(os.getenv("SHERPA_CPU_THREADS", "2"))
+    SHERPA_AUTO_DOWNLOAD: bool = os.getenv("SHERPA_AUTO_DOWNLOAD", "true").lower() in ("true", "1", "yes")
+    SHERPA_DECODING_METHOD: str = os.getenv("SHERPA_DECODING_METHOD", "greedy_search")
 
     DEFAULT_SOURCE_LANGUAGE: str = os.getenv("DEFAULT_SOURCE_LANGUAGE", "vi")
     DEFAULT_TARGET_LANGUAGE: str = os.getenv("DEFAULT_TARGET_LANGUAGE", "ja")
