@@ -26,7 +26,10 @@ VIETNAMESE_DISTINCTIVE_REGEX = re.compile(
     re.IGNORECASE,
 )
 VIETNAMESE_GRAMMAR_KERNELS_REGEX = re.compile(
-    r"\b(là|đã|bị|vì|bao gồm|một|và)\b",
+    r"\b(là|đã|bị|vì|bao gồm|một|và|của|trong|với|cho|từ|theo|tháng|năm|"
+    r"chúng|mình|anh|chị|ông|bà|phó|giám|trình|bày|triển|khai|dự án|"
+    r"cuộc|họp|như|thế|nào|khi|nếu|vậy|thì|rồi|nhé|đây|đó|này|kia|"
+    r"không|có|được|làm|thực|hiện|báo|cáo|kế|hoạch)\b",
     re.IGNORECASE,
 )
 
@@ -630,9 +633,11 @@ class SpeechToTextService:
                     top2_lang, top2_prob = sorted_targets[1] if len(sorted_targets) > 1 else (None, 0.0)
                     entropy_margin = top1_prob - top2_prob
 
-                    # High-entropy / acoustic ambiguity thresholding (margin < 0.15 or prob < 0.50)
-                    if top1_prob < 0.50 or entropy_margin < 0.15:
-                        bayesian_weights = {"vi": 2.0}
+                    # High-entropy / acoustic ambiguity thresholding (margin < 0.20 or prob < 0.55)
+                    # Vietnamese-first meetings: VI Bayesian prior is 3.5x to override acoustic ambiguity
+                    # between CJK phonemes (JA/ZH often confused with VI by Whisper on short utterances).
+                    if top1_prob < 0.55 or entropy_margin < 0.20:
+                        bayesian_weights = {"vi": 3.5}
                         scores = {
                             l: p * bayesian_weights.get(l, 1.0)
                             for l, p in sorted_targets
@@ -793,9 +798,11 @@ class SpeechToTextService:
             lang_prob = getattr(info, "language_probability", 0.0) if info else 0.0
 
             # Text-level LID corrects short-utterance Whisper guesses and forced-language drift.
+            # Threshold lowered from 0.85 → 0.72: Vietnamese diacritics in transcript text are
+            # a reliable signal that should override uncertain acoustic language detection.
             if full_text:
                 text_lang, text_confidence = detect_text_language(full_text, detected_lang)
-                if text_confidence >= 0.85:
+                if text_confidence >= 0.72:
                     detected_lang = text_lang
                     lang_prob = max(lang_prob, text_confidence)
 
