@@ -1,6 +1,6 @@
 import { AdaptiveDialog } from '../common/AdaptiveDialog';
 import React, { useEffect, useMemo, useState } from 'react';
-import { AlertTriangle, Sparkles, X, ChevronDown, Settings as SettingsIcon } from 'lucide-react';
+import { AlertTriangle, Sparkles, X, ChevronDown } from 'lucide-react';
 import { PipelineStatusMessage, SubtitleMessage } from '../../types/subtitle';
 import {
   getLanguageOption,
@@ -36,7 +36,7 @@ export const SubtitleOverlay: React.FC<SubtitleOverlayProps> = ({
   onTargetLanguageChange,
   onToggleShowOriginal: _onToggleShowOriginal,
   isCaptionsOn = true,
-  onOpenSettings,
+  onOpenSettings: _onOpenSettings,
   currentUserId: _currentUserId,
   currentUserDisplayName: _currentUserDisplayName,
   localIdentity: _localIdentity,
@@ -56,6 +56,15 @@ export const SubtitleOverlay: React.FC<SubtitleOverlayProps> = ({
     () => recentSubtitles.filter((item) => item.isFinal).slice(-LIVE_SUBTITLE_LIMIT),
     [recentSubtitles],
   );
+
+  useEffect(() => {
+    if (!isLangMenuOpen) return undefined;
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setIsLangMenuOpen(false);
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isLangMenuOpen]);
 
   useEffect(() => {
     if (!isMobileSheetOpen) return undefined;
@@ -130,7 +139,7 @@ export const SubtitleOverlay: React.FC<SubtitleOverlayProps> = ({
   return (
     <>
       {/* Dedicated Caption Band (Google Meet 2025 / MS Teams style - Docked below video stage, never covering slides/faces) */}
-      <div className="meeting-caption-band shrink-0 w-full px-3 sm:px-4 pb-2 pt-0.5 z-20">
+      <div className="meeting-caption-band shrink-0 w-full px-3 sm:px-4 pb-2 pt-0.5 z-20 overflow-visible">
         <div className="mx-auto max-w-5xl">
           {translatingCount > 0 && !displaySubtitle && (
             <div className="flex items-center justify-between rounded-xl border border-sky-500/30 bg-slate-900 px-3.5 py-2 text-xs text-sky-300 shadow-lg">

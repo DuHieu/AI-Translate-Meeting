@@ -80,6 +80,7 @@ services:
       - Cors__AllowedOrigins__2=https://www.layameet.com
       - License__DefaultMaxRooms=${LICENSE_MAX_ROOMS:-25}
       - License__DefaultMaxParticipants=${LICENSE_MAX_PARTICIPANTS:-20}
+      - Admin__SecretKey=${ADMIN_SECRET_KEY:-vimeet-admin-secret-2026}
     ports:
       - "5000:5000"
     depends_on:

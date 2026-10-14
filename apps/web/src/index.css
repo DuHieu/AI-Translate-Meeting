@@ -345,7 +345,7 @@ input:not([type="checkbox"]):not([type="radio"]), select, textarea { font-size: 
 .meeting-panel-content { position: static; }
 :is(.meeting-panel, .meeting-device-dialog, .meeting-settings-dialog, .prejoin-settings-dialog) button:not(.sheet-handle):not(.meeting-panel-tabs button) { min-height: 44px; min-width: 44px; }
 :is(.meeting-panel, .meeting-device-dialog, .meeting-settings-dialog, .prejoin-settings-dialog) :is(input:not([type="checkbox"]):not([type="radio"]), select) { min-height: 44px; }
-.meeting-caption-band { max-height: min(32dvh, 240px); overflow-y: auto; overscroll-behavior: contain; }
+.meeting-caption-band { max-height: min(32dvh, 240px); overflow: visible; }
 .meeting-caption-band button, .meeting-shell > header button { min-height: 44px; min-width: 44px; }
 .meeting-video-grid { grid-auto-rows: minmax(128px, 1fr); }
 .meeting-video-cell { min-height: 128px; }

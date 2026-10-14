@@ -300,7 +300,7 @@ export const AdminDashboardPage: React.FC = () => {
                 <input
                   type={showKeyInput ? 'text' : 'password'}
                   required
-                  placeholder="layameet-admin-secret-2026"
+                  placeholder="vimeet-admin-secret-2026"
                   value={keyInput}
                   onChange={(e) => setKeyInput(e.target.value)}
                   className="w-full pl-4 pr-11 py-2.5 text-sm rounded-xl border border-zinc-700 bg-zinc-950 text-white placeholder-zinc-500 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"

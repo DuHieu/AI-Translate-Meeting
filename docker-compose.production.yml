@@ -25,6 +25,7 @@ x-api-environment: &api-environment
   Security__EnforceProductionSecrets: "true"
   Cors__AllowedOrigins__0: "https://${APP_DOMAIN:?Set APP_DOMAIN}"
   ForwardedHeaders__KnownProxies__0: 172.30.0.10
+  Admin__SecretKey: "${ADMIN_SECRET_KEY:-vimeet-admin-secret-2026}"
 
 x-api-service: &api-service
   image: "${API_IMAGE:?Set API_IMAGE}:${IMAGE_TAG:?Set IMAGE_TAG}"
