@@ -16,7 +16,7 @@ try {
  page.on('websocket',socket=>socket.on('framereceived',frame=>{
   if(typeof frame.payload==='string')try{const raw=JSON.parse(frame.payload);const d=raw.type==='subtitle'&&raw.data?raw.data:raw;if(d.confidence!==0&&d.originalText)result.messages.push({type:raw.type,original:d.originalText,translation:d.translatedText,isFinal:d.isFinal});}catch{}
  }));
- await page.goto(base);await page.getByRole('button',{name:'Tạo cuộc họp mới',exact:true}).tap();await page.locator('#display-name').pressSequentially('QA live speech');
+ await page.goto(base);const createBtn = page.getByRole('button',{name:'Tạo cuộc họp mới',exact:true}).filter({ visible: true }).first();await createBtn.tap();const instantBtn = page.getByRole('menuitem').filter({ hasText: /Bắt đầu một cuộc họp tức thì|Start an instant meeting|今すぐ会議を開始/ }).filter({ visible: true }).first();try { await instantBtn.waitFor({ state: 'visible', timeout: 3000 }); await instantBtn.tap(); } catch {}await page.locator('#display-name').pressSequentially('QA live speech');
  await page.locator('#native-language-select').selectOption('en');await page.locator('button[type=submit]').tap();
  await page.getByRole('button',{name:'Tắt mic',exact:true}).waitFor({timeout:45000});
  await page.getByRole('button',{name:'Ngôn ngữ',exact:true}).tap();await page.locator('#meeting-target-language').selectOption('ja');await page.getByRole('button',{name:'Đóng ngôn ngữ',exact:true}).tap();

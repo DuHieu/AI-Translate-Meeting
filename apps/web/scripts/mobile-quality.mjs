@@ -56,7 +56,13 @@ try { for (const width of [360, 390, 430, 768, 1024, 1280, 1440, 1920]) {
   await page.locator('.cookie-consent').getByRole('button',{name:'Thu gọn',exact:true}).tap();
   await page.locator('.cookie-consent').getByRole('button',{name:'Từ chối',exact:true}).tap();
   if (!process.env.PUBLIC_ONLY) {
-  await page.getByRole('button', {name:'Tạo cuộc họp mới',exact:true}).tap();
+  const createBtn = page.getByRole('button', {name:'Tạo cuộc họp mới',exact:true}).filter({ visible: true }).first();
+  await createBtn.tap();
+  const instantBtn = page.getByRole('menuitem').filter({ hasText: /Bắt đầu một cuộc họp tức thì|Start an instant meeting|今すぐ会議を開始/ }).filter({ visible: true }).first();
+  try {
+    await instantBtn.waitFor({ state: 'visible', timeout: 3000 });
+    await instantBtn.tap();
+  } catch {}
   await page.locator('#display-name').waitFor();
   await capture('prejoin');
   await page.locator('#display-name').fill('QA Viewport');

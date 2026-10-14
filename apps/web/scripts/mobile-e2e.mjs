@@ -76,8 +76,16 @@ for (const definition of selected) {
     }
     await audit('home');
     const created = await step('01-home-create', async () => {
-      await page.getByRole('button', { name: 'Tạo cuộc họp mới', exact: true }).tap();
-      await page.locator('#display-name').waitFor();
+      const createBtn = page.getByRole('button', { name: 'Tạo cuộc họp mới', exact: true }).filter({ visible: true }).first();
+      await createBtn.tap();
+      const instantBtn = page.getByRole('menuitem').filter({ hasText: /Bắt đầu một cuộc họp tức thì|Start an instant meeting|今すぐ会議を開始/ }).filter({ visible: true }).first();
+      try {
+        await instantBtn.waitFor({ state: 'visible', timeout: 3000 });
+        await instantBtn.tap();
+      } catch {
+        // Fallback if no dropdown menu is rendered
+      }
+      await page.locator('#display-name').waitFor({ timeout: 20000 });
       code = new URL(page.url()).pathname.split('/').at(-1);
       assert.match(code, /^[A-Z0-9]{6}$/);
     });

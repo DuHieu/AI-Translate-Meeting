@@ -32,7 +32,10 @@ try {
   const context = await pw.newContext({hasTouch:true,isMobile:true,locale:'vi-VN',timezoneId:'Asia/Bangkok',viewport:{width:390,height:844},permissions:['microphone','camera']});
   const actual = await context.newPage(); roomCleanup.track(actual);
   await actual.goto(base);
-  await actual.getByRole('button',{name:'Tạo cuộc họp mới',exact:true}).tap();
+  const createBtn = actual.getByRole('button',{name:'Tạo cuộc họp mới',exact:true}).filter({ visible: true }).first();
+  await createBtn.tap();
+  const instantBtn = actual.getByRole('menuitem').filter({ hasText: /Bắt đầu một cuộc họp tức thì|Start an instant meeting|今すぐ会議を開始/ }).filter({ visible: true }).first();
+  try { await instantBtn.waitFor({ state: 'visible', timeout: 3000 }); await instantBtn.tap(); } catch {}
   await actual.locator('#display-name').waitFor();
   const prejoin = actual.url();
   if (!process.env.LIGHTHOUSE_ROOM_ONLY) save('prejoin-mobile', await lighthouse(prejoin, flags), 'Production bundle, default mobile simulated throttling; actual API-created room');

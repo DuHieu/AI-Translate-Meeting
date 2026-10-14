@@ -18,6 +18,8 @@ for (const width of [390, 1440]) {
     const buttons = page.getByRole('button').filter({ hasText: /Cuộc họp mới|Tạo cuộc họp mới|Tạo phòng|New meeting|Start|Bắt đầu|Mới/ });
     await buttons.first().tap();
   });
+  const instantBtn = page.getByRole('menuitem').filter({ hasText: /Bắt đầu một cuộc họp tức thì|Start an instant meeting|今すぐ会議を開始/ }).filter({ visible: true }).first();
+  try { await instantBtn.waitFor({ state: 'visible', timeout: 3000 }); await instantBtn.tap(); } catch {}
   await page.locator('#display-name').waitFor();
   const code = new URL(page.url()).pathname.split('/').at(-1);
   await page.screenshot({ path: `${out}/prejoin-${width}.png` });

@@ -25,7 +25,11 @@ try {
   const hostContext=await browser.newContext({viewport:{width:390,height:844},hasTouch:true,isMobile:true,locale:'vi-VN',permissions:['microphone','camera'],recordVideo:{dir:path.join(out,'video')}});
   contexts.push(hostContext);await hostContext.tracing.start({screenshots:true,snapshots:true,sources:true});
   host=await hostContext.newPage();roomCleanup.track(host);host.setDefaultTimeout(20000);
-  await host.goto(base);await host.getByRole('button',{name:'Tạo cuộc họp mới',exact:true}).tap();
+  await host.goto(base);
+  const createBtn = host.getByRole('button',{name:'Tạo cuộc họp mới',exact:true}).filter({ visible: true }).first();
+  await createBtn.tap();
+  const instantBtn = host.getByRole('menuitem').filter({ hasText: /Bắt đầu một cuộc họp tức thì|Start an instant meeting|今すぐ会議を開始/ }).filter({ visible: true }).first();
+  try { await instantBtn.waitFor({ state: 'visible', timeout: 3000 }); await instantBtn.tap(); } catch {}
   await host.locator('#display-name').fill('QA Grid Host');
   const roomUrl=host.url();await host.locator('button[type=submit]').tap();
   await host.getByRole('button',{name:'Tắt mic',exact:true}).waitFor({timeout:45000});
