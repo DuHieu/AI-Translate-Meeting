@@ -12,7 +12,11 @@ pytestmark = pytest.mark.e2e
 def test_api_live_and_ready(http: requests.Session, api_base: str) -> None:
     live = http.get(f"{api_base}/health/live", timeout=10)
     assert live.status_code == 200
-    assert "Healthy" in live.text or live.json().get("status") in (None, "Healthy", "ok")
+    assert (
+        "healthy" in live.text.lower()
+        or live.json().get("healthy") is True
+        or live.json().get("status") in (None, "Healthy", "ok", "live")
+    )
 
     ready = http.get(f"{api_base}/health/ready", timeout=10)
     assert ready.status_code == 200

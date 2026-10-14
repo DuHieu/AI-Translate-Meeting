@@ -43,8 +43,11 @@ def test_leave_meeting(
     code = meeting_lifecycle["meetingCode"]
     joined = meeting_lifecycle["join"]
     participant_id = joined["participantId"]
+    token = joined.get("sessionToken") or meeting_lifecycle.get("hostToken")
+    headers = {"Authorization": f"Bearer {token}"} if token else {}
     response = http.post(
         f"{api_base}/api/meetings/{code}/leave",
+        headers=headers,
         json={"participantId": participant_id},
         timeout=15,
     )
