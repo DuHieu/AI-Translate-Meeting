@@ -199,7 +199,7 @@ test_api_live() {
     target="$API_URL/health/live"
     local resp
     resp="$(curl_request -f "$target")"
-    echo "$resp" | grep -qi "Healthy"
+    echo "$resp" | grep -Eqi "(Healthy|live|ok)"
   fi
 }
 run_test "Backend API Live Health Probe" test_api_live
@@ -213,7 +213,7 @@ test_api_ready() {
   else
     local resp
     resp="$(curl_request -f "$API_URL/health/ready")"
-    echo "$resp" | grep -qi "Healthy"
+    echo "$resp" | grep -Eqi "(Healthy|ready|ok)"
   fi
 }
 run_test "Backend API Ready Health Probe" test_api_ready

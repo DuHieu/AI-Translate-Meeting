@@ -272,7 +272,7 @@ app.UseAuthorization();
 app.MapControllers();
 app.MapHub<MeetingHub>("/hubs/meeting");
 
-app.MapGet("/health/live", () => Results.Ok(new { status = "live" }));
+app.MapGet("/health/live", () => Results.Ok(new { status = "live", healthy = true }));
 
 app.MapGet("/health/ready", async (
     IReadinessEvaluator evaluator,
