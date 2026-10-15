@@ -81,6 +81,9 @@ scripts/debug_*.py
 *.wav
 !apps/ai-service/tests/*.wav
 *.pcm
-*.mp3
-*audit-report.json
 benchmark-*.json
+
+# Rust / Tauri Desktop
+**/target/
+apps/desktop/src-tauri/target/
+

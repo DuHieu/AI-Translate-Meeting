@@ -22,6 +22,8 @@ import {
   ChevronDown,
   Link2,
   ShieldCheck,
+  Monitor,
+  Download,
 } from 'lucide-react';
 import { admissionStorage } from '../utils/admissionStorage';
 import { LayaMeetLogo } from '../components/common/LayaMeetLogo';
@@ -38,6 +40,8 @@ import { GoogleAuthControl } from '../components/auth/GoogleAuthControl';
 import { ScheduleMeetingModal } from '../components/home/ScheduleMeetingModal';
 import { CreateMeetingForLaterModal } from '../components/home/CreateMeetingForLaterModal';
 import { UpcomingMeetingsStrip } from '../components/home/UpcomingMeetingsStrip';
+import { DownloadModal } from '../components/home/DownloadModal';
+import { DesktopLandingSections } from '../components/home/DesktopLandingSections';
 import { scrollLock } from '../utils/scrollLock';
 
 const HOME_UI: Record<string, Record<string, string>> = {
@@ -98,6 +102,15 @@ const HOME_UI: Record<string, Record<string, string>> = {
     menuStartInstantDesc: 'Vào ngay phòng họp với camera và micro',
     menuSchedule: 'Lên lịch trong Lịch',
     menuScheduleDesc: 'Lên kế hoạch và gửi thư mời trước',
+    desktopBadge: 'LayaMeet Desktop Companion • v1.0.0',
+    heroDesktopTitle1: 'Phụ Đề & Dịch AI Trực Tiếp',
+    heroDesktopTitleHighlight: 'Cho Zoom & Google Meet',
+    heroDesktopTitleEnd: 'Ngay Trên Máy Tính',
+    heroDesktopDesc: 'Không cần mời bot, không tốn băng thông máy chủ. Ứng dụng Desktop tự động bắt âm thanh hệ thống 2 chiều (WASAPI), hiển thị phụ đề nổi trong suốt <350ms và xuất biên bản họp tự động.',
+    btnDownloadWindows: 'Tải Cho Windows (Miễn Phí)',
+    btnDownloadWindowsShort: 'Tải Desktop App',
+    downloadSubtext: 'Windows 10/11 64-bit • Bộ cài 15MB • v1.0.0',
+    orWebMeeting: 'Hoặc trải nghiệm nhanh phòng họp Web Demo:',
   },
   en: {
     joinShort: 'Join',
@@ -156,6 +169,15 @@ const HOME_UI: Record<string, Record<string, string>> = {
     menuStartInstantDesc: 'Join immediately with your camera and mic',
     menuSchedule: 'Schedule in Calendar',
     menuScheduleDesc: 'Plan ahead and send calendar invites',
+    desktopBadge: 'LayaMeet Desktop Companion • v1.0.0',
+    heroDesktopTitle1: 'Live AI Subtitles & Translation',
+    heroDesktopTitleHighlight: 'For Zoom & Google Meet',
+    heroDesktopTitleEnd: 'Directly On Your PC',
+    heroDesktopDesc: 'No bot required, zero server bandwidth costs. The Desktop App captures system audio (WASAPI loopback), renders floating bilingual subtitles (<350ms), and auto-generates meeting minutes.',
+    btnDownloadWindows: 'Download for Windows (Free)',
+    btnDownloadWindowsShort: 'Download App',
+    downloadSubtext: 'Windows 10/11 64-bit • Installer 15MB • v1.0.0',
+    orWebMeeting: 'Or test the instant Web Meeting room:',
   },
   ja: {
     joinShort: '参加',
@@ -214,6 +236,15 @@ const HOME_UI: Record<string, Record<string, string>> = {
     menuStartInstantDesc: 'カメラとマイクを準備して即時参加します',
     menuSchedule: 'カレンダーでスケジュール設定',
     menuScheduleDesc: '事前計画を立てて招待状を送信します',
+    desktopBadge: 'LayaMeet デスクトップ版 • v1.0.0',
+    heroDesktopTitle1: 'リアルタイムAI多言語字幕翻訳',
+    heroDesktopTitleHighlight: 'Zoom・Google Meet対応',
+    heroDesktopTitleEnd: 'PC上で直接動作',
+    heroDesktopDesc: 'ボットの招待不要・サーバー帯域コストゼロ。デスクトップアプリがPC内部音声（WASAPIループバック）を直接検出し、最前面の透明字幕バーで双方向即時翻訳を提供します。',
+    btnDownloadWindows: 'Windows版をダウンロード (無料)',
+    btnDownloadWindowsShort: 'アプリをダウンロード',
+    downloadSubtext: 'Windows 10/11 64-bit • 容量15MB • v1.0.0',
+    orWebMeeting: 'またはWeb版ミーティングをテスト:',
   },
 };
 
@@ -236,6 +267,7 @@ export const HomePage: React.FC<HomePageProps> = ({ forcedLanguage }) => {
   const [isScheduleMeetingOpen, setIsScheduleMeetingOpen] = useState(false);
   const [scheduleRefreshKey, setScheduleRefreshKey] = useState(0);
   const [legalModalType, setLegalModalType] = useState<'privacy' | 'terms' | null>(null);
+  const [isDownloadModalOpen, setIsDownloadModalOpen] = useState(false);
 
   // Active section (inline rendering in main stage)
   const [activeSection, setActiveSection] = useState<ActiveSection>('home');
@@ -301,6 +333,7 @@ export const HomePage: React.FC<HomePageProps> = ({ forcedLanguage }) => {
       isNavDrawerOpen ||
       isScheduleMeetingOpen ||
       isCreateForLaterModalOpen ||
+      isDownloadModalOpen ||
       Boolean(legalModalType);
 
     if (isAnyOverlayOpen) {
@@ -313,6 +346,7 @@ export const HomePage: React.FC<HomePageProps> = ({ forcedLanguage }) => {
     isNavDrawerOpen,
     isScheduleMeetingOpen,
     isCreateForLaterModalOpen,
+    isDownloadModalOpen,
     legalModalType,
   ]);
 
@@ -320,7 +354,9 @@ export const HomePage: React.FC<HomePageProps> = ({ forcedLanguage }) => {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
-        if (isNewMeetingMenuOpen) {
+        if (isDownloadModalOpen) {
+          setIsDownloadModalOpen(false);
+        } else if (isNewMeetingMenuOpen) {
           setIsNewMeetingMenuOpen(false);
         } else if (isCreateForLaterModalOpen) {
           setIsCreateForLaterModalOpen(false);
@@ -338,6 +374,7 @@ export const HomePage: React.FC<HomePageProps> = ({ forcedLanguage }) => {
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [
+    isDownloadModalOpen,
     isNewMeetingMenuOpen,
     isCreateForLaterModalOpen,
     isNavDrawerOpen,
@@ -620,6 +657,16 @@ export const HomePage: React.FC<HomePageProps> = ({ forcedLanguage }) => {
           {/* Light / Dark Mode Toggle */}
           <ThemeToggle />
 
+          {/* Download Desktop App Primary CTA Button */}
+          <button
+            type="button"
+            onClick={() => setIsDownloadModalOpen(true)}
+            className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-semibold text-xs shadow-xs hover:shadow-md transition-all cursor-pointer"
+          >
+            <Monitor className="w-3.5 h-3.5" />
+            <span>{ui.btnDownloadWindowsShort}</span>
+          </button>
+
           {/* Supabase Google Login / User Profile Pill with Plan Badge */}
           <GoogleAuthControl variant="navbar" />
         </div>
@@ -658,6 +705,36 @@ export const HomePage: React.FC<HomePageProps> = ({ forcedLanguage }) => {
                   ? 'Ultra-low latency bilingual subtitle translation with RAM-only privacy.'
                   : 'Phụ đề song ngữ tức thì với AI độ trễ cực thấp · Bảo mật RAM-Only.'}
               </p>
+            </div>
+
+            {/* Desktop App Download Companion Card on Mobile */}
+            <div className="p-3.5 rounded-2xl bg-gradient-to-r from-blue-50 to-indigo-50/50 dark:from-blue-950/30 dark:to-indigo-950/20 border border-blue-200/80 dark:border-blue-900/40 flex items-center justify-between gap-3 shadow-2xs">
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="w-9 h-9 rounded-xl bg-blue-600 text-white flex items-center justify-center shrink-0 shadow-sm">
+                  <Monitor className="w-5 h-5" />
+                </div>
+                <div className="min-w-0">
+                  <div className="text-xs font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-1.5">
+                    <span>LayaMeet Desktop</span>
+                    <span className="px-1.5 py-0.5 rounded-md bg-blue-600/10 text-blue-600 dark:text-blue-400 text-[10px] font-semibold">15MB</span>
+                  </div>
+                  <div className="text-[11px] text-zinc-500 dark:text-zinc-400 truncate">
+                    {language === 'ja'
+                      ? 'Zoom / Google Meet 対応'
+                      : language === 'en'
+                      ? 'Live Subtitles for Zoom & Meet'
+                      : 'Phụ đề trực tiếp cho Zoom & Meet'}
+                  </div>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsDownloadModalOpen(true)}
+                className="px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-500 active:bg-blue-700 text-white text-xs font-semibold shrink-0 shadow-xs flex items-center gap-1 cursor-pointer"
+              >
+                <Download className="w-3.5 h-3.5" />
+                <span>{language === 'ja' ? 'ダウンロード' : language === 'en' ? 'Download' : 'Tải App'}</span>
+              </button>
             </div>
 
             {/* Primary Actions: Start Meeting + Join by Code */}
@@ -858,23 +935,41 @@ export const HomePage: React.FC<HomePageProps> = ({ forcedLanguage }) => {
             >
               {/* Left: Headline + Primary Actions */}
               <div className="w-full max-w-md sm:max-w-xl lg:max-w-xl xl:max-w-2xl space-y-6 text-center lg:text-left">
-                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 text-xs font-medium">
-                  <Globe className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400 shrink-0" />
-                  <span>{t.hero.infraBadge}</span>
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 dark:bg-blue-950/40 border border-blue-200/80 dark:border-blue-900/50 text-blue-700 dark:text-blue-300 text-xs font-semibold shadow-2xs">
+                  <Monitor className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400 shrink-0" />
+                  <span>{ui.desktopBadge}</span>
                 </div>
 
-                <h1 className="text-4xl md:text-5xl xl:text-6xl font-bold text-zinc-950 dark:text-white tracking-tight leading-[1.12]">
-                  {t.hero.titleLine1}
+                <h1 className="text-4xl md:text-5xl xl:text-6xl font-extrabold text-zinc-950 dark:text-white tracking-tight leading-[1.12]">
+                  {ui.heroDesktopTitle1}
                   <br />
-                  <span className="text-blue-600 dark:text-blue-400">
-                    {t.hero.titleHighlight}
+                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 via-indigo-600 to-sky-600">
+                    {ui.heroDesktopTitleHighlight}
                   </span>
-                  <span>{t.hero.titleEnd}</span>
+                  <span className="block text-2xl md:text-3xl font-semibold text-zinc-700 dark:text-zinc-300 mt-1">
+                    {ui.heroDesktopTitleEnd}
+                  </span>
                 </h1>
 
                 <p className="text-zinc-600 dark:text-zinc-400 text-base lg:text-lg leading-relaxed max-w-xl mx-auto lg:mx-0">
-                  {t.hero.description}
+                  {ui.heroDesktopDesc}
                 </p>
+
+                {/* Primary Desktop Download CTA */}
+                <div className="pt-1 flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-3.5">
+                  <button
+                    type="button"
+                    onClick={() => setIsDownloadModalOpen(true)}
+                    className="w-full sm:w-auto px-7 py-3.5 rounded-2xl bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-bold text-base flex items-center justify-center gap-2.5 shadow-lg shadow-blue-500/25 transition-all cursor-pointer hover:-translate-y-0.5 group"
+                  >
+                    <Monitor className="w-5 h-5 group-hover:scale-110 transition-transform" />
+                    <span>{ui.btnDownloadWindows}</span>
+                    <ArrowRight className="w-4 h-4 ml-0.5 opacity-80 group-hover:translate-x-1 transition-transform" />
+                  </button>
+                  <div className="text-xs text-zinc-500 dark:text-zinc-400 font-medium">
+                    {ui.downloadSubtext}
+                  </div>
+                </div>
 
                 {/* Error Message */}
                 {error && (
@@ -883,149 +978,164 @@ export const HomePage: React.FC<HomePageProps> = ({ forcedLanguage }) => {
                   </div>
                 )}
 
-                {/* CTA row — Primary Meeting Actions */}
-                <div className="flex flex-row flex-wrap items-center justify-center lg:justify-start gap-3 pt-1">
-                  {/* Google Meet style New Meeting dropdown button */}
-                  <div className="relative" ref={newMeetingMenuDesktopRef}>
+                {/* Secondary: Quick Web Meeting Container (Preserves full test compatibility) */}
+                <div className="pt-2 text-left bg-white/80 dark:bg-[#18181c]/80 p-4 rounded-2xl border border-zinc-200/80 dark:border-zinc-800 shadow-xs space-y-2">
+                  <span className="text-[11px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider block">
+                    {ui.orWebMeeting}
+                  </span>
+
+                  <div className="flex flex-row flex-wrap items-center justify-center lg:justify-start gap-2.5">
+                    {/* Google Meet style New Meeting dropdown button */}
+                    <div className="relative" ref={newMeetingMenuDesktopRef}>
+                      <button
+                        type="button"
+                        onClick={() => setIsNewMeetingMenuOpen((prev) => !prev)}
+                        disabled={loading}
+                        aria-haspopup="true"
+                        aria-expanded={isNewMeetingMenuOpen}
+                        className="whitespace-nowrap px-4 py-2.5 bg-blue-600 hover:bg-blue-500 active:bg-blue-700 disabled:opacity-50 text-white font-semibold rounded-xl transition-all flex items-center justify-center gap-2 text-sm cursor-pointer disabled:cursor-not-allowed shadow-xs"
+                      >
+                        <Video className="w-4 h-4 shrink-0" />
+                        <span>{loading ? t.hero.btnCreating : t.hero.btnCreate}</span>
+                        <ChevronDown
+                          className={`w-3.5 h-3.5 ml-0.5 shrink-0 transition-transform duration-200 ${
+                            isNewMeetingMenuOpen ? 'rotate-180' : ''
+                          }`}
+                        />
+                      </button>
+
+                      {/* Google Meet Dropdown Menu */}
+                      {isNewMeetingMenuOpen && (
+                        <div
+                          role="menu"
+                          className="absolute top-full left-0 mt-2 z-30 w-84 rounded-2xl bg-white dark:bg-[#18181c] border border-zinc-200 dark:border-zinc-800 shadow-2xl p-1.5 space-y-1 animate-in fade-in zoom-in-95 duration-150"
+                        >
+                          <button
+                            type="button"
+                            role="menuitem"
+                            onClick={handleCreateForLater}
+                            className="w-full text-left p-3 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800/80 transition-colors flex items-start gap-3 cursor-pointer group"
+                          >
+                            <div className="w-9 h-9 rounded-xl bg-zinc-100 dark:bg-zinc-800 group-hover:bg-blue-50 dark:group-hover:bg-blue-950/40 flex items-center justify-center shrink-0 text-zinc-700 dark:text-zinc-300 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                              <Link2 className="w-4 h-4" />
+                            </div>
+                            <div className="min-w-0">
+                              <div className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
+                                {ui.menuCreateForLater}
+                              </div>
+                              <div className="text-xs text-zinc-500 dark:text-zinc-400 leading-tight mt-0.5">
+                                {ui.menuCreateForLaterDesc}
+                              </div>
+                            </div>
+                          </button>
+
+                          <button
+                            type="button"
+                            role="menuitem"
+                            onClick={handleStartInstantMeeting}
+                            className="w-full text-left p-3 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800/80 transition-colors flex items-start gap-3 cursor-pointer group"
+                          >
+                            <div className="w-9 h-9 rounded-xl bg-blue-50 dark:bg-blue-950/40 flex items-center justify-center shrink-0 text-blue-600 dark:text-blue-400 transition-colors">
+                              <Plus className="w-4 h-4" />
+                            </div>
+                            <div className="min-w-0">
+                              <div className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
+                                {ui.menuStartInstant}
+                              </div>
+                              <div className="text-xs text-zinc-500 dark:text-zinc-400 leading-tight mt-0.5">
+                                {ui.menuStartInstantDesc}
+                              </div>
+                            </div>
+                          </button>
+
+                          <button
+                            type="button"
+                            role="menuitem"
+                            onClick={handleOpenSchedule}
+                            className="w-full text-left p-3 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800/80 transition-colors flex items-start gap-3 cursor-pointer group"
+                          >
+                            <div className="w-9 h-9 rounded-xl bg-zinc-100 dark:bg-zinc-800 group-hover:bg-blue-50 dark:group-hover:bg-blue-950/40 flex items-center justify-center shrink-0 text-zinc-700 dark:text-zinc-300 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                              <Calendar className="w-4 h-4" />
+                            </div>
+                            <div className="min-w-0">
+                              <div className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
+                                {ui.menuSchedule}
+                              </div>
+                              <div className="text-xs text-zinc-500 dark:text-zinc-400 leading-tight mt-0.5">
+                                {ui.menuScheduleDesc}
+                              </div>
+                            </div>
+                          </button>
+                        </div>
+                      )}
+                    </div>
+
                     <button
                       type="button"
-                      onClick={() => setIsNewMeetingMenuOpen((prev) => !prev)}
-                      disabled={loading}
-                      aria-haspopup="true"
-                      aria-expanded={isNewMeetingMenuOpen}
-                      className="whitespace-nowrap px-5 py-3 bg-blue-600 hover:bg-blue-500 active:bg-blue-700 disabled:opacity-50 text-white font-semibold rounded-xl transition-all flex items-center justify-center gap-2.5 text-sm sm:text-base cursor-pointer disabled:cursor-not-allowed shadow-sm"
+                      onClick={() => setIsScheduleMeetingOpen(true)}
+                      className="whitespace-nowrap px-3.5 py-2.5 bg-white hover:bg-zinc-50 dark:bg-[#18181c] dark:hover:bg-[#222228] text-zinc-800 dark:text-zinc-100 font-semibold rounded-xl transition-colors flex items-center justify-center gap-1.5 text-xs sm:text-sm cursor-pointer border border-zinc-300 dark:border-zinc-800"
                     >
-                      <Video className="w-5 h-5 shrink-0" />
-                      <span>{loading ? t.hero.btnCreating : t.hero.btnCreate}</span>
-                      <ChevronDown
-                        className={`w-4 h-4 ml-0.5 shrink-0 transition-transform duration-200 ${
-                          isNewMeetingMenuOpen ? 'rotate-180' : ''
-                        }`}
-                      />
+                      <Calendar className="w-3.5 h-3.5 shrink-0 text-zinc-500 dark:text-zinc-400" />
+                      <span>
+                        {language === 'ja' ? '予定を設定' : language === 'en' ? 'Schedule' : 'Đặt lịch'}
+                      </span>
                     </button>
 
-                    {/* Google Meet Dropdown Menu */}
-                    {isNewMeetingMenuOpen && (
-                      <div
-                        role="menu"
-                        className="absolute top-full left-0 mt-2 z-30 w-84 rounded-2xl bg-white dark:bg-[#18181c] border border-zinc-200 dark:border-zinc-800 shadow-2xl p-1.5 space-y-1 animate-in fade-in zoom-in-95 duration-150"
-                      >
+                    {/* Unified Room Code Input */}
+                    <form onSubmit={handleJoinWithCode} className="relative flex items-center">
+                      <div className="relative flex items-center rounded-xl bg-white dark:bg-[#18181c] border border-zinc-300 dark:border-zinc-800 focus-within:border-blue-500 transition-all">
+                        <Keyboard className="w-3.5 h-3.5 text-zinc-400 ml-3 shrink-0" />
+                        <input
+                          type="text"
+                          placeholder={t.hero.inputRoomCode}
+                          value={meetingCodeInput}
+                          onChange={(e) => {
+                            setMeetingCodeInput(extractMeetingCode(e.target.value));
+                            if (error) setError(null);
+                          }}
+                          aria-label={t.hero.inputRoomCode}
+                          className="w-32 sm:w-40 bg-transparent text-zinc-900 dark:text-zinc-100 text-xs sm:text-sm font-medium px-2.5 py-2 outline-none uppercase font-mono tracking-wider placeholder-zinc-400 dark:placeholder-zinc-500"
+                        />
                         <button
-                          type="button"
-                          role="menuitem"
-                          onClick={handleCreateForLater}
-                          className="w-full text-left p-3 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800/80 transition-colors flex items-start gap-3 cursor-pointer group"
+                          type="submit"
+                          disabled={!meetingCodeInput.trim()}
+                          className={`mr-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1 cursor-pointer disabled:cursor-default ${
+                            meetingCodeInput.trim()
+                              ? 'bg-blue-600 text-white hover:bg-blue-500'
+                              : 'text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300'
+                          }`}
+                          aria-label={t.hero.btnJoin}
                         >
-                          <div className="w-9 h-9 rounded-xl bg-zinc-100 dark:bg-zinc-800 group-hover:bg-blue-50 dark:group-hover:bg-blue-950/40 flex items-center justify-center shrink-0 text-zinc-700 dark:text-zinc-300 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
-                            <Link2 className="w-4 h-4" />
-                          </div>
-                          <div className="min-w-0">
-                            <div className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
-                              {ui.menuCreateForLater}
-                            </div>
-                            <div className="text-xs text-zinc-500 dark:text-zinc-400 leading-tight mt-0.5">
-                              {ui.menuCreateForLaterDesc}
-                            </div>
-                          </div>
-                        </button>
-
-                        <button
-                          type="button"
-                          role="menuitem"
-                          onClick={handleStartInstantMeeting}
-                          className="w-full text-left p-3 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800/80 transition-colors flex items-start gap-3 cursor-pointer group"
-                        >
-                          <div className="w-9 h-9 rounded-xl bg-blue-50 dark:bg-blue-950/40 flex items-center justify-center shrink-0 text-blue-600 dark:text-blue-400 transition-colors">
-                            <Plus className="w-4 h-4" />
-                          </div>
-                          <div className="min-w-0">
-                            <div className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
-                              {ui.menuStartInstant}
-                            </div>
-                            <div className="text-xs text-zinc-500 dark:text-zinc-400 leading-tight mt-0.5">
-                              {ui.menuStartInstantDesc}
-                            </div>
-                          </div>
-                        </button>
-
-                        <button
-                          type="button"
-                          role="menuitem"
-                          onClick={handleOpenSchedule}
-                          className="w-full text-left p-3 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800/80 transition-colors flex items-start gap-3 cursor-pointer group"
-                        >
-                          <div className="w-9 h-9 rounded-xl bg-zinc-100 dark:bg-zinc-800 group-hover:bg-blue-50 dark:group-hover:bg-blue-950/40 flex items-center justify-center shrink-0 text-zinc-700 dark:text-zinc-300 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
-                            <Calendar className="w-4 h-4" />
-                          </div>
-                          <div className="min-w-0">
-                            <div className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
-                              {ui.menuSchedule}
-                            </div>
-                            <div className="text-xs text-zinc-500 dark:text-zinc-400 leading-tight mt-0.5">
-                              {ui.menuScheduleDesc}
-                            </div>
-                          </div>
+                          <span>{t.hero.btnJoin}</span>
+                          <ArrowRight className="w-3 h-3" />
                         </button>
                       </div>
-                    )}
+                    </form>
                   </div>
 
-                  <button
-                    type="button"
-                    onClick={() => setIsScheduleMeetingOpen(true)}
-                    className="whitespace-nowrap px-4 py-3 bg-white hover:bg-zinc-50 dark:bg-[#18181c] dark:hover:bg-[#222228] text-zinc-800 dark:text-zinc-100 font-semibold rounded-xl transition-colors flex items-center justify-center gap-2 text-sm sm:text-base cursor-pointer border border-zinc-300 dark:border-zinc-800"
-                  >
-                    <Calendar className="w-4 h-4 shrink-0 text-zinc-500 dark:text-zinc-400" />
-                    <span>
-                      {language === 'ja' ? '予定を設定' : language === 'en' ? 'Schedule' : 'Đặt lịch họp'}
-                    </span>
-                  </button>
-
-                  {/* Unified Room Code Input */}
-                  <form onSubmit={handleJoinWithCode} className="relative flex items-center">
-                    <div className="relative flex items-center rounded-xl bg-white dark:bg-[#18181c] border border-zinc-300 dark:border-zinc-800 focus-within:border-blue-500 transition-all">
-                      <Keyboard className="w-4 h-4 text-zinc-400 ml-3.5 shrink-0" />
-                      <input
-                        type="text"
-                        placeholder={t.hero.inputRoomCode}
-                        value={meetingCodeInput}
-                        onChange={(e) => {
-                          setMeetingCodeInput(extractMeetingCode(e.target.value));
-                          if (error) setError(null);
-                        }}
-                        aria-label={t.hero.inputRoomCode}
-                        className="w-40 sm:w-48 bg-transparent text-zinc-900 dark:text-zinc-100 text-sm sm:text-base font-medium px-3 py-3 outline-none uppercase font-mono tracking-wider placeholder-zinc-400 dark:placeholder-zinc-500"
-                      />
-                      <button
-                        type="submit"
-                        disabled={!meetingCodeInput.trim()}
-                        className={`mr-1.5 px-3 py-2 rounded-lg text-xs font-semibold transition-all flex items-center gap-1 cursor-pointer disabled:cursor-default ${
-                          meetingCodeInput.trim()
-                            ? 'bg-blue-600 text-white hover:bg-blue-500'
-                            : 'text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300'
-                        }`}
-                        aria-label={t.hero.btnJoin}
-                      >
-                        <span>{t.hero.btnJoin}</span>
-                        <ArrowRight className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                  </form>
+                  <UpcomingMeetingsStrip
+                    refreshKey={scheduleRefreshKey}
+                    onOpenCalendar={() => navigate('/calendar')}
+                  />
                 </div>
-
-                <UpcomingMeetingsStrip
-                  refreshKey={scheduleRefreshKey}
-                  onOpenCalendar={() => navigate('/calendar')}
-                />
               </div>
 
               {/* Right: Live Interactive Demo Studio Preview */}
               <div className="flex relative group shrink-0 w-full lg:w-auto justify-center">
                 {isPreviewVisible ? (
-                  <>
+                  <div className="relative">
+                    <div className="mb-2 px-3 py-1.5 rounded-xl bg-white/80 dark:bg-zinc-900/80 border border-zinc-200/80 dark:border-zinc-800 flex items-center justify-between shadow-2xs backdrop-blur-md text-[11px] font-semibold text-zinc-600 dark:text-zinc-300">
+                      <div className="flex items-center gap-1.5">
+                        <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
+                        <span>LayaMeet Live Overlay • Zoom & Meet Companion</span>
+                      </div>
+                      <span className="px-2 py-0.5 rounded-md bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 text-[10px] font-bold">
+                        Always-On-Top
+                      </span>
+                    </div>
                     <div className="absolute -inset-2 bg-gradient-to-tr from-blue-600/10 via-indigo-600/5 to-transparent rounded-3xl blur-xl pointer-events-none" />
                     <InteractiveMeetingPreview onClose={() => setIsPreviewVisible(false)} />
-                  </>
+                  </div>
                 ) : (
                   <div className="flex flex-col items-center justify-center p-8 rounded-3xl border border-dashed border-zinc-300 dark:border-zinc-800 bg-white/40 dark:bg-zinc-900/40 backdrop-blur-sm text-center max-w-sm animate-in fade-in zoom-in-95 duration-200">
                     <div className="w-12 h-12 rounded-2xl bg-blue-500/10 border border-blue-500/20 text-blue-600 dark:text-blue-400 flex items-center justify-center mb-3">
@@ -1050,6 +1160,14 @@ export const HomePage: React.FC<HomePageProps> = ({ forcedLanguage }) => {
                 )}
               </div>
             </section>
+          )}
+
+          {/* ── B2B SAAS DESKTOP COMPANION LANDING SECTIONS ── */}
+          {activeSection === 'home' && (
+            <DesktopLandingSections
+              onOpenDownload={() => setIsDownloadModalOpen(true)}
+              language={language}
+            />
           )}
 
           {/* ── FEATURES section (inline) ── */}
@@ -1262,6 +1380,13 @@ export const HomePage: React.FC<HomePageProps> = ({ forcedLanguage }) => {
         isOpen={legalModalType !== null}
         type={legalModalType}
         onClose={() => setLegalModalType(null)}
+      />
+
+      {/* Windows Desktop App Download Modal */}
+      <DownloadModal
+        isOpen={isDownloadModalOpen}
+        language={language}
+        onClose={() => setIsDownloadModalOpen(false)}
       />
     </div>
   );
