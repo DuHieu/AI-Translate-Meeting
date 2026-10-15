@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, Download, Monitor, CheckCircle2, ShieldCheck, Zap, ArrowRight, ExternalLink } from 'lucide-react';
+import { X, Download, Monitor, CheckCircle2, ShieldCheck, Zap, ExternalLink } from 'lucide-react';
 
 interface DownloadModalProps {
   isOpen: boolean;
@@ -135,11 +135,8 @@ export const DownloadModal: React.FC<DownloadModalProps> = ({ isOpen, onClose, l
           <a
             href="/downloads/LayaMeet-Desktop-Setup-v1.0.0.exe"
             download="LayaMeet-Desktop-Setup-v1.0.0.exe"
-            onClick={(e) => {
-              // Gracefully handle if file isn't uploaded yet by showing notification or fallback
-              if (!window.location.host.includes('localhost')) {
-                // Production download link or direct installer
-              }
+            onClick={() => {
+              // Production download link or direct installer
             }}
             className="w-full py-3.5 px-5 rounded-xl bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-semibold flex items-center justify-center gap-2.5 shadow-sm transition-all cursor-pointer group"
           >
