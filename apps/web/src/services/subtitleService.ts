@@ -1,5 +1,6 @@
 import { PipelinePhase, PipelineStatusMessage, SubtitleMessage } from '../types/subtitle';
 import type { ByokProvider } from '../utils/userSettings';
+import { getSubtitleWsUrl } from '../utils/desktopBridge';
 
 type SubtitleCallback = (msg: SubtitleMessage) => void;
 type PipelineStatusCallback = (status: PipelineStatusMessage) => void;
@@ -249,9 +250,8 @@ export class SubtitleWebSocketService {
   }
 
   private buildUrl(options: SubtitleConnectOptions): string {
-    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const endpoint = import.meta.env.VITE_SUBTITLE_WS_URL || `${protocol}//${window.location.host}/ws/transcribe`;
-    const url = new URL(endpoint, `${protocol}//${window.location.host}`);
+    const endpoint = getSubtitleWsUrl();
+    const url = new URL(endpoint);
 
     url.searchParams.set('meetingId', options.meetingId);
     url.searchParams.set('participantId', options.participantId);

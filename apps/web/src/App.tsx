@@ -9,8 +9,10 @@ import { ScrollToTop } from './components/common/ScrollToTop';
 import { AdminRouteGuard } from './components/admin/AdminRouteGuard';
 import { isOpsSubdomain } from './utils/subdomain';
 import { PAYMENT_ENABLED } from './config/featureFlags';
+import { isDesktopApp } from './utils/desktopBridge';
 
 const HomePage = lazy(() => import('./pages/HomePage').then((module) => ({ default: module.HomePage })));
+const DesktopHomeScreen = lazy(() => import('./components/desktop/DesktopHomeScreen').then((module) => ({ default: module.DesktopHomeScreen })));
 export const PreJoinPage = lazy(() => import('./pages/PreJoinPage').then((module) => ({ default: module.PreJoinPage })));
 const MeetingPage = lazy(() => import('./pages/MeetingPage').then((module) => ({ default: module.MeetingPage })));
 const DevelopersPage = lazy(() => import('./pages/DevelopersPage').then((module) => ({ default: module.DevelopersPage })));
@@ -67,11 +69,14 @@ export const App: React.FC = () => {
                       <AdminRouteGuard>
                         <AdminDashboardPage />
                       </AdminRouteGuard>
+                    ) : isDesktopApp() ? (
+                      <DesktopHomeScreen />
                     ) : (
                       <HomePage />
                     )
                   }
                 />
+                <Route path="/desktop" element={<DesktopHomeScreen />} />
                 <Route path="/ja" element={<HomePage forcedLanguage="ja" />} />
                 <Route path="/en" element={<HomePage forcedLanguage="en" />} />
                 <Route path="/auth/callback" element={<AuthCallbackPage />} />

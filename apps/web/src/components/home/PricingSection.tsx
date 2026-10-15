@@ -5,6 +5,7 @@ import { EnterpriseDemoModal } from './EnterpriseDemoModal';
 import { useLanguage } from '../../context/language-context-def';
 import { useAuth } from '../../context/auth-context-def';
 import { AccountSubscriptionResponse, meetingApi } from '../../api/meetingApi';
+import { PAYMENT_ENABLED } from '../../config/featureFlags';
 import {
   VisaIcon,
   MastercardIcon,
@@ -702,6 +703,10 @@ export const PricingSection: React.FC<PricingSectionProps> = ({ onSelectTier, on
                   <button
                     type="button"
                     onClick={() => {
+                      if (!PAYMENT_ENABLED) {
+                        handleEnterpriseClick();
+                        return;
+                      }
                       if (tier.id === 'pro') {
                         setIsCheckoutOpen(true);
                       } else if (tier.id === 'pro_plus') {
@@ -718,11 +723,11 @@ export const PricingSection: React.FC<PricingSectionProps> = ({ onSelectTier, on
                         : 'bg-[#202025] hover:bg-[#28282f] text-white border border-zinc-800 hover:border-zinc-700'
                     }`}
                   >
-                    <span>{tier.ctaText}</span>
+                    <span>{!PAYMENT_ENABLED && isPro ? (language === 'vi' ? 'Liên hệ tư vấn' : language === 'ja' ? 'お問い合わせ' : 'Contact Us') : tier.ctaText}</span>
                     <ArrowRight className="w-3.5 h-3.5" />
                   </button>
 
-                  {!user && isPro && (
+                  {!user && isPro && PAYMENT_ENABLED && (
                     <button
                       type="button"
                       onClick={() => void handleAccountNoteSignIn()}
@@ -744,21 +749,23 @@ export const PricingSection: React.FC<PricingSectionProps> = ({ onSelectTier, on
         )}
 
         {/* TRAE Style Supported Payment Methods Footer Bar */}
-        <div className="mt-16 sm:mt-20 text-center space-y-4">
-          <p className="text-xs text-zinc-400 font-medium tracking-wide uppercase">
-            {content.paymentMethodsSupported}
-          </p>
-          <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-4 max-w-3xl mx-auto px-4 opacity-90 hover:opacity-100 transition-opacity">
-            <VisaIcon className="h-6 w-auto" />
-            <MastercardIcon className="h-6 w-auto" />
-            <AmexIcon className="h-6 w-auto" />
-            <JcbIcon className="h-6 w-auto" />
-            <DiscoverIcon className="h-6 w-auto" />
-            <UnionPayIcon className="h-6 w-auto" />
-            <ApplePayIcon className="h-6 w-auto" />
-            <GooglePayIcon className="h-6 w-auto" />
+        {PAYMENT_ENABLED && (
+          <div className="mt-16 sm:mt-20 text-center space-y-4">
+            <p className="text-xs text-zinc-400 font-medium tracking-wide uppercase">
+              {content.paymentMethodsSupported}
+            </p>
+            <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-4 max-w-3xl mx-auto px-4 opacity-90 hover:opacity-100 transition-opacity">
+              <VisaIcon className="h-6 w-auto" />
+              <MastercardIcon className="h-6 w-auto" />
+              <AmexIcon className="h-6 w-auto" />
+              <JcbIcon className="h-6 w-auto" />
+              <DiscoverIcon className="h-6 w-auto" />
+              <UnionPayIcon className="h-6 w-auto" />
+              <ApplePayIcon className="h-6 w-auto" />
+              <GooglePayIcon className="h-6 w-auto" />
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Wired Modals */}
         <CheckoutModal
