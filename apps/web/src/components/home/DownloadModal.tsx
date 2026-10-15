@@ -165,6 +165,18 @@ export const DownloadModal: React.FC<DownloadModalProps> = ({ isOpen, onClose, l
               <ExternalLink className="w-3 h-3" />
             </a>
           </div>
+
+          {/* SmartScreen micro-tip */}
+          <div className="mt-2 p-2.5 rounded-xl bg-amber-50/90 dark:bg-amber-950/30 border border-amber-200/80 dark:border-amber-900/60 text-[11px] text-amber-900 dark:text-amber-200 leading-relaxed flex items-start gap-2">
+            <span className="shrink-0 text-xs mt-0.5">💡</span>
+            <span>
+              {isJa
+                ? 'Windows SmartScreenが表示された場合は、「詳細情報」➔「実行」をクリックして開始してください。'
+                : isEn
+                ? 'If Windows SmartScreen appears, click "More info" ➔ "Run anyway" to complete setup.'
+                : 'Nếu Windows SmartScreen hiển thị thông báo, hãy bấm "More info" (Thông tin thêm) ➔ "Run anyway" (Vẫn chạy).'}
+            </span>
+          </div>
         </div>
       </div>
     </div>
