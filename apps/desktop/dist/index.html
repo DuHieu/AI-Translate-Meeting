@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LayaMeet Live Overlay</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      background: transparent;
+      color: #f1f5f9;
+      height: 100vh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      padding: 6px;
+    }
+    .overlay-card {
+      background: rgba(11, 15, 25, 0.88);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 16px;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.05);
+      transition: all 0.2s ease;
+    }
+    .drag-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 14px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      cursor: grab;
+    }
+    .drag-header:active {
+      cursor: grabbing;
+    }
+    .brand-pill {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: -0.2px;
+    }
+    .pulse-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #10b981;
+      box-shadow: 0 0 10px #10b981;
+      animation: pulse 1.8s infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.5; transform: scale(0.85); }
+    }
+    .stat-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 2px 7px;
+      border-radius: 6px;
+      font-size: 10px;
+      font-weight: 600;
+      background: rgba(59, 130, 246, 0.15);
+      color: #60a5fa;
+      border: 1px solid rgba(59, 130, 246, 0.3);
+    }
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      -webkit-app-region: no-drag;
+    }
+    .btn-icon {
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      color: #94a3b8;
+      border-radius: 8px;
+      width: 26px;
+      height: 26px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 11px;
+      transition: all 0.15s ease;
+    }
+    .btn-icon:hover {
+      background: rgba(255, 255, 255, 0.14);
+      color: #ffffff;
+    }
+    .btn-icon.active {
+      background: #2563eb;
+      color: #ffffff;
+      border-color: #3b82f6;
+    }
+    .btn-close:hover {
+      background: #ef4444;
+      color: white;
+    }
+    .subtitles-area {
+      flex: 1;
+      padding: 10px 16px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 6px;
+      overflow: hidden;
+    }
+    .original-line {
+      font-size: 13px;
+      color: #94a3b8;
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+      line-height: 1.4;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .speaker-tag {
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      padding: 1px 6px;
+      border-radius: 4px;
+      background: rgba(255, 255, 255, 0.08);
+      color: #cbd5e1;
+      flex-shrink: 0;
+    }
+    .translated-line {
+      font-size: 17px;
+      font-weight: 600;
+      color: #ffffff;
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+      line-height: 1.35;
+      text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+    }
+    .translated-text {
+      color: #38bdf8;
+      background: linear-gradient(90deg, #38bdf8, #818cf8);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      font-weight: 700;
+    }
+    .bottom-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 6px 14px;
+      background: rgba(0, 0, 0, 0.25);
+      border-top: 1px solid rgba(255, 255, 255, 0.06);
+      font-size: 11px;
+    }
+    .lang-pills {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .lang-btn {
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      color: #94a3b8;
+      padding: 3px 8px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .lang-btn.active {
+      background: rgba(56, 189, 248, 0.2);
+      color: #38bdf8;
+      border-color: rgba(56, 189, 248, 0.4);
+    }
+    .visualizer-canvas {
+      height: 14px;
+      width: 70px;
+    }
+    .export-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      background: rgba(16, 185, 129, 0.15);
+      color: #34d399;
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      padding: 3px 9px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .export-btn:hover {
+      background: rgba(16, 185, 129, 0.25);
+    }
+  </style>
+</head>
+<body>
+  <div class="overlay-card" id="overlayCard">
+    <!-- Draggable Header Bar -->
+    <div class="drag-header" data-tauri-drag-region id="dragHeader">
+      <div class="brand-pill" data-tauri-drag-region>
+        <span class="pulse-dot"></span>
+        <span style="color: #60a5fa;">LayaMeet</span>
+        <span style="color: #64748b; font-weight: 500;">Live Overlay</span>
+        <span class="stat-badge">⚡ &lt;350ms</span>
+        <span class="stat-badge" style="color: #34d399; background: rgba(16,185,129,0.12); border-color: rgba(16,185,129,0.25);">100% RAM-Only</span>
+      </div>
+
+      <div class="header-actions">
+        <button class="btn-icon" id="btnClickThrough" title="Click-through mode (Bấm xuyên qua phụ đề)">🖱️</button>
+        <button class="btn-icon" id="btnFontPlus" title="Tăng cỡ chữ">A+</button>
+        <button class="btn-icon" id="btnFontMinus" title="Giảm cỡ chữ">A-</button>
+        <button class="btn-icon btn-close" id="btnClose" title="Đóng thanh phụ đề">✕</button>
+      </div>
+    </div>
+
+    <!-- Live Bilingual Subtitle Box -->
+    <div class="subtitles-area" id="subtitleContainer">
+      <div class="original-line">
+        <span class="speaker-tag" id="speakerTag">Kenji (Tokyo)</span>
+        <span id="originalText">「第3四半期の売上目標について、予定通り達成できる見込みです。」</span>
+      </div>
+      <div class="translated-line">
+        <span class="speaker-tag" style="background: rgba(56,189,248,0.15); color: #38bdf8;">Laya AI</span>
+        <span class="translated-text" id="translatedText">"Về mục tiêu doanh thu quý 3, chúng tôi dự kiến sẽ đạt được đúng như kế hoạch."</span>
+      </div>
+    </div>
+
+    <!-- Bottom Controls & Visualizer -->
+    <div class="bottom-bar">
+      <div class="lang-pills">
+        <span style="color: #64748b; font-size: 10px; margin-right: 2px;">DỊCH SANG:</span>
+        <button class="lang-btn active" data-lang="vi">🇻🇳 Tiếng Việt</button>
+        <button class="lang-btn" data-lang="en">🇺🇸 English</button>
+        <button class="lang-btn" data-lang="ja">🇯🇵 日本語</button>
+      </div>
+
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <canvas class="visualizer-canvas" id="audioWave" width="70" height="14"></canvas>
+        <button class="export-btn" id="btnExport">📝 Lưu Biên Bản .MD</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Live Speech Demo Simulation & Audio Engine Bridge
+    const DEMO_TRANSCRIPTS = {
+      vi: [
+        { speaker: "Kenji (Tokyo)", src: "「第3四半期の売上目標について、予定通り達成できる見込みです。」", dst: "Về mục tiêu doanh thu quý 3, dự kiến sẽ đạt đúng kế hoạch." },
+        { speaker: "David (San Francisco)", src: "We have finalized the system architecture and AWS migration plan.", dst: "Chúng tôi đã hoàn thiện kiến trúc hệ thống và kế hoạch chuyển đổi lên AWS." },
+        { speaker: "Minh (Hà Nội)", src: "Chúng tôi đã kiểm thử tốc độ phụ đề đạt dưới 200 mili-giây.", dst: "Độ trễ phụ đề thời gian thực được bảo đảm ở mức tối ưu nhất." },
+        { speaker: "Sarah (Singapore)", src: "Action item: Deploy the zero-latency companion before Friday's demo.", dst: "Việc cần làm: Triển khai bản desktop trước buổi demo thứ Sáu." }
+      ],
+      en: [
+        { speaker: "Kenji (Tokyo)", src: "「第3四半期の売上目標について、予定通り達成できる見込みです。」", dst: "Regarding Q3 revenue goals, we are on track to achieve them as planned." },
+        { speaker: "Minh (Hà Nội)", src: "Tiến độ dự án hiện đang chạy trước kế hoạch 2 ngày.", dst: "Project progress is currently running 2 days ahead of schedule." }
+      ],
+      ja: [
+        { speaker: "David (San Francisco)", src: "We have finalized the system architecture and AWS migration plan.", dst: "システム設計およびAWS移行計画が確定いたしました。" },
+        { speaker: "Minh (Hà Nội)", src: "Bản phụ đề chạy nổi luôn hiển thị phía trên Zoom và Teams.", dst: "フローティング字幕バーは常にZoomおよびTeamsの最前面に表示されます。" }
+      ]
+    };
+
+    let currentLang = 'vi';
+    let demoIndex = 0;
+    let fontSize = 17;
+
+    const originalTextEl = document.getElementById('originalText');
+    const translatedTextEl = document.getElementById('translatedText');
+    const speakerTagEl = document.getElementById('speakerTag');
+
+    function updateSubtitle() {
+      const list = DEMO_TRANSCRIPTS[currentLang] || DEMO_TRANSCRIPTS.vi;
+      const item = list[demoIndex % list.length];
+      speakerTagEl.textContent = item.speaker;
+      originalTextEl.textContent = item.src;
+      translatedTextEl.textContent = item.dst;
+      demoIndex++;
+    }
+
+    setInterval(updateSubtitle, 4500);
+
+    // Language switcher
+    document.querySelectorAll('.lang-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.lang-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        currentLang = btn.dataset.lang;
+        updateSubtitle();
+      });
+    });
+
+    // Font size controls
+    document.getElementById('btnFontPlus').addEventListener('click', () => {
+      if (fontSize < 24) fontSize += 2;
+      translatedTextEl.style.fontSize = fontSize + 'px';
+    });
+
+    document.getElementById('btnFontMinus').addEventListener('click', () => {
+      if (fontSize > 13) fontSize -= 2;
+      translatedTextEl.style.fontSize = fontSize + 'px';
+    });
+
+    // Click-through toggle (transparent click pass)
+    let clickThrough = false;
+    document.getElementById('btnClickThrough').addEventListener('click', () => {
+      clickThrough = !clickThrough;
+      document.getElementById('btnClickThrough').classList.toggle('active', clickThrough);
+      if (window.__TAURI__ && window.__TAURI__.core) {
+        window.__TAURI__.core.invoke('set_click_through', { enabled: clickThrough });
+      }
+    });
+
+    // Close button
+    document.getElementById('btnClose').addEventListener('click', () => {
+      if (window.__TAURI__ && window.__TAURI__.window) {
+        window.__TAURI__.window.getCurrentWindow().close();
+      } else {
+        window.close();
+      }
+    });
+
+    // Export minutes button
+    document.getElementById('btnExport').addEventListener('click', () => {
+      const minutes = `# LayaMeet AI - Meeting Minutes\nDate: ${new Date().toLocaleString()}\n\n## Action Items\n- [x] Finalize AWS migration plan\n- [ ] Deploy zero-latency companion\n\n## Summary\nAll teams confirmed ready for release with latency under 350ms.`;
+      if (window.__TAURI__ && window.__TAURI__.core) {
+        window.__TAURI__.core.invoke('save_meeting_minutes', {
+          filename: `Meeting-Minutes-${Date.now()}.md`,
+          content: minutes
+        }).then(path => alert('Đã lưu biên bản vào: ' + path));
+      } else {
+        const blob = new Blob([minutes], { type: 'text/markdown' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = `Meeting-Minutes-${Date.now()}.md`;
+        a.click();
+      }
+    });
+
+    // Audio Visualizer Wave Simulation
+    const canvas = document.getElementById('audioWave');
+    const ctx = canvas.getContext('2d');
+    let phase = 0;
+
+    function drawWave() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = '#38bdf8';
+      const bars = 8;
+      const barWidth = 4;
+      const gap = 4;
+
+      for (let i = 0; i < bars; i++) {
+        const h = Math.abs(Math.sin(phase + i * 0.6)) * 10 + 2;
+        const x = i * (barWidth + gap) + 4;
+        const y = (canvas.height - h) / 2;
+        ctx.fillRect(x, y, barWidth, h);
+      }
+      phase += 0.08;
+      requestAnimationFrame(drawWave);
+    }
+    drawWave();
+  </script>
+</body>
+</html>
