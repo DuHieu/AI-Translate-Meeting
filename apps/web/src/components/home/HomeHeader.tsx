@@ -6,6 +6,7 @@ import { LanguageSwitcher } from '../common/LanguageSwitcher';
 import { ThemeToggle } from '../common/ThemeToggle';
 import { GoogleAuthControl } from '../auth/GoogleAuthControl';
 import { HOME_COPY, HomeSection } from './homeCopy';
+import { PAYMENT_ENABLED } from '../../config/featureFlags';
 
 interface HomeHeaderProps {
   activeSection: HomeSection;
@@ -21,7 +22,7 @@ export function HomeHeader({ activeSection, menuOpen, onMenu, onPreferences, onN
   const links = [
     { id: 'home', label: copy.home },
     { id: 'features', label: t.nav.features },
-    { id: 'pricing', label: t.nav.pricing },
+    ...(PAYMENT_ENABLED ? [{ id: 'pricing' as const, label: t.nav.pricing }] : []),
     { id: 'faq', label: t.nav.faq },
   ] as const;
 

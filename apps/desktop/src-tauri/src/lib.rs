@@ -52,7 +52,14 @@ fn log_file(msg: &str) {
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     std::panic::set_hook(Box::new(|info| {
-        log_file(&format!("FATAL PANIC: {:?}", info));
+        let msg = if let Some(s) = info.payload().downcast_ref::<&str>() {
+            (*s).to_string()
+        } else if let Some(s) = info.payload().downcast_ref::<String>() {
+            s.clone()
+        } else {
+            format!("{:?}", info)
+        };
+        log_file(&format!("FATAL PANIC: {} at {:?}", msg, info.location()));
     }));
 
     log_file("1. LayaMeet Companion Starting");
@@ -102,9 +109,8 @@ pub fn run() {
 
     app.run(|_app_handle, event| {
         match &event {
-            tauri::RunEvent::ExitRequested { api, .. } => {
-                log_file(&format!("RunEvent::ExitRequested received! Preventing exit..."));
-                api.prevent_exit();
+            tauri::RunEvent::ExitRequested { .. } => {
+                log_file("RunEvent::ExitRequested received. Exiting cleanly.");
             }
             tauri::RunEvent::WindowEvent { label, event: win_event, .. } => {
                 log_file(&format!("WindowEvent [{}]: {:?}", label, win_event));

@@ -4,6 +4,7 @@ import { LayaMeetLogo } from './LayaMeetLogo';
 import { ShieldCheck } from 'lucide-react';
 import { useLanguage } from '../../context/language-context-def';
 import { MoitBadge } from './MoitBadge';
+import { PAYMENT_ENABLED } from '../../config/featureFlags';
 
 interface FooterProps {
   onOpenStatusModal?: () => void;
@@ -45,9 +46,11 @@ export const Footer: React.FC<FooterProps> = ({
             <Link to="/features" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
               {t.nav.features}
             </Link>
-            <Link to="/pricing" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
-              {t.nav.pricing}
-            </Link>
+            {PAYMENT_ENABLED && (
+              <Link to="/pricing" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+                {t.nav.pricing}
+              </Link>
+            )}
             <Link to="/faq" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
               {t.nav.faq}
             </Link>
@@ -73,18 +76,22 @@ export const Footer: React.FC<FooterProps> = ({
             <Link to="/terms-of-service" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
               {language === 'ja' ? '利用規約' : language === 'en' ? 'Terms of Service' : 'Điều khoản dịch vụ'}
             </Link>
-            <span>·</span>
-            <Link to="/payment-policy" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
-              {language === 'ja' ? '決済ポリシー' : language === 'en' ? 'Payment Policy' : 'Chính sách thanh toán'}
-            </Link>
-            <span>·</span>
-            <Link to="/refund-policy" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
-              {language === 'ja' ? '返金ポリシー' : language === 'en' ? 'Refund Policy' : 'Khiếu nại & hoàn tiền'}
-            </Link>
-            <span>·</span>
-            <Link to="/delivery-policy" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
-              {language === 'ja' ? 'サービス提供' : language === 'en' ? 'Service Delivery' : 'Giao nhận dịch vụ'}
-            </Link>
+            {PAYMENT_ENABLED && (
+              <>
+                <span>·</span>
+                <Link to="/payment-policy" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+                  {language === 'ja' ? '決済ポリシー' : language === 'en' ? 'Payment Policy' : 'Chính sách thanh toán'}
+                </Link>
+                <span>·</span>
+                <Link to="/refund-policy" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+                  {language === 'ja' ? '返金ポリシー' : language === 'en' ? 'Refund Policy' : 'Khiếu nại & hoàn tiền'}
+                </Link>
+                <span>·</span>
+                <Link to="/delivery-policy" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+                  {language === 'ja' ? 'サービス提供' : language === 'en' ? 'Service Delivery' : 'Giao nhận dịch vụ'}
+                </Link>
+              </>
+            )}
           </div>
 
           <div className="flex items-center gap-3 shrink-0">
@@ -92,6 +99,7 @@ export const Footer: React.FC<FooterProps> = ({
           </div>
         </div>
       </div>
+
 
       {/* ── Sub-footer: 1 dòng tinh gọn, mỏng nhẹ ─────────────────── */}
       <div className="border-t border-zinc-200/80 dark:border-zinc-800/80 py-3 px-4 sm:px-6 bg-zinc-50/70 dark:bg-[#070708]">

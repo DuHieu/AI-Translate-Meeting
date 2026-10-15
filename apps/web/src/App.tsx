@@ -8,6 +8,7 @@ import { CookieConsentBanner } from './components/common/CookieConsentBanner';
 import { ScrollToTop } from './components/common/ScrollToTop';
 import { AdminRouteGuard } from './components/admin/AdminRouteGuard';
 import { isOpsSubdomain } from './utils/subdomain';
+import { PAYMENT_ENABLED } from './config/featureFlags';
 
 const HomePage = lazy(() => import('./pages/HomePage').then((module) => ({ default: module.HomePage })));
 export const PreJoinPage = lazy(() => import('./pages/PreJoinPage').then((module) => ({ default: module.PreJoinPage })));
@@ -85,10 +86,21 @@ export const App: React.FC = () => {
                 <Route path="/developers" element={<DevelopersPage />} />
                 <Route path="/settings" element={<SettingsPage />} />
                 <Route path="/system-status" element={<SystemStatusPage />} />
-                <Route path="/pricing" element={<PricingPage />} />
-                <Route path="/vi/pricing" element={<PricingPage forcedLanguage="vi" />} />
-                <Route path="/en/pricing" element={<PricingPage forcedLanguage="en" />} />
-                <Route path="/ja/pricing" element={<PricingPage forcedLanguage="ja" />} />
+                {PAYMENT_ENABLED ? (
+                  <>
+                    <Route path="/pricing" element={<PricingPage />} />
+                    <Route path="/vi/pricing" element={<PricingPage forcedLanguage="vi" />} />
+                    <Route path="/en/pricing" element={<PricingPage forcedLanguage="en" />} />
+                    <Route path="/ja/pricing" element={<PricingPage forcedLanguage="ja" />} />
+                  </>
+                ) : (
+                  <>
+                    <Route path="/pricing" element={<Navigate to="/" replace />} />
+                    <Route path="/vi/pricing" element={<Navigate to="/" replace />} />
+                    <Route path="/en/pricing" element={<Navigate to="/" replace />} />
+                    <Route path="/ja/pricing" element={<Navigate to="/" replace />} />
+                  </>
+                )}
                 <Route path="/features" element={<FeaturesPage />} />
                 <Route path="/vi/features" element={<FeaturesPage forcedLanguage="vi" />} />
                 <Route path="/en/features" element={<FeaturesPage forcedLanguage="en" />} />
