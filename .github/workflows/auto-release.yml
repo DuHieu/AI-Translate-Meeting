@@ -1,12 +1,6 @@
 name: Automated Semantic Versioning & Release
 
 on:
-  push:
-    branches: [ main ]
-    paths-ignore:
-      - 'CHANGELOG.md'
-      - '.agent-bridge/**'
-      - 'docs/**'
   workflow_dispatch:
     inputs:
       release_type:

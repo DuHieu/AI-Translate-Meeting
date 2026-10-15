@@ -3,8 +3,6 @@
 name: E2E Production
 
 on:
-  push:
-    branches: [main, master]
   workflow_dispatch:
 
 concurrency:

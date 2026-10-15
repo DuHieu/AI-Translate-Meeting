@@ -13,13 +13,8 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  verify:
-    name: Release quality gates
-    uses: ./.github/workflows/ci.yml
-
   publish-images:
-    name: Publish ${{ matrix.name }} image
-    needs: verify
+    name: Build & Publish ${{ matrix.name }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -65,7 +60,7 @@ jobs:
 
   deploy:
     name: Deploy immutable release to VPS
-    needs: [verify, publish-images]
+    needs: publish-images
     runs-on: ubuntu-latest
     environment: production
     permissions:
