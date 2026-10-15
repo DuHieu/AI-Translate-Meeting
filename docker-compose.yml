@@ -104,7 +104,7 @@ services:
       - WHISPER_DEVICE=${WHISPER_DEVICE:-cpu}
       - WHISPER_COMPUTE_TYPE=${WHISPER_COMPUTE_TYPE:-int8}
       - WHISPER_CPU_THREADS=${WHISPER_CPU_THREADS:-4}
-      - WHISPER_PRELOAD=${WHISPER_PRELOAD:-false}
+      - WHISPER_PRELOAD=${WHISPER_PRELOAD:-true}
       - STT_PROVIDER=${STT_PROVIDER:-sherpa}
       - SHERPA_ENABLED=${SHERPA_ENABLED:-true}
       - SHERPA_MODEL_DIR=${SHERPA_MODEL_DIR:-/root/.cache/sherpa-onnx/models/sherpa-onnx-streaming-zipformer-ar_en_id_ja_ru_th_vi_zh-2025-02-10}
