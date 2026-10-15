@@ -9,16 +9,19 @@
   "app": {
     "windows": [
       {
+        "label": "main",
         "title": "LayaMeet Live Overlay",
-        "width": 820,
-        "height": 240,
+        "width": 860,
+        "height": 280,
         "minWidth": 480,
-        "minHeight": 120,
+        "minHeight": 140,
         "resizable": true,
         "fullscreen": false,
         "alwaysOnTop": true,
-        "decorations": false,
-        "transparent": true,
+        "decorations": true,
+        "transparent": false,
+        "visible": true,
+        "center": true,
         "shadow": true,
         "skipTaskbar": false
       }
