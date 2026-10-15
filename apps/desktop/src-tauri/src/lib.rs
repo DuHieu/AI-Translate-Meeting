@@ -2,7 +2,7 @@ pub mod audio_engine;
 pub mod window_manager;
 
 use std::sync::Arc;
-use tauri::{AppHandle, Emitter, Manager, State, WebviewWindow};
+use tauri::{AppHandle, Emitter, State, WebviewWindow};
 use audio_engine::{AudioDeviceInfo, AudioEngine};
 
 struct AppState {
