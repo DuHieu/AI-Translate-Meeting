@@ -16,7 +16,6 @@ import {
 import { Mic, LogIn, ArrowLeft, ChevronDown, SlidersHorizontal, Settings, Volume2, Globe } from 'lucide-react';
 import { LayaMeetLogo } from '../components/common/LayaMeetLogo';
 import { ThemeToggle } from '../components/common/ThemeToggle';
-import { NeuralLinguisticBackground } from '../components/common/NeuralLinguisticBackground';
 import { GoogleAuthControl } from '../components/auth/GoogleAuthControl';
 import { useAuth } from '../context/auth-context-def';
 import { useLanguage } from '../context/language-context-def';
@@ -671,8 +670,6 @@ export const PreJoinPage: React.FC<PreJoinPageProps> = ({ onJoined }) => {
 
   return (
     <main className="prejoin-page relative min-h-dvh bg-slate-100/90 dark:bg-[#070709] text-zinc-900 dark:text-zinc-100 flex flex-col items-center justify-start sm:justify-center p-2.5 sm:p-6 transition-colors overflow-x-hidden overflow-y-auto">
-      {/* ── Interactive Neural Linguistic Synapse Network (Mouse reactive) ── */}
-      <NeuralLinguisticBackground />
 
       {/* ── Atmospheric Ambient Depth Light ──────────────────────── */}
       <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">

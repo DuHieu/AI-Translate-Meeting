@@ -23,102 +23,72 @@ export const Footer: React.FC<FooterProps> = ({
 
   return (
     <footer data-content-footer="true" className="border-t border-zinc-200 dark:border-[#222328] bg-white dark:bg-[#0b0b0d] text-zinc-600 dark:text-zinc-400 text-xs">
-      {/* ── Main Clean Footer Grid ─────────────────────────────────── */}
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-6 md:gap-8 items-start">
-          {/* Cột 1: Thương hiệu, Thông tin chủ sở hữu & Liên hệ (6 cột) */}
-          <div className="md:col-span-6 space-y-2.5">
-            <LayaMeetLogo size="md" />
-            <p className="text-zinc-500 dark:text-zinc-400 text-xs max-w-sm leading-relaxed">
-              {f.slogan}
-            </p>
-
-            <div className="pt-0.5 text-xs text-zinc-500 dark:text-zinc-400 flex flex-wrap items-center gap-x-3 gap-y-1">
-              <span>
-                {language === 'ja' ? 'お問い合わせ:' : language === 'en' ? 'Support:' : 'Hỗ trợ:'}{' '}
-                <a href="mailto:contact@layameet.com" className="text-blue-600 dark:text-blue-400 hover:underline font-medium">
-                  contact@layameet.com
-                </a>
-              </span>
-              <span>·</span>
-              <Link to="/contact" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
-                {language === 'ja' ? '法人導入相談' : language === 'en' ? 'Enterprise Contact' : 'Tư vấn triển khai'}
-              </Link>
-            </div>
-
-            <div className="pt-1.5 flex items-center gap-2.5">
-              <MoitBadge size="sm" />
-              <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-[11px] text-zinc-500 dark:text-zinc-400">
+      {/* ── Main Minimalist Footer ─────────────────────────────────── */}
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10 space-y-6">
+        {/* Top Row: Brand & Product Navigation */}
+        <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6 pb-6 border-b border-zinc-100 dark:border-zinc-900">
+          <div className="space-y-2">
+            <div className="flex items-center gap-3">
+              <LayaMeetLogo size="md" />
+              <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200/80 dark:border-emerald-900/60 text-[11px] font-medium text-emerald-700 dark:text-emerald-400">
                 <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
                 <span>100% RAM-Only</span>
               </div>
             </div>
+            <p className="text-zinc-500 dark:text-zinc-400 text-xs max-w-md leading-relaxed">
+              {f.slogan}
+            </p>
           </div>
 
-          {/* Cột 2 & 3: Song song 2 cột trên Mobile để cắt giảm 50% chiều dài trang */}
-          <div className="grid grid-cols-2 gap-4 sm:gap-6 md:contents">
-            {/* Cột 2: Sản phẩm (3 cột trên desktop) */}
-            <div className="md:col-span-3 space-y-2">
-              <div className="font-bold text-zinc-950 dark:text-white uppercase tracking-wider text-[11px]">
-                {f.productCol}
-              </div>
-              <ul className="space-y-1.5 text-xs text-zinc-500 dark:text-zinc-400">
-                <li>
-                  <Link to="/features" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
-                    {t.nav.features}
-                  </Link>
-                </li>
-                <li>
-                  <Link to="/pricing" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
-                    {t.nav.pricing}
-                  </Link>
-                </li>
-                <li>
-                  <Link to="/faq" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
-                    {t.nav.faq}
-                  </Link>
-                </li>
-                <li>
-                  <Link to={guideLink} className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
-                    {f.guides}
-                  </Link>
-                </li>
-              </ul>
-            </div>
+          {/* Clean Horizontal Links */}
+          <nav className="flex flex-wrap items-center gap-x-5 gap-y-2 text-xs font-medium text-zinc-700 dark:text-zinc-300">
+            <Link to="/features" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+              {t.nav.features}
+            </Link>
+            <Link to="/pricing" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+              {t.nav.pricing}
+            </Link>
+            <Link to="/faq" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+              {t.nav.faq}
+            </Link>
+            <Link to={guideLink} className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+              {f.guides}
+            </Link>
+            <Link to="/contact" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+              {language === 'ja' ? '法人導入相談' : language === 'en' ? 'Enterprise Contact' : 'Tư vấn triển khai'}
+            </Link>
+            <a href="mailto:contact@layameet.com" className="text-blue-600 dark:hover:underline">
+              contact@layameet.com
+            </a>
+          </nav>
+        </div>
 
-            {/* Cột 3: Chính sách bắt buộc Bộ Công Thương (3 cột trên desktop) */}
-            <div className="md:col-span-3 space-y-2">
-              <div className="font-bold text-zinc-950 dark:text-white uppercase tracking-wider text-[11px]">
-                {language === 'ja' ? '法的ポリシー' : language === 'en' ? 'Legal & Policies' : 'Chính Sách & Quy Định'}
-              </div>
-              <ul className="space-y-1.5 text-xs text-zinc-500 dark:text-zinc-400">
-                <li>
-                  <Link to="/payment-policy" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
-                    {language === 'ja' ? '決済ポリシー' : language === 'en' ? 'Payment Policy' : 'Chính sách thanh toán'}
-                  </Link>
-                </li>
-                <li>
-                  <Link to="/privacy-policy" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
-                    {language === 'ja' ? 'プライバシー' : language === 'en' ? 'Privacy Policy' : 'Chính sách bảo mật'}
-                  </Link>
-                </li>
-                <li>
-                  <Link to="/terms-of-service" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
-                    {language === 'ja' ? '利用規約' : language === 'en' ? 'Terms of Service' : 'Điều khoản dịch vụ'}
-                  </Link>
-                </li>
-                <li>
-                  <Link to="/refund-policy" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
-                    {language === 'ja' ? '返金ポリシー' : language === 'en' ? 'Refund Policy' : 'Khiếu nại & hoàn tiền'}
-                  </Link>
-                </li>
-                <li>
-                  <Link to="/delivery-policy" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
-                    {language === 'ja' ? 'サービス提供' : language === 'en' ? 'Service Delivery' : 'Giao nhận dịch vụ'}
-                  </Link>
-                </li>
-              </ul>
-            </div>
+        {/* Middle Row: Mandatory Policies & Compliance */}
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 text-[11px] text-zinc-500 dark:text-zinc-400">
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
+            <Link to="/privacy-policy" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+              {language === 'ja' ? 'プライバシーポリシー' : language === 'en' ? 'Privacy Policy' : 'Chính sách bảo mật'}
+            </Link>
+            <span>·</span>
+            <Link to="/terms-of-service" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+              {language === 'ja' ? '利用規約' : language === 'en' ? 'Terms of Service' : 'Điều khoản dịch vụ'}
+            </Link>
+            <span>·</span>
+            <Link to="/payment-policy" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+              {language === 'ja' ? '決済ポリシー' : language === 'en' ? 'Payment Policy' : 'Chính sách thanh toán'}
+            </Link>
+            <span>·</span>
+            <Link to="/refund-policy" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+              {language === 'ja' ? '返金ポリシー' : language === 'en' ? 'Refund Policy' : 'Khiếu nại & hoàn tiền'}
+            </Link>
+            <span>·</span>
+            <Link to="/delivery-policy" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+              {language === 'ja' ? 'サービス提供' : language === 'en' ? 'Service Delivery' : 'Giao nhận dịch vụ'}
+            </Link>
+          </div>
+
+          <div className="flex items-center gap-3 shrink-0">
+            <MoitBadge size="sm" />
           </div>
         </div>
       </div>

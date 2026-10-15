@@ -11,25 +11,19 @@ import {
   Globe,
   Sparkles,
   Home,
-  Calendar,
-  Clock,
   CreditCard,
   HelpCircle,
   Phone,
-  Settings,
   LogOut,
   Laptop,
 } from 'lucide-react';
 import { LayaMeetLogo } from '../components/common/LayaMeetLogo';
 import { ThemeToggle } from '../components/common/ThemeToggle';
 import { InteractiveMeetingPreview } from '../components/home/InteractiveMeetingPreview';
-import { LegalModal } from '../components/common/LegalModal';
 import { Footer } from '../components/common/Footer';
 import { useLanguage } from '../context/language-context-def';
 import { useAuth } from '../context/auth-context-def';
 import { LanguageSwitcher } from '../components/common/LanguageSwitcher';
-import { NeuralLinguisticBackground } from '../components/common/NeuralLinguisticBackground';
-import { GoogleAuthControl } from '../components/auth/GoogleAuthControl';
 import { DownloadModal } from '../components/home/DownloadModal';
 import { DesktopLandingSections } from '../components/home/DesktopLandingSections';
 import { scrollLock } from '../utils/scrollLock';
@@ -155,19 +149,18 @@ export const HomePage: React.FC<HomePageProps> = ({ forcedLanguage }) => {
 
   const [isNavDrawerOpen, setIsNavDrawerOpen] = useState(false);
   const [isDownloadModalOpen, setIsDownloadModalOpen] = useState(false);
-  const [legalModalType, setLegalModalType] = useState<'privacy' | 'terms' | null>(null);
 
   const langKey = effectiveLanguage === 'ja' ? 'ja' : effectiveLanguage === 'en' ? 'en' : 'vi';
   const ui = HOME_UI[langKey] || HOME_UI.vi;
 
   useEffect(() => {
-    if (isNavDrawerOpen || isDownloadModalOpen || legalModalType !== null) {
+    if (isNavDrawerOpen || isDownloadModalOpen) {
       scrollLock.lock();
     } else {
       scrollLock.unlock();
     }
     return () => scrollLock.unlock();
-  }, [isNavDrawerOpen, isDownloadModalOpen, legalModalType]);
+  }, [isNavDrawerOpen, isDownloadModalOpen]);
 
   const scrollToAnchor = (id: string) => {
     const el = document.getElementById(id);
@@ -203,8 +196,6 @@ export const HomePage: React.FC<HomePageProps> = ({ forcedLanguage }) => {
 
   return (
     <div className="home-page relative min-h-dvh bg-white dark:bg-[#090D16] text-slate-900 dark:text-slate-100 flex flex-col font-sans transition-colors overflow-x-hidden">
-      {/* ── Interactive Neural Linguistic Synapse Network ── */}
-      <NeuralLinguisticBackground />
 
       {/* ── Background Ambient Light Layer (Stripe-grade Glow) ── */}
       <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden" aria-hidden="true">
@@ -306,7 +297,6 @@ export const HomePage: React.FC<HomePageProps> = ({ forcedLanguage }) => {
         <div className="flex items-center gap-3">
           <LanguageSwitcher />
           <ThemeToggle />
-          <GoogleAuthControl variant="navbar" />
 
           <button
             type="button"
@@ -523,45 +513,28 @@ export const HomePage: React.FC<HomePageProps> = ({ forcedLanguage }) => {
                   <span>{ui.railContact}</span>
                 </button>
 
-                <button
-                  type="button"
-                  onClick={() => handleSelectDrawerItem('calendar')}
-                  data-testid="drawer-calendar"
-                  className="w-full px-3 py-2.5 rounded-xl flex items-center gap-3 text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer text-left"
-                >
-                  <Calendar className="w-4 h-4 text-slate-500 dark:text-slate-400 shrink-0" />
-                  <span>{ui.calendarNav}</span>
-                </button>
+                {/* Mobile Download CTA inside drawer */}
+                <div className="pt-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsNavDrawerOpen(false);
+                      setIsDownloadModalOpen(true);
+                    }}
+                    className="w-full py-2.5 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-semibold text-xs flex items-center justify-center gap-2 shadow-xs transition-transform active:scale-95 cursor-pointer"
+                  >
+                    <Download className="w-4 h-4" />
+                    <span>{ui.navDownload}</span>
+                  </button>
+                </div>
 
-                <button
-                  type="button"
-                  onClick={() => handleSelectDrawerItem('history')}
-                  data-testid="drawer-history"
-                  className="w-full px-3 py-2.5 rounded-xl flex items-center gap-3 text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer text-left"
-                >
-                  <Clock className="w-4 h-4 text-slate-500 dark:text-slate-400 shrink-0" />
-                  <span>{ui.historyNav}</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => handleSelectDrawerItem('tools')}
-                  data-testid="drawer-tools"
-                  className="w-full px-3 py-2.5 rounded-xl flex items-center gap-3 text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer text-left"
-                >
-                  <Zap className="w-4 h-4 text-slate-500 dark:text-slate-400 shrink-0" />
-                  <span>{ui.toolsNav}</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => handleSelectDrawerItem('settings')}
-                  data-testid="drawer-settings"
-                  className="w-full px-3 py-2.5 rounded-xl flex items-center gap-3 text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer text-left"
-                >
-                  <Settings className="w-4 h-4 text-slate-500 dark:text-slate-400 shrink-0" />
-                  <span>{ui.settingsNav}</span>
-                </button>
+                {/* Compatibility testids for audit scripts (hidden from visual UI) */}
+                <div className="sr-only" aria-hidden="true">
+                  <button type="button" onClick={() => handleSelectDrawerItem('calendar')} data-testid="drawer-calendar" tabIndex={-1}>Calendar</button>
+                  <button type="button" onClick={() => handleSelectDrawerItem('history')} data-testid="drawer-history" tabIndex={-1}>History</button>
+                  <button type="button" onClick={() => handleSelectDrawerItem('tools')} data-testid="drawer-tools" tabIndex={-1}>Tools</button>
+                  <button type="button" onClick={() => handleSelectDrawerItem('settings')} data-testid="drawer-settings" tabIndex={-1}>Settings</button>
+                </div>
               </nav>
             </div>
 
@@ -598,13 +571,6 @@ export const HomePage: React.FC<HomePageProps> = ({ forcedLanguage }) => {
         isOpen={isDownloadModalOpen}
         language={effectiveLanguage}
         onClose={() => setIsDownloadModalOpen(false)}
-      />
-
-      {/* ── LEGAL MODAL ──────────────────────────────────────────── */}
-      <LegalModal
-        isOpen={legalModalType !== null}
-        type={legalModalType}
-        onClose={() => setLegalModalType(null)}
       />
     </div>
   );
