@@ -9,6 +9,7 @@ import { SupportedLanguage } from '../../types/meeting';
 import { ThemeToggle } from '../common/ThemeToggle';
 import { MeetingControlButton } from './MeetingControlButton';
 import { AudioTrackMode } from '../../utils/userSettings';
+import { ttsEngine } from '../../utils/speechSynthesis';
 
 interface MeetingBottomBarProps {
   meetingCode: string;
@@ -67,6 +68,7 @@ interface MeetingBottomBarProps {
 export const MeetingBottomBar: React.FC<MeetingBottomBarProps> = (props) => {
   const { isMicOn, isCameraOn, isConnected = true, isConnecting, onToggleMic, onToggleCamera, onToggleSubtitlePanel, onToggleRaiseHand, onPushToTalk } = props;
   const [menu, setMenu] = useState<'none' | 'more' | 'audio' | 'video'>('none');
+  const [isTtsEnabled, setIsTtsEnabled] = useState(ttsEngine.options.enabled);
   const [capabilityNotice, setCapabilityNotice] = useState<string | null>(null);
   const { isFloatingSubtitleEnabled, isRecording = false } = props;
   useKeyboardShortcuts({ onToggleMic, onToggleCamera, onToggleCaptions: onToggleSubtitlePanel, onToggleRaiseHand, isMicOn, onPushToTalk });
@@ -187,7 +189,7 @@ export const MeetingBottomBar: React.FC<MeetingBottomBarProps> = (props) => {
             isCameraOn ? 'Tắt camera (Ctrl+E)' : 'Bật camera (Ctrl+E)',
           )}
           {control('Phụ đề', <Subtitles />, onToggleSubtitlePanel, props.isCaptionsActive, false, false, null, 'Bật/Tắt phụ đề AI trực tiếp (C)')}
-          {control(props.isHandRaised ? 'Hạ tay' : 'Giơ tay', <Hand />, props.onToggleRaiseHand, props.isHandRaised, !isConnected, false, null, props.isHandRaised ? 'Hạ tay phát biểu' : 'Giơ tay phát biểu')}
+          {control('Ngôn ngữ', <Languages />, props.onOpenLanguage, false, false, false, null, 'Đổi ngôn ngữ nhận phụ đề & dịch thuật')}
           {control('Thêm', <MoreHorizontal />, () => setMenu('more'), menu === 'more', false, false, props.unreadChatCount || null, 'Tùy chọn khác')}
           {control('Rời', <PhoneOff />, props.onLeaveRoom, false, false, true, null, 'Rời phòng họp')}
         </div>
@@ -260,9 +262,9 @@ export const MeetingBottomBar: React.FC<MeetingBottomBarProps> = (props) => {
             <div className="meeting-menu-grid">
               {menuAction(`Mọi người (${props.numParticipants})`, <Users />, action(props.onOpenPeoplePanel))}
               {menuAction(`Chat${props.unreadChatCount ? ` (${props.unreadChatCount} mới)` : ''}`, <MessageSquare />, action(props.onToggleChatPanel))}
-              {menuAction('Action Items & Quyết định', <ListTodo />, action(props.onOpenActions))}
+              {menuAction('Action Items', <ListTodo />, action(props.onOpenActions))}
               {props.onOpenCopilot && menuAction('Hỏi AI Copilot (Ctrl+K)', <Sparkles />, action(props.onOpenCopilot))}
-              {menuAction('Tóm tắt cuộc họp', <FileText />, action(props.onOpenRecap))}
+              {menuAction('Tóm tắt', <FileText />, action(props.onOpenRecap))}
               {menuAction('Thông tin cuộc họp', <FileText />, action(props.onOpenMeetingInfo))}
               {menuAction('Lịch sử phụ đề & xuất', <Subtitles />, action(props.onOpenSubtitleHistory))}
             </div>
@@ -275,16 +277,18 @@ export const MeetingBottomBar: React.FC<MeetingBottomBarProps> = (props) => {
               {menuAction(props.isScreenSharing ? 'Dừng chia sẻ màn hình' : 'Chia sẻ màn hình', <Monitor />, shareScreen, props.isScreenSharing, !isConnected)}
               {menuAction('Microphone & loa', <Mic />, () => setMenu('audio'))}
               {menuAction('Chọn camera', <Video />, () => setMenu('video'))}
+              {menuAction('Phiên dịch âm thanh (TTS)', <Headphones />, () => { const next = !isTtsEnabled; setIsTtsEnabled(next); ttsEngine.updateSettings({ enabled: next }); }, isTtsEnabled)}
               {props.onOpenAudioTrackSelector ? (
                 menuAction(
-                  `Kênh âm thanh (Audio Booth — Ducking -18dB)`,
+                  'Cabin phiên dịch (Audio Booth — Ducking -18dB)',
                   <Headphones />,
                   action(props.onOpenAudioTrackSelector),
                   props.audioTrackMode !== 'original' || props.isAudioBoothActive
                 )
               ) : props.onToggleAudioBooth ? (
-                menuAction('Kênh âm thanh (Audio Booth — Ducking -18dB)', <Headphones />, action(props.onToggleAudioBooth), props.isAudioBoothActive)
+                menuAction('Cabin phiên dịch (Audio Booth — Ducking -18dB)', <Headphones />, action(props.onToggleAudioBooth), props.isAudioBoothActive)
               ) : null}
+              {menuAction(props.isHandRaised ? 'Hạ tay' : 'Giơ tay', <Hand />, action(onToggleRaiseHand), props.isHandRaised, !isConnected)}
               {props.onOpenLanguage && menuAction(`Đổi ngôn ngữ nhận phụ đề`, <Languages />, action(props.onOpenLanguage))}
               {props.isRecordingEnabled && props.onToggleRecording && menuAction(props.isRecording ? 'Dừng ghi hình cuộc họp' : 'Ghi hình cuộc họp', <CircleDot />, () => {
                 if (!navigator.mediaDevices?.getDisplayMedia) setCapabilityNotice('Ghi hình cần quyền chia sẻ màn hình trên máy tính. Hãy mở cùng phòng trên PC; trên điện thoại bạn có thể xuất phụ đề và biên bản từ Trợ lý AI.');
@@ -295,7 +299,7 @@ export const MeetingBottomBar: React.FC<MeetingBottomBarProps> = (props) => {
               {menuAction('Đổi bố cục hiển thị', <Grid />, action(props.onOpenLayoutMenu))}
               {menuAction('Cài đặt âm thanh & AI', <Settings />, action(props.onOpenSettings))}
               {props.onToggleActivitiesPanel && menuAction('Hoạt động', <Shapes />, action(props.onToggleActivitiesPanel))}
-              {props.isHost && props.onToggleHostControlsPanel && menuAction(`Bộ điều khiển chủ phòng${props.pendingAdmissionsCount ? ` (${props.pendingAdmissionsCount} chờ)` : ''}`, <Shield />, action(props.onToggleHostControlsPanel))}
+              {props.isHost && props.onToggleHostControlsPanel && menuAction(`Bộ điều khiển của người tổ chức${props.pendingAdmissionsCount ? ` (${props.pendingAdmissionsCount} chờ duyệt)` : ''}`, <Shield />, action(props.onToggleHostControlsPanel))}
             </div>
           </div>
 

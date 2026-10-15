@@ -241,11 +241,14 @@ for (const definition of selected) {
         });
         await step('10c-offline-online', async () => {
           await context.setOffline(true);
-          await page.getByText(/Mất mạng/).waitFor();
-          await evidence('offline');
-          await context.setOffline(false);
-          await waitUntil(async () => !(await page.getByText(/Mất mạng/).isVisible()), 15000);
-          await waitUntil(async () => /Đã kết nối/.test(await page.locator('.meeting-shell').innerText()),30000);
+          try {
+            await page.getByText(/Mất mạng/).first().waitFor();
+            await evidence('offline');
+          } finally {
+            await context.setOffline(false);
+          }
+          await waitUntil(async () => !(await page.getByText(/Mất mạng/).first().isVisible()), 15000);
+          await waitUntil(async () => /Đã kết nối/.test(await page.locator('.meeting-shell').innerText()), 30000);
         });
         await step('11-leave', async () => {
           await tap('Rời');
