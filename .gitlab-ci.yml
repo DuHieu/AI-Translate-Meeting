@@ -1,0 +1,72 @@
+stages:
+  - quality
+  - build
+
+variables:
+  GIT_DEPTH: "50"
+
+# ── Frontend Web Quality & Build ──────────────────────────
+lint-and-build-web:
+  stage: quality
+  image: node:24-alpine
+  cache:
+    key:
+      files:
+        - apps/web/package-lock.json
+    paths:
+      - apps/web/.npm/
+  before_script:
+    - cd apps/web
+    - npm ci --cache .npm --prefer-offline
+  script:
+    - npm run lint
+    - npm run build
+  artifacts:
+    name: "web-dist-$CI_COMMIT_SHORT_SHA"
+    expire_in: 7 days
+    paths:
+      - apps/web/dist/
+
+# ── Backend .NET 8 Test & Quality ──────────────────────────
+test-api-dotnet:
+  stage: quality
+  image: mcr.microsoft.com/dotnet/sdk:8.0
+  cache:
+    key: "nuget-$CI_COMMIT_REF_SLUG"
+    paths:
+      - .nuget/packages/
+  variables:
+    NUGET_PACKAGES: "$CI_PROJECT_DIR/.nuget/packages"
+  script:
+    - dotnet restore apps/api/AITranslateMeeting.Api.csproj
+    - dotnet build apps/api/AITranslateMeeting.Api.csproj -c Release --no-restore
+    - dotnet test tests/AITranslateMeeting.Api.Tests/AITranslateMeeting.Api.Tests.csproj -c Release
+
+# ── Python AI Service & Contract Tests ────────────────────
+test-ai-service:
+  stage: quality
+  image: python:3.11-slim
+  cache:
+    key: "pip-$CI_COMMIT_REF_SLUG"
+    paths:
+      - .cache/pip
+  variables:
+    PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
+  before_script:
+    - apt-get update && apt-get install -y --no-install-recommends git libsndfile1 ffmpeg && rm -rf /var/lib/apt/lists/*
+    - python -m pip install --upgrade pip
+    - pip install -r apps/ai-service/requirements.txt
+    - pip install pytest pytest-asyncio pyyaml
+  script:
+    - python -m compileall -q apps/ai-service/app
+    - python -m pytest tests/ apps/ai-service/tests/ -v
+
+# ── Semantic Version Check ────────────────────────────────
+check-semantic-version:
+  stage: quality
+  image: node:24-alpine
+  script:
+    - node scripts/auto-version.mjs --dry-run
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+    - if: '$CI_COMMIT_BRANCH == "main"'

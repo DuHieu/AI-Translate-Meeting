@@ -1,6 +1,6 @@
 [package]
 name = "layameet-desktop"
-version = "0.1.0"
+version = "1.6.0"
 description = "LayaMeet AI Desktop Companion - Real-time Meeting Translation"
 authors = ["LayaMeet Team"]
 edition = "2021"

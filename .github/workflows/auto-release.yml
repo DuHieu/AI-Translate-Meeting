@@ -1,0 +1,159 @@
+name: Automated Semantic Versioning & Release
+
+on:
+  push:
+    branches: [ main ]
+    paths-ignore:
+      - 'CHANGELOG.md'
+      - '.agent-bridge/**'
+      - 'docs/**'
+  workflow_dispatch:
+    inputs:
+      release_type:
+        description: 'Semantic version bump type (auto, patch, minor, major)'
+        required: false
+        default: 'auto'
+        type: choice
+        options:
+          - auto
+          - patch
+          - minor
+          - major
+
+permissions:
+  contents: write
+
+concurrency:
+  group: auto-release-pipeline
+  cancel-in-progress: false
+
+jobs:
+  version-and-tag:
+    name: Calculate Next Version & Generate Changelog
+    runs-on: ubuntu-latest
+    if: "!contains(github.event.head_commit.message, '[skip ci]') && !startsWith(github.event.head_commit.message, 'chore(release):')"
+    outputs:
+      has_changes: ${{ steps.bump.outputs.has_changes }}
+      tag: ${{ steps.bump.outputs.tag }}
+      version: ${{ steps.bump.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - name: Configure Git Bot
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Run Semantic Versioning Engine
+        id: bump
+        run: |
+          RELEASE_ARG=""
+          if [ "${{ github.event.inputs.release_type }}" != "auto" ] && [ -n "${{ github.event.inputs.release_type }}" ]; then
+            RELEASE_ARG="--release-type=${{ github.event.inputs.release_type }}"
+          fi
+          node scripts/auto-version.mjs $RELEASE_ARG --output-notes=RELEASE_NOTES.md
+
+      - name: Commit Version Bumps & Push Tag
+        if: steps.bump.outputs.has_changes == 'true'
+        run: |
+          TAG="${{ steps.bump.outputs.tag }}"
+          git add apps/web/package.json apps/desktop/src-tauri/Cargo.toml apps/desktop/src-tauri/tauri.conf.json apps/mobile/pubspec.yaml apps/api/AITranslateMeeting.Api.csproj CHANGELOG.md
+          git commit -m "chore(release): ${TAG} [skip ci]" || echo "No changes to commit"
+          git tag -a "${TAG}" -m "Release ${TAG}"
+          git push origin main
+          git push origin "${TAG}"
+
+      - name: Upload Release Notes Artifact
+        if: steps.bump.outputs.has_changes == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-notes
+          path: RELEASE_NOTES.md
+
+  build-desktop:
+    name: Build Windows Desktop Companion (.exe)
+    needs: version-and-tag
+    if: needs.version-and-tag.outputs.has_changes == 'true'
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-pc-windows-msvc
+
+      - name: Cache Cargo dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            apps/desktop/src-tauri/target/
+          key: ${{ runner.os }}-cargo-release-${{ hashFiles('apps/desktop/src-tauri/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-release-
+
+      - name: Build Desktop Executable (Release)
+        working-directory: apps/desktop/src-tauri
+        run: cargo build --release
+
+      - name: Package Desktop Artifacts
+        shell: pwsh
+        run: |
+          $tag = "${{ needs.version-and-tag.outputs.tag }}"
+          $exePath = "apps/desktop/src-tauri/target/release/layameet-desktop.exe"
+          $zipPath = "LayaMeet-Desktop-$tag-Windows-x64.zip"
+          Compress-Archive -Path $exePath -DestinationPath $zipPath -Force
+          Write-Host "Created $zipPath successfully"
+
+      - name: Upload Desktop Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: desktop-windows-binary
+          path: |
+            LayaMeet-Desktop-*-Windows-x64.zip
+            apps/desktop/src-tauri/target/release/layameet-desktop.exe
+
+  publish-github-release:
+    name: Publish GitHub Release
+    needs: [version-and-tag, build-desktop]
+    if: needs.version-and-tag.outputs.has_changes == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download Release Notes
+        uses: actions/download-artifact@v4
+        with:
+          name: release-notes
+          path: .
+
+      - name: Download Desktop Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: desktop-windows-binary
+          path: dist-release
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ needs.version-and-tag.outputs.tag }}
+          name: "Release ${{ needs.version-and-tag.outputs.tag }}"
+          body_path: RELEASE_NOTES.md
+          draft: false
+          prerelease: false
+          files: |
+            dist-release/*
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
