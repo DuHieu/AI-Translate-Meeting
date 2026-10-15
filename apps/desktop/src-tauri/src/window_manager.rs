@@ -52,3 +52,20 @@ pub fn save_minutes_file(filename: &str, content: &str) -> Result<String, String
 
     Ok(file_path.to_string_lossy().to_string())
 }
+
+/// Sets the window display mode: 'mini' for floating subtitle companion, 'normal' for full meeting
+pub fn set_window_mode(window: &WebviewWindow, mode: &str) -> Result<(), String> {
+    match mode {
+        "mini" => {
+            let _ = window.set_always_on_top(true);
+            let _ = window.set_size(tauri::Size::Logical(tauri::LogicalSize { width: 800.0, height: 220.0 }));
+        }
+        "normal" => {
+            let _ = window.set_always_on_top(false);
+            let _ = window.set_size(tauri::Size::Logical(tauri::LogicalSize { width: 1080.0, height: 720.0 }));
+        }
+        _ => {}
+    }
+    Ok(())
+}
+

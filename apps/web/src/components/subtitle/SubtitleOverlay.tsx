@@ -1,6 +1,6 @@
 import { AdaptiveDialog } from '../common/AdaptiveDialog';
 import React, { useEffect, useMemo, useState } from 'react';
-import { AlertTriangle, Sparkles, X, ChevronDown } from 'lucide-react';
+import { AlertTriangle, Sparkles, X, ChevronDown, Headphones } from 'lucide-react';
 import { PipelineStatusMessage, SubtitleMessage } from '../../types/subtitle';
 import {
   getLanguageOption,
@@ -11,6 +11,8 @@ import { formatTimestamp } from '../../utils';
 import { LIVE_SUBTITLE_LIMIT } from './LiveSubtitleView';
 import { getUserSettings, subscribeUserSettings, saveUserSettings, UserMeetingSettings } from '../../utils/userSettings';
 import { CountryFlag } from '../common/CountryFlag';
+import { ttsEngine } from '../../utils/speechSynthesis';
+
 
 interface SubtitleOverlayProps {
   subtitle?: SubtitleMessage | null;
@@ -210,6 +212,16 @@ export const SubtitleOverlay: React.FC<SubtitleOverlayProps> = ({
                     {isRisk && (
                       <span className="inline-flex items-center gap-1 rounded-md bg-rose-500/15 border border-rose-500/30 px-2 py-0.5 text-[10px] font-semibold text-rose-300">
                         <AlertTriangle className="h-3 w-3" /> CẢNH BÁO RỦI RO
+                      </span>
+                    )}
+
+                    {ttsEngine.options.enabled && !isSelf && (
+                      <span
+                        title="AI đang phát âm thanh dịch vào tai nghe"
+                        className="inline-flex items-center gap-1 rounded-md bg-emerald-500/15 border border-emerald-500/30 px-2 py-0.5 text-[10px] font-semibold text-emerald-300"
+                      >
+                        <Headphones className="h-3 w-3 text-emerald-400 animate-pulse" />
+                        <span>Thuyết minh AI</span>
                       </span>
                     )}
                   </div>

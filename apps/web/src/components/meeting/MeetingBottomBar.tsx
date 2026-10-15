@@ -10,6 +10,7 @@ import { ThemeToggle } from '../common/ThemeToggle';
 import { MeetingControlButton } from './MeetingControlButton';
 import { AudioTrackMode } from '../../utils/userSettings';
 import { ttsEngine } from '../../utils/speechSynthesis';
+import { TTSVoiceDubbingModal } from './TTSVoiceDubbingModal';
 
 interface MeetingBottomBarProps {
   meetingCode: string;
@@ -69,7 +70,14 @@ export const MeetingBottomBar: React.FC<MeetingBottomBarProps> = (props) => {
   const { isMicOn, isCameraOn, isConnected = true, isConnecting, onToggleMic, onToggleCamera, onToggleSubtitlePanel, onToggleRaiseHand, onPushToTalk } = props;
   const [menu, setMenu] = useState<'none' | 'more' | 'audio' | 'video'>('none');
   const [isTtsEnabled, setIsTtsEnabled] = useState(ttsEngine.options.enabled);
+  const [isTtsModalOpen, setIsTtsModalOpen] = useState(false);
   const [capabilityNotice, setCapabilityNotice] = useState<string | null>(null);
+
+  React.useEffect(() => {
+    return ttsEngine.subscribe((opts) => {
+      setIsTtsEnabled(opts.enabled);
+    });
+  }, []);
   const { isFloatingSubtitleEnabled, isRecording = false } = props;
   useKeyboardShortcuts({ onToggleMic, onToggleCamera, onToggleCaptions: onToggleSubtitlePanel, onToggleRaiseHand, isMicOn, onPushToTalk });
   const action = (callback?: () => void) => () => { setMenu('none'); callback?.(); };
@@ -190,6 +198,16 @@ export const MeetingBottomBar: React.FC<MeetingBottomBarProps> = (props) => {
           )}
           {control('Phụ đề', <Subtitles />, onToggleSubtitlePanel, props.isCaptionsActive, false, false, null, 'Bật/Tắt phụ đề AI trực tiếp (C)')}
           {control('Ngôn ngữ', <Languages />, props.onOpenLanguage, false, false, false, null, 'Đổi ngôn ngữ nhận phụ đề & dịch thuật')}
+          {control(
+            'Thuyết minh',
+            <Headphones className={isTtsEnabled ? 'text-emerald-400' : 'text-zinc-300'} />,
+            () => setIsTtsModalOpen(true),
+            isTtsEnabled,
+            false,
+            false,
+            isTtsEnabled ? 'BẬT' : null,
+            isTtsEnabled ? 'Thuyết minh AI (Voice Dubbing) đang BẬT - Nhấp để chỉnh âm lượng/giọng' : 'Bật thuyết minh AI cho thành viên nước ngoài'
+          )}
           {control('Thêm', <MoreHorizontal />, () => setMenu('more'), menu === 'more', false, false, props.unreadChatCount || null, 'Tùy chọn khác')}
           {control('Rời', <PhoneOff />, props.onLeaveRoom, false, false, true, null, 'Rời phòng họp')}
         </div>
@@ -319,6 +337,11 @@ export const MeetingBottomBar: React.FC<MeetingBottomBarProps> = (props) => {
       )}
       <AudioDeviceMenu microphoneTrack={props.microphoneTrack} isOpen={menu === 'audio'} onClose={() => setMenu('none')} />
       <VideoDeviceMenu isOpen={menu === 'video'} onClose={() => setMenu('none')} />
+      <TTSVoiceDubbingModal
+        isOpen={isTtsModalOpen}
+        onClose={() => setIsTtsModalOpen(false)}
+        targetLanguage={props.targetLanguage}
+      />
     </footer>
   );
 };

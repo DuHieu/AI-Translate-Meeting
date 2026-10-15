@@ -32,6 +32,39 @@ export function getSubtitleWsUrl(): string {
   return `${protocol}//${window.location.host}/ws/transcribe`;
 }
 
+export async function invokeTauri<T>(cmd: string, args?: Record<string, unknown>): Promise<T | null> {
+  if (typeof window === 'undefined') return null;
+  const win = window as unknown as {
+    __TAURI__?: {
+      core?: { invoke: <R>(cmd: string, args?: Record<string, unknown>) => Promise<R> };
+      invoke?: <R>(cmd: string, args?: Record<string, unknown>) => Promise<R>;
+    };
+  };
+
+  try {
+    if (win.__TAURI__?.core?.invoke) {
+      return await win.__TAURI__.core.invoke<T>(cmd, args);
+    }
+    if (win.__TAURI__?.invoke) {
+      return await win.__TAURI__.invoke<T>(cmd, args);
+    }
+  } catch (err) {
+    console.warn(`[DesktopBridge] invokeTauri('${cmd}') failed:`, err);
+  }
+  return null;
+}
+
+export async function setDesktopWindowMode(mode: 'mini' | 'normal'): Promise<boolean> {
+  if (!isDesktopApp()) return false;
+  try {
+    const res = await invokeTauri<void>('set_window_mode', { mode });
+    return res !== null;
+  } catch (err) {
+    console.warn('[DesktopBridge] setDesktopWindowMode failed:', err);
+    return false;
+  }
+}
+
 export async function setDesktopWindowSize(width: number, height: number): Promise<void> {
   if (typeof window === 'undefined') return;
   const tauriWindow = (window as unknown as { __TAURI__?: { window?: { getCurrentWindow?: () => { setSize: (size: unknown) => Promise<void> } } } })
@@ -46,3 +79,4 @@ export async function setDesktopWindowSize(width: number, height: number): Promi
     }
   }
 }
+

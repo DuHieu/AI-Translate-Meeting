@@ -1,19 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Video, Plus, Calendar, Layers, Clock, Settings, Volume2, Shield, Zap, Sparkles, ArrowRight, User } from 'lucide-react';
+import { Video, Plus, Calendar, Layers, Clock, Settings, Volume2, Shield, ArrowRight, User } from 'lucide-react';
 import { meetingApi } from '../../api/meetingApi';
-import { meetingStorage } from '../../utils/meetingStorage';
-import { getUserSettings } from '../../utils/userSettings';
 import { LayaMeetLogo } from '../common/LayaMeetLogo';
 import { LanguageSwitcher } from '../common/LanguageSwitcher';
 import { ThemeToggle } from '../common/ThemeToggle';
-import { useLanguage } from '../../context/language-context-def';
+import { TTSVoiceDubbingModal } from '../meeting/TTSVoiceDubbingModal';
 
 export const DesktopHomeScreen: React.FC = () => {
   const navigate = useNavigate();
-  const { language } = useLanguage();
   const [isCreating, setIsCreating] = useState(false);
+
   const [showJoinModal, setShowJoinModal] = useState(false);
+  const [showTtsModal, setShowTtsModal] = useState(false);
   const [meetingCodeInput, setMeetingCodeInput] = useState('');
   const [displayNameInput, setDisplayNameInput] = useState(() => {
     return localStorage.getItem('layameet-desktop-display-name') || 'Bạn';
@@ -95,11 +94,19 @@ export const DesktopHomeScreen: React.FC = () => {
         </div>
 
         <div className="flex items-center gap-3">
+          <button
+            onClick={() => setShowTtsModal(true)}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/30 text-emerald-400 text-xs font-semibold transition-colors cursor-pointer"
+            title="Cài đặt Thuyết minh AI (Voice Dubbing)"
+          >
+            <Volume2 className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">Thuyết minh AI</span>
+          </button>
           <LanguageSwitcher />
           <ThemeToggle />
           <button
             onClick={() => navigate('/settings')}
-            className="p-2 rounded-lg bg-white/5 hover:bg-white/10 text-slate-300 transition-colors"
+            className="p-2 rounded-lg bg-white/5 hover:bg-white/10 text-slate-300 transition-colors cursor-pointer"
             title="Cài đặt âm thanh & thiết bị"
           >
             <Settings className="w-4 h-4" />
@@ -312,6 +319,13 @@ export const DesktopHomeScreen: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* TTS Voice Dubbing Modal */}
+      <TTSVoiceDubbingModal
+        isOpen={showTtsModal}
+        onClose={() => setShowTtsModal(false)}
+      />
     </div>
   );
 };
+

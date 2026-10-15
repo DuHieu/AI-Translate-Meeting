@@ -38,6 +38,12 @@ fn save_meeting_minutes(filename: String, content: String) -> Result<String, Str
     window_manager::save_minutes_file(&filename, &content)
 }
 
+#[tauri::command]
+fn set_window_mode(window: WebviewWindow, mode: String) -> Result<(), String> {
+    window_manager::set_window_mode(&window, &mode)
+}
+
+
 use std::fs::OpenOptions;
 use std::io::Write;
 
@@ -100,7 +106,8 @@ pub fn run() {
             start_audio_capture,
             stop_audio_capture,
             set_click_through,
-            save_meeting_minutes
+            save_meeting_minutes,
+            set_window_mode
         ])
         .build(context)
         .expect("error while building LayaMeet Desktop Companion application");

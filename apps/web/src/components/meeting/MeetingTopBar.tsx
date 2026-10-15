@@ -1,10 +1,12 @@
 import React from 'react';
 import { ConnectionState } from 'livekit-client';
-import { ShieldCheck, Clock, Zap, Lock } from 'lucide-react';
+import { ShieldCheck, Clock, Zap, Lock, Sparkles, PictureInPicture2 } from 'lucide-react';
 import { NetworkQualityIndicator } from './NetworkQualityIndicator';
 import { LayaMeetLogo } from '../common/LayaMeetLogo';
 import { ThemeToggle } from '../common/ThemeToggle';
 import type { BrandingConfigDto } from '../../api/meetingApi';
+import { isDesktopApp, setDesktopWindowMode } from '../../utils/desktopBridge';
+
 
 interface MeetingTopBarProps {
   meetingCode: string;
@@ -170,6 +172,28 @@ export const MeetingTopBar: React.FC<MeetingTopBarProps> = ({
           </div>
         )}
 
+        {/* AI STT Indicator */}
+        <div
+          title="Hệ thống nhận dạng STT Groq LPU Whisper Large V3 Turbo & Thuyết minh đa ngữ"
+          className="hidden md:flex items-center gap-1.5 px-2 py-1 rounded-md bg-sky-500/10 border border-sky-500/20 text-xs font-medium text-sky-400"
+        >
+          <Sparkles className="w-3.5 h-3.5 text-sky-400" />
+          <span className="text-[11px] font-semibold">AI Realtime STT</span>
+        </div>
+
+        {/* Desktop Mini Overlay (PiP) */}
+        {isDesktopApp() && (
+          <button
+            type="button"
+            onClick={() => void setDesktopWindowMode('mini')}
+            title="Thu nhỏ thành thanh phụ đề nổi ghim trên màn hình"
+            className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-zinc-800/80 hover:bg-zinc-700/80 border border-zinc-700 text-xs font-semibold text-sky-400 transition-colors"
+          >
+            <PictureInPicture2 className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">Ghim nổi</span>
+          </button>
+        )}
+
         {/* Network quality */}
         <NetworkQualityIndicator />
 
@@ -177,6 +201,7 @@ export const MeetingTopBar: React.FC<MeetingTopBarProps> = ({
         <div className="hidden sm:block">
           <ThemeToggle />
         </div>
+
 
         {/* Connection status */}
         <div role="status" className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-zinc-100 dark:bg-[#1a1a1b] border border-zinc-300 dark:border-[#2e2e30] text-xs text-zinc-600 dark:text-zinc-400">

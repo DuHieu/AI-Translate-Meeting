@@ -86,6 +86,7 @@ import { CountryFlag } from '../common/CountryFlag';
 import { getUserSettings, subscribeUserSettings, saveUserSettings, AudioTrackMode } from '../../utils/userSettings';
 import { audioDuckingRegistry } from '../../utils/audioDuckingRegistry';
 import { AudioTrackSelectorModal } from './AudioTrackSelectorModal';
+import { isDesktopApp, setDesktopWindowMode } from '../../utils/desktopBridge';
 
 function playWaitingRoomKnockChime(): void {
   try {
@@ -671,7 +672,12 @@ export const MeetingShell: React.FC<MeetingShellProps> = ({
     if (!sidecarPreferences.floatingSubtitleWidget) {
       setIsFloatingSubtitleActive(false);
     }
-  }, [sidecarPreferences.floatingSubtitleWidget]);
+    if (isDesktopApp()) {
+      void setDesktopWindowMode(isFloatingSubtitleActive ? 'mini' : 'normal');
+    }
+  }, [sidecarPreferences.floatingSubtitleWidget, isFloatingSubtitleActive]);
+
+
 
   const stopMeetingRecording = useCallback(() => {
     const session = recordingSessionRef.current;

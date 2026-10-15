@@ -377,7 +377,7 @@ button:has(> svg:only-child) { display: inline-flex; align-items: center; justif
 @media (min-width: 1024px) {
   :root { --meeting-toolbar-height: calc(76px + env(safe-area-inset-bottom, 0px)); }
   .meeting-toolbar { justify-content: flex-start; }
-  .meeting-primary-controls { width: auto; min-width: 528px; display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 8px; }
+  .meeting-primary-controls { width: auto; min-width: 560px; display: flex; align-items: center; justify-content: center; gap: 8px; }
   .meeting-primary-control {
     display: flex;
     flex-direction: column;
