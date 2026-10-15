@@ -12,105 +12,100 @@
       user-select: none;
       -webkit-user-select: none;
     }
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-      background: #0b0f19;
-      color: #f1f5f9;
-      height: 100vh;
-      overflow: hidden;
-      display: flex;
-      flex-direction: column;
-      padding: 8px;
-    }
-    .overlay-card {
-      background: rgba(11, 15, 25, 0.88);
-      backdrop-filter: blur(24px);
-      -webkit-backdrop-filter: blur(24px);
-      border: 1px solid rgba(255, 255, 255, 0.12);
-      border-radius: 16px;
+    html, body {
       height: 100%;
+      width: 100%;
+      overflow: hidden;
+      background: #090d16;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      color: #f8fafc;
+    }
+    .overlay-container {
+      height: 100vh;
       display: flex;
       flex-direction: column;
-      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.05);
-      transition: all 0.2s ease;
+      background: rgba(11, 15, 25, 0.96);
+      border-top: 1px solid rgba(56, 189, 248, 0.25);
     }
+    /* Header Bar */
     .drag-header {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 8px 14px;
+      padding: 6px 14px;
+      background: rgba(15, 23, 42, 0.75);
       border-bottom: 1px solid rgba(255, 255, 255, 0.08);
       cursor: grab;
+      flex-shrink: 0;
     }
     .drag-header:active {
       cursor: grabbing;
     }
-    .brand-pill {
+    .brand-group {
       display: flex;
       align-items: center;
       gap: 8px;
       font-size: 12px;
       font-weight: 700;
-      letter-spacing: -0.2px;
     }
-    .pulse-dot {
+    .status-dot {
       width: 8px;
       height: 8px;
       border-radius: 50%;
       background: #10b981;
-      box-shadow: 0 0 10px #10b981;
+      box-shadow: 0 0 8px #10b981;
       animation: pulse 1.8s infinite;
     }
     @keyframes pulse {
       0%, 100% { opacity: 1; transform: scale(1); }
-      50% { opacity: 0.5; transform: scale(0.85); }
+      50% { opacity: 0.45; transform: scale(0.85); }
     }
-    .stat-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
-      padding: 2px 7px;
-      border-radius: 6px;
+    .badge {
       font-size: 10px;
       font-weight: 600;
-      background: rgba(59, 130, 246, 0.15);
-      color: #60a5fa;
-      border: 1px solid rgba(59, 130, 246, 0.3);
+      padding: 2px 7px;
+      border-radius: 9999px;
+      background: rgba(56, 189, 248, 0.15);
+      color: #38bdf8;
+      border: 1px solid rgba(56, 189, 248, 0.3);
     }
     .header-actions {
       display: flex;
       align-items: center;
-      gap: 6px;
+      gap: 5px;
       -webkit-app-region: no-drag;
     }
-    .btn-icon {
+    .action-btn {
       background: rgba(255, 255, 255, 0.06);
-      border: 1px solid rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.1);
       color: #94a3b8;
-      border-radius: 8px;
-      width: 26px;
-      height: 26px;
+      border-radius: 6px;
+      height: 24px;
+      padding: 0 7px;
       display: flex;
       align-items: center;
       justify-content: center;
       cursor: pointer;
       font-size: 11px;
+      font-weight: 600;
       transition: all 0.15s ease;
     }
-    .btn-icon:hover {
-      background: rgba(255, 255, 255, 0.14);
+    .action-btn:hover {
+      background: rgba(255, 255, 255, 0.15);
       color: #ffffff;
     }
-    .btn-icon.active {
-      background: #2563eb;
+    .action-btn.active {
+      background: #0284c7;
       color: #ffffff;
-      border-color: #3b82f6;
+      border-color: #38bdf8;
     }
     .btn-close:hover {
-      background: #ef4444;
-      color: white;
+      background: #dc2626;
+      color: #ffffff;
     }
-    .subtitles-area {
+
+    /* Subtitles Presentation Area */
+    .subtitles-stream {
       flex: 1;
       padding: 10px 16px;
       display: flex;
@@ -118,188 +113,246 @@
       justify-content: center;
       gap: 6px;
       overflow: hidden;
+      position: relative;
     }
-    .original-line {
+    .history-line {
+      font-size: 12px;
+      color: #64748b;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      opacity: 0.85;
+      line-height: 1.3;
+      transition: opacity 0.3s ease;
+    }
+    .active-line-original {
       font-size: 13px;
       color: #94a3b8;
       display: flex;
       align-items: baseline;
       gap: 8px;
-      line-height: 1.4;
+      line-height: 1.35;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
     }
-    .speaker-tag {
+    .speaker-pill {
       font-size: 10px;
       font-weight: 700;
       text-transform: uppercase;
-      padding: 1px 6px;
+      padding: 1px 7px;
       border-radius: 4px;
       background: rgba(255, 255, 255, 0.08);
       color: #cbd5e1;
       flex-shrink: 0;
+      letter-spacing: 0.3px;
     }
-    .translated-line {
-      font-size: 17px;
-      font-weight: 600;
-      color: #ffffff;
+    .active-line-translated {
       display: flex;
       align-items: baseline;
       gap: 8px;
       line-height: 1.35;
-      text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
     }
-    .translated-text {
+    .ai-pill {
+      font-size: 10px;
+      font-weight: 800;
+      padding: 1px 6px;
+      border-radius: 4px;
+      background: linear-gradient(135deg, rgba(14, 165, 233, 0.25), rgba(99, 102, 241, 0.25));
       color: #38bdf8;
-      background: linear-gradient(90deg, #38bdf8, #818cf8);
+      border: 1px solid rgba(56, 189, 248, 0.4);
+      flex-shrink: 0;
+    }
+    .translated-content {
+      font-size: 18px;
+      font-weight: 700;
+      color: #ffffff;
+      background: linear-gradient(90deg, #38bdf8 0%, #818cf8 100%);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
-      font-weight: 700;
+      line-height: 1.3;
+      text-shadow: 0 2px 10px rgba(56, 189, 248, 0.2);
     }
+
+    /* Bottom Bar */
     .bottom-bar {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 6px 14px;
-      background: rgba(0, 0, 0, 0.25);
+      padding: 5px 14px;
+      background: rgba(11, 15, 25, 0.9);
       border-top: 1px solid rgba(255, 255, 255, 0.06);
-      font-size: 11px;
+      flex-shrink: 0;
     }
-    .lang-pills {
+    .lang-row {
       display: flex;
       align-items: center;
       gap: 4px;
     }
-    .lang-btn {
+    .lang-label {
+      font-size: 10px;
+      font-weight: 600;
+      color: #64748b;
+      margin-right: 4px;
+    }
+    .lang-chip {
       background: rgba(255, 255, 255, 0.06);
       border: 1px solid rgba(255, 255, 255, 0.08);
       color: #94a3b8;
-      padding: 3px 8px;
-      border-radius: 6px;
+      padding: 2px 7px;
+      border-radius: 5px;
       font-size: 11px;
       font-weight: 600;
       cursor: pointer;
       transition: all 0.15s ease;
     }
-    .lang-btn.active {
+    .lang-chip:hover {
+      background: rgba(255, 255, 255, 0.12);
+      color: #ffffff;
+    }
+    .lang-chip.active {
       background: rgba(56, 189, 248, 0.2);
       color: #38bdf8;
-      border-color: rgba(56, 189, 248, 0.4);
+      border-color: rgba(56, 189, 248, 0.45);
     }
-    .visualizer-canvas {
-      height: 14px;
-      width: 70px;
-    }
-    .export-btn {
-      display: inline-flex;
+    .controls-right {
+      display: flex;
       align-items: center;
-      gap: 4px;
+      gap: 10px;
+    }
+    .wave-canvas {
+      width: 64px;
+      height: 14px;
+    }
+    .export-action {
       background: rgba(16, 185, 129, 0.15);
+      border: 1px solid rgba(16, 185, 129, 0.35);
       color: #34d399;
-      border: 1px solid rgba(16, 185, 129, 0.3);
-      padding: 3px 9px;
-      border-radius: 6px;
+      border-radius: 5px;
       font-size: 11px;
       font-weight: 600;
+      padding: 2px 8px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
       cursor: pointer;
       transition: all 0.15s ease;
     }
-    .export-btn:hover {
+    .export-action:hover {
       background: rgba(16, 185, 129, 0.25);
+      color: #6ee7b7;
     }
   </style>
 </head>
 <body>
-  <div class="overlay-card" id="overlayCard">
-    <!-- Draggable Header Bar -->
-    <div class="drag-header" data-tauri-drag-region id="dragHeader">
-      <div class="brand-pill" data-tauri-drag-region>
-        <span class="pulse-dot"></span>
+  <div class="overlay-container">
+    <!-- Top Draggable Bar -->
+    <div class="drag-header" data-tauri-drag-region>
+      <div class="brand-group" data-tauri-drag-region>
+        <span class="status-dot"></span>
         <span style="color: #60a5fa;">LayaMeet</span>
         <span style="color: #64748b; font-weight: 500;">Live Overlay</span>
-        <span class="stat-badge">⚡ &lt;350ms</span>
-        <span class="stat-badge" style="color: #34d399; background: rgba(16,185,129,0.12); border-color: rgba(16,185,129,0.25);">100% RAM-Only</span>
+        <span class="badge">⚡ &lt;350ms</span>
+        <span class="badge" style="color: #34d399; background: rgba(16,185,129,0.12); border-color: rgba(16,185,129,0.3);">100% RAM-Only</span>
       </div>
 
       <div class="header-actions">
-        <button class="btn-icon" id="btnClickThrough" title="Click-through mode (Bấm xuyên qua phụ đề)">🖱️</button>
-        <button class="btn-icon" id="btnFontPlus" title="Tăng cỡ chữ">A+</button>
-        <button class="btn-icon" id="btnFontMinus" title="Giảm cỡ chữ">A-</button>
-        <button class="btn-icon btn-close" id="btnClose" title="Đóng thanh phụ đề">✕</button>
+        <button class="action-btn" id="btnClickThrough" title="Click-through mode (Bấm xuyên qua phụ đề)">🖱️ Ghim</button>
+        <button class="action-btn" id="btnFontPlus" title="Tăng cỡ chữ">A+</button>
+        <button class="action-btn" id="btnFontMinus" title="Giảm cỡ chữ">A-</button>
+        <button class="action-btn btn-close" id="btnClose" title="Đóng thanh phụ đề">✕</button>
       </div>
     </div>
 
-    <!-- Live Bilingual Subtitle Box -->
-    <div class="subtitles-area" id="subtitleContainer">
-      <div class="original-line">
-        <span class="speaker-tag" id="speakerTag">Kenji (Tokyo)</span>
+    <!-- Live Bilingual Subtitle Box with Stream History -->
+    <div class="subtitles-stream">
+      <div class="history-line" id="prevLine">David (San Francisco): We finalized the system architecture and AWS migration plan.</div>
+      
+      <div class="active-line-original">
+        <span class="speaker-pill" id="speakerTag">Kenji (Tokyo)</span>
         <span id="originalText">「第3四半期の売上目標について、予定通り達成できる見込みです。」</span>
       </div>
-      <div class="translated-line">
-        <span class="speaker-tag" style="background: rgba(56,189,248,0.15); color: #38bdf8;">Laya AI</span>
-        <span class="translated-text" id="translatedText">"Về mục tiêu doanh thu quý 3, chúng tôi dự kiến sẽ đạt được đúng như kế hoạch."</span>
+
+      <div class="active-line-translated">
+        <span class="ai-pill">LAYA AI</span>
+        <span class="translated-content" id="translatedText">"Về mục tiêu doanh thu quý 3, chúng tôi dự kiến sẽ đạt được đúng như kế hoạch."</span>
       </div>
     </div>
 
     <!-- Bottom Controls & Visualizer -->
     <div class="bottom-bar">
-      <div class="lang-pills">
-        <span style="color: #64748b; font-size: 10px; margin-right: 2px;">DỊCH SANG:</span>
-        <button class="lang-btn active" data-lang="vi">🇻🇳 Tiếng Việt</button>
-        <button class="lang-btn" data-lang="en">🇺🇸 English</button>
-        <button class="lang-btn" data-lang="ja">🇯🇵 日本語</button>
+      <div class="lang-row">
+        <span class="lang-label">DỊCH SANG:</span>
+        <button class="lang-chip active" data-lang="vi">🇻🇳 Tiếng Việt</button>
+        <button class="lang-chip" data-lang="en">🇺🇸 English</button>
+        <button class="lang-chip" data-lang="ja">🇯🇵 日本語</button>
+        <button class="lang-chip" data-lang="zh">🇨🇳 中文</button>
+        <button class="lang-chip" data-lang="ko">🇰🇷 한국어</button>
       </div>
 
-      <div style="display: flex; align-items: center; gap: 10px;">
-        <canvas class="visualizer-canvas" id="audioWave" width="70" height="14"></canvas>
-        <button class="export-btn" id="btnExport">📝 Lưu Biên Bản .MD</button>
+      <div class="controls-right">
+        <canvas class="wave-canvas" id="audioWave" width="64" height="14"></canvas>
+        <button class="export-action" id="btnExport">📝 Lưu Biên Bản .MD</button>
       </div>
     </div>
   </div>
 
   <script>
-    // Live Speech Demo Simulation & Audio Engine Bridge
     const DEMO_TRANSCRIPTS = {
       vi: [
         { speaker: "Kenji (Tokyo)", src: "「第3四半期の売上目標について、予定通り達成できる見込みです。」", dst: "Về mục tiêu doanh thu quý 3, dự kiến sẽ đạt đúng kế hoạch." },
         { speaker: "David (San Francisco)", src: "We have finalized the system architecture and AWS migration plan.", dst: "Chúng tôi đã hoàn thiện kiến trúc hệ thống và kế hoạch chuyển đổi lên AWS." },
         { speaker: "Minh (Hà Nội)", src: "Chúng tôi đã kiểm thử tốc độ phụ đề đạt dưới 200 mili-giây.", dst: "Độ trễ phụ đề thời gian thực được bảo đảm ở mức tối ưu nhất." },
-        { speaker: "Sarah (Singapore)", src: "Action item: Deploy the zero-latency companion before Friday's demo.", dst: "Việc cần làm: Triển khai bản desktop trước buổi demo thứ Sáu." }
+        { speaker: "Sarah (Singapore)", src: "Action item: Deploy the zero-latency companion before Friday's demo.", dst: "Việc cần làm: Triển khai bản desktop trước buổi demo thứ Sáu." },
+        { speaker: "Lin (Beijing)", src: "我们的云端跨国专线已经全部联调完毕，随时可以上线。", dst: "Đường truyền mây chuyên dụng xuyên quốc gia đã kiểm thử xong, sẵn sàng go-live." }
       ],
       en: [
         { speaker: "Kenji (Tokyo)", src: "「第3四半期の売上目標について、予定通り達成できる見込みです。」", dst: "Regarding Q3 revenue goals, we are on track to achieve them as planned." },
-        { speaker: "Minh (Hà Nội)", src: "Tiến độ dự án hiện đang chạy trước kế hoạch 2 ngày.", dst: "Project progress is currently running 2 days ahead of schedule." }
+        { speaker: "Minh (Hà Nội)", src: "Tiến độ dự án hiện đang chạy trước kế hoạch 2 ngày.", dst: "Project progress is currently running 2 days ahead of schedule." },
+        { speaker: "Sarah (Singapore)", src: "Action item: Deploy the zero-latency companion before Friday's demo.", dst: "Action item: Deploy the zero-latency companion before Friday's demo." }
       ],
       ja: [
         { speaker: "David (San Francisco)", src: "We have finalized the system architecture and AWS migration plan.", dst: "システム設計およびAWS移行計画が確定いたしました。" },
-        { speaker: "Minh (Hà Nội)", src: "Bản phụ đề chạy nổi luôn hiển thị phía trên Zoom và Teams.", dst: "フローティング字幕バーは常にZoomおよびTeamsの最前面に表示されます。" }
+        { speaker: "Minh (Hà Nội)", src: "Bản phụ đề chạy nổi luôn hiển thị phía trên Zoom và Teams.", dst: "フローティング字幕バーは常にZoomおよびTeamsの最前面に表示されます。" },
+        { speaker: "Sarah (Singapore)", src: "The latency test succeeded with under 200 milliseconds.", dst: "レイテンシ検証は200ミリ秒未満で無事に合格いたしました。" }
+      ],
+      zh: [
+        { speaker: "Kenji (Tokyo)", src: "「第3四半期の売上目標について、予定通り達成できる見込みです。」", dst: "关于第三季度的营收目标，预计将按计划顺利达成。" },
+        { speaker: "David (San Francisco)", src: "We have finalized the system architecture and AWS migration plan.", dst: "我们已经完成了系统架构设计和AWS云迁移规划。" }
+      ],
+      ko: [
+        { speaker: "Kenji (Tokyo)", src: "「第3四半期の売上目標について、予定通り達成できる見込みです。」", dst: "3분기 매출 목표에 대해 계획대로 달성할 수 있을 것으로 예상됩니다." },
+        { speaker: "David (San Francisco)", src: "We have finalized the system architecture and AWS migration plan.", dst: "시스템 아키텍처 및 AWS 마이그레이션 계획이 확정되었습니다." }
       ]
     };
 
     let currentLang = 'vi';
     let demoIndex = 0;
-    let fontSize = 17;
+    let fontSize = 18;
 
+    const prevLineEl = document.getElementById('prevLine');
     const originalTextEl = document.getElementById('originalText');
     const translatedTextEl = document.getElementById('translatedText');
     const speakerTagEl = document.getElementById('speakerTag');
 
     function updateSubtitle() {
       const list = DEMO_TRANSCRIPTS[currentLang] || DEMO_TRANSCRIPTS.vi;
-      const item = list[demoIndex % list.length];
-      speakerTagEl.textContent = item.speaker;
-      originalTextEl.textContent = item.src;
-      translatedTextEl.textContent = item.dst;
+      const prevItem = list[demoIndex % list.length];
       demoIndex++;
+      const currentItem = list[demoIndex % list.length];
+
+      prevLineEl.textContent = `${prevItem.speaker}: ${prevItem.dst}`;
+      speakerTagEl.textContent = currentItem.speaker;
+      originalTextEl.textContent = currentItem.src;
+      translatedTextEl.textContent = `"${currentItem.dst}"`;
     }
 
-    setInterval(updateSubtitle, 4500);
+    setInterval(updateSubtitle, 4200);
 
     // Language switcher
-    document.querySelectorAll('.lang-btn').forEach(btn => {
+    document.querySelectorAll('.lang-chip').forEach(btn => {
       btn.addEventListener('click', () => {
-        document.querySelectorAll('.lang-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.lang-chip').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
         currentLang = btn.dataset.lang;
         updateSubtitle();
@@ -308,16 +361,16 @@
 
     // Font size controls
     document.getElementById('btnFontPlus').addEventListener('click', () => {
-      if (fontSize < 24) fontSize += 2;
+      if (fontSize < 26) fontSize += 2;
       translatedTextEl.style.fontSize = fontSize + 'px';
     });
 
     document.getElementById('btnFontMinus').addEventListener('click', () => {
-      if (fontSize > 13) fontSize -= 2;
+      if (fontSize > 14) fontSize -= 2;
       translatedTextEl.style.fontSize = fontSize + 'px';
     });
 
-    // Click-through toggle (transparent click pass)
+    // Click-through toggle
     let clickThrough = false;
     document.getElementById('btnClickThrough').addEventListener('click', () => {
       clickThrough = !clickThrough;
@@ -362,16 +415,16 @@
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       ctx.fillStyle = '#38bdf8';
       const bars = 8;
-      const barWidth = 4;
+      const barWidth = 3;
       const gap = 4;
 
       for (let i = 0; i < bars; i++) {
-        const h = Math.abs(Math.sin(phase + i * 0.6)) * 10 + 2;
+        const h = Math.abs(Math.sin(phase + i * 0.7)) * 10 + 2;
         const x = i * (barWidth + gap) + 4;
         const y = (canvas.height - h) / 2;
         ctx.fillRect(x, y, barWidth, h);
       }
-      phase += 0.08;
+      phase += 0.09;
       requestAnimationFrame(drawWave);
     }
     drawWave();

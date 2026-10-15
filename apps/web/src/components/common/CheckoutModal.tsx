@@ -17,6 +17,7 @@ import { meetingApi, PaymentOrderResponse, PolarProductPlan } from '../../api/me
 import { useAuth } from '../../context/auth-context-def';
 import { useLanguage } from '../../context/language-context-def';
 import { scrollLock } from '../../utils/scrollLock';
+import { PAYMENT_ENABLED } from '../../config/featureFlags';
 import { LayaMeetLogo } from './LayaMeetLogo';
 import {
   VisaIcon,
@@ -542,7 +543,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
     return new Intl.DateTimeFormat(locale, { dateStyle: 'long' }).format(new Date(value));
   };
 
-  if (!isOpen || typeof document === 'undefined') return null;
+  if (!PAYMENT_ENABLED || !isOpen || typeof document === 'undefined') return null;
 
   const currentPlan = plans.find((p) => p.id === selectedPlanId) || DEFAULT_PLANS[0];
 

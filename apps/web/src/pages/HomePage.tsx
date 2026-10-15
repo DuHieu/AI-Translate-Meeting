@@ -28,6 +28,7 @@ import { DownloadModal } from '../components/home/DownloadModal';
 import { DesktopLandingSections } from '../components/home/DesktopLandingSections';
 import { scrollLock } from '../utils/scrollLock';
 import { AppLanguage } from '../i18n';
+import { PAYMENT_ENABLED } from '../config/featureFlags';
 
 interface HomePageProps {
   forcedLanguage?: AppLanguage;
@@ -278,12 +279,14 @@ export const HomePage: React.FC<HomePageProps> = ({ forcedLanguage }) => {
           >
             {ui.navComparison}
           </button>
-          <Link
-            to="/pricing"
-            className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors cursor-pointer"
-          >
-            {ui.navPricing}
-          </Link>
+          {PAYMENT_ENABLED && (
+            <Link
+              to="/pricing"
+              className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors cursor-pointer"
+            >
+              {ui.navPricing}
+            </Link>
+          )}
           <button
             type="button"
             onClick={() => scrollToAnchor('faq')}
@@ -483,15 +486,17 @@ export const HomePage: React.FC<HomePageProps> = ({ forcedLanguage }) => {
                   <span>{ui.railFeatures}</span>
                 </button>
 
-                <button
-                  type="button"
-                  onClick={() => handleSelectDrawerItem('pricing')}
-                  data-testid="drawer-pricing"
-                  className="w-full px-3 py-2.5 rounded-xl flex items-center gap-3 text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer text-left"
-                >
-                  <CreditCard className="w-4 h-4 text-slate-500 dark:text-slate-400 shrink-0" />
-                  <span>{ui.railPricing}</span>
-                </button>
+                {PAYMENT_ENABLED && (
+                  <button
+                    type="button"
+                    onClick={() => handleSelectDrawerItem('pricing')}
+                    data-testid="drawer-pricing"
+                    className="w-full px-3 py-2.5 rounded-xl flex items-center gap-3 text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer text-left"
+                  >
+                    <CreditCard className="w-4 h-4 text-slate-500 dark:text-slate-400 shrink-0" />
+                    <span>{ui.railPricing}</span>
+                  </button>
+                )}
 
                 <button
                   type="button"

@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { Clock3, FileText, Headphones, Infinity, LogOut, X, Zap } from 'lucide-react';
+import { PAYMENT_ENABLED } from '../../config/featureFlags';
 
 interface UpgradeRequiredModalProps {
   isOpen: boolean;
@@ -97,12 +98,16 @@ export const UpgradeRequiredModal: React.FC<UpgradeRequiredModalProps> = ({
             LayaMeet Pro
           </p>
           <h2 id="upgrade-required-title" className="mt-1 text-xl font-bold text-white sm:text-2xl">
-            {isTimeExpired ? 'Hết thời lượng miễn phí (40 phút)' : 'Nâng cấp LayaMeet Pro'}
+            {isTimeExpired ? 'Hết thời lượng cuộc họp (40 phút)' : 'Thông tin LayaMeet Pro'}
           </h2>
           <p id="upgrade-required-description" className="mt-3 text-sm leading-6 text-zinc-400">
             {isTimeExpired
-              ? 'Cuộc họp đã đạt giới hạn của gói Free. Nâng cấp để tiếp tục mà không cần tạo phòng mới.'
-              : 'Mở khóa đầy đủ công cụ họp song ngữ cho đội ngũ của bạn.'}
+              ? (PAYMENT_ENABLED
+                  ? 'Cuộc họp đã đạt giới hạn của gói Free. Nâng cấp để tiếp tục mà không cần tạo phòng mới.'
+                  : 'Cuộc họp đã đạt giới hạn 40 phút của gói Free. Vui lòng tạo phòng mới để tiếp tục phiên họp.')
+              : (PAYMENT_ENABLED
+                  ? 'Mở khóa đầy đủ công cụ họp song ngữ cho đội ngũ của bạn.'
+                  : 'Chức năng thanh toán và nâng cấp trực tuyến hiện đang tạm thời đóng để bảo trì.')}
           </p>
         </div>
 
@@ -118,15 +123,26 @@ export const UpgradeRequiredModal: React.FC<UpgradeRequiredModalProps> = ({
         </div>
 
         <div className="flex flex-col gap-3 border-t border-zinc-800 bg-zinc-900/50 px-6 py-5 sm:flex-row sm:px-8">
-          <button
-            ref={upgradeButtonRef}
-            type="button"
-            onClick={onUpgrade}
-            className="inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-lg bg-sky-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-400"
-          >
-            <Zap className="h-4 w-4" aria-hidden="true" />
-            Nâng cấp ngay qua VietQR
-          </button>
+          {PAYMENT_ENABLED && (
+            <button
+              ref={upgradeButtonRef}
+              type="button"
+              onClick={onUpgrade}
+              className="inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-lg bg-sky-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-400"
+            >
+              <Zap className="h-4 w-4" aria-hidden="true" />
+              Nâng cấp ngay qua VietQR
+            </button>
+          )}
+          {canDismiss && !PAYMENT_ENABLED && (
+            <button
+              type="button"
+              onClick={onClose}
+              className="inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 px-4 py-2.5 text-sm font-medium text-white transition focus:outline-none focus:ring-2 focus:ring-zinc-500"
+            >
+              Đóng
+            </button>
+          )}
           <button
             type="button"
             onClick={onLeaveMeeting}
