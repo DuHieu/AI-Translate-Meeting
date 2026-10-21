@@ -51,6 +51,7 @@ output/compose-logs/
 .vscode/
 .idea/
 .cursor/
+.claude/
 .DS_Store
 Thumbs.db
 
