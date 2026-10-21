@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, Download, Monitor, CheckCircle2, ShieldCheck, Zap, ExternalLink } from 'lucide-react';
+import { X, Download, CheckCircle2, ShieldCheck, Zap, ExternalLink } from 'lucide-react';
 
 interface DownloadModalProps {
   isOpen: boolean;
@@ -41,9 +41,13 @@ export const DownloadModal: React.FC<DownloadModalProps> = ({ isOpen, onClose, l
 
         {/* Header */}
         <div className="flex items-center gap-3.5 mb-5">
-          <div className="w-12 h-12 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600 shadow-xs">
-            <Monitor className="w-6 h-6" />
-          </div>
+          <img
+            src="/layameet-icon-192.png"
+            alt="LayaMeet"
+            width={48}
+            height={48}
+            className="w-12 h-12 rounded-xl shadow-xs"
+          />
           <div>
             <h3 id="download-modal-title" className="text-xl font-bold text-slate-900">
               {isJa
@@ -53,7 +57,7 @@ export const DownloadModal: React.FC<DownloadModalProps> = ({ isOpen, onClose, l
                 : 'Tải LayaMeet Desktop cho Windows'}
             </h3>
             <p className="text-xs text-slate-500 font-medium">
-              Phiên bản v1.0.0 • 64-bit • Windows 10/11 • 15 MB
+              Phiên bản v1.6.0 • 64-bit • Windows 10/11 • 24 MB
             </p>
           </div>
         </div>
@@ -100,7 +104,7 @@ export const DownloadModal: React.FC<DownloadModalProps> = ({ isOpen, onClose, l
                   ? 'インストーラーをダウンロードして起動します（数秒で完了）。'
                   : isEn
                   ? 'Download and launch the installer (takes only a few seconds).'
-                  : 'Tải bộ cài đặt và khởi chạy (chỉ 15MB, cài đặt trong vài giây).'}
+                  : 'Tải bộ cài đặt và khởi chạy (24MB, cài đặt trong vài giây).'}
               </span>
             </div>
             <div className="flex items-start gap-2.5">
@@ -133,8 +137,8 @@ export const DownloadModal: React.FC<DownloadModalProps> = ({ isOpen, onClose, l
         {/* Download Buttons */}
         <div className="space-y-2.5">
           <a
-            href="/downloads/LayaMeet-Desktop-Setup-v1.0.0.exe"
-            download="LayaMeet-Desktop-Setup-v1.0.0.exe"
+            href="/downloads/LayaMeet-Desktop-Setup-v1.6.0.exe"
+            download="LayaMeet-Desktop-Setup-v1.6.0.exe"
             onClick={() => {
               // Production download link or direct installer
             }}
@@ -149,12 +153,12 @@ export const DownloadModal: React.FC<DownloadModalProps> = ({ isOpen, onClose, l
                 : 'Tải Xuống Bản Cài Đặt (.exe)'}
             </span>
             <span className="text-xs bg-blue-500/40 px-2 py-0.5 rounded-full ml-1">
-              15 MB
+              24 MB
             </span>
           </a>
 
           <div className="flex items-center justify-between text-xs text-slate-500 px-1 pt-1">
-            <span>SHA-256 Verified • Windows Defender Safe</span>
+            <span>Cài cho riêng bạn • Không cần quyền Admin</span>
             <a
               href="https://github.com/DuHieu/AI-Translate-Meeting/releases"
               target="_blank"

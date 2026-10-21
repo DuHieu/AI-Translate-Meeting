@@ -90,3 +90,7 @@ apps/desktop/src-tauri/target/
 
 # Staged by src-tauri/build.rs (sherpa-onnx runtime DLLs)
 apps/desktop/src-tauri/libs/
+
+# Code signing secrets
+*.pfx
+*.p12

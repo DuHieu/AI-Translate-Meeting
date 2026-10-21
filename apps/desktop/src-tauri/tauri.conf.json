@@ -35,14 +35,33 @@
   "bundle": {
     "active": true,
     "targets": "all",
+    "publisher": "LayaMeet AI Technologies",
+    "copyright": "© 2026 LayaMeet AI Technologies. All rights reserved.",
+    "category": "Business",
+    "shortDescription": "LayaMeet - Họp trực tuyến dịch song ngữ thời gian thực",
+    "longDescription": "LayaMeet Desktop: họp trực tuyến với phụ đề và dịch song ngữ thời gian thực (Việt - Nhật - Anh), nhận dạng giọng nói ngay trên máy của bạn.",
     "icon": [
       "icons/32x32.png",
+      "icons/64x64.png",
       "icons/128x128.png",
       "icons/128x128@2x.png",
+      "icons/icon.icns",
       "icons/icon.ico"
     ],
     "resources": {
       "libs/*.dll": "./"
+    },
+    "windows": {
+      "webviewInstallMode": { "type": "downloadBootstrapper", "silent": true },
+      "nsis": {
+        "installerIcon": "icons/icon.ico",
+        "headerImage": "installer/header.bmp",
+        "sidebarImage": "installer/sidebar.bmp",
+        "installMode": "currentUser",
+        "displayLanguageSelector": true,
+        "languages": ["Vietnamese", "English", "Japanese"],
+        "startMenuFolder": "LayaMeet"
+      }
     }
   }
 }
