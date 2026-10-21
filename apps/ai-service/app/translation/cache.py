@@ -102,12 +102,12 @@ class TranslationCache:
 
     @staticmethod
     def normalize_text(text: str) -> str:
-        """Normalizes source text by stripping terminal/leading punctuation and redundant whitespaces."""
+        """Normalizes source text by stripping terminal/leading punctuation, quotes, and redundant whitespaces."""
         if not text:
             return ""
         cleaned = text.strip().lower()
         cleaned = re.sub(r"[\s\t\n]+", " ", cleaned)
-        cleaned = cleaned.strip(".!?,。！？、:;…~-–—")
+        cleaned = cleaned.strip(".!?,。！？、:;…~-–—\"'“”‘’「」『』()[]")
         return cleaned.strip()
 
     def build_general_key(

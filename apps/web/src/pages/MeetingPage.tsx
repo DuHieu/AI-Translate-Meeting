@@ -1,5 +1,5 @@
 import React, { useEffect, useState, lazy } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Navigate } from 'react-router-dom';
 import { MeetingRoom } from '../components/meeting/MeetingRoom';
 import { LeftMeetingScreen } from '../components/meeting/LeftMeetingScreen';
 import { meetingStorage } from '../utils/meetingStorage';
@@ -32,8 +32,7 @@ export const MeetingPage: React.FC = () => {
   }, [meetingCode]);
 
   if (!meetingCode) {
-    navigate('/', { replace: true });
-    return null;
+    return <Navigate to="/" replace />;
   }
 
   if (hasLeftMeeting) {

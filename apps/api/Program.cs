@@ -171,6 +171,9 @@ builder.Services.AddScoped<IParticipantSessionService, ParticipantSessionService
 builder.Services.AddScoped<IDatabaseCleanupService, DatabaseCleanupService>();
 builder.Services.AddHostedService<DatabaseCleanupBackgroundService>();
 builder.Services.AddScoped<IMeetingService, MeetingService>();
+builder.Services.AddScoped<IMeetingScheduleService>(sp => sp.GetRequiredService<IMeetingService>());
+builder.Services.AddScoped<IMeetingMinutesService>(sp => sp.GetRequiredService<IMeetingService>());
+builder.Services.AddScoped<IMeetingAdmissionService>(sp => sp.GetRequiredService<IMeetingService>());
 builder.Services.AddScoped<IReadinessEvaluator, ReadinessEvaluator>();
 builder.Services.AddSingleton<IAuditLogService, AuditLogService>();
 builder.Services.AddSingleton(TimeProvider.System);

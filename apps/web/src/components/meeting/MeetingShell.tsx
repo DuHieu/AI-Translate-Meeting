@@ -23,7 +23,7 @@ import {
   StartAudio,
 } from '@livekit/components-react';
 import { AdaptiveDialog } from '../common/AdaptiveDialog';
-import { MeetingLanguageDialog } from './MeetingLanguageDialog';
+import type { LayoutMode } from './ChangeLayoutDialog';
 import { useMeetingDisplay } from '../../hooks/useMeetingDisplay';
 import { MeetingTopBar } from './MeetingTopBar';
 import { MeetingStage } from './MeetingStage';
@@ -31,26 +31,19 @@ import { MeetingBottomBar } from './MeetingBottomBar';
 import { MeetingAudioRenderer } from './MeetingAudioRenderer';
 import { AiReadinessBanner } from './AiReadinessBanner';
 import { ParticipantsPanel } from './ParticipantsPanel';
-import { ChangeLayoutDialog, LayoutMode } from './ChangeLayoutDialog';
-import { MeetingSettingsDialog } from './MeetingSettingsDialog';
-import { PermissionBlockedModal } from './PermissionBlockedModal';
-import { ConnectionErrorModal } from './ConnectionErrorModal';
-import { PostMeetingModal } from './PostMeetingModal';
+import { AudioTrackSelectorModal } from './AudioTrackSelectorModal';
 import { UpgradeRequiredModal } from './UpgradeRequiredModal';
 import { CheckoutModal } from '../common/CheckoutModal';
+import { FactCheckToast } from './FactCheckToast';
+import { MeetingModalsManager } from './MeetingModalsManager';
 import { WebRtcDiagnostics } from './WebRtcDiagnostics';
-import { MeetingDetailsDialog } from './MeetingDetailsDialog';
-import { MeetingReadyCard } from './MeetingReadyCard';
 import { SubtitleOverlay } from '../subtitle/SubtitleOverlay';
 import { SubtitlePanel } from '../subtitle/SubtitlePanel';
-import { InlineGlossaryModal } from '../subtitle/InlineGlossaryModal';
-import { LiveMeetingCopilot } from './LiveMeetingCopilot';
 import { FloatingReactionsOverlay } from './FloatingReactionsOverlay';
 import { FloatingSubtitleWidget } from './FloatingSubtitleWidget';
 import { ChatPanel } from './ChatPanel';
 import { ActivitiesPanel } from './ActivitiesPanel';
 import { HostControlsPanel } from './HostControlsPanel';
-import { FactCheckToast } from './FactCheckToast';
 import { FactCheckPanel } from './FactCheckPanel';
 import { evaluateSubtitleFactCheck } from '../../utils/factCheckEngine';
 import type { FactCheckEvent } from '../../utils/factCheckEngine';
@@ -85,7 +78,6 @@ import { BellRing, Mic, Users, MessageSquare, Sparkles, ShieldAlert, Shapes, Shi
 import { CountryFlag } from '../common/CountryFlag';
 import { getUserSettings, subscribeUserSettings, saveUserSettings, AudioTrackMode } from '../../utils/userSettings';
 import { audioDuckingRegistry } from '../../utils/audioDuckingRegistry';
-import { AudioTrackSelectorModal } from './AudioTrackSelectorModal';
 import { isDesktopApp, setDesktopWindowMode } from '../../utils/desktopBridge';
 
 function playWaitingRoomKnockChime(): void {
@@ -794,6 +786,29 @@ export const MeetingShell: React.FC<MeetingShellProps> = ({
     window.setTimeout(() => {
       setAudioBoothToast(null);
     }, 3500);
+  }, [handleSidecarPreferencesChange, sidecarPreferences]);
+
+  const handleSelectAudioTrackMode = useCallback((mode: AudioTrackMode) => {
+    setAudioTrackMode(mode);
+    if (mode !== 'original' && !sidecarPreferences.audioBooth) {
+      handleSidecarPreferencesChange({
+        ...sidecarPreferences,
+        audioBooth: true,
+      });
+    } else if (mode === 'original' && sidecarPreferences.audioBooth) {
+      handleSidecarPreferencesChange({
+        ...sidecarPreferences,
+        audioBooth: false,
+      });
+    }
+    setAudioBoothToast(
+      mode === 'original'
+        ? 'Đã chuyển sang Âm thanh gốc: Chỉ nghe giọng thực của người phát biểu.'
+        : mode === 'translated_only'
+        ? 'Đã chuyển sang Chỉ nghe dịch: Đã tắt tiếng người nói, chỉ nghe lồng tiếng AI.'
+        : 'Đã chuyển sang Âm thanh kép: Tự động giảm nhỏ giọng gốc (-18dB) khi AI nói.'
+    );
+    window.setTimeout(() => setAudioBoothToast(null), 3500);
   }, [handleSidecarPreferencesChange, sidecarPreferences]);
 
   // ── LiveKit In-Meeting Collaboration ───────────────────────────────
@@ -2239,83 +2254,7 @@ export const MeetingShell: React.FC<MeetingShellProps> = ({
         </div>
       )}
 
-      {/* Connection Error Modal (NegotiationError, WebSocket failed, etc.) */}
-      {connectionError && (
-        <ConnectionErrorModal
-          errorMessage={connectionError}
-          onRetry={handleRetryConnection}
-          onDismiss={() => setConnectionError(null)}
-        />
-      )}
-
-      {/* Permission Blocked Modal — ONLY for real NotAllowedError / SecurityError */}
-      {blockedPermissionType && !connectionError && (
-        <PermissionBlockedModal
-          deviceType={blockedPermissionType}
-          errorMessage={permissionErrorMessage}
-          onRetry={handleRetryPermissions}
-          onDismiss={() => setBlockedPermissionType(null)}
-        />
-      )}
-
-      {/* Dialog Modals */}
-      {isLanguageOpen && <MeetingLanguageDialog
-        spokenLanguage={session.spokenLanguage}
-        targetLanguage={subtitleTargetLanguage}
-        updating={isUpdatingSubtitleLanguage}
-        error={subtitleLanguageError}
-        onTargetChange={handleTargetLanguageChange}
-        onClose={() => setIsLanguageOpen(false)}
-        onRejoin={onLeaveRoom}
-      />}
-      {isLayoutMenuOpen && (
-        <ChangeLayoutDialog
-          currentLayout={layoutMode}
-          onSelectLayout={handleSelectLayout}
-          onClose={() => setIsLayoutMenuOpen(false)}
-        />
-      )}
-
-      {isSettingsOpen && (
-        <MeetingSettingsDialog
-          onClose={() => setIsSettingsOpen(false)}
-          meetingId={session.meetingId}
-          meetingCode={session.meetingCode}
-          sidecarPreferences={sidecarPreferences}
-          onSidecarPreferencesChange={handleSidecarPreferencesChange}
-        />
-      )}
-
-      <AudioTrackSelectorModal
-        isOpen={isAudioTrackSelectorOpen}
-        onClose={() => setIsAudioTrackSelectorOpen(false)}
-        currentMode={audioTrackMode}
-        onSelectMode={(mode) => {
-          setAudioTrackMode(mode);
-          if (mode !== 'original' && !sidecarPreferences.audioBooth) {
-            handleSidecarPreferencesChange({
-              ...sidecarPreferences,
-              audioBooth: true,
-            });
-          } else if (mode === 'original' && sidecarPreferences.audioBooth) {
-            handleSidecarPreferencesChange({
-              ...sidecarPreferences,
-              audioBooth: false,
-            });
-          }
-          setAudioBoothToast(
-            mode === 'original'
-              ? 'Đã chuyển sang Âm thanh gốc: Chỉ nghe giọng thực của người phát biểu.'
-              : mode === 'translated_only'
-              ? 'Đã chuyển sang Chỉ nghe dịch: Đã tắt tiếng người nói, chỉ nghe lồng tiếng AI.'
-              : 'Đã chuyển sang Âm thanh kép: Tự động giảm nhỏ giọng gốc (-18dB) khi AI nói.'
-          );
-          window.setTimeout(() => setAudioBoothToast(null), 3500);
-        }}
-        targetLanguage={subtitleTargetLanguage}
-        onSelectTargetLanguage={handleTargetLanguageChange}
-      />
-
+      {/* Upgrade & Checkout Modals (Required by feature contracts) */}
       <UpgradeRequiredModal
         isOpen={isUpgradeModalOpen}
         isTimeExpired={isTimeExpired}
@@ -2332,32 +2271,13 @@ export const MeetingShell: React.FC<MeetingShellProps> = ({
         onPaymentSuccess={handlePaymentSuccess}
       />
 
-      <PostMeetingModal
-        isOpen={isPostMeetingOpen}
-        meetingCode={session.meetingCode}
-        recap={postMeetingRecap}
-        history={subtitleHistory}
-        branding={branding}
-        recordingDownloadUrl={recordingDownloadUrl}
-        onClose={() => setIsPostMeetingOpen(false)}
-        onLeaveRoom={onLeaveRoom}
-      />
-
-      {/* In-Meeting Live Copilot (Ctrl+K) */}
-      <LiveMeetingCopilot
-        isOpen={isCopilotOpen}
-        onClose={() => setIsCopilotOpen(false)}
-        history={subtitleHistory}
-        meetingCode={session.meetingCode}
-      />
-
-      {/* Inline Glossary Live Correction Modal */}
-      <InlineGlossaryModal
-        isOpen={isGlossaryModalOpen}
-        onClose={() => setIsGlossaryModalOpen(false)}
-        meetingCode={session.meetingCode}
-        initialSourceTerm={glossaryTerms.source}
-        initialTargetTerm={glossaryTerms.target}
+      <AudioTrackSelectorModal
+        isOpen={isAudioTrackSelectorOpen}
+        onClose={() => setIsAudioTrackSelectorOpen(false)}
+        currentMode={audioTrackMode}
+        onSelectMode={handleSelectAudioTrackMode}
+        targetLanguage={subtitleTargetLanguage}
+        onSelectTargetLanguage={handleTargetLanguageChange}
       />
 
       {/* Real-time Fact-Check Toast Alert */}
@@ -2367,23 +2287,53 @@ export const MeetingShell: React.FC<MeetingShellProps> = ({
         onDismiss={() => setActiveToastEvent(null)}
       />
 
-      {/* Google Meet signature "Cuộc họp của bạn đã sẵn sàng" prompt */}
-      <MeetingReadyCard
+      {/* Modals & Dialogs Orchestration */}
+      <MeetingModalsManager
+        connectionError={connectionError}
+        onRetryConnection={handleRetryConnection}
+        onDismissConnectionError={() => setConnectionError(null)}
+        blockedPermissionType={blockedPermissionType}
+        permissionErrorMessage={permissionErrorMessage}
+        onRetryPermissions={handleRetryPermissions}
+        onDismissBlockedPermission={() => setBlockedPermissionType(null)}
+        isLanguageOpen={isLanguageOpen}
+        spokenLanguage={session.spokenLanguage}
+        subtitleTargetLanguage={subtitleTargetLanguage}
+        isUpdatingSubtitleLanguage={isUpdatingSubtitleLanguage}
+        subtitleLanguageError={subtitleLanguageError}
+        onTargetLanguageChange={handleTargetLanguageChange}
+        onCloseLanguage={() => setIsLanguageOpen(false)}
+        onLeaveRoom={onLeaveRoom}
+        isLayoutMenuOpen={isLayoutMenuOpen}
+        layoutMode={layoutMode}
+        onSelectLayout={handleSelectLayout}
+        onCloseLayoutMenu={() => setIsLayoutMenuOpen(false)}
+        isSettingsOpen={isSettingsOpen}
+        onCloseSettings={() => setIsSettingsOpen(false)}
+        meetingId={session.meetingId}
         meetingCode={session.meetingCode}
-        isOpen={isMeetingReadyCardOpen && participants.length <= 1}
-        onClose={() => setIsMeetingReadyCardOpen(false)}
+        sidecarPreferences={sidecarPreferences}
+        onSidecarPreferencesChange={handleSidecarPreferencesChange}
+        isPostMeetingOpen={isPostMeetingOpen}
+        postMeetingRecap={postMeetingRecap}
+        subtitleHistory={subtitleHistory}
+        branding={branding}
+        recordingDownloadUrl={recordingDownloadUrl}
+        onClosePostMeeting={() => setIsPostMeetingOpen(false)}
+        isCopilotOpen={isCopilotOpen}
+        onCloseCopilot={() => setIsCopilotOpen(false)}
+        isGlossaryModalOpen={isGlossaryModalOpen}
+        onCloseGlossaryModal={() => setIsGlossaryModalOpen(false)}
+        glossaryTerms={glossaryTerms}
+        isMeetingReadyCardOpen={isMeetingReadyCardOpen}
+        participantsCount={participants.length}
+        onCloseMeetingReadyCard={() => setIsMeetingReadyCardOpen(false)}
         onOpenInvite={() => setIsInfoCardOpen(true)}
+        isInfoCardOpen={isInfoCardOpen}
+        role={session.role}
+        effectiveHostToken={effectiveHostToken}
+        onCloseInfoCard={() => setIsInfoCardOpen(false)}
       />
-
-      {/* Meeting Details Dialog (ⓘ) */}
-      {isInfoCardOpen && (
-        <MeetingDetailsDialog
-          meetingCode={session.meetingCode}
-          role={session.role}
-          hostToken={effectiveHostToken}
-          onClose={() => setIsInfoCardOpen(false)}
-        />
-      )}
     </div>
   );
 };

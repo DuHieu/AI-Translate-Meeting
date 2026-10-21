@@ -104,14 +104,18 @@ def test_translation_cache_text_normalization():
     raw2 = "xin chào mọi người."
     raw3 = "Xin chào mọi người?"
     raw4 = "Xin   chào   mọi   người"
+    raw5 = "「Xin chào mọi người!」"
+    raw6 = '"Xin chào mọi người."'
 
     norm1 = TranslationCache.normalize_text(raw1)
     norm2 = TranslationCache.normalize_text(raw2)
     norm3 = TranslationCache.normalize_text(raw3)
     norm4 = TranslationCache.normalize_text(raw4)
+    norm5 = TranslationCache.normalize_text(raw5)
+    norm6 = TranslationCache.normalize_text(raw6)
 
     assert norm1 == "xin chào mọi người"
-    assert norm1 == norm2 == norm3 == norm4
+    assert norm1 == norm2 == norm3 == norm4 == norm5 == norm6
 
 
 @pytest.mark.asyncio
