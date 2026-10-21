@@ -7,15 +7,12 @@ import {
   Download,
   ArrowRight,
   ShieldCheck,
-  Zap,
-  Globe,
   Sparkles,
   Home,
   CreditCard,
   HelpCircle,
   Phone,
   LogOut,
-  Laptop,
 } from 'lucide-react';
 import { LayaMeetLogo } from '../components/common/LayaMeetLogo';
 import { ThemeToggle } from '../components/common/ThemeToggle';
@@ -29,6 +26,7 @@ import { DesktopLandingSections } from '../components/home/DesktopLandingSection
 import { scrollLock } from '../utils/scrollLock';
 import { AppLanguage } from '../i18n';
 import { PAYMENT_ENABLED } from '../config/featureFlags';
+import { DESKTOP_RELEASE } from '../config/desktopRelease';
 
 interface HomePageProps {
   forcedLanguage?: AppLanguage;
@@ -47,13 +45,13 @@ const HOME_UI: Record<string, Record<string, string>> = {
     toolsNav: 'Cài đặt AI & API Key',
     settingsNav: 'Cài đặt & Giao diện',
     closeDrawer: 'Đóng',
-    desktopBadge: 'LayaMeet Desktop Companion • v1.0.0',
+    desktopBadge: `LayaMeet Desktop Companion • v${DESKTOP_RELEASE.version}`,
     heroH1Line1: 'Phần Mềm Dịch Cuộc Họp Trực Tiếp',
     heroH1Highlight: 'Song Ngữ AI Cho Zoom & Teams',
     heroDesc: 'Nói tiếng mẹ đẻ, hiểu đối tác tức thì. LayaMeet tự động bắt âm thanh từ máy tính và hiển thị thanh phụ đề nổi song ngữ thời gian thực mà không cần đổi phần mềm họp, không cần mời bot vào phòng.',
-    btnDownloadWindows: 'Tải Cho Windows (15MB)',
-    btnDownloadMac: 'Tải Bản macOS',
-    downloadMicrocopy: 'Tương thích Windows 10/11 & macOS • Cài đặt 10 giây • Không cần thẻ tín dụng',
+    btnDownloadWindows: `Tải cho Windows (${DESKTOP_RELEASE.sizeLabel})`,
+    btnSeeSteps: 'Xem cách cài đặt',
+    downloadMicrocopy: 'Đã ký số bởi LayaMeet AI Technologies · Cài cho riêng bạn, không cần quyền Admin · Windows 10/11',
     statLatency: '<350ms',
     statLatencyLabel: 'Độ trễ thời gian thực',
     statSecurity: '100% RAM-Only',
@@ -82,13 +80,13 @@ const HOME_UI: Record<string, Record<string, string>> = {
     toolsNav: 'AI & BYOK Settings',
     settingsNav: 'Settings & Appearance',
     closeDrawer: 'Close',
-    desktopBadge: 'LayaMeet Desktop Companion • v1.0.0',
+    desktopBadge: `LayaMeet Desktop Companion • v${DESKTOP_RELEASE.version}`,
     heroH1Line1: 'Real-Time AI Meeting Translation &',
     heroH1Highlight: 'Live Subtitles for Zoom & Teams',
     heroDesc: 'Speak your native language and understand your global partners instantly. LayaMeet captures system audio directly and displays an always-on-top bilingual subtitle bar without requiring bot invites.',
-    btnDownloadWindows: 'Download for Windows (15MB)',
-    btnDownloadMac: 'Download for macOS',
-    downloadMicrocopy: 'Compatible with Windows 10/11 & macOS • 10-second setup • No credit card required',
+    btnDownloadWindows: `Download for Windows (${DESKTOP_RELEASE.sizeLabel})`,
+    btnSeeSteps: 'See how to install',
+    downloadMicrocopy: 'Signed by LayaMeet AI Technologies · Per-user install, no Admin rights · Windows 10/11',
     statLatency: '<350ms',
     statLatencyLabel: 'Ultra-low Latency',
     statSecurity: '100% RAM-Only',
@@ -117,13 +115,13 @@ const HOME_UI: Record<string, Record<string, string>> = {
     toolsNav: 'AI・BYOK設定',
     settingsNav: '設定・外観',
     closeDrawer: '閉じる',
-    desktopBadge: 'LayaMeet デスクトップコンパニオン • v1.0.0',
+    desktopBadge: `LayaMeet デスクトップ • v${DESKTOP_RELEASE.version}`,
     heroH1Line1: 'Zoom・Teams・Meet対応',
     heroH1Highlight: 'リアルタイムAI双方向通訳＆フローティング字幕',
     heroDesc: '母国語で話し、相手の発言をリアルタイムで理解。ボットの招待や会議ツールの変更は不要。画面最前面の透明字幕バーで低遅延<350msの双方向翻訳を提供します。',
-    btnDownloadWindows: 'Windows版をダウンロード (15MB)',
-    btnDownloadMac: 'macOS版をダウンロード',
-    downloadMicrocopy: 'Windows 10/11・macOS両対応 • 10秒で導入完了 • クレジットカード不要',
+    btnDownloadWindows: `Windows版をダウンロード (${DESKTOP_RELEASE.sizeLabel})`,
+    btnSeeSteps: 'インストール手順を見る',
+    downloadMicrocopy: 'LayaMeet AI Technologies 署名済み · 管理者権限不要 · Windows 10/11',
     statLatency: '<350ms',
     statLatencyLabel: '超低遅延ストリーミング',
     statSecurity: '100% RAM-Only',
@@ -196,14 +194,7 @@ export const HomePage: React.FC<HomePageProps> = ({ forcedLanguage }) => {
   };
 
   return (
-    <div className="home-page relative min-h-dvh bg-white dark:bg-[#090D16] text-slate-900 dark:text-slate-100 flex flex-col font-sans transition-colors overflow-x-hidden">
-
-      {/* ── Background Ambient Light Layer (Stripe-grade Glow) ── */}
-      <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden" aria-hidden="true">
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-[600px] bg-gradient-to-b from-blue-500/5 via-indigo-500/5 to-transparent dark:from-blue-600/10 dark:via-indigo-600/5 blur-3xl" />
-        <div className="absolute -top-32 left-1/4 w-[500px] h-[500px] bg-blue-400/10 dark:bg-blue-600/15 rounded-full blur-3xl" />
-        <div className="absolute -top-20 right-1/4 w-[500px] h-[500px] bg-teal-400/10 dark:bg-teal-600/10 rounded-full blur-3xl" />
-      </div>
+    <div className="home-page relative min-h-dvh bg-[#F7F9FC] dark:bg-[#090D16] text-slate-900 dark:text-slate-100 flex flex-col font-sans transition-colors overflow-x-hidden">
 
       {/* ── MOBILE NAVBAR (< md) ─────────────────────────────────── */}
       <header className="md:hidden sticky top-0 z-40 h-16 px-4 bg-white/90 dark:bg-[#090D16]/90 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800 flex items-center justify-between shadow-2xs">
@@ -319,104 +310,61 @@ export const HomePage: React.FC<HomePageProps> = ({ forcedLanguage }) => {
           id="hero"
           className="w-full max-w-7xl mx-auto px-5 sm:px-8 lg:px-12 py-12 lg:py-20 flex flex-col lg:flex-row items-center justify-between gap-12 lg:gap-16"
         >
-          {/* Left Column: Headline, Trust Badges, CTA */}
+          {/* Left Column: Headline, CTA, trust line */}
           <div className="w-full lg:max-w-xl xl:max-w-2xl space-y-6 text-center lg:text-left">
-            {/* Top Pill */}
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-blue-50 dark:bg-blue-950/50 border border-blue-200/80 dark:border-blue-900/60 text-blue-700 dark:text-blue-300 text-xs font-semibold shadow-2xs">
-              <Monitor className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 text-sm font-medium">
+              <Monitor className="w-4 h-4 text-blue-600 dark:text-blue-400" />
               <span>{ui.desktopBadge}</span>
             </div>
 
-            {/* Main H1 SEO Title */}
-            <h1 className="text-4xl sm:text-5xl xl:text-6xl font-extrabold tracking-tight text-slate-900 dark:text-white leading-[1.15]">
-              {ui.heroH1Line1}
-              <br />
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 via-indigo-600 to-teal-600 dark:from-blue-400 dark:via-indigo-400 dark:to-teal-400">
-                {ui.heroH1Highlight}
-              </span>
+            <h1 className="text-4xl sm:text-5xl xl:text-[56px] font-bold tracking-tight text-slate-900 dark:text-white leading-[1.15]">
+              {ui.heroH1Line1}{' '}
+              <span className="text-blue-600 dark:text-blue-400">{ui.heroH1Highlight}</span>
             </h1>
 
-            {/* Subtitle Description */}
             <p className="text-base sm:text-lg text-slate-600 dark:text-slate-300 leading-relaxed max-w-2xl mx-auto lg:mx-0">
               {ui.heroDesc}
             </p>
 
-            {/* Primary Action Buttons */}
-            <div className="pt-2 flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4">
+            <div className="pt-2 flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-3">
               <button
                 type="button"
                 onClick={() => setIsDownloadModalOpen(true)}
-                className="w-full sm:w-auto px-8 py-4 rounded-2xl bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-bold text-base flex items-center justify-center gap-3 shadow-lg shadow-blue-500/25 transition-all cursor-pointer hover:-translate-y-0.5 group"
+                className="w-full sm:w-auto px-6 py-3.5 rounded-xl bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-semibold text-base flex items-center justify-center gap-2.5 transition-colors cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
               >
-                <Monitor className="w-5 h-5 group-hover:scale-110 transition-transform" />
+                <Download className="w-5 h-5" />
                 <span>{ui.btnDownloadWindows}</span>
-                <ArrowRight className="w-4 h-4 opacity-80 group-hover:translate-x-1 transition-transform" />
               </button>
 
               <button
                 type="button"
-                onClick={() => setIsDownloadModalOpen(true)}
-                className="w-full sm:w-auto px-6 py-4 rounded-2xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800/80 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-100 font-semibold text-sm flex items-center justify-center gap-2 border border-slate-200/80 dark:border-slate-700 transition-colors cursor-pointer"
+                onClick={() => scrollToAnchor('how-it-works')}
+                className="w-full sm:w-auto px-6 py-3.5 rounded-xl bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-100 font-semibold text-base flex items-center justify-center gap-2 border border-slate-300 dark:border-slate-700 transition-colors cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
               >
-                <Laptop className="w-4 h-4 text-slate-500 dark:text-slate-400" />
-                <span>{ui.btnDownloadMac}</span>
+                <span>{ui.btnSeeSteps}</span>
+                <ArrowRight className="w-4 h-4" />
               </button>
             </div>
 
-            {/* Micro-trust line */}
-            <p className="text-xs text-slate-500 dark:text-slate-400">
-              {ui.downloadMicrocopy}
+            <p className="flex items-start justify-center lg:justify-start gap-2 text-sm text-slate-600 dark:text-slate-400">
+              <ShieldCheck className="w-4 h-4 mt-0.5 shrink-0 text-emerald-600 dark:text-emerald-400" />
+              <span>{ui.downloadMicrocopy}</span>
             </p>
-
-            {/* Trust Metrics Bar */}
-            <div className="pt-4 grid grid-cols-3 gap-3 border-t border-slate-200/80 dark:border-slate-800/80">
-              <div className="p-3 rounded-2xl bg-slate-50/80 dark:bg-slate-900/60 border border-slate-200/60 dark:border-slate-800 text-center">
-                <div className="text-lg sm:text-xl font-extrabold text-blue-600 dark:text-blue-400 flex items-center justify-center gap-1">
-                  <Zap className="w-4 h-4" />
-                  <span>{ui.statLatency}</span>
-                </div>
-                <div className="text-[11px] text-slate-500 dark:text-slate-400 font-medium mt-0.5">
-                  {ui.statLatencyLabel}
-                </div>
-              </div>
-
-              <div className="p-3 rounded-2xl bg-slate-50/80 dark:bg-slate-900/60 border border-slate-200/60 dark:border-slate-800 text-center">
-                <div className="text-lg sm:text-xl font-extrabold text-emerald-600 dark:text-emerald-400 flex items-center justify-center gap-1">
-                  <ShieldCheck className="w-4 h-4" />
-                  <span>{ui.statSecurity}</span>
-                </div>
-                <div className="text-[11px] text-slate-500 dark:text-slate-400 font-medium mt-0.5">
-                  {ui.statSecurityLabel}
-                </div>
-              </div>
-
-              <div className="p-3 rounded-2xl bg-slate-50/80 dark:bg-slate-900/60 border border-slate-200/60 dark:border-slate-800 text-center">
-                <div className="text-lg sm:text-xl font-extrabold text-indigo-600 dark:text-indigo-400 flex items-center justify-center gap-1">
-                  <Globe className="w-4 h-4" />
-                  <span>{ui.statNoBot}</span>
-                </div>
-                <div className="text-[11px] text-slate-500 dark:text-slate-400 font-medium mt-0.5">
-                  {ui.statNoBotLabel}
-                </div>
-              </div>
-            </div>
           </div>
 
-          {/* Right Column: Apple-style Desktop Mockup with Floating Subtitle Overlay */}
+          {/* Right Column: live subtitle preview */}
           <div className="w-full lg:max-w-lg xl:max-w-xl shrink-0">
-            <div className="relative rounded-3xl bg-slate-900/5 dark:bg-white/5 p-3 sm:p-4 border border-slate-200/80 dark:border-slate-800 shadow-2xl backdrop-blur-xs">
-              {/* Overlay pill indicator */}
-              <div className="mb-3 px-3 py-1.5 rounded-xl bg-white/90 dark:bg-slate-900/90 border border-slate-200/80 dark:border-slate-800 flex items-center justify-between text-xs font-semibold text-slate-700 dark:text-slate-300 shadow-xs">
+            <div className="rounded-xl bg-slate-50 dark:bg-slate-900/60 p-3 sm:p-4 border border-slate-200 dark:border-slate-800">
+              <div className="mb-3 px-3 py-1.5 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex items-center justify-between text-sm font-medium text-slate-700 dark:text-slate-300">
                 <div className="flex items-center gap-2">
-                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 motion-safe:animate-pulse" />
                   <span>{ui.liveOverlayBadge}</span>
                 </div>
-                <span className="px-2 py-0.5 rounded-md bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 text-[10px] font-bold">
+                <span className="px-2 py-0.5 rounded-md bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 text-xs font-semibold">
                   {ui.alwaysOnTopPill}
                 </span>
               </div>
 
-              {/* Interactive Meeting Preview Component */}
               <InteractiveMeetingPreview onClose={() => {}} />
             </div>
           </div>

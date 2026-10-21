@@ -1,5 +1,6 @@
 import React from 'react';
-import { X, Download, CheckCircle2, ShieldCheck, Zap, ExternalLink } from 'lucide-react';
+import { X, Download, ShieldCheck, ExternalLink } from 'lucide-react';
+import { DESKTOP_RELEASE } from '../../config/desktopRelease';
 
 interface DownloadModalProps {
   isOpen: boolean;
@@ -27,7 +28,7 @@ export const DownloadModal: React.FC<DownloadModalProps> = ({ isOpen, onClose, l
         role="dialog"
         aria-modal="true"
         aria-labelledby="download-modal-title"
-        className="relative z-10 w-full max-w-lg bg-white rounded-2xl border border-slate-200/80 shadow-2xl p-6 md:p-8 animate-in fade-in zoom-in-95 duration-200"
+        className="relative z-10 w-full max-w-lg bg-white rounded-xl border border-slate-200 shadow-2xl p-6 md:p-8 animate-in fade-in zoom-in-95 duration-200"
       >
         {/* Close button */}
         <button
@@ -46,7 +47,7 @@ export const DownloadModal: React.FC<DownloadModalProps> = ({ isOpen, onClose, l
             alt="LayaMeet"
             width={48}
             height={48}
-            className="w-12 h-12 rounded-xl shadow-xs"
+            className="w-12 h-12 rounded-xl"
           />
           <div>
             <h3 id="download-modal-title" className="text-xl font-bold text-slate-900">
@@ -56,47 +57,20 @@ export const DownloadModal: React.FC<DownloadModalProps> = ({ isOpen, onClose, l
                 ? 'LayaMeet Desktop for Windows'
                 : 'Tải LayaMeet Desktop cho Windows'}
             </h3>
-            <p className="text-xs text-slate-500 font-medium">
-              Phiên bản v1.6.0 • 64-bit • Windows 10/11 • 10 MB
+            <p className="text-sm text-slate-600">
+              v{DESKTOP_RELEASE.version} · {DESKTOP_RELEASE.platform} · {DESKTOP_RELEASE.sizeLabel}
             </p>
-          </div>
-        </div>
-
-        {/* Value badges */}
-        <div className="grid grid-cols-3 gap-2 mb-6">
-          <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-100 text-center">
-            <Zap className="w-4 h-4 text-blue-600 mx-auto mb-1" />
-            <div className="text-[11px] font-bold text-slate-800">
-              {isJa ? '遅延<350ms' : isEn ? 'Latency <350ms' : 'Độ trễ <350ms'}
-            </div>
-            <div className="text-[9px] text-slate-500">WASAPI Loopback</div>
-          </div>
-          <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-100 text-center">
-            <ShieldCheck className="w-4 h-4 text-emerald-600 mx-auto mb-1" />
-            <div className="text-[11px] font-bold text-slate-800">100% RAM-Only</div>
-            <div className="text-[9px] text-slate-500">
-              {isJa ? '音声非保存' : isEn ? 'Zero raw audio' : 'Không lưu âm thanh'}
-            </div>
-          </div>
-          <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-100 text-center">
-            <CheckCircle2 className="w-4 h-4 text-indigo-600 mx-auto mb-1" />
-            <div className="text-[11px] font-bold text-slate-800">
-              {isJa ? 'Zoom/Meet対応' : isEn ? 'Zoom/Meet' : 'Zoom & Meet'}
-            </div>
-            <div className="text-[9px] text-slate-500">
-              {isJa ? 'ボット不要' : isEn ? 'No bot needed' : 'Không cần bot'}
-            </div>
           </div>
         </div>
 
         {/* 3 Step Quick Guide */}
         <div className="space-y-3 mb-6 bg-slate-50/80 p-4 rounded-xl border border-slate-200/60">
-          <div className="text-xs font-bold uppercase tracking-wider text-slate-600">
+          <div className="text-sm font-semibold text-slate-800">
             {isJa ? '簡単3ステップで開始' : isEn ? 'Quick 3-step setup' : '3 Bước Bắt Đầu Nhanh'}
           </div>
-          <div className="space-y-2 text-xs text-slate-600">
+          <div className="space-y-2 text-sm text-slate-600">
             <div className="flex items-start gap-2.5">
-              <span className="w-5 h-5 rounded-full bg-blue-600 text-white font-bold text-[11px] flex items-center justify-center shrink-0 mt-0.5">
+              <span className="w-5 h-5 rounded-full bg-blue-600 text-white font-bold text-xs flex items-center justify-center shrink-0 mt-0.5">
                 1
               </span>
               <span>
@@ -104,11 +78,11 @@ export const DownloadModal: React.FC<DownloadModalProps> = ({ isOpen, onClose, l
                   ? 'インストーラーをダウンロードして起動します（数秒で完了）。'
                   : isEn
                   ? 'Download and launch the installer (takes only a few seconds).'
-                  : 'Tải bộ cài đặt và khởi chạy (10MB, cài đặt trong vài giây).'}
+                  : 'Tải bộ cài đặt và khởi chạy ({DESKTOP_RELEASE.sizeLabel}).'}
               </span>
             </div>
             <div className="flex items-start gap-2.5">
-              <span className="w-5 h-5 rounded-full bg-blue-600 text-white font-bold text-[11px] flex items-center justify-center shrink-0 mt-0.5">
+              <span className="w-5 h-5 rounded-full bg-blue-600 text-white font-bold text-xs flex items-center justify-center shrink-0 mt-0.5">
                 2
               </span>
               <span>
@@ -120,7 +94,7 @@ export const DownloadModal: React.FC<DownloadModalProps> = ({ isOpen, onClose, l
               </span>
             </div>
             <div className="flex items-start gap-2.5">
-              <span className="w-5 h-5 rounded-full bg-blue-600 text-white font-bold text-[11px] flex items-center justify-center shrink-0 mt-0.5">
+              <span className="w-5 h-5 rounded-full bg-blue-600 text-white font-bold text-xs flex items-center justify-center shrink-0 mt-0.5">
                 3
               </span>
               <span>
@@ -137,12 +111,9 @@ export const DownloadModal: React.FC<DownloadModalProps> = ({ isOpen, onClose, l
         {/* Download Buttons */}
         <div className="space-y-2.5">
           <a
-            href="/downloads/LayaMeet-Desktop-Setup-v1.6.0.exe"
-            download="LayaMeet-Desktop-Setup-v1.6.0.exe"
-            onClick={() => {
-              // Production download link or direct installer
-            }}
-            className="w-full py-3.5 px-5 rounded-xl bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-semibold flex items-center justify-center gap-2.5 shadow-sm transition-all cursor-pointer group"
+            href={DESKTOP_RELEASE.downloadUrl}
+            download={DESKTOP_RELEASE.fileName}
+            className="w-full py-3.5 px-5 rounded-xl bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-semibold flex items-center justify-center gap-2.5 transition-colors cursor-pointer group focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
           >
             <Download className="w-5 h-5 group-hover:translate-y-0.5 transition-transform" />
             <span>
@@ -152,8 +123,8 @@ export const DownloadModal: React.FC<DownloadModalProps> = ({ isOpen, onClose, l
                 ? 'Download for Windows (.exe)'
                 : 'Tải Xuống Bản Cài Đặt (.exe)'}
             </span>
-            <span className="text-xs bg-blue-500/40 px-2 py-0.5 rounded-full ml-1">
-              10 MB
+            <span className="text-sm bg-blue-500/40 px-2 py-0.5 rounded-md ml-1">
+              {DESKTOP_RELEASE.sizeLabel}
             </span>
           </a>
 
@@ -171,8 +142,8 @@ export const DownloadModal: React.FC<DownloadModalProps> = ({ isOpen, onClose, l
           </div>
 
           {/* SmartScreen micro-tip */}
-          <div className="mt-2 p-2.5 rounded-xl bg-amber-50/90 dark:bg-amber-950/30 border border-amber-200/80 dark:border-amber-900/60 text-[11px] text-amber-900 dark:text-amber-200 leading-relaxed flex items-start gap-2">
-            <span className="shrink-0 text-xs mt-0.5">💡</span>
+          <div className="mt-2 p-3 rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200/80 dark:border-amber-900/60 text-xs text-amber-900 dark:text-amber-200 leading-relaxed flex items-start gap-2">
+            <ShieldCheck className="w-4 h-4 shrink-0 mt-0.5" aria-hidden="true" />
             <span>
               {isJa
                 ? 'Windows SmartScreenが表示された場合は、「詳細情報」➔「実行」をクリックして開始してください。'
@@ -180,7 +151,7 @@ export const DownloadModal: React.FC<DownloadModalProps> = ({ isOpen, onClose, l
                 ? 'If Windows SmartScreen appears, click "More info" ➔ "Run anyway" to complete setup.'
                 : 'Nếu Windows SmartScreen hiển thị thông báo, hãy bấm "More info" (Thông tin thêm) ➔ "Run anyway" (Vẫn chạy).'}{' '}
               <a
-                href="/downloads/LayaMeet-Certificate.cer"
+                href={DESKTOP_RELEASE.certificateUrl}
                 download
                 className="font-semibold underline"
               >
