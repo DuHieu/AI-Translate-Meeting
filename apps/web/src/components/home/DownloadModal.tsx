@@ -57,7 +57,7 @@ export const DownloadModal: React.FC<DownloadModalProps> = ({ isOpen, onClose, l
                 : 'Tải LayaMeet Desktop cho Windows'}
             </h3>
             <p className="text-xs text-slate-500 font-medium">
-              Phiên bản v1.6.0 • 64-bit • Windows 10/11 • 24 MB
+              Phiên bản v1.6.0 • 64-bit • Windows 10/11 • 10 MB
             </p>
           </div>
         </div>
@@ -104,7 +104,7 @@ export const DownloadModal: React.FC<DownloadModalProps> = ({ isOpen, onClose, l
                   ? 'インストーラーをダウンロードして起動します（数秒で完了）。'
                   : isEn
                   ? 'Download and launch the installer (takes only a few seconds).'
-                  : 'Tải bộ cài đặt và khởi chạy (24MB, cài đặt trong vài giây).'}
+                  : 'Tải bộ cài đặt và khởi chạy (10MB, cài đặt trong vài giây).'}
               </span>
             </div>
             <div className="flex items-start gap-2.5">
@@ -153,7 +153,7 @@ export const DownloadModal: React.FC<DownloadModalProps> = ({ isOpen, onClose, l
                 : 'Tải Xuống Bản Cài Đặt (.exe)'}
             </span>
             <span className="text-xs bg-blue-500/40 px-2 py-0.5 rounded-full ml-1">
-              24 MB
+              10 MB
             </span>
           </a>
 
@@ -178,7 +178,14 @@ export const DownloadModal: React.FC<DownloadModalProps> = ({ isOpen, onClose, l
                 ? 'Windows SmartScreenが表示された場合は、「詳細情報」➔「実行」をクリックして開始してください。'
                 : isEn
                 ? 'If Windows SmartScreen appears, click "More info" ➔ "Run anyway" to complete setup.'
-                : 'Nếu Windows SmartScreen hiển thị thông báo, hãy bấm "More info" (Thông tin thêm) ➔ "Run anyway" (Vẫn chạy).'}
+                : 'Nếu Windows SmartScreen hiển thị thông báo, hãy bấm "More info" (Thông tin thêm) ➔ "Run anyway" (Vẫn chạy).'}{' '}
+              <a
+                href="/downloads/LayaMeet-Certificate.cer"
+                download
+                className="font-semibold underline"
+              >
+                {isJa ? '証明書 (.cer)' : isEn ? 'Publisher certificate (.cer)' : 'Chứng chỉ nhà phát hành (.cer)'}
+              </a>
             </span>
           </div>
         </div>
