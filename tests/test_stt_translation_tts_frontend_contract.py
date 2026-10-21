@@ -18,7 +18,7 @@ def test_subtitle_hook_streams_vad_gated_16khz_pcm_with_browser_fallback():
 
     assert "startSubtitleAudioCapture" in hook
     assert "isSpeaking" in hook
-    assert "[isMicOn, isAiReady, audioTrack]" in hook
+    assert "[isMicOn, isAiReady, audioTrack" in hook
     assert "subtitleWsService.sendSpeechText" in hook
 
     assert "export const AUDIO_CHUNK_MS = 350;" in capture

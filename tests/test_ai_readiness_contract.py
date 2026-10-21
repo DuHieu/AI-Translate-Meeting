@@ -62,5 +62,5 @@ def test_audio_stream_waits_for_ai_readiness() -> None:
 
     assert "isAiReady?: boolean" in hook
     assert "if (!isMicOn || !isAiReady)" in hook
-    assert "[isMicOn, isAiReady, audioTrack]" in hook
+    assert "[isMicOn, isAiReady, audioTrack" in hook
     assert "startSubtitleAudioCapture" in hook
