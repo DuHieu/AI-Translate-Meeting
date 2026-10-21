@@ -86,7 +86,14 @@ export function calculateRms(samples: Float32Array): number {
   return Math.sqrt(sumSquares / samples.length);
 }
 
+/** On-device STT sink: when set, speech audio goes here instead of the server WebSocket. */
+export interface LocalSttSink {
+  pushAudio: (pcm16: ArrayBuffer) => void;
+  flush: () => void;
+}
+
 export interface SubtitleAudioCaptureOptions {
+  localStt?: LocalSttSink;
   audioTrack: MediaStreamTrack;
   getSourceLanguage: () => string | undefined;
   isRecognitionBlocking: () => boolean;
@@ -111,6 +118,7 @@ export function startSubtitleAudioCapture(
     isRecognitionBlocking,
     setRecognitionBlocking,
     onSpeakingChange,
+    localStt,
   } = options;
 
   let mediaStream: MediaStream | null = null;
@@ -143,6 +151,11 @@ export function startSubtitleAudioCapture(
   let sentenceFlushTimer: number | null = null;
   const SENTENCE_COMPLETION_DEBOUNCE_MS = 650;
 
+  const sendSpeechAudio = (chunk: ArrayBuffer) => {
+    if (localStt) localStt.pushAudio(chunk);
+    else subtitleWsService.sendAudioChunk(chunk);
+  };
+
   const sendPcmWithVad = (pcm: Int16Array, rms: number) => {
     if (!subtitleWsService.isConnected() || isRecognitionBlocking()) return;
 
@@ -157,23 +170,24 @@ export function startSubtitleAudioCapture(
     const buffer = pcm.buffer.slice(pcm.byteOffset, pcm.byteOffset + pcm.byteLength) as ArrayBuffer;
     if (isVoiced) {
       if (!speechActive) {
-        preRollChunks.forEach((chunk) => subtitleWsService.sendAudioChunk(chunk));
+        preRollChunks.forEach((chunk) => sendSpeechAudio(chunk));
         preRollChunks = [];
       }
       speechActive = true;
       silenceChunksCount = 0;
       onSpeakingChange(true);
-      subtitleWsService.sendAudioChunk(buffer);
+      sendSpeechAudio(buffer);
       return;
     }
 
     if (speechActive && silenceChunksCount < hangoverChunks) {
       silenceChunksCount += 1;
-      subtitleWsService.sendAudioChunk(buffer);
+      sendSpeechAudio(buffer);
       if (silenceChunksCount >= hangoverChunks) {
         speechActive = false;
         preRollChunks = [];
         onSpeakingChange(false);
+        localStt?.flush();
       }
       return;
     }
@@ -410,6 +424,7 @@ export function startSubtitleAudioCapture(
           const payload = event.data || {};
           if (typeof payload.isSpeaking === 'boolean') {
             onSpeakingChange(payload.isSpeaking);
+            if (!payload.isSpeaking) localStt?.flush();
           }
           if (
             payload.type === 'SPEECH_CHUNK' &&
@@ -417,7 +432,7 @@ export function startSubtitleAudioCapture(
             subtitleWsService.isConnected() &&
             !isRecognitionBlocking()
           ) {
-            subtitleWsService.sendAudioChunk(payload.data as ArrayBuffer);
+            sendSpeechAudio(payload.data as ArrayBuffer);
           }
         };
 
@@ -439,7 +454,8 @@ export function startSubtitleAudioCapture(
       }
     }
 
-    startBrowserRecognition();
+    // Browser SpeechRecognition would double-send text next to the on-device recognizer.
+    if (!localStt) startBrowserRecognition();
   };
 
   const stream = new MediaStream([audioTrack]);

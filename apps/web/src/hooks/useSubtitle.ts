@@ -5,6 +5,17 @@ import { playActionNotificationChime } from '../utils/speechAndAudio';
 import { getUserSettings, subscribeUserSettings, UserMeetingSettings } from '../utils/userSettings';
 import { ttsEngine } from '../utils/speechSynthesis';
 import { startSubtitleAudioCapture } from './subtitleAudioCapture';
+import {
+  flushLocalAudio,
+  isDesktopApp,
+  onLocalTranscript,
+  prepareLocalStt,
+  pushLocalAudio,
+  startLocalStt,
+  stopLocalStt,
+} from '../utils/desktopBridge';
+
+const LOCAL_STT_SINK = { pushAudio: pushLocalAudio, flush: flushLocalAudio };
 
 const SUBTITLE_HISTORY_LIMIT = 200;
 
@@ -27,6 +38,8 @@ export function useSubtitle(meetingId?: string, participantId?: string, options?
   const [isSpeaking, setIsSpeaking] = useState(false);
   const exportHistoryRef = useRef<SubtitleMessage[]>([]);
   const recognitionActiveRef = useRef(false);
+  // Desktop only: true once the on-device model is loaded and its session started.
+  const [localSttReady, setLocalSttReady] = useState(false);
 
   const participantName = options?.participantName;
   const subtitleToken = options?.subtitleToken;
@@ -182,6 +195,45 @@ export function useSubtitle(meetingId?: string, participantId?: string, options?
     return subscribeUserSettings(syncTranslationConfig);
   }, [meetingId, participantId, isProPlan, subtitleToken, sourceLanguage, targetLanguage]);
 
+  // Desktop: transcribe on-device and send only text. Until the model is ready (or if it fails
+  // to load) the capture below keeps streaming audio to the server STT.
+  useEffect(() => {
+    if (!isDesktopApp() || !meetingId || !participantId) return;
+
+    let cancelled = false;
+    let unlisten: (() => void) | undefined;
+
+    void (async () => {
+      if (!(await prepareLocalStt()) || cancelled) return;
+      unlisten = await onLocalTranscript((t) => {
+        subtitleWsService.sendSpeechText(
+          t.text,
+          sourceLanguageRef.current ?? t.language,
+          t.isFinal,
+          t.confidence,
+        );
+      });
+      if (cancelled) {
+        unlisten();
+        return;
+      }
+      const started = await startLocalStt();
+      if (!started || cancelled) {
+        unlisten();
+        if (started) void stopLocalStt();
+        return;
+      }
+      setLocalSttReady(true);
+    })();
+
+    return () => {
+      cancelled = true;
+      unlisten?.();
+      setLocalSttReady(false);
+      void stopLocalStt();
+    };
+  }, [meetingId, participantId]);
+
   // 2. Microphone streaming via dedicated AudioWorklet VAD capture module
   useEffect(() => {
     if (!isMicOn || !isAiReady) {
@@ -202,13 +254,14 @@ export function useSubtitle(meetingId?: string, participantId?: string, options?
         recognitionActiveRef.current = active;
       },
       onSpeakingChange: setIsSpeaking,
+      localStt: localSttReady ? LOCAL_STT_SINK : undefined,
     });
 
     return () => {
       capture.dispose();
       setIsSpeaking(false);
     };
-  }, [isMicOn, isAiReady, audioTrack]);
+  }, [isMicOn, isAiReady, audioTrack, localSttReady]);
 
   const sendSpeechText = useCallback(
     (text: string) => {

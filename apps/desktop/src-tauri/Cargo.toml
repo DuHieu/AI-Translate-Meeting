@@ -27,3 +27,4 @@ windows = { version = "0.58", features = [
 base64 = "0.22"
 chrono = "0.4"
 dirs = "5.0"
+sherpa-onnx = { version = "1.13.8", default-features = false, features = ["shared"] }
