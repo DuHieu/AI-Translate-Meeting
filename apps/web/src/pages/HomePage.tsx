@@ -51,6 +51,9 @@ const HOME_UI: Record<string, Record<string, string>> = {
     heroDesc: 'Nói tiếng mẹ đẻ, hiểu đối tác tức thì. LayaMeet tự động bắt âm thanh từ máy tính và hiển thị thanh phụ đề nổi song ngữ thời gian thực mà không cần đổi phần mềm họp, không cần mời bot vào phòng.',
     btnDownloadWindows: `Tải cho Windows (${DESKTOP_RELEASE.sizeLabel})`,
     btnSeeSteps: 'Xem cách cài đặt',
+    mobileNote: 'Bản Windows cài trên máy tính. Gửi link này sang máy tính của bạn để tải.',
+    copyLink: 'Sao chép link',
+    linkCopied: 'Đã sao chép',
     downloadMicrocopy: 'Đã ký số bởi LayaMeet AI Technologies · Cài cho riêng bạn, không cần quyền Admin · Windows 10/11',
     statLatency: '<350ms',
     statLatencyLabel: 'Độ trễ thời gian thực',
@@ -86,6 +89,9 @@ const HOME_UI: Record<string, Record<string, string>> = {
     heroDesc: 'Speak your native language and understand your global partners instantly. LayaMeet captures system audio directly and displays an always-on-top bilingual subtitle bar without requiring bot invites.',
     btnDownloadWindows: `Download for Windows (${DESKTOP_RELEASE.sizeLabel})`,
     btnSeeSteps: 'See how to install',
+    mobileNote: 'The Windows app installs on a computer. Send this link to your PC to download it.',
+    copyLink: 'Copy link',
+    linkCopied: 'Copied',
     downloadMicrocopy: 'Signed by LayaMeet AI Technologies · Per-user install, no Admin rights · Windows 10/11',
     statLatency: '<350ms',
     statLatencyLabel: 'Ultra-low Latency',
@@ -121,6 +127,9 @@ const HOME_UI: Record<string, Record<string, string>> = {
     heroDesc: '母国語で話し、相手の発言をリアルタイムで理解。ボットの招待や会議ツールの変更は不要。画面最前面の透明字幕バーで低遅延<350msの双方向翻訳を提供します。',
     btnDownloadWindows: `Windows版をダウンロード (${DESKTOP_RELEASE.sizeLabel})`,
     btnSeeSteps: 'インストール手順を見る',
+    mobileNote: 'Windows版はPC用です。このリンクをPCに送ってダウンロードしてください。',
+    copyLink: 'リンクをコピー',
+    linkCopied: 'コピーしました',
     downloadMicrocopy: 'LayaMeet AI Technologies 署名済み · 管理者権限不要 · Windows 10/11',
     statLatency: '<350ms',
     statLatencyLabel: '超低遅延ストリーミング',
@@ -148,6 +157,13 @@ export const HomePage: React.FC<HomePageProps> = ({ forcedLanguage }) => {
 
   const [isNavDrawerOpen, setIsNavDrawerOpen] = useState(false);
   const [isDownloadModalOpen, setIsDownloadModalOpen] = useState(false);
+  const [linkCopied, setLinkCopied] = useState(false);
+  const copyPageLink = () => {
+    void navigator.clipboard?.writeText(window.location.origin).then(() => {
+      setLinkCopied(true);
+      window.setTimeout(() => setLinkCopied(false), 2000);
+    });
+  };
 
   const langKey = effectiveLanguage === 'ja' ? 'ja' : effectiveLanguage === 'en' ? 'en' : 'vi';
   const ui = HOME_UI[langKey] || HOME_UI.vi;
@@ -343,6 +359,17 @@ export const HomePage: React.FC<HomePageProps> = ({ forcedLanguage }) => {
               >
                 <span>{ui.btnSeeSteps}</span>
                 <ArrowRight className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="md:hidden rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-3 text-left space-y-2">
+              <p className="text-sm text-slate-600 dark:text-slate-300">{ui.mobileNote}</p>
+              <button
+                type="button"
+                onClick={copyPageLink}
+                className="px-3 py-2 rounded-lg bg-slate-100 dark:bg-slate-800 text-sm font-semibold text-slate-800 dark:text-slate-100 cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
+              >
+                <span aria-live="polite">{linkCopied ? ui.linkCopied : ui.copyLink}</span>
               </button>
             </div>
 

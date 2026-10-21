@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { X, Download, ShieldCheck, ExternalLink } from 'lucide-react';
 import { DESKTOP_RELEASE } from '../../config/desktopRelease';
 
@@ -9,6 +9,8 @@ interface DownloadModalProps {
 }
 
 export const DownloadModal: React.FC<DownloadModalProps> = ({ isOpen, onClose, language = 'vi' }) => {
+  const [started, setStarted] = useState(false);
+
   if (!isOpen) return null;
 
   const isJa = language === 'ja';
@@ -113,6 +115,7 @@ export const DownloadModal: React.FC<DownloadModalProps> = ({ isOpen, onClose, l
           <a
             href={DESKTOP_RELEASE.downloadUrl}
             download={DESKTOP_RELEASE.fileName}
+            onClick={() => setStarted(true)}
             className="w-full py-3.5 px-5 rounded-xl bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-semibold flex items-center justify-center gap-2.5 transition-colors cursor-pointer group focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
           >
             <Download className="w-5 h-5 group-hover:translate-y-0.5 transition-transform" />
@@ -127,6 +130,12 @@ export const DownloadModal: React.FC<DownloadModalProps> = ({ isOpen, onClose, l
               {DESKTOP_RELEASE.sizeLabel}
             </span>
           </a>
+
+          {started && (
+            <p role="status" className="text-sm text-emerald-700 px-1">
+              {isJa ? 'ダウンロードを開始しました。完了後にファイルを実行してください。' : isEn ? 'Download started. Run the file when it finishes.' : 'Đã bắt đầu tải. Khi xong, hãy chạy tệp vừa tải.'}
+            </p>
+          )}
 
           <div className="flex items-center justify-between text-xs text-slate-500 px-1 pt-1">
             <span>Cài cho riêng bạn • Không cần quyền Admin</span>
