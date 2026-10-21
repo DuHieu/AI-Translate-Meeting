@@ -4,6 +4,7 @@
   "version": "1.6.0",
   "identifier": "com.layameet.desktop",
   "build": {
+    "beforeBuildCommand": "node prune-dist.cjs",
     "frontendDist": "../../web/dist"
   },
   "app": {
@@ -52,6 +53,10 @@
       "libs/*.dll": "./"
     },
     "windows": {
+      "signCommand": {
+        "cmd": "powershell",
+        "args": ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "../../../scripts/sign-file.ps1", "%1"]
+      },
       "webviewInstallMode": { "type": "downloadBootstrapper", "silent": true },
       "nsis": {
         "installerIcon": "icons/icon.ico",
