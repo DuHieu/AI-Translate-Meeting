@@ -1,18 +1,28 @@
-import React from 'react';
+import React, { Suspense } from 'react';
 import { ConnectionErrorModal } from './ConnectionErrorModal';
 import { PermissionBlockedModal } from './PermissionBlockedModal';
 import { MeetingLanguageDialog } from './MeetingLanguageDialog';
 import { ChangeLayoutDialog, LayoutMode } from './ChangeLayoutDialog';
-import { MeetingSettingsDialog } from './MeetingSettingsDialog';
-import { PostMeetingModal } from './PostMeetingModal';
-import { LiveMeetingCopilot } from './LiveMeetingCopilot';
-import { InlineGlossaryModal } from '../subtitle/InlineGlossaryModal';
 import { MeetingReadyCard } from './MeetingReadyCard';
 import { MeetingDetailsDialog } from './MeetingDetailsDialog';
 import type { SidecarPreferences, SupportedLanguage } from '../../types/meeting';
 import type { SubtitleMessage } from '../../types/subtitle';
 import type { BrandingConfigDto } from '../../api/meetingApi';
 import type { GeneratedRecap } from '../../utils/aiRecapEngine';
+
+// Lazy-load heavyweight dialogs only when activated by user
+const MeetingSettingsDialog = React.lazy(() =>
+  import('./MeetingSettingsDialog').then((mod) => ({ default: mod.MeetingSettingsDialog }))
+);
+const PostMeetingModal = React.lazy(() =>
+  import('./PostMeetingModal').then((mod) => ({ default: mod.PostMeetingModal }))
+);
+const LiveMeetingCopilot = React.lazy(() =>
+  import('./LiveMeetingCopilot').then((mod) => ({ default: mod.LiveMeetingCopilot }))
+);
+const InlineGlossaryModal = React.lazy(() =>
+  import('../subtitle/InlineGlossaryModal').then((mod) => ({ default: mod.InlineGlossaryModal }))
+);
 
 export interface MeetingModalsManagerProps {
   // Connection & Permission
@@ -163,46 +173,6 @@ export const MeetingModalsManager: React.FC<MeetingModalsManagerProps> = ({
         />
       )}
 
-      {/* Meeting Settings Dialog */}
-      {isSettingsOpen && (
-        <MeetingSettingsDialog
-          onClose={onCloseSettings}
-          meetingId={meetingId}
-          meetingCode={meetingCode}
-          sidecarPreferences={sidecarPreferences}
-          onSidecarPreferencesChange={onSidecarPreferencesChange}
-        />
-      )}
-
-      {/* Post Meeting Recap Modal */}
-      <PostMeetingModal
-        isOpen={isPostMeetingOpen}
-        meetingCode={meetingCode}
-        recap={postMeetingRecap}
-        history={subtitleHistory}
-        branding={branding}
-        recordingDownloadUrl={recordingDownloadUrl}
-        onClose={onClosePostMeeting}
-        onLeaveRoom={onLeaveRoom}
-      />
-
-      {/* In-Meeting Live Copilot (Ctrl+K) */}
-      <LiveMeetingCopilot
-        isOpen={isCopilotOpen}
-        onClose={onCloseCopilot}
-        history={subtitleHistory}
-        meetingCode={meetingCode}
-      />
-
-      {/* Inline Glossary Live Correction Modal */}
-      <InlineGlossaryModal
-        isOpen={isGlossaryModalOpen}
-        onClose={onCloseGlossaryModal}
-        meetingCode={meetingCode}
-        initialSourceTerm={glossaryTerms.source}
-        initialTargetTerm={glossaryTerms.target}
-      />
-
       {/* Google Meet signature "Cuộc họp của bạn đã sẵn sàng" prompt */}
       <MeetingReadyCard
         meetingCode={meetingCode}
@@ -220,6 +190,55 @@ export const MeetingModalsManager: React.FC<MeetingModalsManagerProps> = ({
           onClose={onCloseInfoCard}
         />
       )}
+
+      {/* Lazy-loaded Dialogs & Modals */}
+      <Suspense fallback={null}>
+        {/* Meeting Settings Dialog */}
+        {isSettingsOpen && (
+          <MeetingSettingsDialog
+            onClose={onCloseSettings}
+            meetingId={meetingId}
+            meetingCode={meetingCode}
+            sidecarPreferences={sidecarPreferences}
+            onSidecarPreferencesChange={onSidecarPreferencesChange}
+          />
+        )}
+
+        {/* Post Meeting Recap Modal */}
+        {isPostMeetingOpen && (
+          <PostMeetingModal
+            isOpen={isPostMeetingOpen}
+            meetingCode={meetingCode}
+            recap={postMeetingRecap}
+            history={subtitleHistory}
+            branding={branding}
+            recordingDownloadUrl={recordingDownloadUrl}
+            onClose={onClosePostMeeting}
+            onLeaveRoom={onLeaveRoom}
+          />
+        )}
+
+        {/* In-Meeting Live Copilot (Ctrl+K) */}
+        {isCopilotOpen && (
+          <LiveMeetingCopilot
+            isOpen={isCopilotOpen}
+            onClose={onCloseCopilot}
+            history={subtitleHistory}
+            meetingCode={meetingCode}
+          />
+        )}
+
+        {/* Inline Glossary Live Correction Modal */}
+        {isGlossaryModalOpen && (
+          <InlineGlossaryModal
+            isOpen={isGlossaryModalOpen}
+            onClose={onCloseGlossaryModal}
+            meetingCode={meetingCode}
+            initialSourceTerm={glossaryTerms.source}
+            initialTargetTerm={glossaryTerms.target}
+          />
+        )}
+      </Suspense>
     </>
   );
 };
