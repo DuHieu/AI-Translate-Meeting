@@ -2,6 +2,38 @@
 
 All notable changes to the LayaMeet platform are documented in this file.
 
+## [1.7.0] - 2026-10-22
+
+### 🚀 Features & Enhancements
+- feat(desktop): add LayaMeet Desktop v1.6.0 installer and release notes (18369f8)
+- feat(web): mobile copy-link hint and download-started status (98da4b3)
+- feat(web): redesign homepage and download flow (40b8ee7)
+- feat(desktop): branded icons, NSIS installer polish, v1.6.0 download page and signing script (22c46b2)
+- feat(desktop): on-device streaming STT to cut server STT cost (dd684f6)
+- feat(desktop): integrate real-time STT Groq LPU with AI Voice Dubbing (TTS) and mini floating companion overlay (52c8450)
+- feat(desktop): package full LiveKit meeting client into Tauri with Zoom-style Home hub and desktop bridge (d269af0)
+- feat(desktop): package standalone embedded overlay UI and remove devUrl localhost dependency (2039915)
+- feat(web): streamline landing page - remove neural canvas, simplify footer, drop settings & google auth (3960a98)
+- feat(web): redesign layameet landing to enterprise trust style and optimize seo for desktop companion (9ff0258)
+
+### 🐛 Bug Fixes & Stability
+- fix(test): adapt subtitle hook readiness contract to localSttReady (1c2cd83)
+- fix(desktop): disable window maximize, set compact overlay bounds, and add subtitle stream history (87b495e)
+- fix(desktop): resolve process lock and tray-icon conflict in desktop companion release (23025b5)
+- fix(desktop): resolve invisible window and lifecycle crash in desktop overlay companion (461a775)
+- fix(desktop): embed real signed Windows desktop binary and cert in public downloads (2b95f6a)
+
+### ⚡ Performance Optimizations
+- perf(web): lazy-load heavyweight meeting dialogs to reduce meeting bundle chunk (c14a6e5)
+
+### 🛠️ Maintenance & Refactoring
+- refactor: modularize frontend modals and decompose backend meeting service (e78e1d4)
+- build(desktop): re-sign exe after bundle patch; update download modal size and certificate link (f8b1ba6)
+- build(desktop): auto-sign bundle via signCommand and keep website installers out of the app bundle (9cb149a)
+- ci(workflows): streamline pipeline to only build and deploy on push to main (128e0d6)
+
+All notable changes to the LayaMeet platform are documented in this file.
+
 ## [1.6.0] - 2026-10-15
 
 ### 🚀 Features & Enhancements
