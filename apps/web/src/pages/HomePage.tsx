@@ -12,14 +12,15 @@ import {
   CreditCard,
   HelpCircle,
   Phone,
-  LogOut,
+  Zap,
+  Lock,
+  UserCheck,
 } from 'lucide-react';
 import { LayaMeetLogo } from '../components/common/LayaMeetLogo';
 import { ThemeToggle } from '../components/common/ThemeToggle';
 import { InteractiveMeetingPreview } from '../components/home/InteractiveMeetingPreview';
 import { Footer } from '../components/common/Footer';
 import { useLanguage } from '../context/language-context-def';
-import { useAuth } from '../context/auth-context-def';
 import { LanguageSwitcher } from '../components/common/LanguageSwitcher';
 import { DownloadModal } from '../components/home/DownloadModal';
 import { DesktopLandingSections } from '../components/home/DesktopLandingSections';
@@ -50,7 +51,7 @@ const HOME_UI: Record<string, Record<string, string>> = {
     heroH1Highlight: 'Song Ngữ AI Cho Zoom & Teams',
     heroDesc: 'Nói tiếng mẹ đẻ, hiểu đối tác tức thì. LayaMeet tự động bắt âm thanh từ máy tính và hiển thị thanh phụ đề nổi song ngữ thời gian thực mà không cần đổi phần mềm họp, không cần mời bot vào phòng.',
     btnDownloadWindows: `Tải cho Windows (${DESKTOP_RELEASE.sizeLabel})`,
-    btnSeeSteps: 'Xem cách cài đặt',
+    btnSeeSteps: 'Xem cách cài đặt (3 bước)',
     mobileNote: 'Bản Windows cài trên máy tính. Gửi link này sang máy tính của bạn để tải.',
     copyLink: 'Sao chép link',
     linkCopied: 'Đã sao chép',
@@ -88,7 +89,7 @@ const HOME_UI: Record<string, Record<string, string>> = {
     heroH1Highlight: 'Live Subtitles for Zoom & Teams',
     heroDesc: 'Speak your native language and understand your global partners instantly. LayaMeet captures system audio directly and displays an always-on-top bilingual subtitle bar without requiring bot invites.',
     btnDownloadWindows: `Download for Windows (${DESKTOP_RELEASE.sizeLabel})`,
-    btnSeeSteps: 'See how to install',
+    btnSeeSteps: 'Quick 3-step Setup',
     mobileNote: 'The Windows app installs on a computer. Send this link to your PC to download it.',
     copyLink: 'Copy link',
     linkCopied: 'Copied',
@@ -152,7 +153,6 @@ const HOME_UI: Record<string, Record<string, string>> = {
 export const HomePage: React.FC<HomePageProps> = ({ forcedLanguage }) => {
   const { language } = useLanguage();
   const effectiveLanguage = forcedLanguage || language;
-  const { user, signOut } = useAuth();
   const navigate = useNavigate();
 
   const [isNavDrawerOpen, setIsNavDrawerOpen] = useState(false);
@@ -210,17 +210,30 @@ export const HomePage: React.FC<HomePageProps> = ({ forcedLanguage }) => {
   };
 
   return (
-    <div className="home-page relative min-h-dvh bg-[#F7F9FC] dark:bg-[#090D16] text-slate-900 dark:text-slate-100 flex flex-col font-sans transition-colors overflow-x-hidden">
+    <div className="home-page relative min-h-dvh bg-[#07090E] text-slate-100 flex flex-col font-sans transition-colors overflow-x-hidden selection:bg-sky-500/30 selection:text-sky-200">
+      {/* ── AMBIENT BACKGROUND GLOW (Linear / Envato 2026 Style) ─── */}
+      <div
+        className="absolute top-0 left-1/2 -translate-x-1/2 w-[1200px] h-[650px] bg-[radial-gradient(ellipse_at_top,rgba(14,165,233,0.18)_0%,rgba(99,102,241,0.12)_40%,transparent_70%)] blur-3xl pointer-events-none -z-10"
+        aria-hidden="true"
+      />
+      <div
+        className="absolute top-[800px] -left-48 w-[500px] h-[500px] bg-sky-500/10 rounded-full blur-[120px] pointer-events-none -z-10"
+        aria-hidden="true"
+      />
+      <div
+        className="absolute top-[1400px] -right-48 w-[500px] h-[500px] bg-indigo-500/10 rounded-full blur-[120px] pointer-events-none -z-10"
+        aria-hidden="true"
+      />
 
       {/* ── MOBILE NAVBAR (< md) ─────────────────────────────────── */}
-      <header className="md:hidden sticky top-0 z-40 h-16 px-4 bg-white/90 dark:bg-[#090D16]/90 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800 flex items-center justify-between shadow-2xs">
+      <header className="md:hidden sticky top-0 z-40 h-16 px-4 bg-[#07090E]/85 backdrop-blur-xl border-b border-white/[0.08] flex items-center justify-between shadow-lg shadow-black/40">
         <div className="flex items-center gap-2">
           <button
             type="button"
             onClick={() => setIsNavDrawerOpen(true)}
             data-testid="mobile-hamburger-btn"
             aria-label={ui.navDrawerTitle}
-            className="w-10 h-10 -ml-1 rounded-xl flex items-center justify-center text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer touch-manipulation"
+            className="w-10 h-10 -ml-1 rounded-xl flex items-center justify-center text-slate-300 hover:text-white hover:bg-white/[0.06] transition-colors cursor-pointer touch-manipulation"
           >
             <Menu className="w-5 h-5" />
           </button>
@@ -232,7 +245,7 @@ export const HomePage: React.FC<HomePageProps> = ({ forcedLanguage }) => {
           <button
             type="button"
             onClick={() => setIsDownloadModalOpen(true)}
-            className="px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs flex items-center gap-1.5 shadow-xs transition-transform active:scale-95"
+            className="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-400 hover:to-blue-500 text-white font-semibold text-xs flex items-center gap-1.5 shadow-md shadow-sky-500/20 active:scale-95 transition-all"
           >
             <Download className="w-3.5 h-3.5" />
             <span>Tải App</span>
@@ -241,7 +254,7 @@ export const HomePage: React.FC<HomePageProps> = ({ forcedLanguage }) => {
       </header>
 
       {/* ── DESKTOP NAVBAR (md+) ────────────────────────────────── */}
-      <header className="hidden md:flex sticky top-0 left-0 right-0 h-16 border-b border-slate-200/80 dark:border-slate-800/80 bg-white/85 dark:bg-[#090D16]/85 backdrop-blur-md px-6 lg:px-12 items-center justify-between shrink-0 z-50 transition-colors shadow-2xs">
+      <header className="hidden md:flex sticky top-0 left-0 right-0 h-16 border-b border-white/[0.08] bg-[#07090E]/80 backdrop-blur-xl px-6 lg:px-12 items-center justify-between shrink-0 z-50 transition-colors shadow-lg shadow-black/30">
         {/* Left: Brand Logo & Hamburger */}
         <div className="flex items-center gap-3">
           <button
@@ -250,46 +263,46 @@ export const HomePage: React.FC<HomePageProps> = ({ forcedLanguage }) => {
             data-testid="header-logo-menu-btn"
             aria-label={ui.navDrawerTitle}
             title={ui.navDrawerTitle}
-            className="w-9 h-9 -ml-1 rounded-xl flex items-center justify-center text-slate-600 dark:text-slate-400 hover:text-slate-950 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+            className="w-9 h-9 -ml-1 rounded-xl flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/[0.06] transition-colors cursor-pointer"
           >
             <Menu className="w-5 h-5" />
           </button>
 
           <Link to="/" className="flex items-center gap-2.5 hover:opacity-90 transition-opacity">
             <LayaMeetLogo size="md" />
-            <span className="hidden xl:inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold tracking-wide bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200/60 dark:border-blue-900/50">
+            <span className="hidden xl:inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold tracking-wider uppercase bg-sky-500/10 text-sky-400 border border-sky-500/25">
               Desktop AI
             </span>
           </Link>
         </div>
 
         {/* Center: Anchor Links */}
-        <nav className="flex items-center gap-6 lg:gap-8 text-sm font-semibold text-slate-600 dark:text-slate-300">
+        <nav className="flex items-center gap-6 lg:gap-8 text-sm font-medium text-slate-300">
           <button
             type="button"
             onClick={() => scrollToAnchor('features')}
-            className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors cursor-pointer"
+            className="hover:text-white hover:bg-white/[0.04] px-2.5 py-1 rounded-lg transition-colors cursor-pointer"
           >
             {ui.navFeatures}
           </button>
           <button
             type="button"
             onClick={() => scrollToAnchor('how-it-works')}
-            className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors cursor-pointer"
+            className="hover:text-white hover:bg-white/[0.04] px-2.5 py-1 rounded-lg transition-colors cursor-pointer"
           >
             {ui.navHowItWorks}
           </button>
           <button
             type="button"
             onClick={() => scrollToAnchor('comparison')}
-            className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors cursor-pointer"
+            className="hover:text-white hover:bg-white/[0.04] px-2.5 py-1 rounded-lg transition-colors cursor-pointer"
           >
             {ui.navComparison}
           </button>
           {PAYMENT_ENABLED && (
             <Link
               to="/pricing"
-              className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors cursor-pointer"
+              className="hover:text-white hover:bg-white/[0.04] px-2.5 py-1 rounded-lg transition-colors cursor-pointer"
             >
               {ui.navPricing}
             </Link>
@@ -297,7 +310,7 @@ export const HomePage: React.FC<HomePageProps> = ({ forcedLanguage }) => {
           <button
             type="button"
             onClick={() => scrollToAnchor('faq')}
-            className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors cursor-pointer"
+            className="hover:text-white hover:bg-white/[0.04] px-2.5 py-1 rounded-lg transition-colors cursor-pointer"
           >
             {ui.navFaq}
           </button>
@@ -311,7 +324,7 @@ export const HomePage: React.FC<HomePageProps> = ({ forcedLanguage }) => {
           <button
             type="button"
             onClick={() => setIsDownloadModalOpen(true)}
-            className="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-semibold text-sm flex items-center gap-2 shadow-sm shadow-blue-500/20 transition-all cursor-pointer hover:shadow-md hover:-translate-y-0.5"
+            className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-400 hover:to-blue-500 active:scale-95 text-white font-semibold text-sm flex items-center gap-2 shadow-lg shadow-sky-500/20 hover:shadow-sky-500/35 transition-all cursor-pointer hover:-translate-y-0.5"
           >
             <Download className="w-4 h-4" />
             <span>{ui.navDownload}</span>
@@ -321,32 +334,39 @@ export const HomePage: React.FC<HomePageProps> = ({ forcedLanguage }) => {
 
       {/* ── MAIN CONTENT CANVAS ──────────────────────────────────── */}
       <main className="flex-1 flex flex-col">
-        {/* ── HERO SECTION (Stripe / Apple Enterprise Style) ────── */}
+        {/* ── HERO SECTION (Ultra-Modern Glassmorphic B2B Hero) ───── */}
         <section
           id="hero"
-          className="w-full max-w-7xl mx-auto px-5 sm:px-8 lg:px-12 py-12 lg:py-20 flex flex-col lg:flex-row items-center justify-between gap-12 lg:gap-16"
+          className="w-full max-w-7xl mx-auto px-5 sm:px-8 lg:px-12 pt-14 pb-16 lg:pt-20 lg:pb-24 flex flex-col lg:flex-row items-center justify-between gap-12 lg:gap-16"
         >
           {/* Left Column: Headline, CTA, trust line */}
-          <div className="w-full lg:max-w-xl xl:max-w-2xl space-y-6 text-center lg:text-left">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 text-sm font-medium">
-              <Monitor className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+          <div className="w-full lg:max-w-xl xl:max-w-2xl space-y-7 text-center lg:text-left">
+            {/* Top Glowing Tag */}
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/[0.05] border border-white/10 text-slate-200 text-xs sm:text-sm font-medium backdrop-blur-md shadow-sm">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+              <Monitor className="w-4 h-4 text-sky-400" />
               <span>{ui.desktopBadge}</span>
             </div>
 
-            <h1 className="text-4xl sm:text-5xl xl:text-[56px] font-bold tracking-tight text-slate-900 dark:text-white leading-[1.15]">
+            {/* Main Headline */}
+            <h1 className="text-4xl sm:text-5xl xl:text-[58px] font-extrabold tracking-tight text-white leading-[1.12]">
               {ui.heroH1Line1}{' '}
-              <span className="text-blue-600 dark:text-blue-400">{ui.heroH1Highlight}</span>
+              <span className="bg-gradient-to-r from-sky-400 via-blue-400 to-indigo-400 bg-clip-text text-transparent">
+                {ui.heroH1Highlight}
+              </span>
             </h1>
 
-            <p className="text-base sm:text-lg text-slate-600 dark:text-slate-300 leading-relaxed max-w-2xl mx-auto lg:mx-0">
+            {/* Subtitle */}
+            <p className="text-base sm:text-lg text-slate-300 leading-relaxed max-w-2xl mx-auto lg:mx-0 font-normal">
               {ui.heroDesc}
             </p>
 
-            <div className="pt-2 flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-3">
+            {/* Action Buttons */}
+            <div className="pt-2 flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4">
               <button
                 type="button"
                 onClick={() => setIsDownloadModalOpen(true)}
-                className="w-full sm:w-auto px-6 py-3.5 rounded-xl bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-semibold text-base flex items-center justify-center gap-2.5 transition-colors cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
+                className="w-full sm:w-auto px-7 py-4 rounded-2xl bg-gradient-to-r from-sky-500 via-blue-600 to-indigo-600 hover:from-sky-400 hover:to-blue-500 text-white font-bold text-base flex items-center justify-center gap-2.5 shadow-xl shadow-sky-500/25 hover:shadow-sky-500/40 hover:-translate-y-0.5 active:translate-y-0 transition-all cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-500"
               >
                 <Download className="w-5 h-5" />
                 <span>{ui.btnDownloadWindows}</span>
@@ -355,43 +375,82 @@ export const HomePage: React.FC<HomePageProps> = ({ forcedLanguage }) => {
               <button
                 type="button"
                 onClick={() => scrollToAnchor('how-it-works')}
-                className="w-full sm:w-auto px-6 py-3.5 rounded-xl bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-100 font-semibold text-base flex items-center justify-center gap-2 border border-slate-300 dark:border-slate-700 transition-colors cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
+                className="w-full sm:w-auto px-6 py-4 rounded-2xl bg-white/[0.04] hover:bg-white/[0.08] text-slate-200 hover:text-white font-semibold text-base flex items-center justify-center gap-2 border border-white/10 hover:border-white/20 backdrop-blur-md transition-all cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-500"
               >
                 <span>{ui.btnSeeSteps}</span>
-                <ArrowRight className="w-4 h-4" />
+                <ArrowRight className="w-4 h-4 text-sky-400" />
               </button>
             </div>
 
-            <div className="md:hidden rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-3 text-left space-y-2">
-              <p className="text-sm text-slate-600 dark:text-slate-300">{ui.mobileNote}</p>
+            {/* Mobile Note */}
+            <div className="md:hidden rounded-2xl border border-white/10 bg-white/[0.03] p-3.5 text-left space-y-2 backdrop-blur-md">
+              <p className="text-xs text-slate-300">{ui.mobileNote}</p>
               <button
                 type="button"
                 onClick={copyPageLink}
-                className="px-3 py-2 rounded-lg bg-slate-100 dark:bg-slate-800 text-sm font-semibold text-slate-800 dark:text-slate-100 cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
+                className="px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/15 text-xs font-semibold text-white cursor-pointer transition-colors"
               >
                 <span aria-live="polite">{linkCopied ? ui.linkCopied : ui.copyLink}</span>
               </button>
             </div>
 
-            <p className="flex items-start justify-center lg:justify-start gap-2 text-sm text-slate-600 dark:text-slate-400">
-              <ShieldCheck className="w-4 h-4 mt-0.5 shrink-0 text-emerald-600 dark:text-emerald-400" />
+            {/* Trust Microcopy */}
+            <p className="flex items-start justify-center lg:justify-start gap-2 text-xs sm:text-sm text-slate-400">
+              <ShieldCheck className="w-4 h-4 mt-0.5 shrink-0 text-emerald-400" />
               <span>{ui.downloadMicrocopy}</span>
             </p>
+
+            {/* 3 Trust Metric Cards */}
+            <div className="pt-2 grid grid-cols-3 gap-3 border-t border-white/[0.08]">
+              <div className="p-3 rounded-xl bg-white/[0.02] border border-white/[0.06]">
+                <div className="flex items-center gap-1.5 text-sky-400 font-bold text-base sm:text-lg">
+                  <Zap className="w-4 h-4 text-sky-400 shrink-0" />
+                  <span>{ui.statLatency}</span>
+                </div>
+                <div className="text-[11px] sm:text-xs text-slate-400 mt-0.5">{ui.statLatencyLabel}</div>
+              </div>
+
+              <div className="p-3 rounded-xl bg-white/[0.02] border border-white/[0.06]">
+                <div className="flex items-center gap-1.5 text-emerald-400 font-bold text-base sm:text-lg">
+                  <Lock className="w-4 h-4 text-emerald-400 shrink-0" />
+                  <span>{ui.statSecurity}</span>
+                </div>
+                <div className="text-[11px] sm:text-xs text-slate-400 mt-0.5">{ui.statSecurityLabel}</div>
+              </div>
+
+              <div className="p-3 rounded-xl bg-white/[0.02] border border-white/[0.06]">
+                <div className="flex items-center gap-1.5 text-indigo-400 font-bold text-base sm:text-lg">
+                  <UserCheck className="w-4 h-4 text-indigo-400 shrink-0" />
+                  <span>{ui.statNoBot}</span>
+                </div>
+                <div className="text-[11px] sm:text-xs text-slate-400 mt-0.5">{ui.statNoBotLabel}</div>
+              </div>
+            </div>
           </div>
 
-          {/* Right Column: live subtitle preview */}
+          {/* Right Column: Interactive Subtitle Window Mockup */}
           <div className="w-full lg:max-w-lg xl:max-w-xl shrink-0">
-            <div className="rounded-xl bg-slate-50 dark:bg-slate-900/60 p-3 sm:p-4 border border-slate-200 dark:border-slate-800">
-              <div className="mb-3 px-3 py-1.5 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex items-center justify-between text-sm font-medium text-slate-700 dark:text-slate-300">
-                <div className="flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-emerald-500 motion-safe:animate-pulse" />
-                  <span>{ui.liveOverlayBadge}</span>
+            <div className="relative rounded-2xl bg-[#0D121F]/90 p-3 sm:p-5 border border-white/[0.12] shadow-2xl backdrop-blur-2xl ring-1 ring-white/10">
+              {/* Window Header */}
+              <div className="mb-3.5 px-3.5 py-2 rounded-xl bg-black/40 border border-white/[0.08] flex items-center justify-between text-xs font-medium text-slate-300">
+                <div className="flex items-center gap-2.5">
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-2.5 h-2.5 rounded-full bg-red-500/80" />
+                    <span className="w-2.5 h-2.5 rounded-full bg-amber-500/80" />
+                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-500/80" />
+                  </div>
+                  <span className="text-slate-500">|</span>
+                  <div className="flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                    <span className="font-semibold text-slate-200">{ui.liveOverlayBadge}</span>
+                  </div>
                 </div>
-                <span className="px-2 py-0.5 rounded-md bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 text-xs font-semibold">
+                <span className="px-2.5 py-0.5 rounded-full bg-sky-500/15 text-sky-400 border border-sky-500/30 text-[10px] font-bold tracking-wide">
                   {ui.alwaysOnTopPill}
                 </span>
               </div>
 
+              {/* Interactive Meeting Preview Engine */}
               <InteractiveMeetingPreview onClose={() => {}} />
             </div>
           </div>
@@ -412,7 +471,7 @@ export const HomePage: React.FC<HomePageProps> = ({ forcedLanguage }) => {
         <div className="fixed inset-0 z-50 flex">
           {/* Backdrop */}
           <div
-            className="fixed inset-0 bg-black/60 backdrop-blur-xs transition-opacity animate-in fade-in duration-200"
+            className="fixed inset-0 bg-black/75 backdrop-blur-xs transition-opacity animate-in fade-in duration-200"
             onClick={() => setIsNavDrawerOpen(false)}
             aria-hidden="true"
           />
@@ -422,18 +481,18 @@ export const HomePage: React.FC<HomePageProps> = ({ forcedLanguage }) => {
             role="dialog"
             aria-modal="true"
             aria-label={ui.navDrawerTitle}
-            className="relative z-10 w-full max-w-[280px] h-full bg-white dark:bg-[#090D16] border-r border-slate-200 dark:border-slate-800 p-5 flex flex-col justify-between shadow-2xl animate-in slide-in-from-left duration-200 overflow-y-auto"
+            className="relative z-10 w-full max-w-[290px] h-full bg-[#0B0F19] border-r border-white/10 p-5 flex flex-col justify-between shadow-2xl animate-in slide-in-from-left duration-200 overflow-y-auto"
           >
             <div className="space-y-4">
               {/* Brand Header with Close (X) button */}
-              <div className="flex items-center justify-between pb-3 border-b border-slate-200/80 dark:border-slate-800">
+              <div className="flex items-center justify-between pb-3 border-b border-white/10">
                 <LayaMeetLogo size="md" />
                 <button
                   type="button"
                   onClick={() => setIsNavDrawerOpen(false)}
                   data-testid="nav-drawer-close-btn"
                   aria-label={ui.closeDrawer}
-                  className="w-9 h-9 rounded-xl flex items-center justify-center text-slate-500 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                  className="w-9 h-9 rounded-xl flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/[0.08] transition-colors cursor-pointer"
                 >
                   <X className="w-5 h-5" />
                 </button>
@@ -445,9 +504,9 @@ export const HomePage: React.FC<HomePageProps> = ({ forcedLanguage }) => {
                   type="button"
                   onClick={() => handleSelectDrawerItem('home')}
                   data-testid="drawer-home"
-                  className="w-full px-3 py-2.5 rounded-xl flex items-center gap-3 text-sm font-semibold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/40 cursor-pointer text-left"
+                  className="w-full px-3 py-2.5 rounded-xl flex items-center gap-3 text-sm font-semibold text-sky-400 bg-sky-500/10 border border-sky-500/20 cursor-pointer text-left"
                 >
-                  <Home className="w-4 h-4 text-blue-500 shrink-0" />
+                  <Home className="w-4 h-4 text-sky-400 shrink-0" />
                   <span>{ui.railHome}</span>
                 </button>
 
@@ -455,9 +514,9 @@ export const HomePage: React.FC<HomePageProps> = ({ forcedLanguage }) => {
                   type="button"
                   onClick={() => handleSelectDrawerItem('features')}
                   data-testid="drawer-features"
-                  className="w-full px-3 py-2.5 rounded-xl flex items-center gap-3 text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer text-left"
+                  className="w-full px-3 py-2.5 rounded-xl flex items-center gap-3 text-sm font-medium text-slate-300 hover:text-white hover:bg-white/[0.06] transition-colors cursor-pointer text-left"
                 >
-                  <Sparkles className="w-4 h-4 text-slate-500 dark:text-slate-400 shrink-0" />
+                  <Sparkles className="w-4 h-4 text-slate-400 shrink-0" />
                   <span>{ui.railFeatures}</span>
                 </button>
 
@@ -466,9 +525,9 @@ export const HomePage: React.FC<HomePageProps> = ({ forcedLanguage }) => {
                     type="button"
                     onClick={() => handleSelectDrawerItem('pricing')}
                     data-testid="drawer-pricing"
-                    className="w-full px-3 py-2.5 rounded-xl flex items-center gap-3 text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer text-left"
+                    className="w-full px-3 py-2.5 rounded-xl flex items-center gap-3 text-sm font-medium text-slate-300 hover:text-white hover:bg-white/[0.06] transition-colors cursor-pointer text-left"
                   >
-                    <CreditCard className="w-4 h-4 text-slate-500 dark:text-slate-400 shrink-0" />
+                    <CreditCard className="w-4 h-4 text-slate-400 shrink-0" />
                     <span>{ui.railPricing}</span>
                   </button>
                 )}
@@ -477,9 +536,9 @@ export const HomePage: React.FC<HomePageProps> = ({ forcedLanguage }) => {
                   type="button"
                   onClick={() => handleSelectDrawerItem('faq')}
                   data-testid="drawer-faq"
-                  className="w-full px-3 py-2.5 rounded-xl flex items-center gap-3 text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer text-left"
+                  className="w-full px-3 py-2.5 rounded-xl flex items-center gap-3 text-sm font-medium text-slate-300 hover:text-white hover:bg-white/[0.06] transition-colors cursor-pointer text-left"
                 >
-                  <HelpCircle className="w-4 h-4 text-slate-500 dark:text-slate-400 shrink-0" />
+                  <HelpCircle className="w-4 h-4 text-slate-400 shrink-0" />
                   <span>{ui.railFaq}</span>
                 </button>
 
@@ -487,70 +546,41 @@ export const HomePage: React.FC<HomePageProps> = ({ forcedLanguage }) => {
                   type="button"
                   onClick={() => handleSelectDrawerItem('contact')}
                   data-testid="drawer-contact"
-                  className="w-full px-3 py-2.5 rounded-xl flex items-center gap-3 text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer text-left"
+                  className="w-full px-3 py-2.5 rounded-xl flex items-center gap-3 text-sm font-medium text-slate-300 hover:text-white hover:bg-white/[0.06] transition-colors cursor-pointer text-left"
                 >
-                  <Phone className="w-4 h-4 text-slate-500 dark:text-slate-400 shrink-0" />
+                  <Phone className="w-4 h-4 text-slate-400 shrink-0" />
                   <span>{ui.railContact}</span>
                 </button>
 
                 {/* Mobile Download CTA inside drawer */}
-                <div className="pt-2">
+                <div className="pt-3">
                   <button
                     type="button"
                     onClick={() => {
                       setIsNavDrawerOpen(false);
                       setIsDownloadModalOpen(true);
                     }}
-                    className="w-full py-2.5 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-semibold text-xs flex items-center justify-center gap-2 shadow-xs transition-transform active:scale-95 cursor-pointer"
+                    className="w-full px-4 py-3 rounded-xl bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-400 hover:to-blue-500 text-white font-bold text-sm flex items-center justify-center gap-2 shadow-lg shadow-sky-500/20"
                   >
                     <Download className="w-4 h-4" />
-                    <span>{ui.navDownload}</span>
+                    <span>{ui.btnDownloadWindows}</span>
                   </button>
-                </div>
-
-                {/* Compatibility testids for audit scripts (hidden from visual UI) */}
-                <div className="sr-only" aria-hidden="true">
-                  <button type="button" onClick={() => handleSelectDrawerItem('calendar')} data-testid="drawer-calendar" tabIndex={-1}>Calendar</button>
-                  <button type="button" onClick={() => handleSelectDrawerItem('history')} data-testid="drawer-history" tabIndex={-1}>History</button>
-                  <button type="button" onClick={() => handleSelectDrawerItem('tools')} data-testid="drawer-tools" tabIndex={-1}>Tools</button>
-                  <button type="button" onClick={() => handleSelectDrawerItem('settings')} data-testid="drawer-settings" tabIndex={-1}>Settings</button>
                 </div>
               </nav>
             </div>
 
-            {user?.email && (
-              <div className="pt-3 border-t border-slate-200/80 dark:border-slate-800 flex items-center justify-between gap-2">
-                <div className="min-w-0">
-                  <p className="text-xs font-semibold text-slate-900 dark:text-slate-100 truncate">
-                    {user.fullName || user.email.split('@')[0]}
-                  </p>
-                  <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate">
-                    {user.email}
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  onClick={async () => {
-                    setIsNavDrawerOpen(false);
-                    await signOut();
-                  }}
-                  title={language === 'ja' ? 'ログアウト' : language === 'en' ? 'Sign out' : 'Đăng xuất'}
-                  aria-label="Sign out"
-                  className="p-2 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer shrink-0"
-                >
-                  <LogOut className="w-4 h-4" />
-                </button>
-              </div>
-            )}
+            <div className="pt-4 border-t border-white/10 text-[11px] text-slate-500">
+              © 2026 LayaMeet AI Technologies
+            </div>
           </aside>
         </div>
       )}
 
-      {/* ── DOWNLOAD MODAL ───────────────────────────────────────── */}
+      {/* Download Modal Component */}
       <DownloadModal
         isOpen={isDownloadModalOpen}
-        language={effectiveLanguage}
         onClose={() => setIsDownloadModalOpen(false)}
+        language={effectiveLanguage}
       />
     </div>
   );
