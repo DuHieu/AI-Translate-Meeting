@@ -146,6 +146,7 @@ export interface JoinMeetingResponse {
   token: string;
   subtitleToken: string;
   role: 'host' | 'participant';
+  connectionMode?: 'server' | 'p2p';
   sessionToken?: string;
 
   joinedAt: string;
@@ -267,6 +268,7 @@ export interface MeetingSessionData {
   token: string;
   subtitleToken: string;
   role: 'host' | 'participant';
+  connectionMode?: 'server' | 'p2p';
   sessionToken?: string;
   hostToken?: string;
   initialMicOn?: boolean;

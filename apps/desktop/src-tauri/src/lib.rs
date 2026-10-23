@@ -147,6 +147,100 @@ fn set_window_mode(window: WebviewWindow, mode: String) -> Result<(), String> {
     window_manager::set_window_mode(&window, &mode)
 }
 
+#[derive(Serialize, Clone)]
+#[serde(rename_all = "camelCase")]
+struct DesktopUpdateProgress {
+    downloaded: u64,
+    total: u64,
+    percent: u8,
+}
+
+#[tauri::command]
+fn get_desktop_app_version(app: AppHandle) -> String {
+    app.package_info().version.to_string()
+}
+
+/// Downloads the NSIS installer from `installer_url` to `%TEMP%`, emits progress,
+/// launches the installer (silent upgrade `/S` by default) and exits the current app.
+#[tauri::command]
+async fn install_desktop_update(
+    app: AppHandle,
+    installer_url: String,
+    silent: Option<bool>,
+) -> Result<(), String> {
+    if !installer_url.starts_with("https://") && !installer_url.starts_with("http://") {
+        return Err("URL bộ cài đặt không hợp lệ (chỉ chấp nhận http/https)".into());
+    }
+
+    let temp_dir = std::env::temp_dir();
+    let part_path = temp_dir.join("LayaMeet-Desktop-Update-Setup.exe.part");
+    let final_path = temp_dir.join("LayaMeet-Desktop-Update-Setup.exe");
+
+    let client = reqwest::Client::new();
+    let mut resp = client
+        .get(&installer_url)
+        .send()
+        .await
+        .and_then(|r| r.error_for_status())
+        .map_err(|e| format!("Không thể tải bản cập nhật: {e}"))?;
+
+    let total = resp.content_length().unwrap_or(0);
+    let mut file = std::fs::File::create(&part_path).map_err(|e| e.to_string())?;
+    let mut downloaded = 0u64;
+
+    while let Some(chunk) = resp.chunk().await.map_err(|e| e.to_string())? {
+        file.write_all(&chunk).map_err(|e| e.to_string())?;
+        downloaded += chunk.len() as u64;
+        let percent = if total > 0 {
+            ((downloaded.saturating_mul(100)) / total).min(100) as u8
+        } else {
+            50
+        };
+        let _ = app.emit(
+            "desktop-update-progress",
+            DesktopUpdateProgress {
+                downloaded,
+                total,
+                percent,
+            },
+        );
+    }
+    drop(file);
+
+    if downloaded < 512_000 {
+        let _ = std::fs::remove_file(&part_path);
+        return Err("Tệp cài đặt tải về không hợp lệ hoặc bị hỏng.".into());
+    }
+
+    let _ = std::fs::remove_file(&final_path);
+    std::fs::rename(&part_path, &final_path).map_err(|e| e.to_string())?;
+
+    if silent.unwrap_or(false) {
+        let exe_to_relaunch = std::env::current_exe()
+            .ok()
+            .and_then(|p| p.to_str().map(|s| s.to_string()))
+            .unwrap_or_default();
+        let ps_script = format!(
+            "Start-Sleep -Milliseconds 600; Start-Process -FilePath '{}' -ArgumentList '/S' -Wait; if ('{}' -ne '' -and (Test-Path '{}')) {{ Start-Process -FilePath '{}' }}",
+            final_path.to_string_lossy().replace('\'', "''"),
+            exe_to_relaunch.replace('\'', "''"),
+            exe_to_relaunch.replace('\'', "''"),
+            exe_to_relaunch.replace('\'', "''")
+        );
+        std::process::Command::new("powershell")
+            .args(["-NoProfile", "-WindowStyle", "Hidden", "-Command", &ps_script])
+            .spawn()
+            .map_err(|e| format!("Không thể khởi chạy trình cập nhật tự động: {e}"))?;
+    } else {
+        std::process::Command::new(&final_path)
+            .spawn()
+            .map_err(|e| format!("Không thể khởi chạy trình cài đặt: {e}"))?;
+    }
+
+    app.exit(0);
+    Ok(())
+}
+
 
 use std::fs::OpenOptions;
 use std::io::Write;
@@ -217,7 +311,9 @@ pub fn run() {
             stop_audio_capture,
             set_click_through,
             save_meeting_minutes,
-            set_window_mode
+            set_window_mode,
+            get_desktop_app_version,
+            install_desktop_update
         ])
         .build(context)
         .expect("error while building LayaMeet Desktop Companion application");

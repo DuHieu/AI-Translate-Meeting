@@ -224,6 +224,12 @@ export const PreJoinPage: React.FC<PreJoinPageProps> = ({ onJoined }) => {
   const [admissionRejected, setAdmissionRejected] = useState(false);
   const [schedule, setSchedule] = useState<MeetingSchedule | null>(null);
   const [hasPreApprovedPass, setHasPreApprovedPass] = useState(false);
+  const [isP2PMode, setIsP2PMode] = useState<boolean>(() => {
+    const modeParam = new URLSearchParams(window.location.search).get('mode');
+    if (modeParam === 'p2p') return true;
+    const upperCode = (meetingCode || '').trim().toUpperCase();
+    return /^P2P-/.test(upperCode);
+  });
 
   const [audioDevices, setAudioDevices] = useState<MediaDeviceInfo[]>([]);
   const [videoDevices, setVideoDevices] = useState<MediaDeviceInfo[]>([]);
@@ -538,6 +544,7 @@ export const PreJoinPage: React.FC<PreJoinPageProps> = ({ onJoined }) => {
       token: joinRes.token,
       subtitleToken: joinRes.subtitleToken,
       sessionToken: joinRes.sessionToken,
+      connectionMode: joinRes.connectionMode,
       role: joinRes.role,
       hostToken: joinRes.role === 'host' ? hostToken || undefined : undefined,
       initialMicOn: isMicOn,
@@ -601,6 +608,26 @@ export const PreJoinPage: React.FC<PreJoinPageProps> = ({ onJoined }) => {
     completeJoin,
   ]);
 
+  const joinAsP2P = (code: string) => {
+    const pid = `p2p-${Math.random().toString(36).slice(2, 10)}`;
+    stopPreview();
+    completeJoin({
+      meetingId: `p2p-room-${code}`,
+      meetingCode: code,
+      participantId: pid,
+      identity: pid,
+      displayName: displayName.trim(),
+      spokenLanguage,
+      targetLanguage,
+      liveKitUrl: 'p2p://trystero',
+      token: 'p2p-serverless-token',
+      subtitleToken: 'p2p-subtitle-token',
+      role: 'host',
+      connectionMode: 'p2p',
+      joinedAt: new Date().toISOString(),
+    });
+  };
+
   const handleJoinNow = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!meetingCode) return;
@@ -619,6 +646,10 @@ export const PreJoinPage: React.FC<PreJoinPageProps> = ({ onJoined }) => {
     const code = meetingCode.trim().toUpperCase();
 
     try {
+      if (isP2PMode) {
+        joinAsP2P(code);
+        return;
+      }
       const credential = admissionStorage.getHostToken(code)
         || inviteToken.trim()
         || admissionStorage.getInviteToken(code)
@@ -649,6 +680,11 @@ export const PreJoinPage: React.FC<PreJoinPageProps> = ({ onJoined }) => {
             targetLanguage,
           });
         } else {
+          if (!(joinErr instanceof ApiError && joinErr.code?.startsWith('admission_'))) {
+            // Automatic Serverless P2P Fallback when Backend Server is offline
+            joinAsP2P(code);
+            return;
+          }
           throw joinErr;
         }
       }
@@ -705,6 +741,20 @@ export const PreJoinPage: React.FC<PreJoinPageProps> = ({ onJoined }) => {
               className="md:hidden p-2 rounded-lg border border-zinc-300 dark:border-[#3a3a40] bg-white hover:bg-zinc-100 dark:bg-[#202024] text-zinc-700 dark:text-zinc-300 transition-colors cursor-pointer"
             >
               <Settings className="w-4 h-4" />
+            </button>
+            <button
+              type="button"
+              onClick={() => setIsP2PMode((prev) => !prev)}
+              aria-pressed={isP2PMode}
+              title="Chuyển đổi giữa Chế độ P2P Qua Internet (Không cần Server) và Chế độ Server SFU"
+              className={`min-h-[44px] px-3 py-1.5 rounded-lg border text-xs font-mono font-semibold flex items-center gap-1.5 transition-colors cursor-pointer ${
+                isP2PMode
+                  ? 'bg-[#0F766E] border-teal-600 text-white'
+                  : 'bg-white dark:bg-[#202024] border-zinc-300 dark:border-[#3a3a40] text-zinc-700 dark:text-zinc-300'
+              }`}
+            >
+              <Globe className="w-3.5 h-3.5 shrink-0" />
+              <span>{isP2PMode ? 'P2P Serverless: BẬT' : 'Chế độ: Server / Auto P2P'}</span>
             </button>
             <ThemeToggle />
             <button

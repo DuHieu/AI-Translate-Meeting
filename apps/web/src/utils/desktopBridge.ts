@@ -4,12 +4,41 @@
  * and provides appropriate API/WebSocket endpoints and native window controls.
  */
 
+const VPS_URL_STORAGE_KEY = 'layameet:vps-url';
+
+export function getCustomVpsUrl(): string {
+  if (typeof window === 'undefined') return '';
+  try {
+    return (localStorage.getItem(VPS_URL_STORAGE_KEY) || '').trim().replace(/\/+$/, '');
+  } catch {
+    return '';
+  }
+}
+
+export function setCustomVpsUrl(url: string): void {
+  if (typeof window === 'undefined') return;
+  try {
+    const clean = url.trim().replace(/\/+$/, '');
+    if (clean) {
+      localStorage.setItem(VPS_URL_STORAGE_KEY, clean);
+    } else {
+      localStorage.removeItem(VPS_URL_STORAGE_KEY);
+    }
+  } catch {
+    // ignore storage errors
+  }
+}
+
 export function isDesktopApp(): boolean {
   if (typeof window === 'undefined') return false;
   return '__TAURI_INTERNALS__' in window || '__TAURI__' in window;
 }
 
 export function getApiBaseUrl(): string {
+  const customVps = getCustomVpsUrl();
+  if (customVps) {
+    return customVps;
+  }
   if (import.meta.env.VITE_API_URL) {
     return import.meta.env.VITE_API_URL;
   }
@@ -21,6 +50,11 @@ export function getApiBaseUrl(): string {
 }
 
 export function getSubtitleWsUrl(): string {
+  const customVps = getCustomVpsUrl();
+  if (customVps) {
+    const wsBase = customVps.replace(/^https:/i, 'wss:').replace(/^http:/i, 'ws:');
+    return `${wsBase}/ws/transcribe`;
+  }
   if (import.meta.env.VITE_SUBTITLE_WS_URL) {
     return import.meta.env.VITE_SUBTITLE_WS_URL;
   }

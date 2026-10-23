@@ -100,25 +100,51 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-cargo-release-
 
-      - name: Build Desktop Executable (Release)
-        working-directory: apps/desktop/src-tauri
-        run: cargo build --release
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
 
-      - name: Package Desktop Artifacts
+      - name: Build Web Frontend
+        working-directory: apps/web
+        run: |
+          npm ci
+          npm run build
+
+      - name: Build Windows NSIS Setup Installer (.exe)
+        working-directory: apps/desktop/src-tauri
+        run: npx --yes "@tauri-apps/cli@2" build --bundles nsis
+
+      - name: Package Desktop Setup & OTA Manifest
         shell: pwsh
         run: |
           $tag = "${{ needs.version-and-tag.outputs.tag }}"
-          $exePath = "apps/desktop/src-tauri/target/release/layameet-desktop.exe"
-          $zipPath = "LayaMeet-Desktop-$tag-Windows-x64.zip"
-          Compress-Archive -Path $exePath -DestinationPath $zipPath -Force
-          Write-Host "Created $zipPath successfully"
+          $cleanVer = $tag.TrimStart('v')
+          $setupExe = Get-ChildItem "apps/desktop/src-tauri/target/release/bundle/nsis/*-setup.exe" | Select-Object -First 1
+          $outExe = "LayaMeet-Desktop-Setup-$tag.exe"
+          Copy-Item $setupExe.FullName $outExe -Force
+          $sha256 = (Get-FileHash $outExe -Algorithm SHA256).Hash
+          $sizeMb = [Math]::Max(1, [Math]::Round((Get-Item $outExe).Length / 1MB))
+          $manifest = @{
+            version = $cleanVer
+            pubDate = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ")
+            platform = "Windows 10/11 · 64-bit"
+            fileName = $outExe
+            downloadUrl = "/downloads/$outExe"
+            sizeLabel = "$sizeMb MB"
+            sha256 = $sha256
+            notes = "Release $tag"
+          }
+          ($manifest | ConvertTo-Json -Depth 5) | Set-Content "latest.json" -Encoding UTF8
+          Write-Host "Created $outExe ($sizeMb MB, SHA256: $sha256) and latest.json"
 
       - name: Upload Desktop Artifacts
         uses: actions/upload-artifact@v4
         with:
           name: desktop-windows-binary
           path: |
-            LayaMeet-Desktop-*-Windows-x64.zip
+            LayaMeet-Desktop-Setup-*.exe
+            latest.json
             apps/desktop/src-tauri/target/release/layameet-desktop.exe
 
   publish-github-release:

@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import {
-  Menu,
   X,
   Home,
   Sparkles,
@@ -195,19 +194,8 @@ export const PublicPageShell: React.FC<PublicPageShellProps> = ({
       {/* ── Top Header Bar (Desktop & Mobile) ── */}
       <header className="sticky top-0 z-40 h-14 w-full bg-white/90 dark:bg-[#0f0f10]/90 backdrop-blur-md border-b border-zinc-200/80 dark:border-[#272832]/80 shadow-2xs">
         <div className="max-w-[1536px] 2xl:max-w-[1720px] mx-auto px-4 sm:px-6 lg:px-8 h-full flex items-center justify-between gap-3">
-          {/* Left: Hamburger & Brand Logo & Header Inline Breadcrumbs (Vercel / GitHub style) */}
+          {/* Left: Brand Logo & Header Inline Breadcrumbs */}
           <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-            <button
-              type="button"
-              onClick={() => setIsNavDrawerOpen(true)}
-              data-testid="header-logo-menu-btn"
-              aria-label={copy.navDrawerTitle}
-              title={copy.navDrawerTitle}
-              className="w-9 h-9 -ml-1 rounded-xl flex items-center justify-center text-zinc-600 dark:text-zinc-400 hover:text-zinc-950 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer shrink-0"
-            >
-              <Menu className="w-5 h-5" />
-            </button>
-
             <Link
               to="/"
               className="flex items-center hover:opacity-90 transition-opacity shrink-0"
