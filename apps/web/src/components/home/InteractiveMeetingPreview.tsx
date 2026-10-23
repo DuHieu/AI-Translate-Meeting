@@ -1,28 +1,26 @@
 import React, { useState, useEffect } from 'react';
-import { Mic, Globe, Zap, CheckCircle2, Play, Pause, X } from 'lucide-react';
+import { Mic, Play, Pause, X, Check, Volume2 } from 'lucide-react';
 import { useLanguage } from '../../context/language-context-def';
 
-// Razor-sharp inline SVG flags
 const FlagJP: React.FC<{ className?: string }> = ({ className = 'w-3.5 h-2.5' }) => (
-  <svg className={`${className} rounded-[2px] inline-block shrink-0 shadow-xs border border-zinc-700/50`} viewBox="0 0 900 600">
+  <svg className={`${className} rounded-[1px] inline-block shrink-0 border border-zinc-700/60`} viewBox="0 0 900 600">
     <rect width="900" height="600" fill="#ffffff" />
     <circle cx="450" cy="300" r="180" fill="#bc002d" />
   </svg>
 );
 
 const FlagVN: React.FC<{ className?: string }> = ({ className = 'w-3.5 h-2.5' }) => (
-  <svg className={`${className} rounded-[2px] inline-block shrink-0 shadow-xs border border-zinc-700/50`} viewBox="0 0 900 600">
+  <svg className={`${className} rounded-[1px] inline-block shrink-0 border border-zinc-700/60`} viewBox="0 0 900 600">
     <rect width="900" height="600" fill="#da251d" />
     <polygon points="450,150 491,277 625,277 516,356 558,483 450,404 342,483 384,356 275,277 409,277" fill="#ffff00" />
   </svg>
 );
 
 const FlagUS: React.FC<{ className?: string }> = ({ className = 'w-3.5 h-2.5' }) => (
-  <svg className={`${className} rounded-[2px] inline-block shrink-0 shadow-xs border border-zinc-700/50`} viewBox="0 0 741 390">
+  <svg className={`${className} rounded-[1px] inline-block shrink-0 border border-zinc-700/60`} viewBox="0 0 741 390">
     <rect width="741" height="390" fill="#B22234" />
     <path d="M0,30H741M0,90H741M0,150H741M0,210H741M0,270H741M0,330H741" stroke="#fff" strokeWidth="30" />
     <rect width="296" height="210" fill="#3C3B6E" />
-    <circle cx="148" cy="105" r="70" fill="#ffffff" opacity="0.3" />
   </svg>
 );
 
@@ -34,14 +32,12 @@ interface DialogueTurn {
   shortName: string;
   role: string;
   avatarInitials: string;
-  avatarBg: string;
   flagComponent: React.FC<{ className?: string }>;
   sourceLang: string;
   sourceText: string;
   translations: Record<TargetLanguage, string>;
   actionItem?: {
     text: Record<TargetLanguage, string>;
-    confidence: string;
   };
   latencyMs: number;
 }
@@ -51,76 +47,70 @@ const DIALOGUE_SCRIPT: DialogueTurn[] = [
     id: 'turn-1',
     speaker: 'Kenji Sato',
     shortName: 'Kenji S.',
-    role: 'Tokyo',
+    role: 'Tokyo · Product Lead',
     avatarInitials: 'KS',
-    avatarBg: 'from-violet-600 to-indigo-700',
     flagComponent: FlagJP,
     sourceLang: 'JA',
     sourceText: '来週のリリースに向けて、多言語リアルタイム翻訳の遅延を350ms以下に最適化しました。',
     translations: {
       VI: 'Trước đợt phát hành tuần tới, chúng tôi đã tối ưu độ trễ dịch đa ngữ thời gian thực xuống dưới 350ms.',
-      EN: 'Ahead of next week\'s release, we have optimized multi-language real-time translation latency to under 350ms.',
+      EN: "Ahead of next week's release, we have optimized multi-language real-time translation latency to under 350ms.",
       JA: '来週のリリースに向けて、多言語リアルタイム翻訳の遅延を350ms以下に最適化しました。',
     },
     actionItem: {
       text: {
-        VI: 'Xác nhận benchmark STT đa ngữ <350ms trên cụm Staging',
-        EN: 'Verify multilingual STT benchmark <350ms on Staging cluster',
-        JA: 'Staging環境で多言語STTベンチマーク（<350ms）を検証',
+        VI: 'Action: Xác nhận benchmark STT đa ngữ <350ms trên Staging',
+        EN: 'Action: Verify multilingual STT benchmark <350ms on Staging',
+        JA: '課題: Staging環境で多言語STTベンチマーク（<350ms）を検証',
       },
-      confidence: '98%',
     },
-    latencyMs: 312,
+    latencyMs: 118,
   },
   {
     id: 'turn-2',
     speaker: 'David Miller',
     shortName: 'David M.',
-    role: 'San Francisco',
+    role: 'San Francisco · Infra',
     avatarInitials: 'DM',
-    avatarBg: 'from-emerald-600 to-teal-700',
     flagComponent: FlagUS,
     sourceLang: 'EN',
-    sourceText: 'All global participants are receiving seamless local subtitles in their own language without any lag.',
+    sourceText: 'All participants receive direct bilingual captions from system audio without inviting any meeting bots.',
     translations: {
-      VI: 'Tất cả thành viên toàn cầu đều nhận được phụ đề song ngữ theo ngôn ngữ riêng mà không bị gián đoạn.',
-      EN: 'All global participants are receiving seamless local subtitles in their own language without any lag.',
-      JA: '世界中の全参加者が、遅延なく各自の母国語でリアルタイム字幕を受信できています。',
+      VI: 'Tất cả thành viên đều nhận được phụ đề song ngữ trực tiếp từ âm thanh hệ thống mà không cần mời bot vào phòng.',
+      EN: 'All participants receive direct bilingual captions from system audio without inviting any meeting bots.',
+      JA: '会議ボットを招待することなく、システム音声から直接リアルタイム二言語字幕を受信できます。',
     },
     actionItem: {
       text: {
-        VI: 'Thử nghiệm phòng họp 10 quốc gia đồng thời vào thứ Năm',
-        EN: 'Scale test 10 concurrent country regions this Thursday',
-        JA: '木曜日に10か国同時接続での会議室ストレステストを実施',
+        VI: 'Action: Kiểm thử tải 10 phòng họp đồng thời vào thứ Năm',
+        EN: 'Action: Run 10-room concurrent stress test this Thursday',
+        JA: '課題: 木曜日に10会議室同時接続の負荷テストを実施',
       },
-      confidence: '96%',
     },
-    latencyMs: 295,
+    latencyMs: 94,
   },
   {
     id: 'turn-3',
     speaker: 'Minh Nguyen',
     shortName: 'Minh N.',
-    role: 'Đà Nẵng',
+    role: 'Đà Nẵng · Engineering',
     avatarInitials: 'MN',
-    avatarBg: 'from-blue-600 to-cyan-700',
     flagComponent: FlagVN,
     sourceLang: 'VI',
-    sourceText: 'Phía Việt Nam đã sẵn sàng. Hệ thống Laya AI đang trích xuất Action Items đồng thời cho mọi ngôn ngữ.',
+    sourceText: 'Phía Việt Nam đã sẵn sàng. Luồng âm thanh xử lý hoàn toàn trên RAM và tự động tổng hợp biên bản sau cuộc họp.',
     translations: {
-      VI: 'Phía Việt Nam đã sẵn sàng. Hệ thống Laya AI đang trích xuất Action Items đồng thời cho mọi ngôn ngữ.',
-      EN: 'The Vietnam team is ready. The Laya AI engine is concurrently extracting Action Items across all languages.',
-      JA: 'ベトナム側も準備完了です。Laya AIが全言語向けにアクションアイテムをリアルタイム抽出しています。',
+      VI: 'Phía Việt Nam đã sẵn sàng. Luồng âm thanh xử lý hoàn toàn trên RAM và tự động tổng hợp biên bản sau cuộc họp.',
+      EN: 'Vietnam team is ready. Audio streams are processed 100% in RAM and meeting minutes are compiled automatically.',
+      JA: 'ベトナム側も準備完了です。音声は100%メモリ上で処理され、会議後に議事録が自動生成されます。',
     },
     actionItem: {
       text: {
-        VI: 'Xuất biên bản họp đa ngữ tự động sang Markdown cho dự án',
-        EN: 'Export multilingual smart meeting minutes to Markdown for project team',
-        JA: '多言語AI議事録をMarkdownで自動出力しプロジェクトへ共有',
+        VI: 'Action: Xuất biên bản họp sang Markdown gửi khách hàng',
+        EN: 'Action: Export meeting minutes to Markdown for client review',
+        JA: '課題: 議事録をMarkdown形式で出力しクライアントへ共有',
       },
-      confidence: '95%',
     },
-    latencyMs: 284,
+    latencyMs: 86,
   },
 ];
 
@@ -138,75 +128,67 @@ export const InteractiveMeetingPreview: React.FC<InteractiveMeetingPreviewProps>
   });
   const [isPlaying, setIsPlaying] = useState(true);
 
-  // Sync target subtitle preview with site language
   useEffect(() => {
     if (language === 'en') setSelectedLang('EN');
     else if (language === 'ja') setSelectedLang('JA');
     else if (language === 'vi') setSelectedLang('VI');
   }, [language]);
 
-  // Auto-cycle dialogue turns every 6 seconds
   useEffect(() => {
     if (!isPlaying) return;
     const interval = setInterval(() => {
       setCurrentTurnIndex((prev) => (prev + 1) % DIALOGUE_SCRIPT.length);
-    }, 6000);
+    }, 5500);
     return () => clearInterval(interval);
   }, [isPlaying]);
 
   const currentTurn = DIALOGUE_SCRIPT[currentTurnIndex];
-  const otherParticipants = DIALOGUE_SCRIPT.filter((_, idx) => idx !== currentTurnIndex);
   const translatedText = currentTurn.translations[selectedLang] || currentTurn.translations.VI;
 
   const PREVIEW_COPY: Record<
     string,
     {
-      title: string;
-      speaking: string;
-      subLive: string;
-      actionTitle: string;
+      windowTitle: string;
+      overlayLabel: string;
+      targetLangLabel: string;
       closeTip: string;
       playTip: string;
       pauseTip: string;
     }
   > = {
     vi: {
-      title: 'Mô Phỏng Họp Song Ngữ AI',
-      speaking: 'Nói',
-      subLive: 'Dịch AI tức thì',
-      actionTitle: 'Action Item',
-      closeTip: 'Đóng bản xem trước (Tải lại trang để mở lại)',
-      playTip: 'Phát tự động',
+      windowTitle: 'Zoom Meeting — Q4 Architecture Sync',
+      overlayLabel: 'LayaMeet Overlay · Click-Through',
+      targetLangLabel: 'Dịch sang',
+      closeTip: 'Đóng bản xem trước',
+      playTip: 'Tiếp tục mô phỏng',
       pauseTip: 'Tạm dừng',
     },
     en: {
-      title: 'Live Bilingual Meeting Demo',
-      speaking: 'Speaking',
-      subLive: 'Live AI Subtitles',
-      actionTitle: 'Action Item',
-      closeTip: 'Close preview (Reload page to restore)',
-      playTip: 'Play',
+      windowTitle: 'Zoom Meeting — Q4 Architecture Sync',
+      overlayLabel: 'LayaMeet Overlay · Click-Through',
+      targetLangLabel: 'Translate to',
+      closeTip: 'Close preview',
+      playTip: 'Resume simulation',
       pauseTip: 'Pause',
     },
     ja: {
-      title: 'リアルタイム多言語会議デモ',
-      speaking: '発言中',
-      subLive: 'AIリアルタイム字幕',
-      actionTitle: 'TODO / 決定事項',
-      closeTip: 'プレビューを閉じる（リロードで再表示）',
+      windowTitle: 'Zoom ミーティング — Q4 アーキテクチャ定例',
+      overlayLabel: 'LayaMeet オーバーレイ · 最前面透過',
+      targetLangLabel: '翻訳先',
+      closeTip: 'プレビューを閉じる',
       playTip: '再生',
       pauseTip: '一時停止',
     },
   };
 
-  const tLabels = PREVIEW_COPY[language] || PREVIEW_COPY.en;
+  const tLabels = PREVIEW_COPY[language] || PREVIEW_COPY.vi;
 
   return (
-    <div className="w-full sm:w-[500px] lg:w-[540px] xl:w-[580px] bg-zinc-900 border border-zinc-700/60 dark:border-[#33353e] rounded-2xl overflow-hidden shrink-0 shadow-2xl transition-all">
-      {/* ── Studio Top Chrome Bar (Clean Mac-style with working close button) ── */}
-      <div className="px-3.5 py-2.5 bg-zinc-950/80 border-b border-zinc-800/80 flex items-center justify-between select-none">
-        <div className="flex items-center gap-2">
-          {/* Mac-style subtle window controls — Red dot closes the frame */}
+    <div className="w-full bg-[#121316] border border-[#262930] rounded-lg overflow-hidden shadow-2xl text-zinc-100 select-none">
+      {/* ── Native Windows 11 Title Bar ── */}
+      <div className="h-9 px-3 bg-[#181A1F] border-b border-[#262930] flex items-center justify-between text-xs">
+        <div className="flex items-center gap-2.5 min-w-0">
           <div className="flex items-center gap-1.5">
             <button
               type="button"
@@ -214,29 +196,27 @@ export const InteractiveMeetingPreview: React.FC<InteractiveMeetingPreviewProps>
               data-testid="preview-red-dot"
               title={tLabels.closeTip}
               aria-label={tLabels.closeTip}
-              className="w-2.5 h-2.5 rounded-full bg-red-500 hover:bg-red-400 cursor-pointer transition-colors"
+              className="w-2.5 h-2.5 rounded-full bg-zinc-600 hover:bg-red-500 transition-colors cursor-pointer"
             />
-            <span className="w-2.5 h-2.5 rounded-full bg-amber-500/80" />
-            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500/80" />
+            <span className="w-2.5 h-2.5 rounded-full bg-zinc-700" />
+            <span className="w-2.5 h-2.5 rounded-full bg-zinc-700" />
           </div>
-          <span className="text-[11px] font-mono text-zinc-400 pl-1 flex items-center gap-1.5">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-            <span className="font-semibold text-zinc-200">{tLabels.title}</span>
-          </span>
+          <span className="text-[11px] font-medium text-zinc-300 truncate">{tLabels.windowTitle}</span>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5 shrink-0">
+          <span className="text-[10px] font-mono text-zinc-400 px-1.5 py-0.5 rounded bg-[#121316] border border-[#262930] tabular-nums">
+            WASAPI · {currentTurn.latencyMs}ms
+          </span>
           <button
             type="button"
             onClick={() => setIsPlaying(!isPlaying)}
             title={isPlaying ? tLabels.pauseTip : tLabels.playTip}
             aria-label={isPlaying ? tLabels.pauseTip : tLabels.playTip}
-            className="p-1 rounded text-zinc-400 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
+            className="p-1 rounded text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800 transition-colors cursor-pointer"
           >
-            {isPlaying ? <Pause className="w-3 h-3" /> : <Play className="w-3 h-3 text-blue-400" />}
+            {isPlaying ? <Pause className="w-3 h-3" /> : <Play className="w-3 h-3" />}
           </button>
-
-          {/* Close button [✕] for explicit discovery */}
           {onClose && (
             <button
               type="button"
@@ -244,7 +224,7 @@ export const InteractiveMeetingPreview: React.FC<InteractiveMeetingPreviewProps>
               data-testid="preview-close-btn"
               title={tLabels.closeTip}
               aria-label={tLabels.closeTip}
-              className="p-1 rounded text-zinc-400 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
+              className="p-1 rounded text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800 transition-colors cursor-pointer"
             >
               <X className="w-3.5 h-3.5" />
             </button>
@@ -252,104 +232,97 @@ export const InteractiveMeetingPreview: React.FC<InteractiveMeetingPreviewProps>
         </div>
       </div>
 
-      {/* ── Realistic Video Conference Canvas ─────────────────────── */}
-      <div className="relative aspect-[16/10] bg-gradient-to-b from-[#181922] to-[#0c0d12] flex flex-col justify-between p-3.5 overflow-hidden">
-        {/* Subtle ambient audio reaction wave in background */}
-        <div className="absolute inset-0 pointer-events-none flex items-center justify-center opacity-25">
-          <div className="w-48 h-48 rounded-full bg-blue-600/20 blur-3xl animate-pulse" />
+      {/* ── Simulated Conference Grid + Floating Overlay Bar ── */}
+      <div className="p-4 sm:p-5 bg-[#0E1013] space-y-4">
+        {/* Participant Strip (3 Realistic Video Tiles) */}
+        <div className="grid grid-cols-3 gap-2.5">
+          {DIALOGUE_SCRIPT.map((p, idx) => {
+            const isSpeaking = idx === currentTurnIndex;
+            const Flag = p.flagComponent;
+            return (
+              <button
+                key={p.id}
+                type="button"
+                onClick={() => setCurrentTurnIndex(idx)}
+                className={`text-left p-3 rounded-md border transition-colors cursor-pointer flex flex-col justify-between h-24 sm:h-28 ${
+                  isSpeaking
+                    ? 'bg-[#171A21] border-blue-500/80'
+                    : 'bg-[#14161B] border-[#22252C] hover:border-zinc-700 opacity-75 hover:opacity-100'
+                }`}
+              >
+                <div className="flex items-center justify-between w-full">
+                  <div className="w-7 h-7 rounded bg-[#232730] border border-zinc-700/60 text-zinc-200 font-mono text-[11px] font-semibold flex items-center justify-center">
+                    {p.avatarInitials}
+                  </div>
+                  {isSpeaking ? (
+                    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 text-[10px] font-mono">
+                      <Mic className="w-2.5 h-2.5" />
+                      LIVE
+                    </span>
+                  ) : (
+                    <Flag />
+                  )}
+                </div>
+
+                <div>
+                  <div className="text-xs font-semibold text-zinc-100 truncate flex items-center gap-1.5">
+                    <span>{p.shortName}</span>
+                    {isSpeaking && <Flag />}
+                  </div>
+                  <div className="text-[10px] text-zinc-500 truncate">{p.role}</div>
+                </div>
+              </button>
+            );
+          })}
         </div>
 
-        {/* Top Floating Row: Action Item Toast (Left) & Secondary PIP Thumbnails (Right) */}
-        <div className="relative z-10 flex items-start justify-between gap-2">
-          {/* Compact Action Item pill (Clean, non-intrusive) */}
-          {currentTurn.actionItem ? (
-            <div className="max-w-[65%] px-2.5 py-1 rounded-md bg-zinc-900/90 border border-zinc-700/80 backdrop-blur-md text-[10px] text-zinc-200 flex items-center gap-1.5 shadow-sm">
-              <CheckCircle2 className="w-3 h-3 text-emerald-400 shrink-0" />
-              <span className="truncate font-medium">
-                {currentTurn.actionItem.text[selectedLang] || currentTurn.actionItem.text.VI}
-              </span>
+        {/* ── THE ACTUAL PRODUCT: LayaMeet Floating Translucent Overlay ── */}
+        <div className="rounded-lg bg-[#16181E] border border-[#2D313B] p-3.5 sm:p-4 shadow-xl space-y-2.5">
+          {/* Overlay Status Header */}
+          <div className="flex items-center justify-between text-[11px] text-zinc-400 border-b border-[#23262F] pb-2">
+            <div className="flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-emerald-500" />
+              <span className="font-mono text-[11px] text-zinc-300 font-medium">{tLabels.overlayLabel}</span>
             </div>
-          ) : <div />}
-
-          {/* Secondary PIP Attendee Tiles */}
-          <div className="flex items-center gap-1.5 shrink-0">
-            {otherParticipants.map((p) => {
-              const Flag = p.flagComponent;
-              return (
-                <button
-                  key={p.id}
-                  type="button"
-                  onClick={() => {
-                    const idx = DIALOGUE_SCRIPT.findIndex((d) => d.id === p.id);
-                    if (idx !== -1) setCurrentTurnIndex(idx);
-                  }}
-                  className="px-2 py-1 rounded-lg bg-zinc-900/80 hover:bg-zinc-800/90 border border-zinc-700/60 backdrop-blur-md flex items-center gap-1.5 text-[10px] text-zinc-300 transition-all cursor-pointer shadow-sm"
-                  title={`${p.speaker} (${p.role})`}
-                >
-                  <span className="font-semibold">{p.shortName}</span>
-                  <Flag />
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Center: Active Speaker Representation with Speech Pulse */}
-        <div className="relative z-10 flex flex-col items-center justify-center my-auto">
-          {/* Animated Avatar */}
-          <div className="relative">
-            <div className="absolute -inset-2 rounded-full bg-blue-500/25 blur-sm animate-pulse" />
-            <div className={`relative w-16 h-16 rounded-full bg-gradient-to-tr ${currentTurn.avatarBg} text-white font-bold text-lg flex items-center justify-center shadow-lg ring-2 ring-white/20`}>
-              {currentTurn.avatarInitials}
+            <div className="flex items-center gap-2 font-mono text-[10px] text-zinc-400 tabular-nums">
+              <Volume2 className="w-3 h-3 text-zinc-400" />
+              <span>{currentTurn.sourceLang} → {selectedLang}</span>
             </div>
-            {/* Live Speaking Indicator */}
-            <span className="absolute bottom-0 right-0 w-4 h-4 rounded-full bg-emerald-500 ring-2 ring-zinc-900 flex items-center justify-center text-white">
-              <Mic className="w-2.5 h-2.5" />
-            </span>
           </div>
 
-          {/* Speaker Name Tag Badge */}
-          <div className="mt-2 px-2.5 py-0.5 rounded-full bg-black/60 backdrop-blur-md border border-white/10 text-white text-[11px] font-semibold flex items-center gap-1.5">
-            <span>{currentTurn.speaker}</span>
-            <currentTurn.flagComponent />
-            <span className="text-[10px] text-zinc-400 font-normal">({currentTurn.role})</span>
-          </div>
-        </div>
-
-        {/* Bottom: Crystal Clear Bilingual Closed Caption Overlay (Google Meet Style) */}
-        <div className="relative z-10 w-full rounded-xl bg-black/85 backdrop-blur-md border border-white/10 p-3 shadow-xl space-y-1">
-          {/* Original Speech Line (subtle font-mono) */}
-          <div className="flex items-center justify-between text-[10px] text-zinc-400">
-            <span className="flex items-center gap-1 truncate">
-              <span className="font-medium text-zinc-300">{currentTurn.shortName}</span>
-              <span>({currentTurn.sourceLang}):</span>
-              <span className="italic truncate max-w-[260px] sm:max-w-[340px]">{currentTurn.sourceText}</span>
+          {/* Original Transcript Line */}
+          <div className="text-xs text-zinc-400 flex items-baseline gap-2 leading-relaxed">
+            <span className="font-mono text-[10px] uppercase px-1.5 py-0.5 rounded bg-[#20232B] text-zinc-300 shrink-0">
+              {currentTurn.shortName}
             </span>
-            <span className="font-mono text-emerald-400 shrink-0 text-[9px] flex items-center gap-1">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
-              <span>{currentTurn.latencyMs}ms</span>
-            </span>
+            <span className="text-zinc-400 line-clamp-1">{currentTurn.sourceText}</span>
           </div>
 
-          {/* Real-time Subtitle Translation (High contrast, bold, immediate) */}
-          <div className="flex items-start gap-1.5 pt-0.5">
-            <Zap className="w-3.5 h-3.5 text-blue-400 shrink-0 mt-0.5" />
-            <p className="text-xs sm:text-sm font-bold text-white tracking-wide leading-snug">
-              {translatedText}
-            </p>
+          {/* Translated Line (High Contrast, Clean Typography) */}
+          <div className="text-sm sm:text-[15px] font-medium text-white leading-relaxed pt-0.5">
+            {translatedText}
           </div>
+
+          {/* Extracted Action Item Footer inside Overlay */}
+          {currentTurn.actionItem && (
+            <div className="pt-2 border-t border-[#23262F] flex items-center justify-between gap-2 text-[11px] text-zinc-300">
+              <div className="flex items-center gap-1.5 truncate">
+                <Check className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                <span className="truncate font-mono text-[11px] text-zinc-300">
+                  {currentTurn.actionItem.text[selectedLang] || currentTurn.actionItem.text.VI}
+                </span>
+              </div>
+              <span className="text-[10px] font-mono text-zinc-500 shrink-0">RAM-ONLY</span>
+            </div>
+          )}
         </div>
       </div>
 
-      {/* ── Bottom Control Strip: Clean Speaker Switcher & Target Language Toggle ── */}
-      <div className="px-3.5 py-2 bg-zinc-950 border-t border-zinc-800/80 flex items-center justify-between text-xs text-zinc-400">
-        <div className="flex items-center gap-1 text-[11px]">
-          <Globe className="w-3.5 h-3.5 text-blue-400" />
-          <span className="hidden sm:inline text-zinc-300 font-medium">{tLabels.subLive}:</span>
-        </div>
+      {/* ── Bottom Control Bar: Language Switcher ── */}
+      <div className="px-4 py-2.5 bg-[#16181D] border-t border-[#262930] flex items-center justify-between text-xs">
+        <span className="text-[11px] text-zinc-400 font-medium">{tLabels.targetLangLabel}:</span>
 
-        {/* Minimal 3-Language Selector Pills */}
-        <div className="flex items-center gap-1 bg-zinc-900 p-0.5 rounded-lg border border-zinc-800">
+        <div className="flex items-center gap-1 bg-[#101216] p-0.5 rounded-md border border-[#262930]">
           {(['VI', 'EN', 'JA'] as TargetLanguage[]).map((lang) => {
             const isSelected = selectedLang === lang;
             const flags = { VI: FlagVN, EN: FlagUS, JA: FlagJP };
@@ -359,9 +332,9 @@ export const InteractiveMeetingPreview: React.FC<InteractiveMeetingPreviewProps>
                 key={lang}
                 type="button"
                 onClick={() => setSelectedLang(lang)}
-                className={`px-2 py-1 rounded-md text-[10px] font-semibold flex items-center gap-1 transition-all cursor-pointer ${
+                className={`px-2.5 py-1 rounded text-[11px] font-medium flex items-center gap-1.5 transition-colors cursor-pointer ${
                   isSelected
-                    ? 'bg-blue-600 text-white shadow-xs'
+                    ? 'bg-[#2563EB] text-white'
                     : 'text-zinc-400 hover:text-zinc-200'
                 }`}
               >
